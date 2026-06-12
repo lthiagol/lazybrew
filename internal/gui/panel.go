@@ -1,0 +1,231 @@
+package gui
+
+import (
+	"strconv"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/thiago/lazybrew/internal/brew"
+	"github.com/thiago/lazybrew/internal/gui/style"
+)
+
+type PanelID int
+
+const (
+	PanelStatus PanelID = iota
+	PanelFormulae
+	PanelCasks
+	PanelOutdated
+	PanelTaps
+	PanelServices
+	PanelSearch
+)
+
+func (p PanelID) String() string {
+	switch p {
+	case PanelStatus:
+		return "Status"
+	case PanelFormulae:
+		return "Formulae"
+	case PanelCasks:
+		return "Casks"
+	case PanelOutdated:
+		return "Outdated"
+	case PanelTaps:
+		return "Taps"
+	case PanelServices:
+		return "Services"
+	case PanelSearch:
+		return "Search"
+	default:
+		return "?"
+	}
+}
+
+type tabInfo struct {
+	name string
+	id   int
+}
+
+var panelTabs = map[PanelID][]tabInfo{
+	PanelStatus:   {{"Dashboard", 0}, {"Config", 1}, {"Doctor", 2}},
+	PanelFormulae: {{"Info", 0}, {"Deps", 1}, {"Used By", 2}, {"Caveats", 3}, {"Files", 4}},
+	PanelCasks:    {{"Info", 0}, {"Deps", 1}, {"Caveats", 2}},
+	PanelOutdated: {{"Info", 0}, {"Versions", 1}},
+	PanelTaps:     {{"Tap Info", 0}, {"Trust", 1}, {"Formulae", 2}},
+	PanelServices: {{"Status", 0}},
+	PanelSearch:   {{"Info", 0}},
+}
+
+type panelData struct {
+	id       PanelID
+	title    string
+	icon     string
+	items    []string
+	selected int
+	offset   int
+	width    int
+	height   int
+	active   bool
+	loading  bool
+	err      error
+	rawData  interface{}
+}
+
+func (p *panelData) itemCount() int {
+	return len(p.items)
+}
+
+func (p *panelData) visibleCount() int {
+	return max(1, p.height-3)
+}
+
+func (p *panelData) up() {
+	if p.selected > 0 {
+		p.selected--
+	}
+	if p.selected < p.offset {
+		p.offset = p.selected
+	}
+}
+
+func (p *panelData) down() {
+	if p.selected < len(p.items)-1 {
+		p.selected++
+	}
+	if p.selected >= p.offset+p.visibleCount() {
+		p.offset = p.selected - p.visibleCount() + 1
+	}
+}
+
+func (p *panelData) selectedItem() string {
+	if p.selected >= 0 && p.selected < len(p.items) {
+		return p.items[p.selected]
+	}
+	return ""
+}
+
+func (p *panelData) selectedFormula() *brew.Formula {
+	if p.rawData == nil {
+		return nil
+	}
+	formulae, ok := p.rawData.([]brew.Formula)
+	if !ok || p.selected >= len(formulae) {
+		return nil
+	}
+	return &formulae[p.selected]
+}
+
+func (p *panelData) selectedCask() *brew.Cask {
+	if p.rawData == nil {
+		return nil
+	}
+	casks, ok := p.rawData.([]brew.Cask)
+	if !ok || p.selected >= len(casks) {
+		return nil
+	}
+	return &casks[p.selected]
+}
+
+func (p *panelData) selectedTap() *brew.Tap {
+	if p.rawData == nil {
+		return nil
+	}
+	taps, ok := p.rawData.([]brew.Tap)
+	if !ok || p.selected >= len(taps) {
+		return nil
+	}
+	return &taps[p.selected]
+}
+
+func (p *panelData) selectedService() *brew.Service {
+	if p.rawData == nil {
+		return nil
+	}
+	services, ok := p.rawData.([]brew.Service)
+	if !ok || p.selected >= len(services) {
+		return nil
+	}
+	return &services[p.selected]
+}
+
+func (p *panelData) renderSidebarItem(width int) string {
+	countSuffix := ""
+	if p.loading {
+		countSuffix = style.SubtleText.Render(" …")
+	} else if len(p.items) > 0 {
+		countSuffix = style.SubtleText.Render(" (" + strconv.Itoa(len(p.items)) + ")")
+	}
+
+	var line string
+	if p.active {
+		line = "▸ " + p.title + countSuffix
+		return style.AccentText.Render(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(line))
+	}
+	line = "  " + p.title + countSuffix
+	return style.NormalItem.Render(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(line))
+}
+
+func (p *panelData) renderList(width, height int) string {
+	if p.loading {
+		return lipgloss.NewStyle().Width(width).Height(height).Render(style.SubtleText.Render("Loading..."))
+	}
+
+	if p.err != nil {
+		return lipgloss.NewStyle().Width(width).Height(height).Render(style.ErrorBadge.Render("Error: " + p.err.Error()))
+	}
+
+	visible := min(p.visibleCount(), height)
+	if visible < 1 {
+		visible = 1
+	}
+	end := min(p.offset+visible, len(p.items))
+	if p.offset >= end && p.offset > 0 {
+		p.offset = max(0, end-visible)
+		end = min(p.offset+visible, len(p.items))
+	}
+	items := p.items[p.offset:end]
+
+	lines := make([]string, 0, len(items))
+	for i, item := range items {
+		idx := p.offset + i
+		prefix := "  "
+		itemStyle := style.NormalItem
+		if idx == p.selected {
+			prefix = "▸ "
+			itemStyle = style.SelectedItem
+		}
+		rendered := lipgloss.NewStyle().Width(width).MaxWidth(width).Render(prefix + item)
+		lines = append(lines, itemStyle.Render(rendered))
+	}
+
+	if len(lines) == 0 {
+		return lipgloss.NewStyle().Width(width).Height(height).Render(style.SubtleText.Render("No items"))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Top, lines...)
+}
+
+func initPanels() []*panelData {
+	panels := make([]*panelData, 7)
+	panelDefs := []struct {
+		id    PanelID
+		title string
+	}{
+		{PanelStatus, "Status"},
+		{PanelFormulae, "Formulae"},
+		{PanelCasks, "Casks"},
+		{PanelOutdated, "Outdated"},
+		{PanelTaps, "Taps"},
+		{PanelServices, "Services"},
+		{PanelSearch, "Search"},
+	}
+	for i, def := range panelDefs {
+		panels[i] = &panelData{
+			id:      def.id,
+			title:   def.title,
+			loading: true,
+		}
+	}
+	panels[0].active = true
+	return panels
+}

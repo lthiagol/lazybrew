@@ -1,0 +1,191 @@
+package gui
+
+import (
+	"strconv"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/thiago/lazybrew/internal/gui/style"
+)
+
+func (m Model) renderSidebar() string {
+	sw := sidebarWidth(m.cfg, m.width)
+	sh := m.height - 4
+
+	var items []string
+	for i := range m.panels {
+		item := m.panels[i].renderSidebarItem(sw - 4)
+		items = append(items, item)
+	}
+
+	list := lipgloss.JoinVertical(lipgloss.Top, items...)
+	border := style.InactiveBorder
+
+	return lipgloss.NewStyle().
+		Width(sw).
+		Height(sh).
+		Render(border.Render(list))
+}
+
+func (m Model) renderMainPanel() string {
+	sw := sidebarWidth(m.cfg, m.width)
+	mw := m.width - sw - 4
+	mh := m.height - 4
+
+	tabBar := m.renderTabBar(mw)
+	content := m.renderContent(mw, mh-3)
+
+	panel := lipgloss.JoinVertical(lipgloss.Top, tabBar, content)
+
+	return lipgloss.NewStyle().
+		Width(mw + 2).
+		Height(mh).
+		Render(style.ActiveBorder.Render(panel))
+}
+
+func (m Model) renderTabBar(width int) string {
+	if len(m.tabs) == 0 {
+		return ""
+	}
+
+	var tabs []string
+	for i, tab := range m.tabs {
+		if i == m.activeTab {
+			tabs = append(tabs, style.TabActive.Render(" "+tab.name+" "))
+		} else {
+			tabs = append(tabs, style.TabInactive.Render(" "+tab.name+" "))
+		}
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+}
+
+func (m Model) renderContent(width, height int) string {
+	panel := m.panels[m.activePanel]
+	if panel.loading {
+		return style.SubtleText.Render("Loading...")
+	}
+
+	switch m.activePanel {
+	case PanelFormulae:
+		switch m.activeTab {
+		case 0:
+			return panel.renderList(width, height)
+		case 1, 2, 4:
+			key := tabKey(m.activePanel, m.activeTab)
+			if content, ok := m.tabContent[key]; ok {
+				return style.NormalItem.Render(content)
+			}
+			return style.SubtleText.Render("Loading...")
+		case 3:
+			f := panel.selectedFormula()
+			if f == nil || f.Caveats == "" {
+				return style.SubtleText.Render("No caveats")
+			}
+			return style.NormalItem.Render(f.Caveats)
+		}
+
+	case PanelCasks:
+		switch m.activeTab {
+		case 0:
+			return panel.renderList(width, height)
+		case 1:
+			c := panel.selectedCask()
+			if c == nil || len(c.DependsOn) == 0 {
+				return style.SubtleText.Render("No dependencies")
+			}
+			result := ""
+			for _, d := range c.DependsOn {
+				result += d + "\n"
+			}
+			return style.NormalItem.Render(result)
+		case 2:
+			return style.SubtleText.Render("Cask caveats not available")
+		}
+
+	case PanelStatus:
+		switch m.activeTab {
+		case 0:
+			return panel.renderList(width, height)
+		case 1:
+			key := tabKey(m.activePanel, m.activeTab)
+			if content, ok := m.tabContent[key]; ok {
+				return style.SubtleText.Render(content)
+			}
+			return style.SubtleText.Render("Loading...")
+		case 2:
+			key := tabKey(m.activePanel, m.activeTab)
+			if content, ok := m.tabContent[key]; ok {
+				return style.NormalItem.Render(content)
+			}
+			return style.SubtleText.Render("Run 'v' for vulnerability check or 'm' for missing dependencies")
+		}
+
+	case PanelTaps:
+		switch m.activeTab {
+		case 0:
+			return panel.renderList(width, height)
+		case 1:
+			t := panel.selectedTap()
+			if t == nil {
+				return style.SubtleText.Render("No tap selected")
+			}
+			trusted := "untrusted"
+			if t.Trusted || t.IsOfficial {
+				trusted = "trusted"
+			}
+			return style.NormalItem.Render("Tap: " + t.Name + "\n" +
+				"Trusted: " + trusted + "\n" +
+				"Official: " + boolStr(t.IsOfficial) + "\n" +
+				"Remote: " + t.Remote + "\n" +
+				"Formulae: " + strconv.Itoa(t.FormulaCount) + "\n" +
+				"Casks: " + strconv.Itoa(t.CaskCount) + "\n")
+		case 2:
+			t := panel.selectedTap()
+			if t == nil || len(t.FormulaNames) == 0 {
+				return style.SubtleText.Render("No formulae in this tap")
+			}
+			result := ""
+			for _, fn := range t.FormulaNames {
+				result += fn + "\n"
+			}
+			return style.NormalItem.Render(result)
+		}
+
+	case PanelServices:
+		return panel.renderList(width, height)
+
+	case PanelOutdated:
+		return panel.renderList(width, height)
+
+	case PanelSearch:
+		return panel.renderList(width, height)
+	}
+
+	return panel.renderList(width, height)
+}
+
+func boolStr(b bool) string {
+	if b {
+		return "yes"
+	}
+	return "no"
+}
+
+func (m Model) renderBottomBar() string {
+	hints := panelHints(m.activePanel)
+	globalHints := []keyHint{{"Tab", "next"}, {"S-Tab", "prev"}, {"1-7", "jump"}, {"/", "search"}, {"?", "help"}, {"R", "refresh"}, {"q", "quit"}}
+
+	var parts []string
+	for _, h := range hints {
+		parts = append(parts, style.HintKey.Render(h.key)+" "+style.HintDesc.Render(h.desc))
+	}
+	parts = append(parts, style.SubtleText.Render("│"))
+	for _, h := range globalHints {
+		parts = append(parts, style.HintKey.Render(h.key)+" "+style.HintDesc.Render(h.desc))
+	}
+
+	bar := lipgloss.JoinHorizontal(lipgloss.Top, parts...)
+	return lipgloss.NewStyle().
+		Width(m.width - 2).
+		Padding(0, 1).
+		Render(bar)
+}

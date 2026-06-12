@@ -1,0 +1,95 @@
+{
+  "formulae": [
+    {
+      "name": "ripgrep",
+      "full_name": "ripgrep",
+      "tap": "homebrew/core",
+      "versions": { "stable": "14.1.2", "head": null },
+      "desc": "Search tool like grep but faster",
+      "homepage": "https://github.com/BurntSushi/ripgrep",
+      "license": "MIT",
+      "installed": [
+        {
+          "version": "14.1.1",
+          "installed_on_request": true,
+          "installed_as_dependency": false,
+          "time": 1700000000,
+          "runtime_dependencies": ["pcre2"]
+        }
+      ],
+      "dependencies": [{ "name": "pcre2" }],
+      "build_dependencies": [],
+      "caveats": "",
+      "keg_only": false,
+      "bottle": { "stable": { "files": { "arm64_sonoma": { "url": "..." } } } },
+      "pinned": false,
+      "binaries": ["rg"]
+    },
+    {
+      "name": "neovim",
+      "full_name": "neovim",
+      "tap": "homebrew/core",
+      "versions": { "stable": "0.10.4", "head": null },
+      "desc": "Vim-fork focused on extensibility and agility",
+      "homepage": "https://neovim.io",
+      "license": "Apache-2.0",
+      "installed": [
+        {
+          "version": "0.10.4",
+          "installed_on_request": true,
+          "installed_as_dependency": false,
+          "time": 1701000000,
+          "runtime_dependencies": ["luajit", "tree-sitter"]
+        }
+      ],
+      "dependencies": [{ "name": "luajit" }, { "name": "tree-sitter" }],
+      "build_dependencies": ["cmake"],
+      "caveats": "Some notes about neovim",
+      "keg_only": false,
+      "bottle": { "stable": { "files": { "arm64_sonoma": { "url": "..." } } } },
+      "pinned": false,
+      "binaries": ["nvim"]
+    },
+    {
+      "name": "python@3.12",
+      "full_name": "python@3.12",
+      "tap": "homebrew/core",
+      "versions": { "stable": "3.12.8", "head": null },
+      "desc": "Python 3.12",
+      "homepage": "https://www.python.org",
+      "license": "Python-2.0",
+      "installed": [
+        {
+          "version": "3.12.8",
+          "installed_on_request": true,
+          "installed_as_dependency": false,
+          "time": 1702000000,
+          "runtime_dependencies": ["openssl", "xz", "zlib"]
+        }
+      ],
+      "dependencies": [{ "name": "openssl" }, { "name": "xz" }, { "name": "zlib" }],
+      "build_dependencies": ["pkg-config"],
+      "caveats": "",
+      "keg_only": true,
+      "bottle": { "stable": { "files": { "arm64_sonoma": { "url": "..." } } } },
+      "pinned": true
+    },
+    {
+      "name": "fish",
+      "full_name": "fish",
+      "tap": "homebrew/core",
+      "versions": { "stable": "3.7.1", "head": null },
+      "desc": "Friendly interactive shell",
+      "homepage": "https://fishshell.com",
+      "license": "GPL-3.0-only",
+      "installed": [],
+      "dependencies": [{ "name": "pcre2" }],
+      "build_dependencies": ["cmake"],
+      "caveats": "",
+      "keg_only": false,
+      "bottle": { "stable": { "files": {} } },
+      "pinned": false
+    }
+  ],
+  "casks": []
+}
