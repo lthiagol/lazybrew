@@ -31,7 +31,7 @@ func TestTapsServiceList(t *testing.T) {
 		return []byte(`[]`), nil
 	}
 	cache := NewCache(time.Minute)
-	taps := NewTapsService(r, cache)
+	taps := NewTapsReader(r, cache)
 
 	list, err := taps.List(context.Background())
 	if err != nil {
@@ -71,7 +71,7 @@ func TestTapsServiceTap(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	taps := NewTapsService(r, cache)
+	taps := NewTapsWriter(r, cache)
 
 	if err := taps.Tap(context.Background(), "some-org/formulas"); err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestTapsServiceTapWithURL(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	taps := NewTapsService(r, cache)
+	taps := NewTapsWriter(r, cache)
 
 	if err := taps.TapWithURL(context.Background(), "custom/tap", "https://example.com/tap.git"); err != nil {
 		t.Fatal(err)
@@ -97,7 +97,7 @@ func TestTapsServiceUntap(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	taps := NewTapsService(r, cache)
+	taps := NewTapsWriter(r, cache)
 
 	if err := taps.Untap(context.Background(), "nicknisi/tap"); err != nil {
 		t.Fatal(err)
@@ -110,7 +110,7 @@ func TestTapsServiceRepair(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	taps := NewTapsService(r, cache)
+	taps := NewTapsWriter(r, cache)
 
 	if err := taps.Repair(context.Background(), "nicknisi/tap"); err != nil {
 		t.Fatal(err)
@@ -132,7 +132,7 @@ func TestTapsServiceGet(t *testing.T) {
 		}]`), nil
 	}
 	cache := NewCache(time.Minute)
-	taps := NewTapsService(r, cache)
+	taps := NewTapsReader(r, cache)
 
 	tap, err := taps.Get(context.Background(), "homebrew/core")
 	if err != nil {

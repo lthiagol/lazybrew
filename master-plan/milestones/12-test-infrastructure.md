@@ -1,6 +1,8 @@
 # Milestone 12 — Test Infrastructure & Quality
 
-> **Status:** 🔲 Not Started  
+> **Status:** ⚠️ In Progress  
+> **Done:** Modal tests (14), fuzz tests (2), snapshot tests (5)  
+> **Remaining:** E2E tests (0), integration tests (0), gui/ package has zero tests  
 > **Depends on:** Milestone 10 (GUI Architecture — decomposed code is testable), Milestone 11 (Feature Completion — features must exist before they can be tested)  
 > **Enables:** v0.2.0 Release
 

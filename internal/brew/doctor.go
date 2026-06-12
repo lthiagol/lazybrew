@@ -8,6 +8,7 @@ import (
 type DiagnosticsReader interface {
 	Doctor(ctx context.Context) ([]DoctorWarning, error)
 	Missing(ctx context.Context) ([]MissingDep, error)
+	Vulns(ctx context.Context) (string, error)
 	Config(ctx context.Context) (*BrewConfig, error)
 	Version(ctx context.Context) (string, error)
 }
@@ -125,6 +126,14 @@ func (s *diagnosticsReader) parseMissingOutput(text string) []MissingDep {
 		}
 	}
 	return missing
+}
+
+func (s *diagnosticsReader) Vulns(ctx context.Context) (string, error) {
+	output, err := s.runner.Execute(ctx, "vulns")
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
 }
 
 func (s *diagnosticsReader) Config(ctx context.Context) (*BrewConfig, error) {

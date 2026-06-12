@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 )
 
-type ServicesService interface {
+type ServicesReader interface {
 	List(ctx context.Context) ([]Service, error)
+}
+
+type ServicesWriter interface {
 	Start(ctx context.Context, name string) error
 	Stop(ctx context.Context, name string) error
 	Restart(ctx context.Context, name string) error
@@ -14,16 +17,25 @@ type ServicesService interface {
 	Cleanup(ctx context.Context) error
 }
 
-type servicesService struct {
+type servicesReader struct {
 	runner Runner
 	cache  *Cache
 }
 
-func NewServicesService(runner Runner, cache *Cache) ServicesService {
-	return &servicesService{runner: runner, cache: cache}
+type servicesWriter struct {
+	runner Runner
+	cache  *Cache
 }
 
-func (s *servicesService) List(ctx context.Context) ([]Service, error) {
+func NewServicesReader(runner Runner, cache *Cache) ServicesReader {
+	return &servicesReader{runner: runner, cache: cache}
+}
+
+func NewServicesWriter(runner Runner, cache *Cache) ServicesWriter {
+	return &servicesWriter{runner: runner, cache: cache}
+}
+
+func (s *servicesReader) List(ctx context.Context) ([]Service, error) {
 	if cached, ok := s.cache.Get(KeyServicesList); ok {
 		if services, ok := cached.([]Service); ok {
 			return services, nil
@@ -55,30 +67,30 @@ func (s *servicesService) List(ctx context.Context) ([]Service, error) {
 	return services, nil
 }
 
-func (s *servicesService) Start(ctx context.Context, name string) error {
+func (s *servicesWriter) Start(ctx context.Context, name string) error {
 	s.cache.Invalidate(KeyServicesList)
 	_, err := s.runner.Execute(ctx, "services", "start", name)
 	return err
 }
 
-func (s *servicesService) Stop(ctx context.Context, name string) error {
+func (s *servicesWriter) Stop(ctx context.Context, name string) error {
 	s.cache.Invalidate(KeyServicesList)
 	_, err := s.runner.Execute(ctx, "services", "stop", name)
 	return err
 }
 
-func (s *servicesService) Restart(ctx context.Context, name string) error {
+func (s *servicesWriter) Restart(ctx context.Context, name string) error {
 	s.cache.Invalidate(KeyServicesList)
 	_, err := s.runner.Execute(ctx, "services", "restart", name)
 	return err
 }
 
-func (s *servicesService) Run(ctx context.Context, name string) error {
+func (s *servicesWriter) Run(ctx context.Context, name string) error {
 	_, err := s.runner.Execute(ctx, "services", "run", name)
 	return err
 }
 
-func (s *servicesService) Cleanup(ctx context.Context) error {
+func (s *servicesWriter) Cleanup(ctx context.Context) error {
 	s.cache.Invalidate(KeyServicesList)
 	_, err := s.runner.Execute(ctx, "services", "cleanup")
 	return err

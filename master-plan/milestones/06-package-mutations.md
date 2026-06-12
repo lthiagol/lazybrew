@@ -1,6 +1,6 @@
 # Milestone 6 — Package Mutations (Install / Uninstall / Upgrade)
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Done  
 > **Depends on:** Milestone 4 (Read-Only Panels), Milestone 5 (Modals & Search)  
 > **Enables:** Milestone 7 (Taps & Trust)
 
@@ -273,6 +273,33 @@ Status panel → press `u`
 
 ---
 
+### 6.8 — Fetch (Pre-Download Without Installing)
+
+**What:** Pre-download a formula or cask without installing it. Useful for offline preparation or slow networks.
+
+**Keybinding:** `F` in Formulae/Casks/Search panels (on an uninstalled item)
+
+**Flow:**
+```
+Search panel → select a package → press `F`
+  → ProgressModal: "Fetching neovim..."
+  → TaskManager: brew fetch neovim [--all-platforms]
+  → On success: toast "✓ neovim downloaded"
+```
+
+**Options:**
+- `--all-platforms` for casks: download for all platforms
+- Useful before going offline: fetch now, install later
+
+**Acceptance criteria:**
+- [ ] Fetch from Search/formulae/casks panels works
+- [ ] `--all-platforms` flag available for casks
+- [ ] Progress streams in real time
+- [ ] Success/failure toast
+- [ ] Already-installed check (no need to fetch installed packages)
+
+---
+
 ## Tests for This Milestone
 
 | Test | Type | File | What It Validates |
@@ -293,6 +320,8 @@ Status panel → press `u`
 | `TestUpdateBrew` | E2E (teatest) | `internal/gui/flows/update_test.go` | brew update runs and refreshes |
 | `TestReinstallFormula` | E2E (teatest) | `internal/gui/flows/reinstall_test.go` | Select → r → confirm → progress → success |
 | `TestReinstallCask` | E2E (teatest) | `internal/gui/flows/reinstall_test.go` | Reinstall cask works |
+| `TestFetchFormula` | E2E (teatest) | `internal/gui/flows/fetch_test.go` | Fetch formula works |
+| `TestFetchCask` | E2E (teatest) | `internal/gui/flows/fetch_test.go` | Fetch cask with --all-platforms |
 | `TestCacheInvalidationAfterInstall` | Unit | `internal/brew/cache_test.go` | Install invalidates formulae cache |
 | `TestCacheInvalidationAfterUpgrade` | Unit | `internal/brew/cache_test.go` | Upgrade invalidates outdated cache |
 
@@ -304,6 +333,7 @@ Status panel → press `u`
 - [ ] Install works for formulae and casks (from search)
 - [ ] Uninstall works with confirmation and dependency warning
 - [ ] Reinstall works for formulae and casks (gap from coverage audit)
+- [ ] Fetch works for formulae and casks with --all-platforms (gap from coverage audit)
 - [ ] Upgrade works (single + all + batch)
 - [ ] `brew update` works from Status panel
 - [ ] Progress modal streams output in real-time

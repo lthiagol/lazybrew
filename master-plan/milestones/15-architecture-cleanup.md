@@ -1,6 +1,6 @@
 # Milestone 15 — Architecture Cleanup
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Complete  
 > **Depends on:** Milestone 14 (Wire Dead Code)  
 > **Enables:** Milestone 16 (Test Coverage)
 

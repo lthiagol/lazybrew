@@ -1,6 +1,6 @@
 # Milestone 8 — P1 Features (Services, Pin, Cleanup, Doctor)
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Done  
 > **Depends on:** Milestone 6 (Package Mutations)  
 > **Enables:** Milestone 9 (Polish & Release)
 

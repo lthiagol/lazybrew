@@ -24,12 +24,16 @@ type Model struct {
 	viewport    viewport.Model
 	ready       bool
 
-	activeModal modal.Modal
-	toast       *modal.Toast
-	batch       *batchState
-	showHelp    bool
-	tabContent  map[string]string
-	program     *tea.Program
+	activeModal     modal.Modal
+	toast           *modal.Toast
+	batch           *batchState
+	showHelp        bool
+	tabContent      map[string]string
+	program         *tea.Program
+	confirmCallback func() tea.Msg
+	pendingAction   string
+	pendingMutType  mutationType
+	isBusy          bool
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -97,9 +101,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case ProgressCompleteMsg:
+		m.isBusy = false
 		if m.activeModal != nil {
 			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
 				p.SetDone(msg.Err)
+			}
+		}
+		if msg.Name != "" {
+			if msg.Err == nil {
+				m.toast = modal.NewToast(msg.Name+" completed", modal.ToastSuccess)
+			} else {
+				m.toast = modal.NewToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
 			}
 		}
 		if msg.Err == nil {
@@ -108,13 +120,59 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case MutationResultMsg:
+		if msg.Leaves != nil && m.activePanel == PanelFormulae {
+			p := m.panels[PanelFormulae]
+			if !p.leavesActive {
+				p.unfilteredItems = p.items
+				leavesSet := make(map[string]bool, len(msg.Leaves))
+				for _, l := range msg.Leaves {
+					leavesSet[l] = true
+				}
+				filtered := make([]string, 0, len(msg.Leaves))
+				for _, item := range p.items {
+					name := extractPackageName(item)
+					if leavesSet[name] {
+						filtered = append(filtered, item)
+					}
+				}
+				p.items = filtered
+				p.leavesActive = true
+			} else {
+				p.items = p.unfilteredItems
+				p.unfilteredItems = nil
+				p.leavesActive = false
+			}
+			if p.selected >= len(p.items) {
+				p.selected = max(0, len(p.items)-1)
+			}
+		}
 		m.activeModal = nil
-		if msg.Err == nil {
+		if msg.Err == nil && msg.Leaves == nil {
 			m.toast = modal.NewToast(msg.Name+" completed", modal.ToastSuccess)
-		} else {
+		} else if msg.Err != nil {
 			m.toast = modal.NewToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
 		}
 		return m, func() tea.Msg { return RefreshMsg{} }
+
+	case CleanupPreviewMsg:
+		m.activeModal = nil
+		m.pendingAction = "cleanup"
+		m.activeModal = modal.NewConfirmModal("Confirm Cleanup",
+			"Run brew cleanup? This will remove old versions.")
+		return m, m.activeModal.Init()
+
+	case AutoremovePreviewMsg:
+		m.activeModal = nil
+		m.pendingAction = "autoremove"
+		m.activeModal = modal.NewConfirmModal("Confirm Autoremove",
+			"Remove orphaned dependencies?")
+		return m, m.activeModal.Init()
+
+	case DepCheckMsg:
+		m.pendingAction = "uninstall"
+		m.pendingMutType = msg.MutType
+		m.activeModal = modal.NewConfirmModal(msg.Label+" "+msg.Name, msg.Message)
+		return m, m.activeModal.Init()
 
 	case TabContentMsg:
 		if msg.Err != nil && msg.Content == "" {
@@ -147,7 +205,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.err = msg.Err
 			if msg.Err == nil {
 				p.items = msg.Items
-				p.rawData = msg.RawData
+				p.formulae = msg.Formulae
+				p.casks = msg.Casks
+				p.taps = msg.Taps
+				p.services = msg.Services
 			}
 		}
 		return m, nil
@@ -232,15 +293,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "x":
 			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
-				return m.doMutation(mutUninstall, "Uninstall")
+				return m.confirmUninstall(mutUninstall)
+			}
+			if m.activePanel == PanelTaps {
+				return m.confirmUntap()
 			}
 		case "X":
 			if m.activePanel == PanelCasks {
-				return m.doMutation(mutZap, "Zap")
+				return m.confirmUninstall(mutZap)
 			}
 		case "r":
 			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
 				return m.doMutation(mutReinstall, "Reinstall")
+			}
+			if m.activePanel == PanelTaps {
+				return m.confirmRepair()
+			}
+		case "F":
+			if m.activePanel == PanelSearch || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
+				return m.doMutation(mutFetch, "Fetch")
 			}
 		case "u":
 			if m.activePanel == PanelOutdated || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
@@ -278,6 +349,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "c":
 			if m.activePanel == PanelServices {
 				return m.serviceCleanup()
+			}
+			if m.activePanel == PanelStatus {
+				return m.brewCleanup()
+			}
+		case "d":
+			if m.activePanel == PanelStatus {
+				return m.runDoctor()
+			}
+		case "L":
+			if m.activePanel == PanelFormulae {
+				return m.toggleLeaves()
+			}
+		case "A":
+			if m.activePanel == PanelStatus {
+				return m.runAutoremove()
 			}
 		case "B":
 			if m.activePanel == PanelStatus {

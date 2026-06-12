@@ -1,6 +1,6 @@
 # Milestone 14 — Wire Dead Code & Fix Broken Functionality
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Done  
 > **Depends on:** Milestone 13 (Critical Bug Fixes)  
 > **Enables:** Milestone 15 (Architecture Cleanup)
 

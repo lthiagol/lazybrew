@@ -1,6 +1,7 @@
 # Milestone 2 — TUI Shell & Layout
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Done  
+> **Remaining:** Small terminal detection (sidebar collapse at <100 cols, hide at <60, Ctrl+B toggle)  
 > **Depends on:** Milestone 1 (Foundation)  
 > **Enables:** Milestone 4 (Read-Only Panels), Milestone 5 (Modals & Search)
 

@@ -21,12 +21,14 @@ const (
 	mutUpgrade
 	mutUpgradeAll
 	mutZap
+	mutFetch
 )
 
 type MutationResultMsg struct {
-	Err  error
-	Name string
-	Type mutationType
+	Err    error
+	Name   string
+	Type   mutationType
+	Leaves []string
 }
 
 type ProgressLineMsg struct {

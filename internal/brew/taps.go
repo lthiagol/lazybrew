@@ -5,22 +5,34 @@ import (
 	"strings"
 )
 
-type TapsService interface {
+type TapsReader interface {
 	List(ctx context.Context) ([]Tap, error)
 	Get(ctx context.Context, name string) (*Tap, error)
+}
+
+type TapsWriter interface {
 	Tap(ctx context.Context, name string) error
 	TapWithURL(ctx context.Context, name, url string) error
 	Untap(ctx context.Context, name string) error
 	Repair(ctx context.Context, name string) error
 }
 
-type tapsService struct {
+type tapsReader struct {
 	runner Runner
 	cache  *Cache
 }
 
-func NewTapsService(runner Runner, cache *Cache) TapsService {
-	return &tapsService{runner: runner, cache: cache}
+type tapsWriter struct {
+	runner Runner
+	cache  *Cache
+}
+
+func NewTapsReader(runner Runner, cache *Cache) TapsReader {
+	return &tapsReader{runner: runner, cache: cache}
+}
+
+func NewTapsWriter(runner Runner, cache *Cache) TapsWriter {
+	return &tapsWriter{runner: runner, cache: cache}
 }
 
 type tapInfoJSON struct {
@@ -40,7 +52,7 @@ type tapInfoJSON struct {
 	CaskNames    []string `json:"cask_names,omitempty"`
 }
 
-func (s *tapsService) List(ctx context.Context) ([]Tap, error) {
+func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
 	if cached, ok := s.cache.Get(KeyTapsList); ok {
 		if taps, ok := cached.([]Tap); ok {
 			return taps, nil
@@ -83,7 +95,7 @@ func (s *tapsService) List(ctx context.Context) ([]Tap, error) {
 	return taps, nil
 }
 
-func (s *tapsService) Get(ctx context.Context, name string) (*Tap, error) {
+func (s *tapsReader) Get(ctx context.Context, name string) (*Tap, error) {
 	info, err := s.fetchTapInfo(ctx, name)
 	if err != nil {
 		return nil, err
@@ -105,7 +117,7 @@ func (s *tapsService) Get(ctx context.Context, name string) (*Tap, error) {
 	return &tap, nil
 }
 
-func (s *tapsService) fetchTapInfo(ctx context.Context, name string) (*tapInfoJSON, error) {
+func (s *tapsReader) fetchTapInfo(ctx context.Context, name string) (*tapInfoJSON, error) {
 	var data []tapInfoJSON
 	if err := s.runner.ExecuteJSON(ctx, &data, "tap-info", "--json", name); err != nil {
 		return nil, err
@@ -116,25 +128,25 @@ func (s *tapsService) fetchTapInfo(ctx context.Context, name string) (*tapInfoJS
 	return &data[0], nil
 }
 
-func (s *tapsService) Tap(ctx context.Context, name string) error {
+func (s *tapsWriter) Tap(ctx context.Context, name string) error {
 	s.cache.InvalidateFor("tap")
 	_, err := s.runner.Execute(ctx, "tap", name)
 	return err
 }
 
-func (s *tapsService) TapWithURL(ctx context.Context, name, url string) error {
+func (s *tapsWriter) TapWithURL(ctx context.Context, name, url string) error {
 	s.cache.InvalidateFor("tap")
 	_, err := s.runner.Execute(ctx, "tap", name, url)
 	return err
 }
 
-func (s *tapsService) Untap(ctx context.Context, name string) error {
+func (s *tapsWriter) Untap(ctx context.Context, name string) error {
 	s.cache.InvalidateFor("untap")
 	_, err := s.runner.Execute(ctx, "untap", name)
 	return err
 }
 
-func (s *tapsService) Repair(ctx context.Context, name string) error {
+func (s *tapsWriter) Repair(ctx context.Context, name string) error {
 	_, err := s.runner.Execute(ctx, "tap", "--repair", name)
 	return err
 }

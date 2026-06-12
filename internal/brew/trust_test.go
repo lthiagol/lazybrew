@@ -19,7 +19,7 @@ func TestTrustServiceListTrusted(t *testing.T) {
 		return nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewTrustService(r, cache)
+	svc := NewTrustReader(r, cache)
 
 	entries, err := svc.ListTrusted(context.Background())
 	if err != nil {
@@ -40,7 +40,7 @@ func TestTrustServiceListTrusted(t *testing.T) {
 func TestTrustServiceGetTapTrustStatusOfficial(t *testing.T) {
 	r := NewMockRunner()
 	cache := NewCache(time.Minute)
-	svc := NewTrustService(r, cache)
+	svc := NewTrustReader(r, cache)
 
 	status, err := svc.GetTapTrustStatus(context.Background(), "homebrew/core")
 	if err != nil {
@@ -59,7 +59,7 @@ func TestTrustServiceGetTapTrustStatusUntrusted(t *testing.T) {
 		return nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewTrustService(r, cache)
+	svc := NewTrustReader(r, cache)
 
 	status, err := svc.GetTapTrustStatus(context.Background(), "nicknisi/tap")
 	if err != nil {
@@ -76,7 +76,7 @@ func TestTrustServiceTrustTap(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewTrustService(r, cache)
+	svc := NewTrustWriter(r, cache)
 
 	if err := svc.TrustTap(context.Background(), "nicknisi/tap"); err != nil {
 		t.Fatal(err)
@@ -89,7 +89,7 @@ func TestTrustServiceUntrustTap(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewTrustService(r, cache)
+	svc := NewTrustWriter(r, cache)
 
 	if err := svc.UntrustTap(context.Background(), "nicknisi/tap"); err != nil {
 		t.Fatal(err)
@@ -102,7 +102,7 @@ func TestTrustServiceTrustFormula(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewTrustService(r, cache)
+	svc := NewTrustWriter(r, cache)
 
 	if err := svc.TrustFormula(context.Background(), "nicknisi/tap/some-formula"); err != nil {
 		t.Fatal(err)
@@ -115,7 +115,7 @@ func TestTrustServiceTrustCask(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewTrustService(r, cache)
+	svc := NewTrustWriter(r, cache)
 
 	if err := svc.TrustCask(context.Background(), "nicknisi/tap/some-cask"); err != nil {
 		t.Fatal(err)

@@ -98,7 +98,18 @@ func (m Model) renderContent(width, height int) string {
 			}
 			return style.NormalItem.Render(result)
 		case 2:
-			return style.SubtleText.Render("Cask caveats not available")
+			c := panel.selectedCask()
+			if c == nil {
+				return style.SubtleText.Render("No cask selected")
+			}
+			result := "Description: " + c.Description + "\n"
+			if len(c.Artifacts) > 0 {
+				result += "\nArtifacts:\n"
+				for _, a := range c.Artifacts {
+					result += "  " + a + "\n"
+				}
+			}
+			return style.NormalItem.Render(result)
 		}
 
 	case PanelStatus:
@@ -116,7 +127,7 @@ func (m Model) renderContent(width, height int) string {
 			if content, ok := m.tabContent[key]; ok {
 				return style.NormalItem.Render(content)
 			}
-			return style.SubtleText.Render("Run 'v' for vulnerability check or 'm' for missing dependencies")
+			return style.SubtleText.Render("Loading...")
 		}
 
 	case PanelTaps:

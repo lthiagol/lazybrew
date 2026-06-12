@@ -1,6 +1,7 @@
 # Milestone 4 — Read-Only Panels (Real Data)
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Done  
+> **Remaining:** Empty states are generic ("No items"), not panel-specific ("No formulae installed", "Everything up to date!")  
 > **Depends on:** Milestone 2 (TUI Shell), Milestone 3 (Brew Data Layer)  
 > **Enables:** Milestone 5 (Modals & Search), Milestone 6 (Mutations)
 

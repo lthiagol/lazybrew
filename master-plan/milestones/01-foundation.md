@@ -1,6 +1,6 @@
 # Milestone 1 — Project Foundation & Core Types
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Complete  
 > **Depends on:** Nothing  
 > **Enables:** Milestone 2 (TUI Shell), Milestone 3 (Brew Data Layer)
 

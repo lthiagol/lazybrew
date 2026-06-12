@@ -15,7 +15,7 @@ func TestServicesServiceList(t *testing.T) {
 		]`), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewServicesService(r, cache)
+	svc := NewServicesReader(r, cache)
 
 	list, err := svc.List(context.Background())
 	if err != nil {
@@ -49,7 +49,7 @@ func TestServicesServiceStart(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewServicesService(r, cache)
+	svc := NewServicesWriter(r, cache)
 
 	if err := svc.Start(context.Background(), "redis"); err != nil {
 		t.Fatal(err)
@@ -62,7 +62,7 @@ func TestServicesServiceStop(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewServicesService(r, cache)
+	svc := NewServicesWriter(r, cache)
 
 	if err := svc.Stop(context.Background(), "redis"); err != nil {
 		t.Fatal(err)
@@ -75,7 +75,7 @@ func TestServicesServiceRestart(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewServicesService(r, cache)
+	svc := NewServicesWriter(r, cache)
 
 	if err := svc.Restart(context.Background(), "postgresql@16"); err != nil {
 		t.Fatal(err)
@@ -88,7 +88,7 @@ func TestServicesServiceRun(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
-	svc := NewServicesService(r, cache)
+	svc := NewServicesWriter(r, cache)
 
 	if err := svc.Run(context.Background(), "redis"); err != nil {
 		t.Fatal(err)

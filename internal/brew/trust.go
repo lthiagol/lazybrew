@@ -5,24 +5,36 @@ import (
 	"strings"
 )
 
-type TrustService interface {
+type TrustReader interface {
 	ListTrusted(ctx context.Context) ([]TrustEntry, error)
+	GetTapTrustStatus(ctx context.Context, tapName string) (TrustStatus, error)
+}
+
+type TrustWriter interface {
 	TrustTap(ctx context.Context, tapName string) error
 	TrustFormula(ctx context.Context, fullName string) error
 	TrustCask(ctx context.Context, fullName string) error
 	UntrustTap(ctx context.Context, tapName string) error
 	UntrustFormula(ctx context.Context, fullName string) error
 	UntrustCask(ctx context.Context, fullName string) error
-	GetTapTrustStatus(ctx context.Context, tapName string) (TrustStatus, error)
 }
 
-type trustService struct {
+type trustReader struct {
 	runner Runner
 	cache  *Cache
 }
 
-func NewTrustService(runner Runner, cache *Cache) TrustService {
-	return &trustService{runner: runner, cache: cache}
+type trustWriter struct {
+	runner Runner
+	cache  *Cache
+}
+
+func NewTrustReader(runner Runner, cache *Cache) TrustReader {
+	return &trustReader{runner: runner, cache: cache}
+}
+
+func NewTrustWriter(runner Runner, cache *Cache) TrustWriter {
+	return &trustWriter{runner: runner, cache: cache}
 }
 
 type trustJSON struct {
@@ -35,7 +47,7 @@ type trustEntryJSON struct {
 	Tap  string `json:"tap"`
 }
 
-func (s *trustService) ListTrusted(ctx context.Context) ([]TrustEntry, error) {
+func (s *trustReader) ListTrusted(ctx context.Context) ([]TrustEntry, error) {
 	if cached, ok := s.cache.Get(KeyTrustList); ok {
 		if entries, ok := cached.([]TrustEntry); ok {
 			return entries, nil
@@ -60,43 +72,7 @@ func (s *trustService) ListTrusted(ctx context.Context) ([]TrustEntry, error) {
 	return entries, nil
 }
 
-func (s *trustService) TrustTap(ctx context.Context, tapName string) error {
-	s.cache.InvalidateFor("trust")
-	_, err := s.runner.Execute(ctx, "trust", tapName)
-	return err
-}
-
-func (s *trustService) TrustFormula(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("trust")
-	_, err := s.runner.Execute(ctx, "trust", "--formula", fullName)
-	return err
-}
-
-func (s *trustService) TrustCask(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("trust")
-	_, err := s.runner.Execute(ctx, "trust", "--cask", fullName)
-	return err
-}
-
-func (s *trustService) UntrustTap(ctx context.Context, tapName string) error {
-	s.cache.InvalidateFor("untrust")
-	_, err := s.runner.Execute(ctx, "untrust", tapName)
-	return err
-}
-
-func (s *trustService) UntrustFormula(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("untrust")
-	_, err := s.runner.Execute(ctx, "untrust", "--formula", fullName)
-	return err
-}
-
-func (s *trustService) UntrustCask(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("untrust")
-	_, err := s.runner.Execute(ctx, "untrust", "--cask", fullName)
-	return err
-}
-
-func (s *trustService) GetTapTrustStatus(ctx context.Context, tapName string) (TrustStatus, error) {
+func (s *trustReader) GetTapTrustStatus(ctx context.Context, tapName string) (TrustStatus, error) {
 	if strings.HasPrefix(tapName, "homebrew/") {
 		return TrustOfficial, nil
 	}
@@ -113,4 +89,40 @@ func (s *trustService) GetTapTrustStatus(ctx context.Context, tapName string) (T
 	}
 
 	return TrustUntrusted, nil
+}
+
+func (s *trustWriter) TrustTap(ctx context.Context, tapName string) error {
+	s.cache.InvalidateFor("trust")
+	_, err := s.runner.Execute(ctx, "trust", tapName)
+	return err
+}
+
+func (s *trustWriter) TrustFormula(ctx context.Context, fullName string) error {
+	s.cache.InvalidateFor("trust")
+	_, err := s.runner.Execute(ctx, "trust", "--formula", fullName)
+	return err
+}
+
+func (s *trustWriter) TrustCask(ctx context.Context, fullName string) error {
+	s.cache.InvalidateFor("trust")
+	_, err := s.runner.Execute(ctx, "trust", "--cask", fullName)
+	return err
+}
+
+func (s *trustWriter) UntrustTap(ctx context.Context, tapName string) error {
+	s.cache.InvalidateFor("untrust")
+	_, err := s.runner.Execute(ctx, "untrust", tapName)
+	return err
+}
+
+func (s *trustWriter) UntrustFormula(ctx context.Context, fullName string) error {
+	s.cache.InvalidateFor("untrust")
+	_, err := s.runner.Execute(ctx, "untrust", "--formula", fullName)
+	return err
+}
+
+func (s *trustWriter) UntrustCask(ctx context.Context, fullName string) error {
+	s.cache.InvalidateFor("untrust")
+	_, err := s.runner.Execute(ctx, "untrust", "--cask", fullName)
+	return err
 }

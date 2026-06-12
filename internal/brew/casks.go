@@ -15,6 +15,7 @@ type CasksReader interface {
 type CasksWriter interface {
 	Install(ctx context.Context, name string) (<-chan string, <-chan error)
 	Uninstall(ctx context.Context, name string) (<-chan string, <-chan error)
+	Reinstall(ctx context.Context, name string) (<-chan string, <-chan error)
 	Zap(ctx context.Context, name string) (<-chan string, <-chan error)
 	Upgrade(ctx context.Context, name string) (<-chan string, <-chan error)
 	Pin(ctx context.Context, name string) error
@@ -149,6 +150,11 @@ func (s *casksWriter) Install(ctx context.Context, name string) (<-chan string, 
 func (s *casksWriter) Uninstall(ctx context.Context, name string) (<-chan string, <-chan error) {
 	s.cache.InvalidateFor("uninstall")
 	return s.runner.ExecuteStream(ctx, "uninstall", "--cask", name)
+}
+
+func (s *casksWriter) Reinstall(ctx context.Context, name string) (<-chan string, <-chan error) {
+	s.cache.InvalidateFor("reinstall")
+	return s.runner.ExecuteStream(ctx, "reinstall", "--cask", name)
 }
 
 func (s *casksWriter) Zap(ctx context.Context, name string) (<-chan string, <-chan error) {

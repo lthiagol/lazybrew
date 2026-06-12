@@ -57,18 +57,23 @@ var panelTabs = map[PanelID][]tabInfo{
 }
 
 type panelData struct {
-	id       PanelID
-	title    string
-	icon     string
-	items    []string
-	selected int
-	offset   int
-	width    int
-	height   int
-	active   bool
-	loading  bool
-	err      error
-	rawData  interface{}
+	id              PanelID
+	title           string
+	icon            string
+	items           []string
+	unfilteredItems []string
+	leavesActive    bool
+	selected        int
+	offset          int
+	width           int
+	height          int
+	active          bool
+	loading         bool
+	err             error
+	formulae        []brew.Formula
+	casks           []brew.Cask
+	taps            []brew.Tap
+	services        []brew.Service
 }
 
 func (p *panelData) itemCount() int {
@@ -105,47 +110,31 @@ func (p *panelData) selectedItem() string {
 }
 
 func (p *panelData) selectedFormula() *brew.Formula {
-	if p.rawData == nil {
-		return nil
+	if p.selected >= 0 && p.selected < len(p.formulae) {
+		return &p.formulae[p.selected]
 	}
-	formulae, ok := p.rawData.([]brew.Formula)
-	if !ok || p.selected >= len(formulae) {
-		return nil
-	}
-	return &formulae[p.selected]
+	return nil
 }
 
 func (p *panelData) selectedCask() *brew.Cask {
-	if p.rawData == nil {
-		return nil
+	if p.selected >= 0 && p.selected < len(p.casks) {
+		return &p.casks[p.selected]
 	}
-	casks, ok := p.rawData.([]brew.Cask)
-	if !ok || p.selected >= len(casks) {
-		return nil
-	}
-	return &casks[p.selected]
+	return nil
 }
 
 func (p *panelData) selectedTap() *brew.Tap {
-	if p.rawData == nil {
-		return nil
+	if p.selected >= 0 && p.selected < len(p.taps) {
+		return &p.taps[p.selected]
 	}
-	taps, ok := p.rawData.([]brew.Tap)
-	if !ok || p.selected >= len(taps) {
-		return nil
-	}
-	return &taps[p.selected]
+	return nil
 }
 
 func (p *panelData) selectedService() *brew.Service {
-	if p.rawData == nil {
-		return nil
+	if p.selected >= 0 && p.selected < len(p.services) {
+		return &p.services[p.selected]
 	}
-	services, ok := p.rawData.([]brew.Service)
-	if !ok || p.selected >= len(services) {
-		return nil
-	}
-	return &services[p.selected]
+	return nil
 }
 
 func (p *panelData) renderSidebarItem(width int) string {

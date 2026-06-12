@@ -1,6 +1,6 @@
 # Milestone 5 — Modals, Input & Search
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Complete  
 > **Depends on:** Milestone 2 (TUI Shell), Milestone 3 (Brew Data Layer)  
 > **Enables:** Milestone 6 (Package Mutations), Milestone 7 (Taps & Trust)
 

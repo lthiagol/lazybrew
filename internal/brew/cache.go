@@ -103,3 +103,25 @@ func (c *Cache) InvalidateAll() {
 	defer c.mu.Unlock()
 	c.entries = make(map[CacheKey]cacheEntry)
 }
+
+type TypedCache[T any] struct {
+	cache *Cache
+	key   CacheKey
+}
+
+func NewTypedCache[T any](cache *Cache, key CacheKey) *TypedCache[T] {
+	return &TypedCache[T]{cache: cache, key: key}
+}
+
+func (tc *TypedCache[T]) Get() (T, bool) {
+	val, ok := tc.cache.Get(tc.key)
+	if !ok {
+		var zero T
+		return zero, false
+	}
+	return val.(T), true
+}
+
+func (tc *TypedCache[T]) Set(val T) {
+	tc.cache.Set(tc.key, val)
+}

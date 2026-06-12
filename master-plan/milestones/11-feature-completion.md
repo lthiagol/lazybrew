@@ -1,6 +1,6 @@
 # Milestone 11 — Feature Completion
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Done  
 > **Depends on:** Milestone 10 (GUI Architecture — tab content must work before new features land correctly)  
 > **Enables:** Milestone 12 (Test Infrastructure — features need tests)
 

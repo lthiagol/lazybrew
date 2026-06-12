@@ -1,6 +1,6 @@
 # Milestone 3 — Brew Data Layer
 
-> **Status:** 🔲 Not Started  
+> **Status:** ✅ Complete  
 > **Depends on:** Milestone 1 (Foundation — types + runner)  
 > **Enables:** Milestone 4 (Read-Only Panels)
 
