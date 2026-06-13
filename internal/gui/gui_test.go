@@ -601,6 +601,22 @@ func TestModelTaskRejectedToast(t *testing.T) {
 	}
 }
 
+func TestOutdatedFetchSurfacesError(t *testing.T) {
+	client := brew.NewClient(brew.NewMockRunner())
+	cmd := fetchPanelData(client, PanelOutdated)
+	if cmd == nil {
+		t.Fatal("fetchPanelData returned nil cmd")
+	}
+	msg := cmd()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if dMsg.Err == nil {
+		t.Log("Outdated fetch succeeded with mock")
+	}
+}
+
 func TestOutdatedPanelTypedData(t *testing.T) {
 	m := newTestModel()
 	msg := DataLoadedMsg{

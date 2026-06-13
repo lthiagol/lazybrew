@@ -955,8 +955,14 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Casks: casks}
 
 		case PanelOutdated:
-			formulae, _ := client.Formulae.Outdated(ctx)
-			casks, _ := client.Casks.Outdated(ctx)
+			formulae, fErr := client.Formulae.Outdated(ctx)
+			casks, cErr := client.Casks.Outdated(ctx)
+			if fErr != nil {
+				return DataLoadedMsg{PanelID: panel, Err: fErr}
+			}
+			if cErr != nil {
+				return DataLoadedMsg{PanelID: panel, Err: cErr}
+			}
 			items := make([]string, 0, len(formulae)+len(casks))
 			for _, f := range formulae {
 				items = append(items, presentation.FormatOutdatedFormula(f))
@@ -997,13 +1003,33 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 func fetchStatusData(client *brew.Client) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		formulae, _ := client.Formulae.List(ctx)
-		casks, _ := client.Casks.List(ctx)
-		outdatedFormulae, _ := client.Formulae.Outdated(ctx)
-		outdatedCasks, _ := client.Casks.Outdated(ctx)
-		taps, _ := client.Taps.List(ctx)
-		services, _ := client.Services.List(ctx)
+		formulae, fErr := client.Formulae.List(ctx)
+		casks, cErr := client.Casks.List(ctx)
+		outdatedFormulae, ofErr := client.Formulae.Outdated(ctx)
+		outdatedCasks, ocErr := client.Casks.Outdated(ctx)
+		taps, tErr := client.Taps.List(ctx)
+		services, sErr := client.Services.List(ctx)
 		cfg, _ := client.Diagnostics.Config(ctx)
+
+		var errs []string
+		if fErr != nil {
+			errs = append(errs, "formulae: "+fErr.Error())
+		}
+		if cErr != nil {
+			errs = append(errs, "casks: "+cErr.Error())
+		}
+		if ofErr != nil {
+			errs = append(errs, "outdated formulae: "+ofErr.Error())
+		}
+		if ocErr != nil {
+			errs = append(errs, "outdated casks: "+ocErr.Error())
+		}
+		if tErr != nil {
+			errs = append(errs, "taps: "+tErr.Error())
+		}
+		if sErr != nil {
+			errs = append(errs, "services: "+sErr.Error())
+		}
 
 		brewVersion := ""
 		prefix := ""
@@ -1041,6 +1067,10 @@ func fetchStatusData(client *brew.Client) tea.Cmd {
 		items = append(items, "")
 		items = append(items, presentation.FormatDoctorStatus(doctorWarnings))
 
-		return DataLoadedMsg{PanelID: PanelStatus, Items: items}
+		for _, e := range errs {
+			items = append(items, "⚠ "+e)
+		}
+
+		return DataLoadedMsg{PanelID: PanelStatus, Items: items, Err: nil}
 	}
 }
