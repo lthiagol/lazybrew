@@ -24,3 +24,6 @@ clean:
 cover:
 	go test ./... -coverprofile=coverage.out -count=1
 	go tool cover -html=coverage.out
+
+cover-check:
+	@./scripts/check-coverage.sh
