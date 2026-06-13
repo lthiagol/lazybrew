@@ -245,19 +245,21 @@ func TestExtractPackageName(t *testing.T) {
 	}
 }
 
-func TestDoMutationGuard(t *testing.T) {
+func TestDoMutationRejectedWhenRunning(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.panels[PanelFormulae].items = []string{"test  1.0  bottled"}
 	m.panels[PanelFormulae].selected = 0
-	m.isBusy = true
-	tm, cmd := m.doMutation(mutInstall, "Install")
-	if cmd != nil {
-		t.Error("doMutation should return nil when busy")
+
+	_, cmd := m.doMutation(mutInstall, "Install")
+	if cmd == nil {
+		t.Fatal("expected cmd from first doMutation")
 	}
-	rm := tm.(Model)
-	if rm.toast == nil {
-		t.Error("should show warning toast when busy")
+	_ = cmd()
+
+	_, cmd2 := m.doMutation(mutInstall, "Install")
+	if cmd2 != nil {
+		t.Error("doMutation should return nil when already running")
 	}
 }
 

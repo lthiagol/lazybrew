@@ -8,6 +8,7 @@ import (
 	"github.com/thiago/lazybrew/internal/brew"
 	"github.com/thiago/lazybrew/internal/gui/modal"
 	"github.com/thiago/lazybrew/internal/gui/presentation"
+	"github.com/thiago/lazybrew/internal/gui/task"
 )
 
 func (m *Model) startSearch() (tea.Model, tea.Cmd) {
@@ -238,12 +239,6 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 }
 
 func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {
-	if m.isBusy {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
-	}
-	m.isBusy = true
-
 	panel := m.panels[m.activePanel]
 	if panel.selected >= len(panel.items) {
 		return m, nil
@@ -255,63 +250,72 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 	}
 
 	title := label + " " + name
+	pkgName := name
 	if mutType == mutUpgradeAll {
 		title = "Upgrading all packages"
+		pkgName = ""
 	}
 
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal(title, cancel)
+	t := &task.Task{
+		ID:    name,
+		Title: title,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			var ch <-chan string
+			var errCh <-chan error
 
-	if m.program == nil {
+			switch mutType {
+			case mutInstall:
+				ch, errCh = m.client.FormulaeWrite.Install(ctx, pkgName)
+			case mutUninstall:
+				if m.activePanel == PanelCasks {
+					ch, errCh = m.client.CasksWrite.Uninstall(ctx, pkgName)
+				} else {
+					ch, errCh = m.client.FormulaeWrite.Uninstall(ctx, pkgName)
+				}
+			case mutReinstall:
+				if m.activePanel == PanelCasks {
+					ch, errCh = m.client.CasksWrite.Reinstall(ctx, pkgName)
+				} else {
+					ch, errCh = m.client.FormulaeWrite.Reinstall(ctx, pkgName)
+				}
+			case mutUpgrade:
+				if m.activePanel == PanelCasks {
+					ch, errCh = m.client.CasksWrite.Upgrade(ctx, pkgName)
+				} else {
+					ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, pkgName)
+				}
+			case mutUpgradeAll:
+				ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, "")
+			case mutZap:
+				ch, errCh = m.client.CasksWrite.Zap(ctx, pkgName)
+			case mutFetch:
+				ch, errCh = m.client.Runner.ExecuteStream(ctx, "fetch", pkgName)
+			}
+
+			if ch == nil {
+				ch = closedCh()
+			}
+			return ch, errCh, nil
+		},
+	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
 		return m, nil
 	}
 
-	go func() {
-		var ch <-chan string
-		var errCh <-chan error
+	return m, m.tasks.RunNext()
+}
 
-		switch mutType {
-		case mutInstall:
-			ch, errCh = m.client.FormulaeWrite.Install(cancelCtx, name)
-		case mutUninstall:
-			if m.activePanel == PanelCasks {
-				ch, errCh = m.client.CasksWrite.Uninstall(cancelCtx, name)
-			} else {
-				ch, errCh = m.client.FormulaeWrite.Uninstall(cancelCtx, name)
-			}
-		case mutReinstall:
-			if m.activePanel == PanelCasks {
-				ch, errCh = m.client.CasksWrite.Reinstall(cancelCtx, name)
-			} else {
-				ch, errCh = m.client.FormulaeWrite.Reinstall(cancelCtx, name)
-			}
-		case mutUpgrade:
-			if m.activePanel == PanelCasks {
-				ch, errCh = m.client.CasksWrite.Upgrade(cancelCtx, name)
-			} else {
-				ch, errCh = m.client.FormulaeWrite.Upgrade(cancelCtx, name)
-			}
-		case mutUpgradeAll:
-			ch, errCh = m.client.FormulaeWrite.Upgrade(cancelCtx, "")
-		case mutZap:
-			ch, errCh = m.client.CasksWrite.Zap(cancelCtx, name)
-		case mutFetch:
-			ch, errCh = m.client.Runner.ExecuteStream(cancelCtx, "fetch", name)
-		}
-
-		if ch != nil {
-			for line := range ch {
-				m.program.Send(ProgressLineMsg{Line: line})
-			}
-		}
-		var err error
-		if errCh != nil {
-			err = <-errCh
-		}
-		m.program.Send(ProgressCompleteMsg{Err: err, Name: name})
-	}()
-
-	return m, nil
+func closedCh() <-chan string {
+	ch := make(chan string)
+	close(ch)
+	return ch
 }
 
 func (m *Model) startTapAdd() (tea.Model, tea.Cmd) {
