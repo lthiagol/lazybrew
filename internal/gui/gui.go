@@ -1,8 +1,10 @@
 package gui
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,11 +16,17 @@ import (
 	"github.com/thiago/lazybrew/internal/gui/task"
 )
 
+const (
+	minTerminalWidth  = 80
+	minTerminalHeight = 24
+)
+
 type Model struct {
 	client      *brew.Client
 	cfg         *config.Config
 	width       int
 	height      int
+	terminalTooSmall bool
 	activePanel PanelID
 	panels      []*panelData
 	activeTab   int
@@ -62,14 +70,27 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		fetchPanelData(m.client, PanelFormulae),
 		fetchPanelData(m.client, PanelCasks),
 		fetchPanelData(m.client, PanelOutdated),
 		fetchPanelData(m.client, PanelTaps),
 		fetchPanelData(m.client, PanelServices),
 		fetchStatusData(m.client),
-	)
+	}
+	if tick := m.autoRefreshCmd(); tick != nil {
+		cmds = append(cmds, tick)
+	}
+	return tea.Batch(cmds...)
+}
+
+func (m Model) autoRefreshCmd() tea.Cmd {
+	if m.cfg.GUI.AutoRefreshSeconds <= 0 {
+		return nil
+	}
+	return tea.Tick(time.Duration(m.cfg.GUI.AutoRefreshSeconds)*time.Second, func(t time.Time) tea.Msg {
+		return RefreshMsg{}
+	})
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -220,6 +241,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.terminalTooSmall = msg.Width < minTerminalWidth || msg.Height < minTerminalHeight
 		if !m.ready {
 			m.viewport = viewport.New(max(10, msg.Width-4), max(10, msg.Height-6))
 			m.ready = true
@@ -251,14 +273,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case RefreshMsg:
 		m.clearTabContent()
-		return m, tea.Batch(
+		cmds := []tea.Cmd{
 			fetchPanelData(m.client, PanelFormulae),
 			fetchPanelData(m.client, PanelCasks),
 			fetchPanelData(m.client, PanelOutdated),
 			fetchPanelData(m.client, PanelTaps),
 			fetchPanelData(m.client, PanelServices),
 			fetchStatusData(m.client),
-		)
+		}
+		if tick := m.autoRefreshCmd(); tick != nil {
+			cmds = append(cmds, tick)
+		}
+		return m, tea.Batch(cmds...)
 
 	case tea.KeyMsg:
 		if m.activeModal != nil {
@@ -459,6 +485,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	if !m.ready {
 		return "Loading..."
+	}
+
+	if m.terminalTooSmall {
+		warning := fmt.Sprintf("Terminal too small (%dx%d). Minimum: %dx%d",
+			m.width, m.height, minTerminalWidth, minTerminalHeight)
+		return lipgloss.NewStyle().
+			Width(m.width).
+			Height(m.height).
+			Align(lipgloss.Center, lipgloss.Center).
+			Render(style.ErrorBadge.Render(warning))
 	}
 
 	if m.showHelp {

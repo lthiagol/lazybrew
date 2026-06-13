@@ -162,6 +162,26 @@ func TestWindowSizeMsg(t *testing.T) {
 	}
 }
 
+func TestSmallTerminalWarning(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 79, Height: 24})
+	if !m.terminalTooSmall {
+		t.Error("79x24 should trigger terminalTooSmall")
+	}
+
+	m2 := newTestModel()
+	m2 = updateModel(m2, tea.WindowSizeMsg{Width: 80, Height: 24})
+	if m2.terminalTooSmall {
+		t.Error("80x24 should NOT trigger terminalTooSmall")
+	}
+
+	m3 := newTestModel()
+	m3 = updateModel(m3, tea.WindowSizeMsg{Width: 80, Height: 23})
+	if !m3.terminalTooSmall {
+		t.Error("80x23 should trigger terminalTooSmall")
+	}
+}
+
 func TestDataLoadedMsg(t *testing.T) {
 	m := newTestModel()
 

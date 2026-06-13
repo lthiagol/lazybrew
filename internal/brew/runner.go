@@ -31,6 +31,16 @@ func NewDefaultRunner() (*DefaultRunner, error) {
 	return &DefaultRunner{brewPath: path}, nil
 }
 
+func NewDefaultRunnerWithPath(brewPath string) (*DefaultRunner, error) {
+	if brewPath == "" {
+		return NewDefaultRunner()
+	}
+	if _, err := os.Stat(brewPath); err != nil {
+		return nil, fmt.Errorf("brew path %s: %w", brewPath, err)
+	}
+	return &DefaultRunner{brewPath: brewPath}, nil
+}
+
 func findBrewPath() (string, error) {
 	candidates := []string{
 		os.Getenv("HOMEBREW_PREFIX") + "/bin/brew",

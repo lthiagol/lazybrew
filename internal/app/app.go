@@ -32,7 +32,12 @@ func New(opts Options) (tea.Model, error) {
 		style.ApplyTheme(style.DarkTheme())
 	}
 
-	runner, err := brew.NewDefaultRunner()
+	var runner *brew.DefaultRunner
+	if cfg.Brew.Path != "" {
+		runner, err = brew.NewDefaultRunnerWithPath(cfg.Brew.Path)
+	} else {
+		runner, err = brew.NewDefaultRunner()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("cannot start lazybrew: %w", err)
 	}
