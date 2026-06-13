@@ -111,19 +111,19 @@ func TestCacheZeroTTL(t *testing.T) {
 }
 
 func TestCacheConcurrentExpiry(t *testing.T) {
-	c := NewCache(50 * time.Millisecond)
+	c := NewCache(time.Millisecond)
 	done := make(chan struct{})
-	for i := 0; i < 4; i++ {
-		go func(idx int) {
-			for j := 0; j < 50; j++ {
+	for i := 0; i < 20; i++ {
+		go func() {
+			for j := 0; j < 20; j++ {
 				c.Set(KeyFormulaeList, j)
 				c.Get(KeyFormulaeList)
 				time.Sleep(time.Millisecond)
 			}
 			done <- struct{}{}
-		}(i)
+		}()
 	}
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 20; i++ {
 		<-done
 	}
 }
