@@ -154,7 +154,7 @@ func (p *panelData) renderSidebarItem(width int) string {
 	return style.NormalItem.Render(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(line))
 }
 
-func (p *panelData) renderList(width, height int) string {
+func (p *panelData) renderList(width, height int, batch map[int]bool) string {
 	if p.loading {
 		return lipgloss.NewStyle().Width(width).Height(height).Render(style.SubtleText.Render("Loading..."))
 	}
@@ -178,9 +178,16 @@ func (p *panelData) renderList(width, height int) string {
 	for i, item := range items {
 		idx := p.offset + i
 		prefix := "  "
+		if batch != nil && batch[idx] {
+			prefix = "● "
+		}
 		itemStyle := style.NormalItem
 		if idx == p.selected {
 			prefix = "▸ "
+			itemStyle = style.SelectedItem
+		}
+		if batch != nil && batch[idx] && idx == p.selected {
+			prefix = "▸●"
 			itemStyle = style.SelectedItem
 		}
 		rendered := lipgloss.NewStyle().Width(width).MaxWidth(width).Render(prefix + item)

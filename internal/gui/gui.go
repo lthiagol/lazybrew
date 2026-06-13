@@ -35,6 +35,7 @@ type Model struct {
 	confirmCallback func() tea.Msg
 	pendingAction   string
 	pendingMutType  mutationType
+	batchCount      int
 
 	tasks *task.Manager
 }
@@ -140,6 +141,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.Title != "" {
 			m.toast = modal.NewToast(msg.Title+" completed", modal.ToastSuccess)
+		}
+		if m.batchCount > 0 {
+			m.batchCount--
 		}
 		return m, tea.Batch(
 			m.tasks.RunNext(),
@@ -353,7 +357,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.doMutation(mutFetch, "Fetch")
 			}
 		case "u":
-			if m.activePanel == PanelOutdated || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
+			if m.activePanel == PanelOutdated {
+				if len(m.batch.selected) > 0 {
+					return m.batchUpgrade()
+				}
+				return m.doMutation(mutUpgrade, "Upgrade")
+			}
+			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
 				return m.doMutation(mutUpgrade, "Upgrade")
 			}
 		case "U":
@@ -367,6 +377,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.activePanel == PanelTaps {
 				m, cmd := m.startTapAdd()
 				return m, cmd
+			}
+			if m.activePanel == PanelOutdated {
+				p := m.panels[PanelOutdated]
+				if len(m.batch.selected) == len(p.items) {
+					m.batch.selected = make(map[int]bool)
+				} else {
+					for i := range p.items {
+						m.batch.selected[i] = true
+					}
+				}
+				return m, nil
 			}
 		case "t":
 			if m.activePanel == PanelTaps {

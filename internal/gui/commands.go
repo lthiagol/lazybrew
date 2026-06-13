@@ -375,6 +375,66 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 	return m, m.tasks.RunNext()
 }
 
+func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
+	panel := m.panels[PanelOutdated]
+	if len(m.batch.selected) == 0 {
+		return m, nil
+	}
+
+	names := make([]struct {
+		name  string
+		isCask bool
+	}, 0, len(m.batch.selected))
+
+	for idx := range m.batch.selected {
+		if idx >= len(panel.items) {
+			continue
+		}
+		itemName := extractPackageName(panel.items[idx])
+		if itemName == "" {
+			continue
+		}
+		isCask := false
+		if idx >= len(panel.formulae) && idx-len(panel.formulae) < len(panel.casks) {
+			isCask = true
+		}
+		names = append(names, struct {
+			name  string
+			isCask bool
+		}{itemName, isCask})
+	}
+
+	m.batchCount = len(names)
+	m.batch.selected = make(map[int]bool)
+
+	for _, n := range names {
+		name := n.name
+		isCask := n.isCask
+
+		t := &task.Task{
+			ID:    name,
+			Title: "Upgrade " + name,
+			Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+				var ch <-chan string
+				var errCh <-chan error
+				if isCask {
+					ch, errCh = m.client.CasksWrite.Upgrade(ctx, name)
+				} else {
+					ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, name)
+				}
+				if ch == nil {
+					ch = closedCh()
+				}
+				return ch, errCh, nil
+			},
+		}
+
+		m.tasks.Enqueue(t)
+	}
+
+	return m, m.tasks.RunNext()
+}
+
 func closedCh() <-chan string {
 	ch := make(chan string)
 	close(ch)
@@ -475,13 +535,17 @@ func (m Model) togglePin(mutType mutationType) (tea.Model, tea.Cmd) {
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			var err error
 			if m.activePanel == PanelCasks {
-				err = m.client.CasksWrite.Unpin(ctx, name)
-				if err != nil {
+				c := panel.selectedCask()
+				if c != nil && c.Pinned {
+					err = m.client.CasksWrite.Unpin(ctx, name)
+				} else {
 					err = m.client.CasksWrite.Pin(ctx, name)
 				}
 			} else {
-				err = m.client.FormulaeWrite.Unpin(ctx, name)
-				if err != nil {
+				f := panel.selectedFormula()
+				if f != nil && f.Pinned {
+					err = m.client.FormulaeWrite.Unpin(ctx, name)
+				} else {
 					err = m.client.FormulaeWrite.Pin(ctx, name)
 				}
 			}

@@ -134,7 +134,7 @@ func (m Model) renderContent(width, height int) string {
 	case PanelStatus:
 		switch m.activeTab {
 		case 0:
-			return panel.renderList(width, height)
+			return panel.renderList(width, height, nil)
 		case 1:
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
@@ -154,7 +154,7 @@ func (m Model) renderContent(width, height int) string {
 	case PanelTaps:
 		switch m.activeTab {
 		case 0:
-			return panel.renderList(width, height)
+			return panel.renderList(width, height, nil)
 		case 1:
 			t := panel.selectedTap()
 			if t == nil {
@@ -183,7 +183,7 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelServices:
-		return panel.renderList(width, height)
+		return panel.renderList(width, height, nil)
 
 	case PanelOutdated:
 		switch m.activeTab {
@@ -200,14 +200,14 @@ func (m Model) renderContent(width, height int) string {
 			}
 			return emptyPanel(width, height)
 		default:
-			return panel.renderList(width, height)
+			return panel.renderList(width, height, m.batch.selected)
 		}
 
 	case PanelSearch:
-		return panel.renderList(width, height)
+		return panel.renderList(width, height, nil)
 	}
 
-	return panel.renderList(width, height)
+	return panel.renderList(width, height, nil)
 }
 
 func boolStr(b bool) string {
