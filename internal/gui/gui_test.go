@@ -227,6 +227,27 @@ func TestPanelHints(t *testing.T) {
 	}
 }
 
+func TestEmptyStateMessages(t *testing.T) {
+	tests := []struct {
+		panel PanelID
+		want  string
+	}{
+		{PanelFormulae, "No formulae installed"},
+		{PanelCasks, "No casks installed"},
+		{PanelOutdated, "Everything up to date!"},
+		{PanelTaps, "No custom taps"},
+		{PanelServices, "No services configured"},
+		{PanelSearch, "No results"},
+		{PanelStatus, "No data"},
+	}
+	for _, tt := range tests {
+		got := emptyMessage(tt.panel)
+		if got != tt.want {
+			t.Errorf("emptyMessage(%v) = %q, want %q", tt.panel, got, tt.want)
+		}
+	}
+}
+
 func TestExtractPackageName(t *testing.T) {
 	tests := []struct {
 		input    string

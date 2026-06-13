@@ -188,10 +188,29 @@ func (p *panelData) renderList(width, height int) string {
 	}
 
 	if len(lines) == 0 {
-		return lipgloss.NewStyle().Width(width).Height(height).Render(style.SubtleText.Render("No items"))
+		return lipgloss.NewStyle().Width(width).Height(height).Render(style.SubtleText.Render(emptyMessage(p.id)))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Top, lines...)
+}
+
+func emptyMessage(id PanelID) string {
+	switch id {
+	case PanelFormulae:
+		return "No formulae installed"
+	case PanelCasks:
+		return "No casks installed"
+	case PanelOutdated:
+		return "Everything up to date!"
+	case PanelTaps:
+		return "No custom taps"
+	case PanelServices:
+		return "No services configured"
+	case PanelSearch:
+		return "No results"
+	default:
+		return "No data"
+	}
 }
 
 func initPanels() []*panelData {
