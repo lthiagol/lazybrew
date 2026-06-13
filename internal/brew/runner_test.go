@@ -2,8 +2,85 @@ package brew
 
 import (
 	"context"
+	"strings"
 	"testing"
+	"time"
 )
+
+// RecordingRunner wraps MockRunner and records all Execute calls.
+type RecordingRunner struct {
+	MockRunner
+	Calls []RecordedCall
+}
+
+type RecordedCall struct {
+	Args []string
+	At   time.Time
+}
+
+func NewRecordingRunner() *RecordingRunner {
+	r := &RecordingRunner{}
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		r.Calls = append(r.Calls, RecordedCall{
+			Args: args,
+			At:   time.Now(),
+		})
+		return []byte{}, nil
+	}
+	return r
+}
+
+func AssertCalled(t *testing.T, r *RecordingRunner, args ...string) {
+	t.Helper()
+	want := strings.Join(args, " ")
+	for _, call := range r.Calls {
+		if strings.Join(call.Args, " ") == want {
+			return
+		}
+	}
+	t.Errorf("expected call %q not found in %d recorded calls", want, len(r.Calls))
+	for i, call := range r.Calls {
+		t.Logf("  call %d: %s", i, strings.Join(call.Args, " "))
+	}
+}
+
+func AssertNotCalled(t *testing.T, r *RecordingRunner, args ...string) {
+	t.Helper()
+	want := strings.Join(args, " ")
+	for _, call := range r.Calls {
+		if strings.Join(call.Args, " ") == want {
+			t.Errorf("unexpected call %q found", want)
+			return
+		}
+	}
+}
+
+func TestRecordingRunnerCapturesCalls(t *testing.T) {
+	r := NewRecordingRunner()
+	ctx := context.Background()
+
+	r.Execute(ctx, "install", "ripgrep")
+	r.Execute(ctx, "install", "neovim")
+	r.Execute(ctx, "uninstall", "ripgrep")
+
+	if len(r.Calls) != 3 {
+		t.Fatalf("expected 3 calls, got %d", len(r.Calls))
+	}
+
+	AssertCalled(t, r, "install", "ripgrep")
+	AssertCalled(t, r, "install", "neovim")
+	AssertCalled(t, r, "uninstall", "ripgrep")
+	AssertNotCalled(t, r, "install", "git")
+
+	if r.Calls[0].At.IsZero() {
+		t.Error("expected timestamp to be set")
+	}
+
+	// ExecuteJSON delegates to ExecuteFn internally
+	var s string
+	_ = r.ExecuteJSON(ctx, &s, "info", "ripgrep")
+	AssertCalled(t, r, "info", "ripgrep")
+}
 
 func TestMockRunnerExecute(t *testing.T) {
 	r := NewMockRunner()

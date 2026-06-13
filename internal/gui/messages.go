@@ -1,6 +1,15 @@
 package gui
 
-import "github.com/thiago/lazybrew/internal/brew"
+import (
+	"github.com/thiago/lazybrew/internal/brew"
+	"github.com/thiago/lazybrew/internal/gui/task"
+)
+
+// Task message re-exports — types defined in internal/gui/task/
+type TaskStartedMsg = task.TaskStartedMsg
+type TaskOutputMsg = task.TaskOutputMsg
+type TaskCompletedMsg = task.TaskCompletedMsg
+type TaskRejectedMsg = task.TaskRejectedMsg
 
 type DataLoadedMsg struct {
 	PanelID  PanelID

@@ -4,7 +4,7 @@ A TUI for managing Homebrew on macOS and Linux.
 
 ## Status
 
-Early development. Not ready for daily use.
+Early development — TUI functional, not daily-driver reliable.
 
 ## Installation
 
@@ -26,7 +26,43 @@ make build
 lazybrew
 ```
 
-Prints the current version and exits. The interactive TUI is not yet built.
+Launch the interactive TUI. Available flags:
+
+| Flag | Description |
+|------|-------------|
+| `--version` | Print version and exit |
+| `--config PATH` | Path to config file (default `~/.config/lazybrew/config.yml`) |
+| `--debug` | Enable debug logging |
+
+### Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Next / previous panel |
+| `1`–`7` | Jump to panel |
+| `j`/`k` | Scroll list |
+| `[`/`]` | Switch tabs |
+| `R` | Refresh all data |
+| `/` | Search packages |
+| `q` | Quit |
+| `?` | Help |
+
+Per-panel actions appear in the bottom bar and `?` help screen.
+
+## Configuration
+
+Config file at `~/.config/lazybrew/config.yml`:
+
+```yaml
+gui:
+  theme: dark             # dark or light
+  sidebar_width: 30
+  mouse: true
+  auto_refresh_seconds: 60
+brew:
+  path: ""                # auto-detect if empty
+  update_on_start: false
+```
 
 ## Development
 
@@ -37,19 +73,15 @@ Prints the current version and exits. The interactive TUI is not yet built.
 - `git` — for version control
 - `make` — to run build targets
 
-Optional but recommended:
-- `gofmt` — bundled with Go, needed for `make fmt`
-- `goreleaser` — for building releases
-
 Run `./check_dependencies.sh` to verify all dependencies are met.
 
 ### Commands
 
 | Command | Description |
-|---|---|
+|---------|-------------|
 | `make build` | Build binary to `bin/lazybrew` |
 | `make run` | Run directly |
-| `make test` | Run unit tests |
+| `make test` | Run unit tests (with `-race`) |
 | `make test-integration` | Run integration tests (requires Homebrew) |
 | `make lint` | Run `go vet` |
 | `make fmt` | Format code |
@@ -59,19 +91,23 @@ Run `./check_dependencies.sh` to verify all dependencies are met.
 ### Project Structure
 
 ```
-cmd/lazybrew/          Entry point
+cmd/lazybrew/            Entry point
 internal/
-  brew/                Brew CLI abstraction and domain types
-    runner.go          Brew command execution
-    formulae.go        Formula read/write services
-    cache.go           In-memory cache with TTL
-    types.go           Domain types (Formula, Cask, Tap, Service, ...)
-    errors.go          Typed error definitions
-    logger.go          Structured logging (slog)
-  gui/                 TUI layer (not yet built)
-  config/              Configuration (not yet built)
-master-plan/           Planning documents and milestones
-testdata/              Test fixtures
+  app/                   Application bootstrap and options
+  brew/                  Brew CLI abstraction and domain types
+    runner.go            Brew command execution
+    formulae.go          Formula read/write services
+    cache.go             In-memory cache with TTL
+    types.go             Domain types (Formula, Cask, Tap, Service, ...)
+    errors.go            Typed error definitions
+    logger.go            Structured logging (slog)
+  config/                Configuration loading and defaults
+  gui/                   TUI layer (Bubble Tea model, views, keybindings)
+    modal/               Modal widgets (confirm, input, menu, progress, toast)
+    presentation/        Formatting helpers for display strings
+    style/               Lip Gloss styles and themes
+master-plan/             Planning documents and milestones
+testdata/                Test fixtures
 ```
 
 ### Target

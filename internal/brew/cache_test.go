@@ -128,6 +128,23 @@ func TestCacheConcurrentExpiry(t *testing.T) {
 	}
 }
 
+func TestTypedCacheWrongTypeReturnsMiss(t *testing.T) {
+	c := NewCache(time.Minute)
+	tc := NewTypedCache[string](c, KeyFormulaeList)
+	c.Set(KeyFormulaeList, 42)
+	val, ok := tc.Get()
+	if ok {
+		t.Fatal("expected miss on wrong type")
+	}
+	if val != "" {
+		t.Errorf("expected zero value, got %q", val)
+	}
+	_, cached := c.Get(KeyFormulaeList)
+	if cached {
+		t.Error("expected key to be invalidated on type mismatch")
+	}
+}
+
 func TestCacheSeparateOutdatedKeys(t *testing.T) {
 	c := NewCache(time.Minute)
 	c.Set(KeyOutdatedFormulae, []Formula{{Name: "ripgrep"}})

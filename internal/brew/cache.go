@@ -119,7 +119,13 @@ func (tc *TypedCache[T]) Get() (T, bool) {
 		var zero T
 		return zero, false
 	}
-	return val.(T), true
+	typed, ok := val.(T)
+	if !ok {
+		tc.cache.Invalidate(tc.key)
+		var zero T
+		return zero, false
+	}
+	return typed, true
 }
 
 func (tc *TypedCache[T]) Set(val T) {
