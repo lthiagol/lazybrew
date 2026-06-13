@@ -1,7 +1,9 @@
 package gui
 
 import (
+	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/thiago/lazybrew/internal/gui/presentation"
@@ -225,9 +227,13 @@ func (m Model) renderBottomBar() string {
 	for _, h := range hints {
 		parts = append(parts, style.HintKey.Render(h.key)+" "+style.HintDesc.Render(h.desc))
 	}
-	parts = append(parts, style.SubtleText.Render("│"))
 	for _, h := range globalHints {
 		parts = append(parts, style.HintKey.Render(h.key)+" "+style.HintDesc.Render(h.desc))
+	}
+
+	updateStatus := m.updateStatusText()
+	if updateStatus != "" {
+		parts = append(parts, style.SubtleText.Render("│"), updateStatus)
 	}
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Top, parts...)
@@ -235,4 +241,18 @@ func (m Model) renderBottomBar() string {
 		Width(m.width - 2).
 		Padding(0, 1).
 		Render(bar)
+}
+
+func (m Model) updateStatusText() string {
+	if m.isUpdating {
+		return style.SubtleText.Render("⟳ Updating...")
+	}
+	if !m.lastUpdate.IsZero() {
+		ago := time.Since(m.lastUpdate).Round(time.Second)
+		return style.SubtleText.Render(fmt.Sprintf("⟳ Updated %s ago", ago))
+	}
+	if m.cfg.Brew.UpdateOnStart {
+		return style.SubtleText.Render("⟳ Never updated")
+	}
+	return ""
 }

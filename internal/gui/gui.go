@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -44,6 +45,9 @@ type Model struct {
 	pendingAction   string
 	pendingMutType  mutationType
 	batchCount      int
+	lastUpdate      time.Time
+	isUpdating      bool
+	updateOutput    []string
 
 	tasks *task.Manager
 }
@@ -70,6 +74,12 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 }
 
 func (m Model) Init() tea.Cmd {
+	if m.cfg.Brew.UpdateOnStart {
+		return tea.Batch(
+			func() tea.Msg { return StartUpdateMsg{} },
+			m.updateTickerCmd(),
+		)
+	}
 	cmds := []tea.Cmd{
 		fetchPanelData(m.client, PanelFormulae),
 		fetchPanelData(m.client, PanelCasks),
@@ -82,6 +92,14 @@ func (m Model) Init() tea.Cmd {
 		cmds = append(cmds, tick)
 	}
 	return tea.Batch(cmds...)
+}
+
+
+
+func (m Model) updateTickerCmd() tea.Cmd {
+	return tea.Tick(10*time.Second, func(t time.Time) tea.Msg {
+		return UpdateTickMsg{}
+	})
 }
 
 func (m Model) autoRefreshCmd() tea.Cmd {
@@ -130,7 +148,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.activeModal = modal.NewProgressModal(msg.Title, m.tasks.CancelCurrent)
 		return m, m.tasks.RunNext()
 
+	case UpdateTickMsg:
+		return m, m.updateTickerCmd()
+
+	case StartUpdateMsg:
+		if m.isUpdating || !m.cfg.Brew.UpdateOnStart {
+			return m, nil
+		}
+		m.isUpdating = true
+		m.updateOutput = nil
+		t := &task.Task{
+			ID:    "brew-update",
+			Title: "brew update",
+			Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+				ch, errCh := m.client.Runner.ExecuteStream(ctx, "update")
+				if ch == nil {
+					ch = closedCh()
+				}
+				return ch, errCh, nil
+			},
+		}
+		m.tasks.Enqueue(t)
+		return m, m.tasks.RunNext()
+
 	case TaskOutputMsg:
+		if m.isUpdating {
+			m.updateOutput = append(m.updateOutput, msg.Line)
+		}
 		if m.activeModal != nil {
 			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
 				p.AppendLine(msg.Line)
@@ -139,6 +183,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.tasks.RunNext()
 
 	case TaskCompletedMsg:
+		if msg.ID == "brew-update" {
+			m.isUpdating = false
+			m.lastUpdate = time.Now()
+			return m, tea.Batch(
+				m.tasks.RunNext(),
+				func() tea.Msg { return RefreshMsg{} },
+			)
+		}
 		if m.activeModal != nil {
 			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
 				p.SetDone(msg.Err)
@@ -311,7 +363,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "R":
-			return m, func() tea.Msg { return RefreshMsg{} }
+			if m.cfg.Brew.UpdateOnStart && !m.isUpdating {
+				m.isUpdating = true
+				m.updateOutput = nil
+				t := &task.Task{
+					ID:    "brew-update",
+					Title: "brew update",
+					Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+						ch, errCh := m.client.Runner.ExecuteStream(ctx, "update")
+						if ch == nil {
+							ch = closedCh()
+						}
+						return ch, errCh, nil
+					},
+				}
+				m.tasks.Enqueue(t)
+				return m, m.tasks.RunNext()
+			return m, tea.Batch(
+				m.updateTickerCmd(),
+				func() tea.Msg { return RefreshMsg{} },
+			)
+		}
+		if m.cfg.Brew.UpdateOnStart {
+			return m, tea.Batch(
+				m.updateTickerCmd(),
+				func() tea.Msg { return RefreshMsg{} },
+			)
+		}
+		return m, func() tea.Msg { return RefreshMsg{} }
 
 		case "tab":
 			m.nextPanel()

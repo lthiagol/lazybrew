@@ -44,6 +44,15 @@ type AutoremovePreviewMsg struct {
 	Lines []string
 }
 
+type UpdateTickMsg struct{}
+
+type StartUpdateMsg struct{}
+
+type UpdateCompleteMsg struct {
+	Output []string
+	Err    error
+}
+
 type DepCheckMsg struct {
 	MutType mutationType
 	Name    string
