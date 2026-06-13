@@ -1,6 +1,6 @@
 # Lazybrew — Manual Smoke Checklist
 
-> **When to run:** After M20 phase F, before release tag, after major GUI changes.  
+> **Status:** Ready for M20 verification. Run before M22 release tag.  
 > **Requires:** Real Homebrew installation (macOS or Linux).  
 > **Duration:** ~15 minutes
 
