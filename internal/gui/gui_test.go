@@ -600,3 +600,34 @@ func TestModelTaskRejectedToast(t *testing.T) {
 		t.Fatal("expected toast for rejected task")
 	}
 }
+
+func TestOutdatedPanelTypedData(t *testing.T) {
+	m := newTestModel()
+	msg := DataLoadedMsg{
+		PanelID: PanelOutdated,
+		Items:   []string{"formula-a  2.0  outdated"},
+		Formulae: []brew.Formula{
+			{Name: "formula-a", Version: "1.0", NewVersion: "2.0"},
+		},
+	}
+	m = updateModel(m, msg)
+
+	p := m.panels[PanelOutdated]
+	if p.loading {
+		t.Error("loading should be false after DataLoadedMsg")
+	}
+	if len(p.formulae) != 1 {
+		t.Errorf("formulae count = %d, want 1", len(p.formulae))
+	}
+
+	f := p.selectedFormula()
+	if f == nil {
+		t.Fatal("selectedFormula() returned nil")
+	}
+	if f.Name != "formula-a" {
+		t.Errorf("formula name = %q, want %q", f.Name, "formula-a")
+	}
+	if f.NewVersion != "2.0" {
+		t.Errorf("NewVersion = %q, want %q", f.NewVersion, "2.0")
+	}
+}

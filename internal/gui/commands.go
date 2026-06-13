@@ -964,7 +964,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			for _, c := range casks {
 				items = append(items, presentation.FormatOutdatedCask(c))
 			}
-			return DataLoadedMsg{PanelID: panel, Items: items}
+			return DataLoadedMsg{PanelID: panel, Items: items, Formulae: formulae, Casks: casks}
 
 		case PanelTaps:
 			taps, err := client.Taps.List(ctx)
