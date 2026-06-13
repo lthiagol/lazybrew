@@ -28,10 +28,11 @@
 [X] Milestone 14 — Wire Dead Code & Fix Broken Functionality
 [X] Milestone 15 — Architecture Cleanup
 [X] Milestone 16 — Test Coverage Completion                  (186 tests, all 8 packages covered)
+[ ] Milestone 17 — Lazygit TUI & Auto-Update                  (planned)
 ```
 
 **Current Phase:** v0.2.0 — Done  
-**Current Milestone:** —  
+**Current Milestone:** 17 — Planned  
 **Blockers:** None
 
 ---
@@ -56,6 +57,7 @@
 | 14 | [Wire Dead Code](milestones/14-wire-dead-code.md) | ⚠️ Partial | Brewfile menu wiring, type assertions, runVulns/runMissing output, ModalDoneMsg removed, batchState.mu removed. **Missing: serviceCleanup doesn't execute, Formulae Files tab placeholder, Cask Caveats hardcoded, Doctor tab shows wrong data** |
 | 15 | [Architecture Cleanup](milestones/15-architecture-cleanup.md) | ⚠️ In Progress | 5/10 done: itoa→strconv, jsonUnmarshal removed, atomic Logger, unexported Program, NewMockClient removed |
 | 16 | [Test Coverage](milestones/16-test-coverage.md) | ⚠️ In Progress | Config/style/logger tests done. Missing: app_test.go, gui_test.go, E2E, integration; 120/147 tests |
+| 17 | [Lazygit TUI & Auto-Update](milestones/17-lazygit-tui-and-auto-update.md) | 🔜 Planned | Per-panel bordered sidebar boxes, accordion heights, brew update on startup, update status in bottom bar |
 
 ---
 
@@ -110,4 +112,13 @@ See the design document for the full architecture, feature inventory, and UI lay
 | 2026-06-12 | Code audit: 10 design issues found | Dead batch code, unused mutex, inconsistent interfaces, interface{} overuse, duplicate itoa, mixed json patterns, global state races |
 | 2026-06-12 | M13-M16 created | 4 new milestones to address audit findings: critical bugs, dead code, architecture cleanup, test coverage |
 | 2026-06-12 | Second code audit: 120 tests, not 147 | All 16 milestones reviewed against actual code. 10 fully complete, 6 partially complete. Gaps documented in each milestone file.
+| 2026-06-12 | M17: title INSIDE box, not in border | Title as bold first content line per-panel box. Avoiding complex mixed-style border construction. Still achieves "boxes" look. |
+| 2026-06-12 | M17: accordion = 40/60 split | Active panel gets 40% of content area, inactive share 60% equally. Minimum: 4 rows active, 2 inactive. Degrades to 1 at very small terminals. |
+| 2026-06-12 | M17: auto-update is non-blocking | No progress modal. UI renders immediately with loading indicators. Bottom bar shows `⟳ Updating...` / `⟳ Updated 12s ago`. Update runs in background goroutine. |
+| 2026-06-12 | M17: `R` key respects `update_on_start` | If `true`, `R` runs brew update first; if `false`, just refreshes data (current behavior). |
+| 2026-06-12 | M17: `HOMEBREW_NO_AUTO_UPDATE` confirmed safe | Does NOT block `brew update`. Only blocks implicit auto-update before other commands. Verified against Homebrew 6.0.0 source. No runner changes needed. |
+| 2026-06-12 | M17: renderBox as simple lipgloss wrapper | `lipgloss.NewStyle().Border().Width(w).Height(h).BorderForeground(c).Render(content)` — no custom border string construction. Reliable, tested behavior. |
+| 2026-06-12 | M17: 10 sub-steps, independently testable | Each step has isolated acceptance criteria and unit tests. Minimum dependency between steps. Can be implemented in any order within phase boundaries. |
+| 2026-06-12 | M17: not worth switching to gocui | 5,650+ lines of Bubble Tea would need full rewrite. Visual gap is achievable with Lip Gloss. gocui is less actively maintained than Charm ecosystem. |
+| 2026-06-12 | M17: bottom bar update ticker at 10s interval | 10s tick updates timestamp text. Not 1s — nobody needs second-accuracy on "updated X ago" and it reduces CPU overhead. |
 
