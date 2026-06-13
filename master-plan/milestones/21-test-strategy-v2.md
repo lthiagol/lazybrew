@@ -195,18 +195,19 @@ tm.WaitTeatestExpectedTerminals(t, expectedViewSubstring)
 
 **Size:** M · **Tier:** T2
 
-Map findings to tests:
+Map each finding to a regression test that prevents re-introduction:
 
-| Finding ID | Test | Step dependency |
-|---|---|---|
-| C1 | `TestDoMutationInvalidSelectionNotStuck` | M19.6 |
-| C3 | `TestTabContentChangesWithSelection` | M20.1 |
-| H1 | `TestBatchUpgradeCallsBrewWithSelectedNames` | M20.3 |
-| H2 | `TestPinRespectsPinnedFlag` | M20.4 |
-| H3 | `TestOutdatedFetchSurfacesError` | M20.9 |
+| Finding ID | Finding (short) | What the test must verify | Test name | Step dep. |
+|---|---|---|---|---|
+| C1 | `doMutation` sets `isBusy=true` then returns without clearing on invalid selection / empty name / nil program | `doMutation` with invalid selection (index out of range, empty name) returns nil cmd, does NOT leave manager stuck in running state (naturally solved by TaskManager — no `isBusy` to get stuck) | `TestDoMutationRejectedWhenRunning` | M19.6 |
+| C3 | Tab content cache keyed by `panel:tab` only — ignores selected item; stale Deps/Used By/Files on selection change | Selecting different item on same panel produces different tab cache key; `j`/`k` triggers refetch for tabs that depend on selected item | `TestTabContentChangesWithSelection` | M20.1 |
+| H1 | Batch select (`Space`) toggles selection but no batch upgrade implementation existed | Batch upgrade with 2+ selected outdated items enqueues one upgrade Task per item; recorded brew args match selected names | `TestBatchUpgradeCallsBrewWithSelectedNames` | M20.3 |
+| H2 | Pin toggle tries `Unpin` first, then `Pin` on any error — wrong semantics for already-pinned packages | Pin toggle calls `Pin` when `Pinned` is false, calls `Unpin` when `Pinned` is true (never both) | `TestPinRespectsPinnedFlag` | M20.4 |
+| H3 | `fetchPanelData` Outdated silently ignores errors (`formulae, _ := ...`) | Mock runner error on Outdated fetch → `DataLoadedMsg.Err` is set, panel shows error state | `TestOutdatedFetchSurfacesError` | M20.9 |
 
 **Acceptance criteria:**
 - [ ] Each critical/high finding from architecture-review has a linked test name in review doc appendix
+- [ ] Each test explicitly asserts the bug scenario (not just a happy-path variant)
 
 ---
 
