@@ -49,6 +49,9 @@ type Model struct {
 	isUpdating      bool
 	updateOutput    []string
 
+	searchResults      []brew.SearchResult
+	searchInfoContent  string
+
 	tasks *task.Manager
 }
 
@@ -132,8 +135,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.err = msg.Err
 		} else {
 			p.items = msg.Results
+			m.searchResults = msg.Raw
 		}
 		m.switchPanel(PanelSearch)
+		return m, m.fetchSelectedSearchInfo()
+
+	case SearchInfoLoadedMsg:
+		if msg.Err != nil {
+			m.searchInfoContent = "Error: " + msg.Err.Error()
+		} else {
+			m.searchInfoContent = msg.Content
+		}
 		return m, nil
 
 	case ProgressLineMsg:
@@ -413,11 +425,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "j", "down":
 			m.panels[m.activePanel].down()
+			if m.activePanel == PanelSearch {
+				return m, m.fetchSelectedSearchInfo()
+			}
 			if needsTabFetch(m.activePanel, m.activeTab) {
 				return m, m.loadTabContent()
 			}
 		case "k", "up":
 			m.panels[m.activePanel].up()
+			if m.activePanel == PanelSearch {
+				return m, m.fetchSelectedSearchInfo()
+			}
 			if needsTabFetch(m.activePanel, m.activeTab) {
 				return m, m.loadTabContent()
 			}

@@ -2,6 +2,8 @@ package gui
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -297,7 +299,22 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 			}
 			items[i] = r.Name + "  " + typ + "  " + installed + "  " + r.Description
 		}
-		return SearchDoneMsg{Results: items}
+		return SearchDoneMsg{Results: items, Raw: results}
+	}
+}
+
+func (m Model) fetchSelectedSearchInfo() tea.Cmd {
+	if m.activePanel != PanelSearch || m.panels[PanelSearch].selected >= len(m.searchResults) {
+		return nil
+	}
+	r := m.searchResults[m.panels[PanelSearch].selected]
+	return func() tea.Msg {
+		ctx := context.Background()
+		output, err := m.client.Runner.Execute(ctx, "info", "--json=v2", r.Name)
+		if err != nil {
+			return SearchInfoLoadedMsg{Err: err}
+		}
+		return SearchInfoLoadedMsg{Content: string(output)}
 	}
 }
 
@@ -433,6 +450,59 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 	}
 
 	return m, m.tasks.RunNext()
+}
+
+type pkgInfo struct {
+	Name         string
+	Version      string
+	Type         string
+	Bottled      bool
+	Installed    bool
+	InstallPath  string
+	License      string
+	Description  string
+	Homepage     string
+	Dependencies []string
+	Caveats      string
+}
+
+func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
+	var result struct {
+		Formulae []brew.Formula `json:"formulae"`
+		Casks    []brew.Cask    `json:"casks"`
+	}
+	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+		return nil, err
+	}
+	if len(result.Formulae) > 0 {
+		f := result.Formulae[0]
+		return &pkgInfo{
+			Name:        f.Name,
+			Version:     f.Version,
+			Type:        "formula",
+			Bottled:     f.Bottled,
+			Installed:   f.InstalledOnReq || f.InstalledAsDep,
+			InstallPath: f.InstallPath,
+			License:     f.License,
+			Description: f.Description,
+			Homepage:    f.Homepage,
+			Dependencies: append(f.Dependencies, f.BuildDeps...),
+			Caveats:     f.Caveats,
+		}, nil
+	}
+	if len(result.Casks) > 0 {
+		c := result.Casks[0]
+		return &pkgInfo{
+			Name:        c.Name,
+			Version:     c.Version,
+			Type:        "cask",
+			Installed:   false,
+			Description: c.Description,
+			Homepage:    c.Homepage,
+			Dependencies: c.DependsOn,
+		}, nil
+	}
+	return nil, fmt.Errorf("no package info found")
 }
 
 func closedCh() <-chan string {

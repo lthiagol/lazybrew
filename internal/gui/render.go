@@ -266,10 +266,63 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelSearch:
-		return panel.renderList(width, height, nil)
+		if m.searchInfoContent == "" {
+			return style.SubtleText.Render("No package selected")
+		}
+		return m.renderSearchInfo(width, height)
 	}
 
 	return panel.renderList(width, height, nil)
+}
+
+func (m Model) renderSearchInfo(width, height int) string {
+	info, err := parsePackageInfo(m.searchInfoContent)
+	if err != nil {
+		return style.ErrorBadge.Render("Parse error: " + err.Error())
+	}
+
+	var lines []string
+	lines = append(lines, fmt.Sprintf("Name:     %s", info.Name))
+
+	ver := info.Version
+	if info.Bottled {
+		ver += " (bottled)"
+	}
+	lines = append(lines, fmt.Sprintf("Version:  %s", ver))
+	lines = append(lines, fmt.Sprintf("Type:     %s", info.Type))
+
+	status := "not installed"
+	if info.Installed {
+		status = fmt.Sprintf("installed (%s)", info.InstallPath)
+	}
+	lines = append(lines, fmt.Sprintf("Status:   %s", status))
+	if info.License != "" {
+		lines = append(lines, fmt.Sprintf("License:  %s", info.License))
+	}
+	if info.Homepage != "" {
+		lines = append(lines, fmt.Sprintf("Homepage: %s", truncateWithEllipsis(info.Homepage, width-12)))
+	}
+
+	all := lipgloss.JoinVertical(lipgloss.Top, lines...)
+	result := all
+
+	if info.Description != "" {
+		desc := "\n\n" + style.AccentText.Render("Description:") + "\n" + info.Description
+		result += desc
+	}
+	if len(info.Dependencies) > 0 {
+		deps := "\n\n" + style.AccentText.Render("Dependencies:") + "\n"
+		for _, d := range info.Dependencies {
+			deps += "  " + d + "\n"
+		}
+		result += deps
+	}
+	if info.Caveats != "" {
+		cav := "\n\n" + style.AccentText.Render("Caveats:") + "\n" + info.Caveats
+		result += cav
+	}
+
+	return style.NormalItem.Render(result)
 }
 
 func boolStr(b bool) string {

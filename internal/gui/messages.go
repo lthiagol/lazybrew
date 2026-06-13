@@ -31,6 +31,12 @@ type TabContentMsg struct {
 
 type SearchDoneMsg struct {
 	Results []string
+	Raw     []brew.SearchResult
+	Err     error
+}
+
+type SearchInfoLoadedMsg struct {
+	Content string
 	Err     error
 }
 
