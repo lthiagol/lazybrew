@@ -12,21 +12,26 @@ import (
 
 func (m Model) renderSidebar() string {
 	sw := sidebarWidth(m.cfg, m.width)
-	sh := m.height - 4
+	contentWidth := sw - 2
+	heights := m.computeContentHeights()
 
-	var items []string
-	for i := range m.panels {
-		item := m.panels[i].renderSidebarItem(sw - 4)
-		items = append(items, item)
+	var boxes []string
+	for i, p := range m.panels {
+		title := p.title
+		if p.loading {
+			title += style.SubtleText.Render("  …")
+		} else if count := p.itemCount(); count > 0 {
+			title += style.SubtleText.Render("  " + strconv.Itoa(count))
+		}
+		titleLine := style.PanelTitle.Render(title)
+		itemsMaxRows := max(0, heights[i]-1)
+		itemsContent := p.renderSidebarContent(contentWidth, itemsMaxRows)
+		fullContent := lipgloss.JoinVertical(lipgloss.Top, titleLine, itemsContent)
+		box := renderBox(fullContent, contentWidth, heights[i], i == int(m.activePanel))
+		boxes = append(boxes, box)
 	}
 
-	list := lipgloss.JoinVertical(lipgloss.Top, items...)
-	border := style.InactiveBorder
-
-	return lipgloss.NewStyle().
-		Width(sw).
-		Height(sh).
-		Render(border.Render(list))
+	return lipgloss.JoinVertical(lipgloss.Top, boxes...)
 }
 
 func (m Model) renderMainPanel() string {
@@ -34,10 +39,20 @@ func (m Model) renderMainPanel() string {
 	mw := m.width - sw - 4
 	mh := m.height - 4
 
-	tabBar := m.renderTabBar(mw)
-	content := m.renderContent(mw, mh-3)
+	panelName := m.panels[m.activePanel].title
+	tabName := ""
+	if len(m.tabs) > 0 && m.activeTab < len(m.tabs) {
+		tabName = m.tabs[m.activeTab].name
+	}
+	breadcrumb := style.PanelTitle.Render(panelName)
+	if tabName != "" {
+		breadcrumb += style.SubtleText.Render(" › ") + style.AccentText.Render(tabName)
+	}
 
-	panel := lipgloss.JoinVertical(lipgloss.Top, tabBar, content)
+	tabBar := m.renderTabBar(mw)
+	content := m.renderContent(mw, mh-4)
+
+	panel := lipgloss.JoinVertical(lipgloss.Top, breadcrumb, tabBar, content)
 
 	return lipgloss.NewStyle().
 		Width(mw + 2).
@@ -59,6 +74,51 @@ func (m Model) renderTabBar(width int) string {
 		}
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+}
+
+func (m Model) computeContentHeights() []int {
+	n := len(m.panels)
+	if n == 0 {
+		return nil
+	}
+	sidebarHeight := m.height - 4
+	borderOverhead := n * 2
+	availableRows := sidebarHeight - borderOverhead
+	if availableRows < n {
+		availableRows = n
+	}
+	minActive := 4
+	minInactive := 2
+	needed := minActive + (n-1)*minInactive
+	if availableRows < needed {
+		heights := make([]int, n)
+		for i := range heights {
+			if i == int(m.activePanel) {
+				heights[i] = max(1, availableRows-(n-1))
+			} else {
+				heights[i] = 1
+			}
+		}
+		return heights
+	}
+	activeRows := availableRows * 40 / 100
+	if activeRows < minActive {
+		activeRows = minActive
+	}
+	remaining := availableRows - activeRows
+	inactiveRows := remaining / max(1, n-1)
+	if inactiveRows < minInactive {
+		inactiveRows = minInactive
+	}
+	heights := make([]int, n)
+	for i := range heights {
+		if i == int(m.activePanel) {
+			heights[i] = activeRows
+		} else {
+			heights[i] = inactiveRows
+		}
+	}
+	return heights
 }
 
 func (m Model) renderContentInViewport(content string) string {

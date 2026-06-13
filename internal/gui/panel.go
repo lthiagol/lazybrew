@@ -207,6 +207,55 @@ func emptyPanel(width, height int) string {
 	)
 }
 
+func (p *panelData) renderSidebarContent(width, maxRows int) string {
+	if p.loading {
+		return lipgloss.NewStyle().Width(width).Render(style.SubtleText.Render("..."))
+	}
+	if p.err != nil {
+		return lipgloss.NewStyle().Width(width).Render(style.ErrorBadge.Render("!"))
+	}
+	count := len(p.items)
+	if count == 0 {
+		return style.SubtleText.Render("(empty)")
+	}
+	if p.selected >= count {
+		p.selected = max(0, count-1)
+	}
+	if p.offset >= count {
+		p.offset = max(0, count-maxRows)
+	}
+	visible := min(maxRows, count-p.offset)
+	if visible <= 0 {
+		return ""
+	}
+	end := p.offset + visible
+	slice := p.items[p.offset:end]
+	lines := make([]string, 0, visible)
+	for i, item := range slice {
+		idx := p.offset + i
+		prefix := "  "
+		itemStyle := style.NormalItem
+		if idx == p.selected {
+			prefix = "▸ "
+			itemStyle = style.SelectedItem
+		}
+		text := truncateWithEllipsis(prefix+item, width)
+		lines = append(lines, itemStyle.Render(text))
+	}
+	return lipgloss.JoinVertical(lipgloss.Top, lines...)
+}
+
+func truncateWithEllipsis(s string, maxWidth int) string {
+	runes := []rune(s)
+	if len(runes) <= maxWidth {
+		return s
+	}
+	if maxWidth <= 3 {
+		return string(runes[:maxWidth])
+	}
+	return string(runes[:maxWidth-3]) + "..."
+}
+
 func emptyMessage(id PanelID) string {
 	switch id {
 	case PanelFormulae:
