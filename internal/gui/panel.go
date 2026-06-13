@@ -194,6 +194,12 @@ func (p *panelData) renderList(width, height int) string {
 	return lipgloss.JoinVertical(lipgloss.Top, lines...)
 }
 
+func emptyPanel(width, height int) string {
+	return lipgloss.NewStyle().Width(width).Height(height).Render(
+		style.SubtleText.Render("No selection"),
+	)
+}
+
 func emptyMessage(id PanelID) string {
 	switch id {
 	case PanelFormulae:

@@ -117,6 +117,97 @@ func FormatStatusDashboard(
 	return lines
 }
 
+func FormatFormulaInfo(f brew.Formula, width int) string {
+	var b strings.Builder
+
+	b.WriteString(label("Name", f.Name))
+	b.WriteString(label("Version", versionDisplay(f)))
+	b.WriteString(label("Tap", f.Tap))
+
+	status := "installed"
+	if f.KegOnly {
+		status = "keg-only"
+	}
+	if f.Pinned {
+		status = "pinned"
+	}
+	if f.Outdated && f.NewVersion != "" {
+		status = fmt.Sprintf("outdated (%s → %s)", f.Version, f.NewVersion)
+	}
+	b.WriteString(label("Status", status))
+
+	if f.License != "" {
+		b.WriteString(label("License", f.License))
+	}
+	if f.Homepage != "" {
+		b.WriteString(label("Homepage", truncate(f.Homepage, width-12)))
+	}
+
+	c := "no"
+	if f.Bottled {
+		c = "yes"
+	}
+	b.WriteString(label("Bottled", c))
+
+	if f.Description != "" {
+		b.WriteString(label("Description", truncate(f.Description, width-14)))
+	}
+
+	return strings.TrimRight(b.String(), "\n")
+}
+
+func FormatCaskInfo(c brew.Cask, width int) string {
+	var b strings.Builder
+
+	b.WriteString(label("Name", c.Name))
+	b.WriteString(label("Version", c.Version))
+	b.WriteString(label("Tap", c.Tap))
+
+	status := "installed"
+	if c.Pinned {
+		status = "pinned"
+	}
+	if c.Outdated && c.NewVersion != "" {
+		status = fmt.Sprintf("outdated (%s → %s)", c.Version, c.NewVersion)
+	}
+	if c.AutoUpdates {
+		status += " (auto-update)"
+	}
+	b.WriteString(label("Status", status))
+
+	if c.Homepage != "" {
+		b.WriteString(label("Homepage", truncate(c.Homepage, width-12)))
+	}
+	if c.Description != "" {
+		b.WriteString(label("Description", truncate(c.Description, width-14)))
+	}
+
+	return strings.TrimRight(b.String(), "\n")
+}
+
+func label(key, value string) string {
+	return fmt.Sprintf("%-12s %s\n", key+":", value)
+}
+
+func versionDisplay(f brew.Formula) string {
+	v := f.Version
+	for _, lv := range f.ListVersions {
+		if lv != v {
+			v += " (" + lv + ")"
+			break
+		}
+	}
+	return v
+}
+
+func truncate(s string, maxLen int) string {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+	return string(runes[:maxLen-1]) + "…"
+}
+
 func FormatDoctorStatus(warnings []brew.DoctorWarning) string {
 	if len(warnings) == 0 {
 		return "Doctor: No issues"

@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/thiago/lazybrew/internal/gui/presentation"
 	"github.com/thiago/lazybrew/internal/gui/style"
 )
 
@@ -68,7 +69,12 @@ func (m Model) renderContent(width, height int) string {
 	case PanelFormulae:
 		switch m.activeTab {
 		case 0:
-			return panel.renderList(width, height)
+			f := panel.selectedFormula()
+			if f == nil {
+				return emptyPanel(width, height)
+			}
+			info := presentation.FormatFormulaInfo(*f, width)
+			return style.NormalItem.Render(info)
 		case 1, 2, 4:
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
@@ -87,7 +93,12 @@ func (m Model) renderContent(width, height int) string {
 	case PanelCasks:
 		switch m.activeTab {
 		case 0:
-			return panel.renderList(width, height)
+			c := panel.selectedCask()
+			if c == nil {
+				return emptyPanel(width, height)
+			}
+			info := presentation.FormatCaskInfo(*c, width)
+			return style.NormalItem.Render(info)
 		case 1:
 			c := panel.selectedCask()
 			if c == nil || len(c.DependsOn) == 0 {
@@ -168,7 +179,22 @@ func (m Model) renderContent(width, height int) string {
 		return panel.renderList(width, height)
 
 	case PanelOutdated:
-		return panel.renderList(width, height)
+		switch m.activeTab {
+		case 0:
+			f := panel.selectedFormula()
+			if f != nil {
+				info := presentation.FormatFormulaInfo(*f, width)
+				return style.NormalItem.Render(info)
+			}
+			c := panel.selectedCask()
+			if c != nil {
+				info := presentation.FormatCaskInfo(*c, width)
+				return style.NormalItem.Render(info)
+			}
+			return emptyPanel(width, height)
+		default:
+			return panel.renderList(width, height)
+		}
 
 	case PanelSearch:
 		return panel.renderList(width, height)
