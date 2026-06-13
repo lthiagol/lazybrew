@@ -1,8 +1,6 @@
 package gui
 
 import (
-	"strconv"
-
 	"github.com/charmbracelet/lipgloss"
 	"github.com/thiago/lazybrew/internal/brew"
 	"github.com/thiago/lazybrew/internal/gui/style"
@@ -135,23 +133,6 @@ func (p *panelData) selectedService() *brew.Service {
 		return &p.services[p.selected]
 	}
 	return nil
-}
-
-func (p *panelData) renderSidebarItem(width int) string {
-	countSuffix := ""
-	if p.loading {
-		countSuffix = style.SubtleText.Render(" …")
-	} else if len(p.items) > 0 {
-		countSuffix = style.SubtleText.Render(" (" + strconv.Itoa(len(p.items)) + ")")
-	}
-
-	var line string
-	if p.active {
-		line = "▸ " + p.title + countSuffix
-		return style.AccentText.Render(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(line))
-	}
-	line = "  " + p.title + countSuffix
-	return style.NormalItem.Render(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(line))
 }
 
 func (p *panelData) renderList(width, height int, batch map[int]bool) string {
