@@ -2,6 +2,7 @@ package gui
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -208,7 +209,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err != nil && msg.Content == "" {
 			return m, nil
 		}
-		key := tabKey(msg.PanelID, msg.TabIndex)
+		key := tabKey(msg.PanelID, msg.TabIndex, msg.ItemName)
 		m.tabContent[key] = msg.Content
 		return m, nil
 
@@ -241,9 +242,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.services = msg.Services
 			}
 		}
+		m.clearPanelTabContent(msg.PanelID)
 		return m, nil
 
 	case RefreshMsg:
+		m.clearTabContent()
 		return m, tea.Batch(
 			fetchPanelData(m.client, PanelFormulae),
 			fetchPanelData(m.client, PanelCasks),
@@ -301,8 +304,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "j", "down":
 			m.panels[m.activePanel].down()
+			if needsTabFetch(m.activePanel, m.activeTab) {
+				return m, m.loadTabContent()
+			}
 		case "k", "up":
 			m.panels[m.activePanel].up()
+			if needsTabFetch(m.activePanel, m.activeTab) {
+				return m, m.loadTabContent()
+			}
 
 		case "[":
 			cmd = m.prevTab()
@@ -512,8 +521,36 @@ func (m *Model) prevTab() tea.Cmd {
 	return m.loadTabContent()
 }
 
-func tabKey(panel PanelID, tab int) string {
-	return strconv.Itoa(int(panel)) + ":" + strconv.Itoa(tab)
+func tabKey(panel PanelID, tab int, itemName string) string {
+	return strconv.Itoa(int(panel)) + ":" + strconv.Itoa(tab) + ":" + itemName
+}
+
+func needsTabFetch(panelID PanelID, tabIdx int) bool {
+	needsFetch := map[PanelID]map[int]bool{
+		PanelStatus:   {1: true, 2: true},
+		PanelFormulae: {1: true, 2: true, 4: true},
+	}
+	return needsFetch[panelID] != nil && needsFetch[panelID][tabIdx]
+}
+
+func (m *Model) clearTabContent() {
+	m.tabContent = make(map[string]string)
+}
+
+func (m *Model) clearPanelTabContent(pid PanelID) {
+	prefix := strconv.Itoa(int(pid)) + ":"
+	for k := range m.tabContent {
+		if strings.HasPrefix(k, prefix) {
+			delete(m.tabContent, k)
+		}
+	}
+}
+
+func selectedItemName(p *panelData) string {
+	if p.selected >= len(p.items) {
+		return ""
+	}
+	return extractPackageName(p.items[p.selected])
 }
 
 func extractPackageName(item string) string {

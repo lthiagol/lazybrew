@@ -70,7 +70,8 @@ func (m Model) renderContent(width, height int) string {
 		case 0:
 			return panel.renderList(width, height)
 		case 1, 2, 4:
-			key := tabKey(m.activePanel, m.activeTab)
+			itemName := selectedItemName(panel)
+			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				return style.NormalItem.Render(content)
 			}
@@ -117,13 +118,15 @@ func (m Model) renderContent(width, height int) string {
 		case 0:
 			return panel.renderList(width, height)
 		case 1:
-			key := tabKey(m.activePanel, m.activeTab)
+			itemName := selectedItemName(panel)
+			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				return style.SubtleText.Render(content)
 			}
 			return style.SubtleText.Render("Loading...")
 		case 2:
-			key := tabKey(m.activePanel, m.activeTab)
+			itemName := selectedItemName(panel)
+			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				return style.NormalItem.Render(content)
 			}

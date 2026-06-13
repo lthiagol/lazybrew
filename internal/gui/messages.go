@@ -24,6 +24,7 @@ type DataLoadedMsg struct {
 type TabContentMsg struct {
 	PanelID  PanelID
 	TabIndex int
+	ItemName string
 	Content  string
 	Err      error
 }

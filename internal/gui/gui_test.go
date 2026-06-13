@@ -273,13 +273,16 @@ func TestMutationTypeValues(t *testing.T) {
 }
 
 func TestTabKey(t *testing.T) {
-	key := tabKey(PanelFormulae, 2)
+	key := tabKey(PanelFormulae, 2, "test")
 	if key == "" {
 		t.Error("tabKey should not be empty")
 	}
-	key2 := tabKey(PanelCasks, 2)
+	key2 := tabKey(PanelCasks, 2, "test")
 	if key == key2 {
 		t.Error("different panel/tab combos should produce different keys")
+	}
+	if tabKey(PanelFormulae, 2, "a") == tabKey(PanelFormulae, 2, "b") {
+		t.Error("different item names should produce different keys")
 	}
 }
 

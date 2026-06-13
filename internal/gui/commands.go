@@ -614,16 +614,16 @@ func (m *Model) loadTabContent() tea.Cmd {
 	tabIdx := m.activeTab
 
 	if needsFetch[panelID] != nil && needsFetch[panelID][tabIdx] {
-		key := tabKey(panelID, tabIdx)
-		if _, ok := m.tabContent[key]; ok {
-			return nil
-		}
 		panel := m.panels[panelID]
 		if panel.selected >= len(panel.items) {
 			return nil
 		}
 		name := extractPackageName(panel.selectedItem())
 		if name == "" {
+			return nil
+		}
+		key := tabKey(panelID, tabIdx, name)
+		if _, ok := m.tabContent[key]; ok {
 			return nil
 		}
 		return fetchTabContentCmd(m.client, panelID, tabIdx, name)
@@ -639,38 +639,38 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 			if tab == 1 {
 				cfg, err := client.Diagnostics.Config(ctx)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
 				}
-				return TabContentMsg{PanelID: panel, TabIndex: tab,
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
 					Content: formatConfig(cfg)}
 			}
 			if tab == 2 {
 				warnings, err := client.Diagnostics.Doctor(ctx)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
 				}
 				if len(warnings) == 0 {
-					return TabContentMsg{PanelID: panel, TabIndex: tab,
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
 						Content: "Your system is ready to brew."}
 				}
 				content := ""
 				for _, w := range warnings {
 					content += w.Title + "\n" + w.Details + "\n\n"
 				}
-				return TabContentMsg{PanelID: panel, TabIndex: tab, Content: content}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: content}
 			}
 		case PanelFormulae:
 			switch tab {
 			case 1:
 				deps, err := client.Formulae.Deps(ctx, name)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
 				}
-				return TabContentMsg{PanelID: panel, TabIndex: tab, Content: deps}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: deps}
 			case 2:
 				uses, err := client.Formulae.Uses(ctx, name)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
 				}
 				result := ""
 				for _, u := range uses {
@@ -679,20 +679,20 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 				if result == "" {
 					result = "No dependents"
 				}
-				return TabContentMsg{PanelID: panel, TabIndex: tab, Content: result}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: result}
 		case 4:
 			output, err := client.Runner.Execute(ctx, "list", name)
 			if err != nil {
-				return TabContentMsg{PanelID: panel, TabIndex: tab, Err: err}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
 			}
 			content := string(output)
 			if content == "" {
 				content = "No files installed"
 			}
-			return TabContentMsg{PanelID: panel, TabIndex: tab, Content: content}
+			return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: content}
 			}
 		}
-		return TabContentMsg{PanelID: panel, TabIndex: tab, Content: ""}
+		return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: ""}
 	}
 }
 
