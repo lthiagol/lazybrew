@@ -32,8 +32,16 @@ Prints the current version and exits. The interactive TUI is not yet built.
 
 ### Prerequisites
 
-- Go 1.23+
-- Homebrew (for integration tests)
+- Go 1.24+
+- Homebrew (for integration tests and runtime)
+- `git` — for version control
+- `make` — to run build targets
+
+Optional but recommended:
+- `gofmt` — bundled with Go, needed for `make fmt`
+- `goreleaser` — for building releases
+
+Run `./check_dependencies.sh` to verify all dependencies are met.
 
 ### Commands
 
