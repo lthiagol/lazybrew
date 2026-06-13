@@ -34,7 +34,6 @@ type Model struct {
 	confirmCallback func() tea.Msg
 	pendingAction   string
 	pendingMutType  mutationType
-	isBusy          bool
 
 	tasks *task.Manager
 }
@@ -104,25 +103,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case ProgressCompleteMsg:
-		m.isBusy = false
-		if m.activeModal != nil {
-			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
-				p.SetDone(msg.Err)
-			}
-		}
-		if msg.Name != "" {
-			if msg.Err == nil {
-				m.toast = modal.NewToast(msg.Name+" completed", modal.ToastSuccess)
-			} else {
-				m.toast = modal.NewToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
-			}
-		}
-		if msg.Err == nil {
-			return m, func() tea.Msg { return RefreshMsg{} }
-		}
-		return m, nil
-
 	case TaskStartedMsg:
 		m.activeModal = modal.NewProgressModal(msg.Title, m.tasks.CancelCurrent)
 		return m, m.tasks.RunNext()
@@ -141,17 +121,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.SetDone(msg.Err)
 			}
 		}
-		if msg.Err == nil {
-			if msg.Title != "" {
-				m.toast = modal.NewToast(msg.Title+" completed", modal.ToastSuccess)
-			}
-			return m, tea.Batch(
-				m.tasks.RunNext(),
-				func() tea.Msg { return RefreshMsg{} },
-			)
+		if msg.Err != nil {
+			m.toast = modal.NewToast(msg.Title+": "+msg.Err.Error(), modal.ToastError)
+			return m, m.tasks.RunNext()
 		}
-		m.toast = modal.NewToast(msg.Title+": "+msg.Err.Error(), modal.ToastError)
-		return m, m.tasks.RunNext()
+		switch msg.ID {
+		case "cleanup-preview":
+			m.pendingAction = "cleanup"
+			m.activeModal = modal.NewConfirmModal("Confirm Cleanup",
+				"Run brew cleanup? This will remove old versions.")
+			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
+		case "autoremove-preview":
+			m.pendingAction = "autoremove"
+			m.activeModal = modal.NewConfirmModal("Confirm Autoremove",
+				"Remove orphaned dependencies?")
+			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
+		}
+		if msg.Title != "" {
+			m.toast = modal.NewToast(msg.Title+" completed", modal.ToastSuccess)
+		}
+		return m, tea.Batch(
+			m.tasks.RunNext(),
+			func() tea.Msg { return RefreshMsg{} },
+		)
 
 	case TaskRejectedMsg:
 		m.toast = modal.NewToast(msg.Reason, modal.ToastWarning)

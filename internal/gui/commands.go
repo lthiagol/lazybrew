@@ -247,23 +247,30 @@ func (m *Model) executeBrewfileAction(index int) tea.Cmd {
 		return nil
 	}
 	action := actions[index]
-	cancelCtx, cancel := context.WithCancel(context.Background())
 	title := "Brewfile " + action
-	m.activeModal = modal.NewProgressModal(title, cancel)
 
-	return func() tea.Msg {
-		ch, errCh := m.client.Runner.ExecuteStream(cancelCtx, "bundle", action)
-		if ch != nil {
-			for line := range ch {
-				m.program.Send(ProgressLineMsg{Line: line})
+	t := &task.Task{
+		ID:    "brewfile-" + action,
+		Title: title,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			ch, errCh := m.client.Runner.ExecuteStream(ctx, "bundle", action)
+			if ch == nil {
+				ch = closedCh()
 			}
-		}
-		var err error
-		if errCh != nil {
-			err = <-errCh
-		}
-		return ProgressCompleteMsg{Err: err, Name: "brewfile " + action}
+			return ch, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return nil
+	}
+	return m.tasks.RunNext()
 }
 
 func (m *Model) executeSearch(query string) tea.Cmd {
@@ -521,40 +528,80 @@ func (m Model) brewfileMenu() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) runVulns() (tea.Model, tea.Cmd) {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Vulnerability Check", cancel)
-
-	return m, func() tea.Msg {
-		output, err := m.client.Diagnostics.Vulns(cancelCtx)
-		if err != nil {
-			return ProgressCompleteMsg{Err: err, Name: "vulns"}
-		}
-		if output == "" {
-			output = "No vulnerabilities found"
-		}
-		m.program.Send(ProgressLineMsg{Line: output})
-		return ProgressCompleteMsg{Err: nil, Name: "vulns"}
+	t := &task.Task{
+		ID:    "vulns",
+		Title: "Vulnerability Check",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			out := make(chan string)
+			errCh := make(chan error, 1)
+			go func() {
+				output, err := m.client.Diagnostics.Vulns(ctx)
+				if err != nil {
+					errCh <- err
+					close(out)
+					return
+				}
+				if output == "" {
+					output = "No vulnerabilities found"
+				}
+				out <- output
+				errCh <- nil
+				close(out)
+			}()
+			return out, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) runMissing() (tea.Model, tea.Cmd) {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Missing Dependencies", cancel)
-
-	return m, func() tea.Msg {
-		missing, err := m.client.Diagnostics.Missing(cancelCtx)
-		if err != nil {
-			return ProgressCompleteMsg{Err: err, Name: "missing"}
-		}
-		if len(missing) == 0 {
-			m.program.Send(ProgressLineMsg{Line: "All dependencies satisfied"})
-		} else {
-			for _, d := range missing {
-				m.program.Send(ProgressLineMsg{Line: d.Formula + ": missing " + d.Missing})
-			}
-		}
-		return ProgressCompleteMsg{Err: nil, Name: "missing"}
+	t := &task.Task{
+		ID:    "missing",
+		Title: "Missing Dependencies",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			out := make(chan string)
+			errCh := make(chan error, 1)
+			go func() {
+				missing, err := m.client.Diagnostics.Missing(ctx)
+				if err != nil {
+					errCh <- err
+					close(out)
+					return
+				}
+				if len(missing) == 0 {
+					out <- "All dependencies satisfied"
+				} else {
+					for _, d := range missing {
+						out <- d.Formula + ": missing " + d.Missing
+					}
+				}
+				errCh <- nil
+				close(out)
+			}()
+			return out, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m *Model) loadTabContent() tea.Cmd {
@@ -716,26 +763,46 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) runDoctor() (tea.Model, tea.Cmd) {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Doctor", cancel)
-
-	return m, func() tea.Msg {
-		warnings, err := m.client.Diagnostics.Doctor(cancelCtx)
-		if err != nil {
-			return ProgressCompleteMsg{Err: err, Name: "doctor"}
-		}
-		if len(warnings) == 0 {
-			m.program.Send(ProgressLineMsg{Line: "Your system is ready to brew."})
-		} else {
-			for _, w := range warnings {
-				m.program.Send(ProgressLineMsg{Line: w.Title})
-				if w.Details != "" {
-					m.program.Send(ProgressLineMsg{Line: "  " + w.Details})
+	t := &task.Task{
+		ID:    "doctor",
+		Title: "Doctor",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			out := make(chan string)
+			errCh := make(chan error, 1)
+			go func() {
+				warnings, err := m.client.Diagnostics.Doctor(ctx)
+				if err != nil {
+					errCh <- err
+					close(out)
+					return
 				}
-			}
-		}
-		return ProgressCompleteMsg{Err: nil, Name: "doctor"}
+				if len(warnings) == 0 {
+					out <- "Your system is ready to brew."
+				} else {
+					for _, w := range warnings {
+						out <- w.Title
+						if w.Details != "" {
+							out <- "  " + w.Details
+						}
+					}
+				}
+				errCh <- nil
+				close(out)
+			}()
+			return out, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
@@ -750,87 +817,103 @@ func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) brewCleanup() (tea.Model, tea.Cmd) {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Cleanup Preview", cancel)
-
-	return m, func() tea.Msg {
-		ch, errCh := m.client.DiagnosticsWrite.Cleanup(cancelCtx, true)
-		var lines []string
-		if ch != nil {
-			for line := range ch {
-				lines = append(lines, line)
-				m.program.Send(ProgressLineMsg{Line: line})
+	t := &task.Task{
+		ID:    "cleanup-preview",
+		Title: "Cleanup Preview",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			ch, errCh := m.client.DiagnosticsWrite.Cleanup(ctx, true)
+			if ch == nil {
+				ch = closedCh()
 			}
-		}
-		if errCh != nil {
-			err := <-errCh
-			if err != nil {
-				return ProgressCompleteMsg{Err: err, Name: "cleanup"}
-			}
-		}
-		return CleanupPreviewMsg{Lines: lines}
+			return ch, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) runAutoremove() (tea.Model, tea.Cmd) {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Autoremove Preview", cancel)
-
-	return m, func() tea.Msg {
-		ch, errCh := m.client.DiagnosticsWrite.Autoremove(cancelCtx, true)
-		var lines []string
-		if ch != nil {
-			for line := range ch {
-				lines = append(lines, line)
-				m.program.Send(ProgressLineMsg{Line: line})
+	t := &task.Task{
+		ID:    "autoremove-preview",
+		Title: "Autoremove Preview",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			ch, errCh := m.client.DiagnosticsWrite.Autoremove(ctx, true)
+			if ch == nil {
+				ch = closedCh()
 			}
-		}
-		if errCh != nil {
-			err := <-errCh
-			if err != nil {
-				return ProgressCompleteMsg{Err: err, Name: "autoremove"}
-			}
-		}
-		return AutoremovePreviewMsg{Lines: lines}
+			return ch, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) executeCleanup() (tea.Model, tea.Cmd) {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Cleanup", cancel)
-
-	return m, func() tea.Msg {
-		ch, errCh := m.client.DiagnosticsWrite.Cleanup(cancelCtx, false)
-		if ch != nil {
-			for line := range ch {
-				m.program.Send(ProgressLineMsg{Line: line})
+	t := &task.Task{
+		ID:    "cleanup",
+		Title: "Cleanup",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			ch, errCh := m.client.DiagnosticsWrite.Cleanup(ctx, false)
+			if ch == nil {
+				ch = closedCh()
 			}
-		}
-		var err error
-		if errCh != nil {
-			err = <-errCh
-		}
-		return ProgressCompleteMsg{Err: err, Name: "cleanup"}
+			return ch, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) executeAutoremove() (tea.Model, tea.Cmd) {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Autoremove", cancel)
-
-	return m, func() tea.Msg {
-		ch, errCh := m.client.DiagnosticsWrite.Autoremove(cancelCtx, false)
-		if ch != nil {
-			for line := range ch {
-				m.program.Send(ProgressLineMsg{Line: line})
+	t := &task.Task{
+		ID:    "autoremove",
+		Title: "Autoremove",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			ch, errCh := m.client.DiagnosticsWrite.Autoremove(ctx, false)
+			if ch == nil {
+				ch = closedCh()
 			}
-		}
-		var err error
-		if errCh != nil {
-			err = <-errCh
-		}
-		return ProgressCompleteMsg{Err: err, Name: "autoremove"}
+			return ch, errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func formatConfig(cfg *brew.BrewConfig) string {
