@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -8,6 +9,8 @@ import (
 	"github.com/thiago/lazybrew/internal/config"
 	"github.com/thiago/lazybrew/internal/gui/modal"
 )
+
+var assertAnError = errors.New("test error")
 
 func newTestModel() *Model {
 	cfg := config.Default()
@@ -538,5 +541,57 @@ func TestFetchFlow(t *testing.T) {
 	_, cmd := m.doMutation(mutFetch, "Fetch")
 	if cmd != nil {
 		t.Log("fetch mutation dispatched")
+	}
+}
+
+func TestModelTaskStartedOpensModal(t *testing.T) {
+	m := newTestModel()
+	msg := TaskStartedMsg{ID: "t1", Title: "Test Task"}
+	m = updateModel(m, msg)
+	if m.activeModal == nil {
+		t.Fatal("expected modal to be opened")
+	}
+	if _, ok := m.activeModal.(*modal.ProgressModal); !ok {
+		t.Fatalf("expected ProgressModal, got %T", m.activeModal)
+	}
+}
+
+func TestModelTaskOutputAppendsLine(t *testing.T) {
+	m := newTestModel()
+	m.activeModal = modal.NewProgressModal("Test", nil)
+
+	msg := TaskOutputMsg{ID: "t1", Line: "hello"}
+	m = updateModel(m, msg)
+
+	if m.activeModal == nil {
+		t.Fatal("modal should remain open")
+	}
+}
+
+func TestModelTaskCompletedToast(t *testing.T) {
+	m := newTestModel()
+	msg := TaskCompletedMsg{ID: "t1", Title: "Test", Err: nil}
+	m = updateModel(m, msg)
+	if m.toast == nil {
+		t.Fatal("expected toast for successful completion")
+	}
+}
+
+func TestModelTaskCompletedErrorToast(t *testing.T) {
+	m := newTestModel()
+	err := assertAnError
+	msg := TaskCompletedMsg{ID: "t1", Title: "Test", Err: err}
+	m = updateModel(m, msg)
+	if m.toast == nil {
+		t.Fatal("expected toast for error completion")
+	}
+}
+
+func TestModelTaskRejectedToast(t *testing.T) {
+	m := newTestModel()
+	msg := TaskRejectedMsg{Reason: "queue is full"}
+	m = updateModel(m, msg)
+	if m.toast == nil {
+		t.Fatal("expected toast for rejected task")
 	}
 }

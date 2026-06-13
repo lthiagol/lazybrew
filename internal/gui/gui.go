@@ -10,6 +10,7 @@ import (
 	"github.com/thiago/lazybrew/internal/config"
 	"github.com/thiago/lazybrew/internal/gui/modal"
 	"github.com/thiago/lazybrew/internal/gui/style"
+	"github.com/thiago/lazybrew/internal/gui/task"
 )
 
 type Model struct {
@@ -34,6 +35,8 @@ type Model struct {
 	pendingAction   string
 	pendingMutType  mutationType
 	isBusy          bool
+
+	tasks *task.Manager
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -53,6 +56,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		tabs:        panelTabs[PanelStatus],
 		batch:       newBatchState(),
 		tabContent:  make(map[string]string),
+		tasks:       task.NewManager(task.DefaultMaxQueue),
 	}
 }
 
@@ -117,6 +121,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err == nil {
 			return m, func() tea.Msg { return RefreshMsg{} }
 		}
+		return m, nil
+
+	case TaskStartedMsg:
+		m.activeModal = modal.NewProgressModal(msg.Title, m.tasks.CancelCurrent)
+		return m, m.tasks.RunNext()
+
+	case TaskOutputMsg:
+		if m.activeModal != nil {
+			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
+				p.AppendLine(msg.Line)
+			}
+		}
+		return m, m.tasks.RunNext()
+
+	case TaskCompletedMsg:
+		if m.activeModal != nil {
+			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
+				p.SetDone(msg.Err)
+			}
+		}
+		if msg.Err == nil {
+			if msg.Title != "" {
+				m.toast = modal.NewToast(msg.Title+" completed", modal.ToastSuccess)
+			}
+			return m, tea.Batch(
+				m.tasks.RunNext(),
+				func() tea.Msg { return RefreshMsg{} },
+			)
+		}
+		m.toast = modal.NewToast(msg.Title+": "+msg.Err.Error(), modal.ToastError)
+		return m, m.tasks.RunNext()
+
+	case TaskRejectedMsg:
+		m.toast = modal.NewToast(msg.Reason, modal.ToastWarning)
 		return m, nil
 
 	case MutationResultMsg:
