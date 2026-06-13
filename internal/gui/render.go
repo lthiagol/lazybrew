@@ -59,6 +59,13 @@ func (m Model) renderTabBar(width int) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
 }
 
+func (m Model) renderContentInViewport(content string) string {
+	m.viewport.SetContent(content)
+	m.viewport.Width = max(10, m.width-4)
+	m.viewport.Height = max(10, m.height-6)
+	return m.viewport.View()
+}
+
 func (m Model) renderContent(width, height int) string {
 	panel := m.panels[m.activePanel]
 	if panel.loading {
@@ -79,7 +86,7 @@ func (m Model) renderContent(width, height int) string {
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
-				return style.NormalItem.Render(content)
+				return m.renderContentInViewport(content)
 			}
 			return style.SubtleText.Render("Loading...")
 		case 3:
@@ -108,7 +115,7 @@ func (m Model) renderContent(width, height int) string {
 			for _, d := range c.DependsOn {
 				result += d + "\n"
 			}
-			return style.NormalItem.Render(result)
+			return m.renderContentInViewport(result)
 		case 2:
 			c := panel.selectedCask()
 			if c == nil {
@@ -121,7 +128,7 @@ func (m Model) renderContent(width, height int) string {
 					result += "  " + a + "\n"
 				}
 			}
-			return style.NormalItem.Render(result)
+			return m.renderContentInViewport(result)
 		}
 
 	case PanelStatus:
@@ -132,14 +139,14 @@ func (m Model) renderContent(width, height int) string {
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
-				return style.SubtleText.Render(content)
+				return m.renderContentInViewport(content)
 			}
 			return style.SubtleText.Render("Loading...")
 		case 2:
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
-				return style.NormalItem.Render(content)
+				return m.renderContentInViewport(content)
 			}
 			return style.SubtleText.Render("Loading...")
 		}
