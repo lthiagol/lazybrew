@@ -114,18 +114,32 @@ func (m *Model) executeTrustAction(index int) tea.Cmd {
 		return nil
 	}
 
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Trust: "+name, cancel)
-
-	return func() tea.Msg {
-		var err error
-		if index == 0 {
-			err = m.client.TrustWrite.TrustTap(cancelCtx, name)
-		} else {
-			err = m.client.TrustWrite.UntrustTap(cancelCtx, name)
-		}
-		return MutationResultMsg{Name: name, Type: mutInstall, Err: err}
+	t := &task.Task{
+		ID:    name,
+		Title: "Trust: " + name,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			var err error
+			if index == 0 {
+				err = m.client.TrustWrite.TrustTap(ctx, name)
+			} else {
+				err = m.client.TrustWrite.UntrustTap(ctx, name)
+			}
+			errCh := make(chan error, 1)
+			errCh <- err
+			return closedCh(), errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return nil
+	}
+	return m.tasks.RunNext()
 }
 
 func (m *Model) executeTrustFormulaAction(index int) tea.Cmd {
@@ -147,42 +161,84 @@ func (m *Model) executeTrustCaskAction(index int) tea.Cmd {
 }
 
 func (m *Model) trustItemCmd(fullName, itemType string) tea.Cmd {
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Trust: "+fullName, cancel)
-
-	return func() tea.Msg {
-		var err error
-		if itemType == "formula" {
-			err = m.client.TrustWrite.TrustFormula(cancelCtx, fullName)
-		} else {
-			err = m.client.TrustWrite.TrustCask(cancelCtx, fullName)
-		}
-		return MutationResultMsg{Name: fullName, Type: mutInstall, Err: err}
+	t := &task.Task{
+		ID:    fullName,
+		Title: "Trust: " + fullName,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			var err error
+			if itemType == "formula" {
+				err = m.client.TrustWrite.TrustFormula(ctx, fullName)
+			} else {
+				err = m.client.TrustWrite.TrustCask(ctx, fullName)
+			}
+			errCh := make(chan error, 1)
+			errCh <- err
+			return closedCh(), errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return nil
+	}
+	return m.tasks.RunNext()
 }
 
 func (m Model) executeUntap() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
 	name := extractPackageName(panel.selectedItem())
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Untap "+name, cancel)
 
-	return m, func() tea.Msg {
-		err := m.client.TapsWrite.Untap(cancelCtx, name)
-		return MutationResultMsg{Name: name, Type: mutUninstall, Err: err}
+	t := &task.Task{
+		ID:    name,
+		Title: "Untap " + name,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			errCh := make(chan error, 1)
+			errCh <- m.client.TapsWrite.Untap(ctx, name)
+			return closedCh(), errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) executeRepair() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
 	name := extractPackageName(panel.selectedItem())
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal("Repair "+name, cancel)
 
-	return m, func() tea.Msg {
-		err := m.client.TapsWrite.Repair(cancelCtx, name)
-		return MutationResultMsg{Name: name, Type: mutInstall, Err: err}
+	t := &task.Task{
+		ID:    name,
+		Title: "Repair " + name,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			errCh := make(chan error, 1)
+			errCh <- m.client.TapsWrite.Repair(ctx, name)
+			return closedCh(), errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m *Model) executeBrewfileAction(index int) tea.Cmd {
@@ -365,23 +421,35 @@ func (m Model) serviceAction(action string) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	m.activeModal = modal.NewProgressModal(action+" "+name, cancel)
-
-	return m, func() tea.Msg {
-		var err error
-		switch action {
-		case "start":
-			err = m.client.ServicesWrite.Start(cancelCtx, name)
-		case "stop":
-			err = m.client.ServicesWrite.Stop(cancelCtx, name)
-		case "restart":
-			err = m.client.ServicesWrite.Restart(cancelCtx, name)
-		case "run":
-			err = m.client.ServicesWrite.Run(cancelCtx, name)
-		}
-		return MutationResultMsg{Name: name, Type: mutInstall, Err: err}
+	t := &task.Task{
+		ID:    name,
+		Title: action + " " + name,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			errCh := make(chan error, 1)
+			switch action {
+			case "start":
+				errCh <- m.client.ServicesWrite.Start(ctx, name)
+			case "stop":
+				errCh <- m.client.ServicesWrite.Stop(ctx, name)
+			case "restart":
+				errCh <- m.client.ServicesWrite.Restart(ctx, name)
+			case "run":
+				errCh <- m.client.ServicesWrite.Run(ctx, name)
+			}
+			return closedCh(), errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) togglePin(mutType mutationType) (tea.Model, tea.Cmd) {
@@ -394,21 +462,38 @@ func (m Model) togglePin(mutType mutationType) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	return m, func() tea.Msg {
-		var err error
-		if m.activePanel == PanelCasks {
-			err = m.client.CasksWrite.Unpin(context.Background(), name)
-			if err != nil {
-				err = m.client.CasksWrite.Pin(context.Background(), name)
+	t := &task.Task{
+		ID:    name,
+		Title: "Toggle pin " + name,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			var err error
+			if m.activePanel == PanelCasks {
+				err = m.client.CasksWrite.Unpin(ctx, name)
+				if err != nil {
+					err = m.client.CasksWrite.Pin(ctx, name)
+				}
+			} else {
+				err = m.client.FormulaeWrite.Unpin(ctx, name)
+				if err != nil {
+					err = m.client.FormulaeWrite.Pin(ctx, name)
+				}
 			}
-		} else {
-			err = m.client.FormulaeWrite.Unpin(context.Background(), name)
-			if err != nil {
-				err = m.client.FormulaeWrite.Pin(context.Background(), name)
-			}
-		}
-		return MutationResultMsg{Name: name, Type: mutInstall, Err: err}
+			errCh := make(chan error, 1)
+			errCh <- err
+			return closedCh(), errCh, nil
+		},
 	}
+
+	started, err := m.tasks.Enqueue(t)
+	if err != nil {
+		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
+		return m, nil
+	}
+	if !started {
+		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
+		return m, nil
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) serviceCleanup() (tea.Model, tea.Cmd) {
