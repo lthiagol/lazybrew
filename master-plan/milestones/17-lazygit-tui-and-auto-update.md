@@ -1,18 +1,96 @@
 # Milestone 17 — Lazygit-Inspired TUI & Auto-Update
 
-> **Status:** 🔜 Planned
-> **Depends on:** Milestone 15, Milestone 16
-> **Enables:** Better UX for all subsequent milestones
+> **Status:** 🔜 Planned  
+> **Size estimate:** L (5–8 days)  
+> **Depends on:** M19 ✅, M20 ✅, M21 T2 (E2E baseline), M22 recommended  
+> **Enables:** v0.3.0 UX release, `ShowIcons` (backlog B-10)  
+> **Parallel track:** F (Polish) — **last** on critical path  
+> **Gate criteria:** M19–M22 gates pass; smoke-checklist green; auto-update uses TaskManager pattern  
+> **Format:** Refined 2026-06-13 ([templates/milestone.md](../templates/milestone.md))
+
+See [planning-challenge-2026-06-13.md](../planning-challenge-2026-06-13.md) — M17 runs after correctness + CI, not after M15/M16 alone.
 
 ---
 
 ## Goal
 
-Redesign the TUI to feel more like lazygit — each sidebar panel rendered as its own bordered "box", accordion height distribution, and a `brew update` flow on startup so data is always fresh.
+Redesign the TUI to feel more like lazygit: per-panel bordered sidebar boxes, accordion height distribution, main-panel breadcrumb, bottom-bar update status, optional non-blocking `brew update` on startup, and search result info in the main panel.
 
 ---
 
-## Design Decisions
+## Why Now
+
+Visual polish on top of broken concurrency or stale tab content wastes rework. This milestone runs last so layout changes sit on TaskManager (M19), correct Info/tabs (M20), and teatest coverage (M21).
+
+---
+
+## Challenged Assumptions
+
+| Assumption | Challenge | Decision |
+|---|---|---|
+| Depends on M15/M16 | M16 coverage targets unmet; M15 incomplete | **Depends on M19–M22** |
+| Switch to gocui | Large rewrite | **Keep Bubble Tea + Lip Gloss** (D17-1) |
+| Auto-update via raw goroutine | Same anti-pattern as M19 | **Use TaskManager / tea.Cmd** for update (D17-2) |
+| M2 small-terminal collapse here | Scope creep | **M20.7 warning only**; full collapse → backlog B-10 / post-M17 |
+
+---
+
+## Out of Scope
+
+- Full M2 sidebar collapse / Ctrl+B toggle — backlog **B-10**
+- `ShowIcons` in sidebar titles — backlog **B-10**
+- Lazy panel loading — backlog **B-02**
+- Rewriting M1–M16 legacy steps
+
+---
+
+## Architecture Decisions (ADRs)
+
+| ID | Decision | Alternatives rejected | Rationale |
+|---|---|---|---|
+| D17-1 | Stay on Bubble Tea + Lip Gloss | gocui rewrite | 7k+ lines; Charm ecosystem |
+| D17-2 | Auto-update through TaskManager | `go func` + `program.Send` | M19 concurrency rules |
+| D17-3 | Title inside box (bold first line) | Title in border line | Simpler lipgloss; same visual goal |
+| D17-4 | Accordion 40/60 split; min 4 active / 2 inactive rows | Equal heights | lazygit-like focus |
+| D17-5 | `renderBox` = lipgloss border wrapper only | Custom border strings | Reliable sizing |
+| D17-6 | Update timestamp ticker **10s** | 1s tick | Enough precision; less CPU |
+| D17-7 | Search info: section rules, not nested boxes | Nested `renderBox` in main | Avoid double borders |
+| D17-8 | `update_on_start` default `false` | default true | Backward compatible |
+
+---
+
+## Phases
+
+Execute **in order**. Complete phase gate before next phase.
+
+| Phase | Steps | Theme | Phase gate |
+|---|---|---|---|
+| **A — Auto-update** | 17.1, 17.2, 17.3, 17.7 | Messages, startup/R refresh, bottom bar | Update flow uses TaskManager; bottom bar states correct |
+| **B — Sidebar boxes** | 17.4, 17.5, 17.6, 17.9, 17.10 | Accordion, per-panel borders, alignment | 80×24 renders; no clip |
+| **C — Main panel** | 17.8 | Breadcrumb title | Tab bar + content fit |
+| **D — Search preview** | 17.11 | Package info on selection | Info loads on j/k; `i` still installs |
+
+---
+
+## Step Index
+
+| Step | Title | Size | Phase | Depends | Deliverable |
+|---|---|---|---|---|---|
+| 17.1 | Messages + model fields | S | A | M19 | `StartUpdateMsg`, `UpdateCompleteMsg`, fields |
+| 17.2 | Auto-update Init + handlers | M | A | 17.1, M19 | Non-blocking update; R key behavior |
+| 17.3 | `parseUpdateSummary` | S | A | 17.2 | Toast summary strings |
+| 17.4 | `renderSidebarContent` | M | B | — | Compact sidebar list renderer |
+| 17.5 | `computeContentHeights` | M | B | 17.4 | Accordion row math |
+| 17.6 | Per-panel sidebar boxes | L | B | 17.4, 17.5 | `box.go`, rewrite `renderSidebar` |
+| 17.7 | Bottom bar + update ticker | M | A | 17.2 | Hints left; status right; 10s tick |
+| 17.8 | Main panel breadcrumb | S | C | — | `Panel › Tab` line |
+| 17.9 | Sidebar loading/empty/error | S | B | 17.4 | States inside boxes |
+| 17.10 | Visual integration / alignment | M | B | 17.6, 17.8 | No gaps; height match main panel |
+| 17.11 | Search info preview | L | D | M20.1, 17.8 | `SearchInfoLoadedMsg`, render |
+
+---
+
+## Design Decisions (detail)
 
 | Decision | Chosen Approach | Rationale |
 |---|---|---|
@@ -1167,46 +1245,75 @@ func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
 
 ## Tests for This Milestone
 
-| Test | Type | File | What It Validates |
+Consolidated test plan — add/update in **same step** as implementation.
+
+| Test | Tier | Step | Proves |
 |---|---|---|---|
-| `TestStartUpdateMsg` | Unit | `gui_test.go` | `update_on_start=true` sends `StartUpdateMsg` from Init |
-| `TestNoUpdateOnStart` | Unit | `gui_test.go` | `update_on_start=false` sends panel fetches from Init |
-| `TestUpdateCompleteRefreshes` | Unit | `gui_test.go` | After `UpdateCompleteMsg`, all panel fetches are queued |
-| `TestDuplicateUpdateIgnored` | Unit | `gui_test.go` | `StartUpdateMsg` while `isUpdating` is no-op |
-| `TestParseUpdateSummary` | Unit | `gui_test.go` | All brew update output variants parsed correctly |
-| `TestParseUpdateEmpty` | Unit | `gui_test.go` | Empty/no-match input returns empty string |
-| `TestAccordionHeights` | Unit | `gui_test.go` | Heights sum to available space, active gets ~40% |
-| `TestAccordionMinimums` | Unit | `gui_test.go` | Minimums enforced at small terminal sizes |
-| `TestRenderSidebarContent` | Unit | `gui_test.go` | Items rendered correctly with truncation |
-| `TestRenderSidebarContentStates` | Unit | `gui_test.go` | Loading, error, empty states rendered properly |
-| `TestRenderBox` | Unit | `gui_test.go` | Box has correct border, active/inactive colors |
-| `TestRenderBottomBarUpdate` | Unit | `gui_test.go` | Bottom bar shows correct update state |
-| `TestRenderBreadcrumb` | Unit | `gui_test.go` | Main panel shows `PanelName › TabName` |
-| `TestExistingNavigation` | Unit | `gui_test.go` | All existing navigation tests still pass |
-| `TestExistingTabSwitching` | Unit | `gui_test.go` | All existing tab tests still pass |
-| `TestSearchInfoLoadsOnSelection` | Unit | `gui_test.go` | Selecting search result triggers info fetch |
-| `TestSearchInfoRenders` | Unit | `gui_test.go` | Info content renders correctly in main panel |
-| `TestSearchInfoEmpty` | Unit | `gui_test.go` | "No package selected" when no selection |
-| `TestSearchInfoError` | Unit | `gui_test.go` | Error state renders for failed info fetch |
-| `TestParsePackageInfo` | Unit | `gui_test.go` | Formula info parsed from JSON correctly |
-| `TestParsePackageInfoCask` | Unit | `gui_test.go` | Cask info parsed from JSON correctly |
-| `TestParsePackageInfoInvalid` | Unit | `gui_test.go` | Invalid JSON returns error gracefully |
+| `TestStartUpdateMsg` | unit | 17.2 | Init sends update when configured |
+| `TestNoUpdateOnStart` | unit | 17.2 | Default Init fetches panels |
+| `TestUpdateCompleteRefreshes` | unit | 17.2 | Refresh after update |
+| `TestDuplicateUpdateIgnored` | unit | 17.2 | No concurrent updates |
+| `TestParseUpdateSummary` | unit | 17.3 | Summary strings |
+| `TestParseUpdateEmpty` | unit | 17.3 | Empty brew output |
+| `TestAccordionHeights` | unit | 17.5 | 40/60 split |
+| `TestAccordionMinimums` | unit | 17.5 | Small terminal degradation |
+| `TestRenderSidebarContent` | unit | 17.4 | Truncation, selection |
+| `TestRenderSidebarContentStates` | unit | 17.9 | Loading/empty/error |
+| `TestRenderBox` | unit | 17.6 | Border colors |
+| `TestRenderBottomBarUpdate` | unit | 17.7 | Status strings |
+| `TestRenderBreadcrumb` | unit | 17.8 | Panel › Tab |
+| `TestExistingNavigation` | unit | 17.10 | No regressions |
+| `TestExistingTabSwitching` | unit | 17.10 | No regressions |
+| `TestSearchInfoLoadsOnSelection` | unit | 17.11 | Info fetch on j/k |
+| `TestSearchInfoRenders` | unit/e2e | 17.11 | Main panel content |
+| `TestParsePackageInfo` | unit | 17.11 | JSON parsing |
+| `TestParsePackageInfoCask` | unit | 17.11 | Cask branch |
+| `TestParsePackageInfoInvalid` | unit | 17.11 | Error handling |
+
+**Verification commands:**
+
+```bash
+make test
+go test -race ./internal/gui/...
+# After M21: teatest flows for navigation + search info
+```
 
 ---
 
 ## Definition of Done
 
-- [ ] Auto-update runs on startup when `brew.update_on_start=true` (non-blocking, bottom bar indicator)
-- [ ] `R` key with `update_on_start=true` runs update first
-- [ ] Bottom bar shows hints (left) + update status (right)  
-- [ ] Each sidebar panel renders as an individual bordered box
-- [ ] Active panel has accent border and ~40% sidebar height
-- [ ] Inactive panels have subtle borders and share remaining height
-- [ ] Main panel shows `PanelName › TabName` title line
-- [ ] Empty, loading, error states render correctly in sidebar boxes
-- [ ] All existing tests pass
-- [ ] Renders correctly at 80x24 minimum terminal size
-- [ ] No regressions in mutation/panel navigation/tab switching
-- [ ] Search results show package info in main panel on selection
-- [ ] Formula/cask info renders correctly (name, version, type, status, deps)
-- [ ] `i` still installs from the info view
+- [ ] Phases A–D complete; step acceptance criteria met
+- [ ] Auto-update uses TaskManager (D17-2) — no new `program.Send`
+- [ ] All tests in Test Plan exist and pass
+- [ ] `go test -race ./...` passes
+- [ ] [smoke-checklist.md](../smoke-checklist.md) re-run after visual changes
+- [ ] Renders at 80×24 without clip (17.10)
+- [ ] [status.md](../status.md) updated; header matches ✅ when done
+
+---
+
+## Post-Milestone Gate
+
+Before v0.3.0 tag:
+
+- [ ] M19–M22 still green (no regressions)
+- [ ] teatest navigation + search flows pass (M21)
+- [ ] Manual lazygit visual check on real terminal
+
+---
+
+## Rollback Plan
+
+If accordion layout fails at common sizes:
+
+1. Ship Phase A (auto-update + bottom bar) without Phase B box rewrite
+2. Keep old `renderSidebar` behind config flag `gui.legacy_sidebar` (optional emergency — remove before v1.0)
+
+---
+
+## Version History
+
+| Date | Change |
+|---|---|
+| 2026-06-11 | Initial milestone |
+| 2026-06-13 | Refined to current template; deps M19–M22; phases; TaskManager for update |

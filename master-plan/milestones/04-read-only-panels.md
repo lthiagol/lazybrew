@@ -1,9 +1,21 @@
 # Milestone 4 — Read-Only Panels (Real Data)
 
-> **Status:** ✅ Done  
-> **Remaining:** Empty states are generic ("No items"), not panel-specific ("No formulae installed", "Everything up to date!")  
+> **Status:** ⚠️ Partial  
+> **Remaining:** Info tab shows list not details; generic empty states  
 > **Depends on:** Milestone 2 (TUI Shell), Milestone 3 (Brew Data Layer)  
 > **Enables:** Milestone 5 (Modals & Search), Milestone 6 (Mutations)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. Historical steps below document original build; active fixes are in M20.
+
+| Open item | Execute in |
+|---|---|
+| Info tab content (not sidebar duplicate) | [M20.2](20-functional-completeness-and-ux.md) |
+| Panel-specific empty states | [M20.5](20-functional-completeness-and-ux.md) |
+| Tab cache / selection correctness | [M20.1](20-functional-completeness-and-ux.md) |
 
 ---
 

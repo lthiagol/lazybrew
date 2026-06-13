@@ -1,8 +1,22 @@
 # Milestone 6 — Package Mutations (Install / Uninstall / Upgrade)
 
-> **Status:** ✅ Done  
+> **Status:** ⚠️ Partial  
+> **Remaining:** TaskManager not built; batch upgrade missing; some confirm flows incomplete  
 > **Depends on:** Milestone 4 (Read-Only Panels), Milestone 5 (Modals & Search)  
 > **Enables:** Milestone 7 (Taps & Trust)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. **Do not implement §6.1 Task Manager from this file** — superseded by M19.
+
+| Open item | Execute in |
+|---|---|
+| TaskManager | [M19](19-bubble-tea-concurrency-and-task-manager.md) |
+| `doMutation` / concurrency fixes | [M19.6](19-bubble-tea-concurrency-and-task-manager.md) |
+| Batch upgrade (Space + u) | [M20.3](20-functional-completeness-and-ux.md) |
+| Reinstall / fetch keybindings (if gaps remain) | Verify in [M20.11](../smoke-checklist.md) smoke |
 
 ---
 

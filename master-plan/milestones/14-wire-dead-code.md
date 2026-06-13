@@ -1,8 +1,20 @@
 # Milestone 14 — Wire Dead Code & Fix Broken Functionality
 
-> **Status:** ✅ Done  
+> **Status:** ⚠️ Mostly done  
+> **Remaining:** Verify all DoD checkboxes (M18.4 audit)  
 > **Depends on:** Milestone 13 (Critical Bug Fixes)  
 > **Enables:** Milestone 15 (Architecture Cleanup)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. Most fixes merged; audit-only unless smoke finds regressions.
+
+| Open item | Execute in |
+|---|---|
+| DoD verification | [M18.4](18-documentation-and-project-hygiene.md) |
+| New broken wiring found | Fix in place + regression test in [M21.4](21-test-strategy-v2.md) |
 
 ---
 

@@ -1,10 +1,23 @@
 # Milestone 12 — Test Infrastructure & Quality
 
-> **Status:** ⚠️ In Progress  
-> **Done:** Modal tests (14), fuzz tests (2), snapshot tests (5)  
-> **Remaining:** E2E tests (0), integration tests (0), gui/ package has zero tests  
+> **Status:** ⚠️ Partial  
+> **Done:** Modal tests, fuzz tests, snapshot tests  
+> **Remaining:** E2E (teatest), integration tests, deep gui coverage  
 > **Depends on:** Milestone 10 (GUI Architecture — decomposed code is testable), Milestone 11 (Feature Completion — features must exist before they can be tested)  
 > **Enables:** v0.2.0 Release
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. **Do not execute §12.3 E2E / §12.4 integration from this file** — superseded by M21.
+
+| Open item | Execute in |
+|---|---|
+| teatest E2E flows | [M21.2](21-test-strategy-v2.md) |
+| Integration `//go:build integration` | [M21.3](21-test-strategy-v2.md) |
+| Coverage floors | [M21.5](21-test-strategy-v2.md) |
+| Modal/gui unit gaps | M21 + existing tests |
 
 ---
 

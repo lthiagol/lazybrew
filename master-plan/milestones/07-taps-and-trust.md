@@ -1,8 +1,20 @@
 # Milestone 7 — Taps & Trust Management
 
-> **Status:** ✅ Done  
+> **Status:** ⚠️ Partial  
+> **Remaining:** Verify all tap/trust/repair/untap flows in smoke test  
 > **Depends on:** Milestone 5 (Modals), Milestone 6 (Package Mutations — for task manager)  
 > **Enables:** Milestone 8 (P1 Features)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. Most features wired; verification only unless smoke fails.
+
+| Open item | Execute in |
+|---|---|
+| End-to-end tap/trust/untap/repair verification | [M20.11](../smoke-checklist.md) |
+| UX gaps found in smoke | New step in M20 or backlog [B-06](../backlog.md) |
 
 ---
 

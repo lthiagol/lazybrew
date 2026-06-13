@@ -1,8 +1,20 @@
 # Milestone 8 — P1 Features (Services, Pin, Cleanup, Doctor)
 
-> **Status:** ✅ Done  
+> **Status:** ⚠️ Partial  
+> **Remaining:** Verify cleanup, doctor, leaves, autoremove, vulns, missing in smoke  
 > **Depends on:** Milestone 6 (Package Mutations)  
 > **Enables:** Milestone 9 (Polish & Release)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. Keybindings largely wired; confirm via smoke.
+
+| Open item | Execute in |
+|---|---|
+| Status panel actions (d, c, A, v, m, B) | [M20.11](../smoke-checklist.md) |
+| Pin semantics fix | [M20.4](20-functional-completeness-and-ux.md) |
 
 ---
 

@@ -1,8 +1,20 @@
 # Milestone 11 — Feature Completion
 
-> **Status:** ✅ Done  
+> **Status:** ⚠️ Partial  
+> **Remaining:** Verify services run, brewfile, vulns, missing in smoke  
 > **Depends on:** Milestone 10 (GUI Architecture — tab content must work before new features land correctly)  
 > **Enables:** Milestone 12 (Test Infrastructure — features need tests)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. Coverage audit targets; verify don't re-implement.
+
+| Open item | Execute in |
+|---|---|
+| Feature wiring verification | [M20.11](../smoke-checklist.md) |
+| Search info preview | [M17.11](17-lazygit-tui-and-auto-update.md) |
 
 ---
 

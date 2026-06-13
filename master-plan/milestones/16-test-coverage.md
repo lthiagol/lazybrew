@@ -1,9 +1,21 @@
 # Milestone 16 — Test Coverage Completion
 
-> **Status:** ✅ Complete  
-> **Tests:** 186 total (exceeds 147 target); gui/ at 5% (33 tests); all 8 packages have tests  
+> **Status:** ⚠️ Partial  
+> **Tests:** ~162 functions (not 186); gui/ ~31.5% coverage (not 70% target)  
 > **Depends on:** Milestone 15 (Architecture Cleanup)  
-> **Enables:** v0.2.0 Release
+> **Enables:** Superseded by M21 for release gate
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy. **Do not treat this file's coverage targets as current gate** — use M21.
+
+| Open item | Execute in |
+|---|---|
+| E2E + integration | [M21](21-test-strategy-v2.md) |
+| Coverage floors (brew 75%, gui 55%, …) | [M21.5](21-test-strategy-v2.md) |
+| Package tests started here | Keep; extend in M21 |
 
 ---
 

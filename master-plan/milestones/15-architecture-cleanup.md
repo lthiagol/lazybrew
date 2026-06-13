@@ -1,8 +1,20 @@
 # Milestone 15 — Architecture Cleanup
 
-> **Status:** ✅ Complete  
+> **Status:** ⚠️ Mostly done  
+> **Remaining:** TypedCache panic path → M19.0; verify Reader/Writer splits complete  
 > **Depends on:** Milestone 14 (Wire Dead Code)  
 > **Enables:** Milestone 16 (Test Coverage)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy.
+
+| Open item | Execute in |
+|---|---|
+| TypedCache safe get (panic on wrong type) | [M19.0](19-bubble-tea-concurrency-and-task-manager.md) |
+| Remaining DoD items | [M18.4](18-documentation-and-project-hygiene.md) audit |
 
 ---
 

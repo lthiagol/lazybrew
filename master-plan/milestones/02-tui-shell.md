@@ -1,9 +1,20 @@
 # Milestone 2 — TUI Shell & Layout
 
-> **Status:** ✅ Done  
-> **Remaining:** Small terminal detection (sidebar collapse at <100 cols, hide at <60, Ctrl+B toggle)  
+> **Status:** ⚠️ Partial  
+> **Remaining:** Small terminal — warning in M20.7; full lazygit collapse deferred to M17/backlog B-10  
 > **Depends on:** Milestone 1 (Foundation)  
 > **Enables:** Milestone 4 (Read-Only Panels), Milestone 5 (Modals & Search)
+
+---
+
+## Active Work Routing
+
+> **Format:** Legacy ([milestone-legacy-index.md](../milestone-legacy-index.md)). Do not execute open items from steps below.
+
+| Open item | Execute in |
+|---|---|
+| Minimum terminal warning | [M20.7](20-functional-completeness-and-ux.md) |
+| Sidebar collapse / Ctrl+B / accordion at small width | [M17](17-lazygit-tui-and-auto-update.md) / backlog B-10 |
 
 ---
 

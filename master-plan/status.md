@@ -4,121 +4,155 @@
 > **Stack:** Go + Bubble Tea + Lip Gloss + Bubbles  
 > **Platforms:** macOS + Linux  
 > **Created:** 2026-06-11  
-> **Last Updated:** 2026-06-12  
+> **Last Updated:** 2026-06-13 (planning pass 2)  
 > **Target Homebrew:** 6.0.0+
+
+---
+
+## Planning Documents
+
+| Document | Purpose |
+|---|---|
+| [architecture-review-2026-06-13.md](architecture-review-2026-06-13.md) | First-pass findings |
+| [planning-challenge-2026-06-13.md](planning-challenge-2026-06-13.md) | Challenged decisions + revised sequencing |
+| [review-template.md](review-template.md) | **Project-agnostic** template for future reviews |
+| [templates/](templates/) | Milestone, status, and step templates + conventions |
+| [milestone-legacy-index.md](milestone-legacy-index.md) | M1–M17 format audit + routing to M18–M22 |
+| [backlog.md](backlog.md) | Deferred items (out of M18–M22 scope) |
+| [smoke-checklist.md](smoke-checklist.md) | Manual verification (M20.11) |
+| [coverage-audit.md](coverage-audit.md) | Brew command coverage |
 
 ---
 
 ## Overall Progress
 
 ```
-[X] Milestone 1  — Project Foundation & Core Types
-[X] Milestone 2  — TUI Shell & Layout                        (small terminal not done)
-[X] Milestone 3  — Brew Data Layer
-[X] Milestone 4  — Read-Only Panels                          (empty states generic)
-[X] Milestone 5  — Modals, Input & Search
-[X] Milestone 6  — Package Mutations
-[X] Milestone 7  — Taps & Trust Management
-[X] Milestone 8  — P1 Features
-[X] Milestone 9  — Polish, Config & Release
-[X] Milestone 10 — GUI Architecture Payoff
-[X] Milestone 11 — Feature Completion
-[X] Milestone 12 — Test Infrastructure & QA
-[X] Milestone 13 — Critical Bug Fixes
-[X] Milestone 14 — Wire Dead Code & Fix Broken Functionality
-[X] Milestone 15 — Architecture Cleanup
-[X] Milestone 16 — Test Coverage Completion                  (186 tests, all 8 packages covered)
-[ ] Milestone 17 — Lazygit TUI & Auto-Update                  (planned)
+[X]  Milestone 1   — Foundation
+[~]  Milestone 2   — TUI Shell (small terminal → M20.7)
+[X]  Milestone 3   — Brew Data Layer
+[~]  Milestone 4   — Read-Only Panels (Info tab → M20.2)
+[X]  Milestone 5   — Modals & Search
+[~]  Milestone 6   — Package Mutations (TaskManager → M19)
+[~]  Milestone 7–11 — Features (verify DoD during M20 smoke)
+[~]  Milestone 12  — Test Infrastructure (E2E → M21)
+[X]  Milestone 13  — Critical Bug Fixes
+[~]  Milestone 14–16 — Wire/cleanup/tests (partial)
+[ ]  Milestone 17  — Lazygit UI (after M19–M22)
+[ ]  Milestone 18  — Documentation & Hygiene
+[ ]  Milestone 19  — Concurrency & TaskManager
+[ ]  Milestone 20  — Functional & UX (phases A–F)
+[ ]  Milestone 21  — Test Strategy v2 (tiers T0–T3)
+[ ]  Milestone 22  — CI & Release
 ```
 
-**Current Phase:** v0.2.0 — Done  
-**Current Milestone:** 17 — Planned  
-**Blockers:** None
+**Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
+
+**Current phase:** Planning complete for M18–M22 — ready for execution  
+**Execution entry point:** M18.1 + M19.0 in parallel, then M18.5 → M19.1
 
 ---
 
-## Milestone Index
+## Parallel Execution Tracks
 
-| # | Milestone | Status | Description |
-|---|---|---|---|---|---|
-| 1 | [Foundation](milestones/01-foundation.md) | ✅ Complete | Go module, directory structure, domain types, brew runner, test infra |
-| 2 | [TUI Shell](milestones/02-tui-shell.md) | ✅ Done | Bubble Tea app, layout, panel navigation, bottom bar, **missing: small terminal detection** |
-| 3 | [Brew Data Layer](milestones/03-brew-data-layer.md) | ✅ Complete | JSON parsing, cache, R/W service splits (Formulae/Casks/Diagnostics), search JSON |
-| 4 | [Read-Only Panels](milestones/04-read-only-panels.md) | ✅ Done | Formulae, Casks, Outdated, Status, Taps panels with real data, **empty states are generic** |
-| 5 | [Modals & Search](milestones/05-modals-and-search.md) | ✅ Complete | Confirmation, text input, menu, progress modals + search flow + toast system |
-| 6 | [Package Mutations](milestones/06-package-mutations.md) | ⚠️ Partial | Install/upgrade work. **Missing: TaskManager (no queuing/retry), uninstall lacks confirmation modal, no reinstall flow** |
-| 7 | [Taps & Trust](milestones/07-taps-and-trust.md) | ⚠️ Partial | Tap add works. **Missing: untap keybinding + official protection, trust formula/cask granularity from GUI, repair keybinding** |
-| 8 | [P1 Features](milestones/08-p1-features.md) | ⚠️ Partial | Pin/unpin works (formulae+casks), services start/stop, brew missing. **Missing: cleanup keybinding, doctor keybinding, leaves toggle, autoremove keybinding; vulns is a broken stub (calls Doctor instead of brew vulns)** |
-| 9 | [Polish & Release](milestones/09-polish-and-release.md) | ✅ Complete | Config system (YAML), theming (dark/light), help overlay, CLI flags, goreleaser |
-| 10 | [GUI Architecture](milestones/10-gui-architecture.md) | ✅ Complete | Tab content switching, progress streaming, config consumption, Esc closes help, gui.go decomposed |
-| 11 | [Feature Completion](milestones/11-feature-completion.md) | ⚠️ Partial | Used-by tab works, missing wired. **Broken: services run (`f`) action silently ignored, serviceCleanup modal only (no execute), Brewfile menu is a stub (calls Doctor), vulns calls wrong command** |
-| 12 | [Test Infrastructure](milestones/12-test-infrastructure.md) | ⚠️ Partial | Modal tests (14), fuzz tests (2), snapshots (5). **Missing: E2E tests (0), integration tests (0), gui/ package has zero tests** |
-| 13 | [Critical Bug Fixes](milestones/13-critical-bug-fixes.md) | ✅ Complete | Cache RLock→Lock upgrade, separate KeyOutdated keys, ConfirmModal defaults No, padRight UTF-8 |
-| 14 | [Wire Dead Code](milestones/14-wire-dead-code.md) | ⚠️ Partial | Brewfile menu wiring, type assertions, runVulns/runMissing output, ModalDoneMsg removed, batchState.mu removed. **Missing: serviceCleanup doesn't execute, Formulae Files tab placeholder, Cask Caveats hardcoded, Doctor tab shows wrong data** |
-| 15 | [Architecture Cleanup](milestones/15-architecture-cleanup.md) | ⚠️ In Progress | 5/10 done: itoa→strconv, jsonUnmarshal removed, atomic Logger, unexported Program, NewMockClient removed |
-| 16 | [Test Coverage](milestones/16-test-coverage.md) | ⚠️ In Progress | Config/style/logger tests done. Missing: app_test.go, gui_test.go, E2E, integration; 120/147 tests |
-| 17 | [Lazygit TUI & Auto-Update](milestones/17-lazygit-tui-and-auto-update.md) | 🔜 Planned | Per-panel bordered sidebar boxes, accordion heights, brew update on startup, update status in bottom bar |
+Tracks can run concurrently when dependencies allow.
+
+| Track | Milestones | Owner focus | Starts | Blocks |
+|---|---|---|---|---|
+| **A — Docs** | M18 | README, DESIGN, AGENTS, audit | Day 1 | M19.6 needs 18.8 |
+| **B — Concurrency** | M19 | TaskManager | After M18.5 | M20.3, M17 |
+| **C — UX** | M20 | Tab cache, Info, batch | M20.A during M19.8 | M17 |
+| **D — Quality** | M21 T0–T3 | tests | T0 immediately | M22 full |
+| **E — Ops** | M22.1 early | CI | After M19.5 | Release |
+
+### Critical path
+
+```
+M18.5 → M19.1 → M19.5 → M19.6 → M20.A → M20.B → M21.T2 → M22.4 → M17
+```
 
 ---
 
-## Testing Strategy (Cross-Cutting)
+## Milestone Index (M18–M22 detail)
 
-| Test Type | Framework | What It Covers | When Written |
-|---|---|---|---|
-| **Unit** | Go `testing` + `testify` | Types, parsers, formatters, cache, config | Every milestone |
-| **Snapshot** | `go-snaps` or custom | Presentation output (formatted panel strings) | Milestones 4+ |
-| **TUI / E2E** | `teatest` (Bubble Tea) | Full app interaction flows (key presses → UI state) | Milestones 2+ |
-| **Integration** | Go `testing` + build tag | Actual `brew` CLI calls (requires brew installed) | Milestone 3+ |
-| **Fuzz** | Go `testing.F` | JSON parsing edge cases | Milestone 3 |
+| # | Milestone | Steps | Size | Gate |
+|---|---|---|---|---|
+| 18 | [Documentation](milestones/18-documentation-and-project-hygiene.md) | 18.1–18.10 | M | DESIGN + AGENTS exist |
+| 19 | [TaskManager](milestones/19-bubble-tea-concurrency-and-task-manager.md) | 19.0–19.10 | L | No program.Send |
+| 20 | [Functional UX](milestones/20-functional-completeness-and-ux.md) | 20.1–20.11 | L | smoke-checklist pass |
+| 21 | [Tests v2](milestones/21-test-strategy-v2.md) | 21.0–21.5 | M–L | 8 E2E + 5 integration |
+| 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1–22.6 | M | CI green + goreleaser |
+| 17 | [Lazygit UI](milestones/17-lazygit-tui-and-auto-update.md) | 17.1–17.11 (phases A–D) | L | After M19–M22; refined template |
 
-> Integration tests that call real `brew` commands use a build tag (`//go:build integration`) so they don't run in CI without brew installed.
-
----
-
-## Architecture Reference
-
-See the design document for the full architecture, feature inventory, and UI layout specifications.
+Legacy milestones M1–M17: see [milestone-legacy-index.md](milestone-legacy-index.md)
 
 ---
 
-## Decision Log
+## Challenged Decisions (summary)
+
+Full rationale: [planning-challenge-2026-06-13.md](planning-challenge-2026-06-13.md)
+
+| Decision | Outcome |
+|---|---|
+| Docs before all code? | **No** — M19 starts after M18.5 only |
+| M20 monolith? | **Split** into phases A–F |
+| M21 after all M20? | **Tiered** — T0/T1 parallel with M19 |
+| M22 after all M21? | **Split** — 22.1 after M19.5 |
+| M17 defer? | **Yes** — visual polish last |
+| TypedCache fix? | **Moved to M19.0** |
+| Config dead fields? | **Document M18.9, wire M20.8** |
+
+---
+
+## Metrics Baseline (2026-06-13)
+
+| Metric | Value |
+|---|---|
+| Go lines | ~7,821 |
+| Test functions | 162 |
+| `brew/` coverage | 65.2% |
+| `gui/` coverage | 31.5% |
+| Integration tests | 0 |
+| teatest E2E | 0 |
+| CI workflows | 0 |
+
+---
+
+## Testing Strategy
+
+| Tier | When | What |
+|---|---|---|
+| T0 | During M19 | TypedCache, cache race, MockRunner recorder |
+| T1 | M19.5+ | teatest helper, integration file |
+| T2 | M20.A+ | E2E flows, regression tests |
+| T3 | Pre-release | Makefile coverage floors |
+
+Future reviews: use [review-template.md](review-template.md).
+
+---
+
+## Decision Log (recent)
 
 | Date | Decision | Context |
 |---|---|---|
-| 2026-06-11 | Go + Bubble Tea | Modern API, Elm architecture, Lip Gloss styling |
-| 2026-06-11 | macOS + Linux | Support both Homebrew and Linuxbrew |
-| 2026-06-11 | Native `brew trust`/`brew untrust` only | Latest brew only, no backward compat |
-| 2026-06-11 | Separate Formulae & Casks panels | Consistent with lazygit/lazydocker pattern |
-| 2026-06-11 | Name: lazybrew | Matches lazy* convention |
-| 2026-06-11 | P0 feature set for MVP | Confirmed as-is from design doc |
-| 2026-06-11 | Target Homebrew 6.0.0+ | Reviewed brew 6.0.0 changelog; plan is compatible. Trust is now mandatory (was opt-in in 5.x), validating our M7 plans. |
-| 2026-06-11 | Pin casks too (was only formulae) | Homebrew 6.0.0 added `brew pin` for casks; extended M8 to cover both |
-| 2026-06-11 | Run brew non-interactively | 6.0.0 made "ask mode" default — brew may prompt for confirmation if stdin is a TTY. M3 runner will detect non-TTY or set `HOMEBREW_NO_ASK` env var |
-| 2026-06-11 | No BrewUI panic | Homebrew announced BrewUI (official GUI). lazybrew is a TUI — complementary, not competing directly. Still worth mentioning in docs |
-| 2026-06-11 | Plan review: 34 issues fixed | Comprehensive review of all milestones. Key fixes: Runner stdout/stderr split, HOMEBREW_NO_ASK from day one, typed errors, split read/write service interfaces, generics cache, JSON search, graceful shutdown, concurrent read safety |
-| 2026-06-11 | Read/write service split | FormulaeService split into FormulaeReader + FormulaeWriter. Same for Casks and Diagnostics. Reads are cacheable/concurrent; writes go through task manager |
-| 2026-06-11 | Synthetic test fixtures | Don't capture real brew output as fixtures (rots between versions). Use minimal synthetic JSON covering edge cases |
-| 2026-06-11 | No hardcoded bottle tags | Bottled detection must not hardcode macOS version tags (arm64_sonoma etc.). Use generic platform-matching logic |
-| 2026-06-11 | Services: `f` for run, not `R` | Changed "Run service" keybinding from `R` to `f` to avoid case-sensitivity confusion with `r` (restart) |
-| 2026-06-11 | Modal results are typed | No `interface{}` results. Each modal type returns typed results via ModalResult struct |
-| 2026-06-11 | Progress cancel via context | Esc cancels running brew via context.CancelFunc -> SIGINT -> 5s -> SIGKILL |
-| 2026-06-12 | YAML config system | `~/.config/lazybrew/config.yml` with defaults for theme, sidebar width, mouse, keybindings |
-| 2026-06-12 | Help overlay `?` | Full-screen keyboard reference organized by panel, toggle with `?`/`Esc` |
-| 2026-06-12 | CLI flags with `flag` stdlib | `--version`, `--config`, `--debug` parsed via standard library |
-| 2026-06-12 | `.goreleaser.yml` | Cross-platform builds for darwin/linux, amd64/arm64, tar.gz with checksums |
-| 2026-06-12 | All 9 milestones complete | v0.1.0-dev — 5,650 lines across 42 Go files, 71 tests, 65%+ coverage |
-| 2026-06-12 | Code audit: 4 critical bugs found | Cache RLock race (will crash), KeyOutdated collision, ConfirmModal defaults to Yes, padRight splits UTF-8 |
-| 2026-06-12 | Code audit: 5 broken features found | Brewfile menu unhandled, serviceCleanup skips confirm, vulns/missing discard output, hard type assertions, context cancel discarded |
-| 2026-06-12 | Code audit: 10 design issues found | Dead batch code, unused mutex, inconsistent interfaces, interface{} overuse, duplicate itoa, mixed json patterns, global state races |
-| 2026-06-12 | M13-M16 created | 4 new milestones to address audit findings: critical bugs, dead code, architecture cleanup, test coverage |
-| 2026-06-12 | Second code audit: 120 tests, not 147 | All 16 milestones reviewed against actual code. 10 fully complete, 6 partially complete. Gaps documented in each milestone file.
-| 2026-06-12 | M17: title INSIDE box, not in border | Title as bold first content line per-panel box. Avoiding complex mixed-style border construction. Still achieves "boxes" look. |
-| 2026-06-12 | M17: accordion = 40/60 split | Active panel gets 40% of content area, inactive share 60% equally. Minimum: 4 rows active, 2 inactive. Degrades to 1 at very small terminals. |
-| 2026-06-12 | M17: auto-update is non-blocking | No progress modal. UI renders immediately with loading indicators. Bottom bar shows `⟳ Updating...` / `⟳ Updated 12s ago`. Update runs in background goroutine. |
-| 2026-06-12 | M17: `R` key respects `update_on_start` | If `true`, `R` runs brew update first; if `false`, just refreshes data (current behavior). |
-| 2026-06-12 | M17: `HOMEBREW_NO_AUTO_UPDATE` confirmed safe | Does NOT block `brew update`. Only blocks implicit auto-update before other commands. Verified against Homebrew 6.0.0 source. No runner changes needed. |
-| 2026-06-12 | M17: renderBox as simple lipgloss wrapper | `lipgloss.NewStyle().Border().Width(w).Height(h).BorderForeground(c).Render(content)` — no custom border string construction. Reliable, tested behavior. |
-| 2026-06-12 | M17: 10 sub-steps, independently testable | Each step has isolated acceptance criteria and unit tests. Minimum dependency between steps. Can be implemented in any order within phase boundaries. |
-| 2026-06-12 | M17: not worth switching to gocui | 5,650+ lines of Bubble Tea would need full rewrite. Visual gap is achievable with Lip Gloss. gocui is less actively maintained than Charm ecosystem. |
-| 2026-06-12 | M17: bottom bar update ticker at 10s interval | 10s tick updates timestamp text. Not 1s — nobody needs second-accuracy on "updated X ago" and it reduces CPU overhead. |
+| 2026-06-13 | Planning pass 2 | Granular steps, challenged M18–M22 sequencing |
+| 2026-06-13 | review-template.md | Project-agnostic audit template for agents |
+| 2026-06-13 | M19.0 TypedCache | Moved from M21 — before concurrency |
+| 2026-06-13 | M22.1 early CI | Don't wait for full test pyramid |
+| 2026-06-13 | backlog.md | B-01–B-10 deferred explicitly |
+| 2026-06-13 | M17 last | Visual work after correctness + CI |
 
+---
+
+## Adoption Readiness
+
+Planning for M18–M22 is **execution-ready** when:
+
+- [x] Each step has size, deps, acceptance criteria, tests
+- [x] Challenged decisions documented
+- [x] Parallel tracks defined
+- [x] Out-of-scope in backlog.md
+- [x] Review template for future audits
+- [x] Milestone/status templates in [templates/](templates/)
+- [ ] Human sign-off on config ADR (ShowIcons deferred — see M18.9)
+
+**Ready for execution:** ☑ Yes (pending ShowIcons sign-off only)
