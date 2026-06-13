@@ -815,6 +815,356 @@ The main panel is `mh = m.height - 4`. So both sidebar and main panel have the s
 
 ---
 
+### 17.11 — Search Result Info Preview in Main Panel
+
+**What:** When the Search panel is active and a result is selected, show `brew info` for that package in the main panel. No tab switching needed — it auto-loads on selection.
+
+**Files:**
+- `internal/gui/gui.go` — Model field `searchResults`, store on `SearchDoneMsg`, info fetch handler
+- `internal/gui/messages.go` — new `SearchInfoLoadedMsg`
+- `internal/gui/render.go` — update `renderContent()` for `PanelSearch`
+- `internal/gui/commands.go` — new `fetchSearchInfo()` command
+
+**Visual target (Search selected in sidebar):**
+```
+┌─ Search ─────────────────┐ ┌─ Search › stow ──────────────────────────────────────┐
+│ ▸ stow    formula   ✓    │ │ ┌─ Package Info ────────────────────────────────────┐ │
+│   lazygit formula   ✓    │ │ │ Name:      stow                                   │ │
+│   stowage cask           │ │ │ Version:   2.4.1 (bottled)                        │ │
+│   stowaway formula       │ │ │ Type:      formula                                │ │
+│                           │ │ │ Status:    installed                              │ │
+│                           │ │ │ License:   GPL-3.0-or-later                      │ │
+│                           │ │ │ Homepage:  https://www.gnu.org/software/stow/    │ │
+│                           │ │ ├───────────────────────────────────────────────────┤ │
+│                           │ │ │ Description:                                      │ │
+│                           │ │ │   Organize software neatly under ~/stow           │ │
+│                           │ │ ├───────────────────────────────────────────────────┤ │
+│                           │ │ │ Dependencies: perl                                │ │
+│                           │ │ ├───────────────────────────────────────────────────┤ │
+│                           │ │ │ Caveats:                                          │ │
+│                           │ │ │   Emacs users: add (require 'stow) to .emacs     │ │
+│                           │ │ └───────────────────────────────────────────────────┘ │
+│                           │ │                                                       │
+│                           │ │  i: install    j/k: navigate  Enter: re-search       │
+│                           │ └───────────────────────────────────────────────────────┘
+├───────────────────────────┤
+│ j/k: ▲▼  i: install  ?: help  q: quit            │  ⟳ Updated 5m ago │
+└───────────────────────────┘
+```
+
+**Implementation:**
+
+**1. Store raw search results** (`gui.go`):
+
+Add to Model:
+```go
+searchResults []brew.SearchResult
+```
+
+Modify `SearchDoneMsg` handler in `Update()`:
+```go
+case SearchDoneMsg:
+    p := m.panels[PanelSearch]
+    p.loading = false
+    if msg.Err != nil {
+        p.err = msg.Err
+    } else {
+        p.items = msg.Items       // formatted strings (keep for sidebar)
+        m.searchResults = msg.Raw // NEW: raw data for info fetching
+    }
+    m.switchPanel(PanelSearch)
+    return m, nil
+```
+
+**2. Update `SearchDoneMsg`** (`messages.go`):
+```go
+type SearchDoneMsg struct {
+    Items   []string          // formatted display strings
+    Raw     []brew.SearchResult // raw results for info
+    Err     error
+}
+```
+
+**3. Update `executeSearch`** (`commands.go`):
+```go
+items := make([]string, len(results))
+for i, r := range results {
+    // ... existing formatting ...
+}
+return SearchDoneMsg{Items: items, Raw: results, Err: nil}
+```
+
+**4. Info loading on selection change** (`gui.go`):
+
+Add a case to detect selection changes in the Search panel. The simplest approach: load info whenever `j`/`k` is pressed and the Search panel is active. Or more elegantly: check in a new `searchSelectionChanged()` method.
+
+Simplest approach — in the `j`/`k` handlers, after the existing `p.down()`/`p.up()`:
+```go
+case "j", "down":
+    m.panels[m.activePanel].down()
+    if m.activePanel == PanelSearch {
+        return m, m.fetchSelectedSearchInfo()
+    }
+case "k", "up":
+    m.panels[m.activePanel].up()
+    if m.activePanel == PanelSearch {
+        return m, m.fetchSelectedSearchInfo()
+    }
+```
+
+And also when search results first arrive:
+```go
+case SearchDoneMsg:
+    // ... store results ...
+    return m, m.fetchSelectedSearchInfo()  // load info for first result
+```
+
+**5. `SearchInfoLoadedMsg`** (`messages.go`):
+```go
+type SearchInfoLoadedMsg struct {
+    Content string
+    Err     error
+}
+```
+
+**6. `fetchSelectedSearchInfo`** (`commands.go`):
+```go
+func (m Model) fetchSelectedSearchInfo() tea.Cmd {
+    if m.activePanel != PanelSearch || m.panels[PanelSearch].selected >= len(m.searchResults) {
+        return nil
+    }
+    r := m.searchResults[m.panels[PanelSearch].selected]
+    name := r.Name
+
+    return func() tea.Msg {
+        ctx := context.Background()
+        output, err := m.client.Runner.Execute(ctx, "info", "--json=v2", name)
+        if err != nil {
+            return SearchInfoLoadedMsg{Err: err}
+        }
+        return SearchInfoLoadedMsg{
+            Content: string(output),  // raw JSON, formatted in renderContent
+        }
+    }
+}
+```
+
+**7. Store info content** (`gui.go`):
+
+Add to Model:
+```go
+searchInfoContent string  // cached info content for current selection
+```
+
+Handler:
+```go
+case SearchInfoLoadedMsg:
+    if msg.Err != nil {
+        m.searchInfoContent = "Error: " + msg.Err.Error()
+    } else {
+        m.searchInfoContent = msg.Content
+    }
+    return m, nil
+```
+
+**8. Render info in main panel** (`render.go`):
+
+Update `renderContent()` — add a `PanelSearch` case that renders info instead of a generic list:
+```go
+case PanelSearch:
+    if m.searchInfoContent == "" {
+        return style.SubtleText.Render("No package selected")
+    }
+    return m.renderSearchInfo(mw, height)
+```
+
+**9. `renderSearchInfo`** new method (`render.go`):
+```go
+func (m Model) renderSearchInfo(width, height int) string {
+    // Parse the JSON from searchInfoContent
+    // Format into sub-box display
+    // For JSON response shape:
+    // { "formulae": [{...}], "casks": [{...}] }
+    //
+    // Use lipgloss boxes to show:
+    //   ┌─ Package Info ─────────────┐
+    //   │ Name:   stow              │
+    //   │ ...                       │
+    //   ├───────────────────────────┤
+    //   │ Description               │
+    //   ├───────────────────────────┤
+    //   │ Dependencies              │
+    //   └───────────────────────────┘
+}
+```
+
+Format the info as sub-boxes:
+```go
+func (m Model) renderSearchInfo(width, height int) string {
+    info, err := parsePackageInfo(m.searchInfoContent)
+    if err != nil {
+        return style.ErrorBadge.Render("Parse error: " + err.Error())
+    }
+
+    // ┌─ Package Info ──────────────┐
+    var lines []string
+    lines = append(lines, fmt.Sprintf("Name:     %s", info.Name))
+    lines = append(lines, fmt.Sprintf("Version:  %s%s", info.Version, bottledSuffix(info)))
+    lines = append(lines, fmt.Sprintf("Type:     %s", info.Type))
+    status := "not installed"
+    if info.Installed {
+        status = fmt.Sprintf("installed (%s)", info.InstallPath)
+    }
+    lines = append(lines, fmt.Sprintf("Status:   %s", status))
+    if info.License != "" {
+        lines = append(lines, fmt.Sprintf("License:  %s", info.License))
+    }
+    if info.Homepage != "" {
+        lines = append(lines, fmt.Sprintf("Homepage: %s", info.Homepage))
+    }
+
+    infoBox := renderBox(lipgloss.JoinVertical(lipgloss.Top, lines...),
+        width-2, len(lines)+1, true)
+
+    // Description sub-box
+    descBox := ""
+    if info.Description != "" {
+        descBox = renderBox(style.NormalItem.Render(info.Description),
+            width-2, 2, false)
+    }
+
+    // Dependencies sub-box
+    depsBox := ""
+    if len(info.Dependencies) > 0 {
+        deps := lipgloss.JoinVertical(lipgloss.Top,
+            mapToStyled(info.Dependencies, style.NormalItem)...)
+        depsBox = renderBox(deps, width-2, len(info.Dependencies)+1, false)
+    }
+
+    return lipgloss.JoinVertical(lipgloss.Top, infoBox, descBox, depsBox)
+}
+```
+
+**Important simplification**: Rather than rendering sub-boxes with `renderBox` (which adds a border), we can use a simple approach:
+- Main panel already has an outer border (from 17.8)
+- Info content is rendered as styled text inside the main border
+- Use horizontal rules (`─`) as visual separators between sections
+- Section headers in bold/accent
+
+This is simpler and avoids nested borders:
+```
+┌─ Search › stow ────────────────────────────────────┐
+│ Name:      stow                                      │
+│ Version:   2.4.1 (bottled)                           │
+│ Type:      formula                                   │
+│ Status:    not installed                             │
+│ ─────────────────────────────────────────────────── │
+│ Description:                                         │
+│   Organize software neatly under ~/stow               │
+│ ─────────────────────────────────────────────────── │
+│ Dependencies:                                        │
+│   perl                                               │
+│ ─────────────────────────────────────────────────── │
+│ Caveats:                                             │
+│   Emacs users: add (require 'stow) to .emacs        │
+└──────────────────────────────────────────────────────┘
+```
+
+**10. `parsePackageInfo`** helper (`commands.go`):
+```go
+type pkgInfo struct {
+    Name         string
+    Version      string
+    Type         string     // "formula" or "cask"
+    Bottled      bool
+    Installed    bool
+    InstallPath  string
+    License      string
+    Description  string
+    Homepage     string
+    Dependencies []string
+    Caveats      string
+}
+
+func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
+    // Parse brew info --json=v2 output
+    // Structure: { "formulae": [...], "casks": [...] }
+    // At most one array has one element
+    var result struct {
+        Formulae []brew.Formula `json:"formulae"`
+        Casks    []brew.Cask    `json:"casks"`
+    }
+    if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+        return nil, err
+    }
+
+    if len(result.Formulae) > 0 {
+        f := result.Formulae[0]
+        return &pkgInfo{
+            Name:        f.Name,
+            Version:     f.Version,
+            Type:        "formula",
+            Bottled:     f.Bottled,
+            Installed:   f.InstalledOnReq || f.InstalledAsDep,
+            InstallPath: f.InstallPath,
+            License:     f.License,
+            Description: f.Description,
+            Homepage:    f.Homepage,
+            Dependencies: append(f.Dependencies, f.BuildDeps...),
+            Caveats:     f.Caveats,
+        }, nil
+    }
+    if len(result.Casks) > 0 {
+        c := result.Casks[0]
+        return &pkgInfo{
+            Name:         c.Name,
+            Version:      c.Version,
+            Type:         "cask",
+            Installed:    false, // installed detection from search result
+            Description:  c.Description,
+            Homepage:     c.Homepage,
+            Dependencies: c.DependsOn,
+        }, nil
+    }
+
+    return nil, fmt.Errorf("no package info found")
+}
+```
+
+**Edge cases:**
+- No selection → main panel shows "No package selected"
+- Fetch error → "Error: failed to load package info"
+- Not installed → show "not installed" in accent/warning
+- No description → skip description section
+- No dependencies → skip dependencies section
+- Package name changed between search and info fetch (rare) → handle gracefully
+
+**Caching:**
+- `searchInfoContent` caches the last fetched info
+- When selection changes, re-fetch
+- A simple map cache (`map[string]string`) on the Model could avoid redundant fetches for frequently-viewed packages
+
+**Keybindings update:**
+- `i` still installs (unchanged)
+- `Enter` could re-run search (future)
+- Tab switching is irrelevant — Search has only one tab
+
+**Acceptance criteria:**
+- [ ] Selecting a search result in sidebar loads package info in main panel
+- [ ] Formula info shows name, version, type, status, license, homepage
+- [ ] Cask info shows name, version, type, status, homepage
+- [ ] Not installed shows "not installed" clearly
+- [ ] Description section shown when available
+- [ ] Dependencies section shown when available
+- [ ] Caveats section shown when available
+- [ ] "No package selected" when search is empty or no selection
+- [ ] Error state shown when info fetch fails
+- [ ] Info updates when navigating to a different result
+- [ ] `i` still installs from the info view
+- [ ] JSON parse errors render gracefully (not a crash)
+
+---
+
 ## Tests for This Milestone
 
 | Test | Type | File | What It Validates |
@@ -834,6 +1184,13 @@ The main panel is `mh = m.height - 4`. So both sidebar and main panel have the s
 | `TestRenderBreadcrumb` | Unit | `gui_test.go` | Main panel shows `PanelName › TabName` |
 | `TestExistingNavigation` | Unit | `gui_test.go` | All existing navigation tests still pass |
 | `TestExistingTabSwitching` | Unit | `gui_test.go` | All existing tab tests still pass |
+| `TestSearchInfoLoadsOnSelection` | Unit | `gui_test.go` | Selecting search result triggers info fetch |
+| `TestSearchInfoRenders` | Unit | `gui_test.go` | Info content renders correctly in main panel |
+| `TestSearchInfoEmpty` | Unit | `gui_test.go` | "No package selected" when no selection |
+| `TestSearchInfoError` | Unit | `gui_test.go` | Error state renders for failed info fetch |
+| `TestParsePackageInfo` | Unit | `gui_test.go` | Formula info parsed from JSON correctly |
+| `TestParsePackageInfoCask` | Unit | `gui_test.go` | Cask info parsed from JSON correctly |
+| `TestParsePackageInfoInvalid` | Unit | `gui_test.go` | Invalid JSON returns error gracefully |
 
 ---
 
@@ -850,3 +1207,6 @@ The main panel is `mh = m.height - 4`. So both sidebar and main panel have the s
 - [ ] All existing tests pass
 - [ ] Renders correctly at 80x24 minimum terminal size
 - [ ] No regressions in mutation/panel navigation/tab switching
+- [ ] Search results show package info in main panel on selection
+- [ ] Formula/cask info renders correctly (name, version, type, status, deps)
+- [ ] `i` still installs from the info view
