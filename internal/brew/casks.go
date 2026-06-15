@@ -3,7 +3,6 @@ package brew
 import (
 	"context"
 	"encoding/json"
-	"strings"
 )
 
 type CasksReader interface {
@@ -40,12 +39,63 @@ func NewCasksWriter(runner Runner, cache *Cache) CasksWriter {
 	return &casksWriter{runner: runner, cache: cache}
 }
 
+type flexString string
+
+func (f *flexString) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		*f = flexString(s)
+		return nil
+	}
+	var a []string
+	if err := json.Unmarshal(data, &a); err == nil {
+		if len(a) > 0 {
+			*f = flexString(a[0])
+		}
+		return nil
+	}
+	return json.Unmarshal(data, (*string)(f))
+}
+
+type flexStrings []string
+
+func (f *flexStrings) UnmarshalJSON(data []byte) error {
+	var a []interface{}
+	if err := json.Unmarshal(data, &a); err == nil {
+		for _, v := range a {
+			switch val := v.(type) {
+			case string:
+				*f = append(*f, val)
+			case map[string]interface{}:
+				if name, ok := val["name"].(string); ok {
+					*f = append(*f, name)
+				}
+			}
+		}
+		if *f == nil {
+			*f = flexStrings{}
+		}
+		return nil
+	}
+	var obj map[string]interface{}
+	if err := json.Unmarshal(data, &obj); err == nil {
+		if name, ok := obj["name"].(string); ok {
+			*f = append(*f, name)
+		}
+		if *f == nil {
+			*f = flexStrings{}
+		}
+		return nil
+	}
+	return json.Unmarshal(data, (*[]string)(f))
+}
+
 type casksJSON struct {
 	Casks []caskJSON `json:"casks"`
 }
 
 type caskJSON struct {
-	Name        string        `json:"name"`
+	Name        flexString     `json:"name"`
 	FullName    string        `json:"full_name"`
 	Tap         string        `json:"tap"`
 	Version     string        `json:"version"`
@@ -56,9 +106,9 @@ type caskJSON struct {
 	Pinned      bool          `json:"pinned"`
 	Sha256      string        `json:"sha256"`
 	URL         string        `json:"url"`
-	Installed   []interface{} `json:"installed"`
+	Installed   interface{}    `json:"installed"`
 	Artifacts   []interface{} `json:"artifacts"`
-	DependsOn   []string      `json:"depends_on"`
+	DependsOn   flexStrings    `json:"depends_on"`
 	Namespace   string        `json:"_namespace"`
 }
 
@@ -106,7 +156,7 @@ func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
 
 	output, err := s.runner.Execute(ctx, "outdated", "--json=v2", "--cask")
 	if err != nil {
-		if strings.Contains(err.Error(), "no outdated") {
+		if IsExitCode(err, 1) {
 			return []Cask{}, nil
 		}
 		return nil, err
@@ -185,8 +235,8 @@ func (s *casksWriter) Unpin(ctx context.Context, name string) error {
 
 func parseCask(c caskJSON) Cask {
 	version := c.Version
-	if len(c.Installed) > 0 {
-		if m, ok := c.Installed[0].(map[string]interface{}); ok {
+	if installed, ok := c.Installed.([]interface{}); ok && len(installed) > 0 {
+		if m, ok := installed[0].(map[string]interface{}); ok {
 			if v, ok := m["version"].(string); ok {
 				version = v
 			}
@@ -213,7 +263,7 @@ func parseCask(c caskJSON) Cask {
 	}
 
 	return Cask{
-		Name:        c.Name,
+		Name:        string(c.Name),
 		FullName:    c.FullName,
 		Tap:         c.Tap,
 		Version:     version,
@@ -224,6 +274,6 @@ func parseCask(c caskJSON) Cask {
 		Sha256:      c.Sha256,
 		URL:         c.URL,
 		Artifacts:   artifactNames,
-		DependsOn:   c.DependsOn,
+		DependsOn:   []string(c.DependsOn),
 	}
 }

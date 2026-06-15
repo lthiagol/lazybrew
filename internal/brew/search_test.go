@@ -7,18 +7,8 @@ import (
 
 func TestSearchServiceSearch(t *testing.T) {
 	r := NewMockRunner()
-	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
-		data := result.(*searchJSON)
-		*data = searchJSON{
-			Formulae: []searchItemJSON{
-				{Name: "neovim", FullName: "neovim", Description: "Vim-fork focused on extensibility", Installed: []interface{}{map[string]interface{}{"version": "0.10.4"}}},
-				{Name: "neovim-qt", FullName: "neovim-qt", Description: "Neovim client library and GUI"},
-			},
-			Casks: []searchItemJSON{
-				{Name: "neovide", FullName: "neovide", Description: "Neovim client in Rust"},
-			},
-		}
-		return nil
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte("==> Formulae\nneovim\nneovim-qt\n\n==> Casks\nneovide"), nil
 	}
 	svc := NewSearchService(r)
 
@@ -31,18 +21,12 @@ func TestSearchServiceSearch(t *testing.T) {
 		t.Fatalf("expected 3 results, got %d", len(results))
 	}
 
-	installed := results[0]
-	if installed.Name != "neovim" {
-		t.Errorf("Name = %q, want neovim", installed.Name)
+	f := results[0]
+	if f.Name != "neovim" {
+		t.Errorf("Name = %q, want neovim", f.Name)
 	}
-	if !installed.IsFormula {
+	if !f.IsFormula {
 		t.Error("neovim should be a formula")
-	}
-	if !installed.Installed {
-		t.Error("neovim should be marked installed")
-	}
-	if installed.Version != "0.10.4" {
-		t.Errorf("Version = %q, want 0.10.4", installed.Version)
 	}
 
 	cask := results[2]
@@ -56,10 +40,8 @@ func TestSearchServiceSearch(t *testing.T) {
 
 func TestSearchServiceEmpty(t *testing.T) {
 	r := NewMockRunner()
-	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
-		data := result.(*searchJSON)
-		*data = searchJSON{}
-		return nil
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte("==> Formulae\n\n==> Casks"), nil
 	}
 	svc := NewSearchService(r)
 
@@ -74,14 +56,11 @@ func TestSearchServiceEmpty(t *testing.T) {
 
 func TestSearchServiceSearchDesc(t *testing.T) {
 	r := NewMockRunner()
-	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
-		data := result.(*searchJSON)
-		*data = searchJSON{
-			Formulae: []searchItemJSON{
-				{Name: "ripgrep", Description: "Search tool like grep but faster"},
-			},
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 2 && args[0] == "--desc" {
+			return []byte("ripgrep"), nil
 		}
-		return nil
+		return []byte("==> Formulae\nripgrep"), nil
 	}
 	svc := NewSearchService(r)
 
@@ -89,7 +68,33 @@ func TestSearchServiceSearchDesc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("results: %+v", results)
 	if len(results) != 1 || results[0].Name != "ripgrep" {
 		t.Errorf("got %v, want [ripgrep]", results)
+	}
+}
+
+func TestParseSearchOutput(t *testing.T) {
+	raw := "==> Formulae\nfzf\nripgrep\n\n==> Casks\nfirefox\nspotify"
+	results := parseSearchOutput(raw)
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+	if results[0].Name != "fzf" || !results[0].IsFormula {
+		t.Error("fzf should be a formula")
+	}
+	if results[2].Name != "firefox" || !results[2].IsCask {
+		t.Error("firefox should be a cask")
+	}
+}
+
+func TestParseSearchOutputFormulaeOnly(t *testing.T) {
+	raw := "fzf\nripgrep"
+	results := parseSearchOutput(raw)
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+	if !results[0].IsFormula {
+		t.Error("should default to formula when no section headers")
 	}
 }

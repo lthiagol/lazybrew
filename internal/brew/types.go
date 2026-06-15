@@ -31,7 +31,7 @@ type Formula struct {
 	Binaries            []string `json:"binaries,omitempty"`             // executables installed by this formula
 	InstalledDependents []string `json:"installed_dependents,omitempty"` // reverse deps (installed only)
 	ListVersions        []string `json:"list_versions,omitempty"`        // all installed version history
-	Revision            string   `json:"revision,omitempty"`             // formula revision
+	Revision            int      `json:"revision,omitempty"`             // formula revision
 	Shadowed            bool     `json:"shadowed,omitempty"`             // PATH shadowing warning
 }
 

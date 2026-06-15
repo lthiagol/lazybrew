@@ -107,6 +107,7 @@ func (r *DefaultRunner) ExecuteJSON(ctx context.Context, result any, args ...str
 		return err
 	}
 	if err := json.Unmarshal(stdout, result); err != nil {
+		Logger().Warn("json parse failed", "args", strings.Join(args, " "), "cause", err.Error(), "raw", string(stdout)[:min(len(stdout), 200)])
 		return &JSONParseError{
 			Command:   strings.Join(args, " "),
 			Cause:     err,

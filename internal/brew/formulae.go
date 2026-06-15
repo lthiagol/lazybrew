@@ -56,7 +56,7 @@ type formulaJSON struct {
 	Homepage            string           `json:"homepage"`
 	License             string           `json:"license"`
 	Installed           []installedJSON  `json:"installed"`
-	Dependencies        []dependencyJSON `json:"dependencies"`
+	Dependencies        flexStrings      `json:"dependencies"`
 	BuildDependencies   []string         `json:"build_dependencies"`
 	Caveats             string           `json:"caveats"`
 	KegOnly             bool             `json:"keg_only"`
@@ -66,7 +66,7 @@ type formulaJSON struct {
 	Binaries            []string         `json:"binaries,omitempty"`
 	InstalledDependents []string         `json:"installed_dependents,omitempty"`
 	ListVersions        []string         `json:"list_versions,omitempty"`
-	Revision            string           `json:"revision,omitempty"`
+	Revision            int              `json:"revision,omitempty"`
 	Shadowed            bool             `json:"shadowed,omitempty"`
 }
 
@@ -80,7 +80,7 @@ type installedJSON struct {
 	InstalledOnRequest  bool     `json:"installed_on_request"`
 	InstalledAsDep      bool     `json:"installed_as_dependency"`
 	Time                int64    `json:"time"`
-	RuntimeDependencies []string `json:"runtime_dependencies"`
+	RuntimeDependencies flexStrings `json:"runtime_dependencies"`
 }
 
 type dependencyJSON struct {
@@ -156,7 +156,7 @@ func (s *formulaeReader) Outdated(ctx context.Context) ([]Formula, error) {
 
 	output, err := s.runner.Execute(ctx, "outdated", "--json=v2", "--formula")
 	if err != nil {
-		if strings.Contains(err.Error(), "no outdated") {
+		if IsExitCode(err, 1) {
 			return []Formula{}, nil
 		}
 		return nil, err
@@ -275,15 +275,12 @@ func parseFormula(f formulaJSON) Formula {
 		installedOn = time.Unix(inst.Time, 0)
 		installedOnReq = inst.InstalledOnRequest
 		installedAsDep = inst.InstalledAsDep
-		deps = inst.RuntimeDependencies
+		deps = []string(inst.RuntimeDependencies)
 	} else if f.Versions.Stable != "" {
 		version = f.Versions.Stable
 	}
 
-	var buildDeps []string
-	for _, d := range f.Dependencies {
-		buildDeps = append(buildDeps, d.Name)
-	}
+	buildDeps := []string(f.Dependencies)
 
 	bottled := len(f.Bottle.Stable.Files) > 0
 

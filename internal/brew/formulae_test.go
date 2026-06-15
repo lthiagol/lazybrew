@@ -370,7 +370,7 @@ func TestFormulaeJSONParse6Point0Fields(t *testing.T) {
 			"installed": [{"version":"14.1.1","installed_on_request":true,"installed_as_dependency":false,"time":1700000000}],
 			"binaries": ["rg"],
 			"list_versions": ["14.1.0","14.1.1"],
-			"revision": "1",
+			"revision": 1,
 			"shadowed": false
 		}]
 	}`
@@ -395,8 +395,8 @@ func TestFormulaeJSONParse6Point0Fields(t *testing.T) {
 	if len(f.ListVersions) != 2 {
 		t.Errorf("ListVersions = %v, want [14.1.0 14.1.1]", f.ListVersions)
 	}
-	if f.Revision != "1" {
-		t.Errorf("Revision = %q, want 1", f.Revision)
+	if f.Revision != 1 {
+		t.Errorf("Revision = %d, want 1", f.Revision)
 	}
 }
 

@@ -1,6 +1,7 @@
 package brew
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -45,4 +46,12 @@ type TimeoutError struct {
 
 func (e *TimeoutError) Error() string {
 	return fmt.Sprintf("brew %s timed out after %s", e.Command, e.Timeout)
+}
+
+func IsExitCode(err error, code int) bool {
+	var e *BrewExitError
+	if errors.As(err, &e) {
+		return e.ExitCode == code
+	}
+	return false
 }

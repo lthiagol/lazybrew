@@ -11,7 +11,7 @@ import (
 var logger atomic.Value
 
 func init() {
-	logger.Store(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+	logger.Store(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{
 		Level: slog.LevelWarn,
 	})))
 }
@@ -39,8 +39,7 @@ func EnableFileLogging(path string) error {
 	if err != nil {
 		return err
 	}
-	w := io.MultiWriter(os.Stderr, f)
-	logger.Store(slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{
+	logger.Store(slog.New(slog.NewTextHandler(f, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	})))
 	return nil

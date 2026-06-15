@@ -80,7 +80,7 @@ func TestFormulaHas6Point0Fields(t *testing.T) {
 		Binaries:            []string{"rg"},
 		InstalledDependents: []string{"other-pkg"},
 		ListVersions:        []string{"14.1.0", "14.1.1"},
-		Revision:            "1",
+		Revision:            1,
 	}
 	if len(f.Aliases) != 1 {
 		t.Error("Formula.Aliases should be populated")
