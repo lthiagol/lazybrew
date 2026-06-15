@@ -51,7 +51,7 @@ var panelTabs = map[PanelID][]tabInfo{
 	PanelOutdated: {{"Info", 0}, {"Versions", 1}},
 	PanelTaps:     {{"Tap Info", 0}, {"Trust", 1}, {"Formulae", 2}},
 	PanelServices: {{"Status", 0}},
-	PanelSearch:   {{"Info", 0}},
+	PanelSearch:   {},
 }
 
 type panelData struct {
@@ -72,6 +72,7 @@ type panelData struct {
 	casks           []brew.Cask
 	taps            []brew.Tap
 	services        []brew.Service
+	visibleRows     int
 }
 
 func (p *panelData) itemCount() int {
@@ -79,12 +80,19 @@ func (p *panelData) itemCount() int {
 }
 
 func (p *panelData) visibleCount() int {
+	if p.visibleRows > 0 {
+		return p.visibleRows
+	}
 	return max(1, p.height-3)
 }
 
 func (p *panelData) up() {
 	if p.selected > 0 {
 		p.selected--
+	} else if len(p.items) > 0 {
+		p.selected = len(p.items) - 1
+		p.offset = max(0, p.selected-p.visibleCount()+1)
+		return
 	}
 	if p.selected < p.offset {
 		p.offset = p.selected
@@ -94,6 +102,10 @@ func (p *panelData) up() {
 func (p *panelData) down() {
 	if p.selected < len(p.items)-1 {
 		p.selected++
+	} else if len(p.items) > 0 {
+		p.selected = 0
+		p.offset = 0
+		return
 	}
 	if p.selected >= p.offset+p.visibleCount() {
 		p.offset = p.selected - p.visibleCount() + 1
@@ -193,7 +205,11 @@ func (p *panelData) renderSidebarContent(width, maxRows int) string {
 		return lipgloss.NewStyle().Width(width).Render(style.SubtleText.Render("..."))
 	}
 	if p.err != nil {
-		return lipgloss.NewStyle().Width(width).Render(style.ErrorBadge.Render("!"))
+		msg := p.err.Error()
+		if len(msg) > width-2 && width > 10 {
+			msg = msg[:width-5] + "..."
+		}
+		return lipgloss.NewStyle().Width(width).Render(style.ErrorBadge.Render(msg))
 	}
 	count := len(p.items)
 	if count == 0 {
@@ -271,10 +287,14 @@ func initPanels() []*panelData {
 		{PanelSearch, "Search"},
 	}
 	for i, def := range panelDefs {
+		loading := true
+		if def.id == PanelSearch {
+			loading = false
+		}
 		panels[i] = &panelData{
 			id:      def.id,
 			title:   def.title,
-			loading: true,
+			loading: loading,
 		}
 	}
 	panels[0].active = true

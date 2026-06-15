@@ -1208,3 +1208,22 @@ func fetchStatusData(client *brew.Client) tea.Cmd {
 		return DataLoadedMsg{PanelID: PanelStatus, Items: items, Err: nil}
 	}
 }
+
+func parseUpdateSummary(lines []string) string {
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if strings.Contains(line, "Already up-to-date") {
+			return "Already up to date"
+		}
+		if strings.HasPrefix(line, "Updated") {
+			return strings.TrimRight(line, ".")
+		}
+		if strings.HasPrefix(line, "Error:") {
+			return ""
+		}
+	}
+	return ""
+}

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -52,6 +53,7 @@ type Model struct {
 
 	searchResults     []brew.SearchResult
 	searchInfoContent string
+	searchInput       textinput.Model
 
 	tasks      *task.Manager
 	commandLog *CommandLog
@@ -68,6 +70,9 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	panels := initPanels()
 	cl := NewCommandLog(20)
 	s := spinner.New(spinner.WithStyle(style.SubtleText))
+	ti := textinput.New()
+	ti.Placeholder = "Search packages..."
+	ti.Width = 40
 	return &Model{
 		client:      client,
 		cfg:         cfg,
@@ -80,6 +85,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		tasks:       task.NewManager(task.DefaultMaxQueue),
 		commandLog:  cl,
 		spinner:     s,
+		searchInput: ti,
 	}
 }
 
@@ -171,7 +177,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.searchResults = msg.Raw
 		}
 		m.switchPanel(PanelSearch)
-		return m, m.fetchSelectedSearchInfo()
+		return m, nil
 
 	case SearchInfoLoadedMsg:
 		if msg.Err != nil {
@@ -231,6 +237,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.ID == "brew-update" {
 			m.isUpdating = false
 			m.lastUpdate = time.Now()
+			if msg.Err != nil {
+				m.toast = modal.NewToast("Update: "+msg.Err.Error(), modal.ToastError)
+			} else {
+				summary := parseUpdateSummary(m.updateOutput)
+				if summary != "" {
+					m.toast = modal.NewToast(summary, modal.ToastSuccess)
+				}
+			}
 			return m, tea.Batch(
 				m.tasks.RunNext(),
 				func() tea.Msg { return RefreshMsg{} },
@@ -399,12 +413,39 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		if m.searchInput.Focused() {
+			switch msg.String() {
+			case "esc":
+				m.searchInput.Blur()
+				return m, nil
+			case "enter":
+				q := strings.TrimSpace(m.searchInput.Value())
+				if q != "" {
+					m.searchInput.Blur()
+					return m, m.executeSearch(q)
+				}
+				return m, nil
+			case "q", "ctrl+c":
+				if m.searchInput.Value() == "" {
+					return m, tea.Quit
+				}
+				m.searchInput, cmd = m.searchInput.Update(msg)
+				return m, cmd
+			default:
+				m.searchInput, cmd = m.searchInput.Update(msg)
+				return m, cmd
+			}
+		}
+
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "esc":
 			if m.showHelp {
 				m.showHelp = false
+			}
+			if m.searchInput.Focused() {
+				m.searchInput.Blur()
 			}
 			return m, nil
 		case "R":
@@ -454,17 +495,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "j", "down":
 			m.panels[m.activePanel].down()
-			if m.activePanel == PanelSearch {
-				return m, m.fetchSelectedSearchInfo()
-			}
 			if needsTabFetch(m.activePanel, m.activeTab) {
 				return m, m.loadTabContent()
 			}
 		case "k", "up":
 			m.panels[m.activePanel].up()
-			if m.activePanel == PanelSearch {
-				return m, m.fetchSelectedSearchInfo()
-			}
 			if needsTabFetch(m.activePanel, m.activeTab) {
 				return m, m.loadTabContent()
 			}
@@ -474,9 +509,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "]":
 			cmd = m.nextTab()
 
+		case "left":
+			cmd = m.prevTab()
+		case "right":
+			cmd = m.nextTab()
+
 		case "/":
+			if m.activePanel == PanelSearch {
+				m.searchInput.Focus()
+				return m, m.searchInput.Cursor.BlinkCmd()
+			}
 			m, cmd := m.startSearch()
 			return m, cmd
+
+		case "enter":
+			if m.activePanel == PanelSearch && m.searchInput.Value() != "" {
+				m.searchInput.Blur()
+				return m, m.executeSearch(m.searchInput.Value())
+			}
+			if m.activePanel == PanelSearch && len(m.searchResults) > 0 {
+				return m, m.fetchSelectedSearchInfo()
+			}
 
 		case "?":
 			m.showHelp = !m.showHelp
@@ -596,6 +649,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	if m.activePanel == PanelSearch && !m.searchInput.Focused() {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes && len(keyMsg.Runes) > 0 {
+			m.searchInput.Focus()
+			m.searchInput, cmd = m.searchInput.Update(msg)
+			return m, cmd
+		}
+	}
+
 	if m.activeModal != nil {
 		updated, cmd := m.activeModal.Update(msg)
 		if modal, ok := updated.(modal.Modal); ok {
@@ -688,6 +749,13 @@ func (m *Model) switchPanel(id PanelID) {
 	m.panels[m.activePanel].active = true
 	m.activeTab = 0
 	m.tabs = panelTabs[m.activePanel]
+	if id == PanelSearch {
+		if len(m.searchResults) == 0 {
+			m.searchInput.Focus()
+		}
+	} else {
+		m.searchInput.Blur()
+	}
 }
 
 func (m *Model) nextTab() tea.Cmd {

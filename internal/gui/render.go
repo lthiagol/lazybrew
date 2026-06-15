@@ -26,6 +26,7 @@ func (m Model) renderSidebar() string {
 		}
 		titleLine := style.PanelTitle.Render(title)
 		itemsMaxRows := max(0, heights[i]-1)
+		p.visibleRows = itemsMaxRows
 		itemsContent := p.renderSidebarContent(contentWidth, itemsMaxRows)
 		fullContent := lipgloss.JoinVertical(lipgloss.Top, titleLine, itemsContent)
 		box := renderBox(fullContent, contentWidth, heights[i], i == int(m.activePanel))
@@ -121,16 +122,22 @@ func (m Model) computeContentHeights() []int {
 		activeRows = minActive
 	}
 	remaining := availableRows - activeRows
-	inactiveRows := remaining / max(1, n-1)
+	inactiveCount := n - 1
+	inactiveRows := remaining / max(1, inactiveCount)
 	if inactiveRows < minInactive {
 		inactiveRows = minInactive
 	}
+	extra := availableRows - activeRows - inactiveRows*inactiveCount
 	heights := make([]int, n)
 	for i := range heights {
 		if i == int(m.activePanel) {
 			heights[i] = activeRows
 		} else {
 			heights[i] = inactiveRows
+		}
+		if extra > 0 {
+			heights[i]++
+			extra--
 		}
 	}
 	return heights
@@ -231,6 +238,21 @@ func (m Model) renderContent(width, height int) string {
 	case PanelTaps:
 		switch m.activeTab {
 		case 0:
+			if panel.taps != nil && len(panel.taps) > 0 {
+				official := 0
+				trusted := 0
+				for _, t := range panel.taps {
+					if t.IsOfficial {
+						official++
+					}
+					if t.Trusted || t.IsOfficial {
+						trusted++
+					}
+				}
+				header := fmt.Sprintf("%d taps  |  %d official  %d trusted  %d untrusted",
+					len(panel.taps), official, trusted, len(panel.taps)-trusted)
+				return style.SubtleText.Render(header) + "\n" + panel.renderList(width, height-1, nil)
+			}
 			return panel.renderList(width, height, nil)
 		case 1:
 			t := panel.selectedTap()
@@ -281,10 +303,21 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelSearch:
-		if m.searchInfoContent == "" {
-			return style.SubtleText.Render("No package selected")
+		searchBox := style.AccentText.Render("/ ") + m.searchInput.View()
+		searchBox = style.NormalItem.Render(searchBox)
+		help := style.SubtleText.Render("  Enter to search  |  Esc to clear")
+		top := lipgloss.JoinVertical(lipgloss.Top, searchBox, help, "")
+
+		if len(m.searchResults) == 0 && m.searchInfoContent == "" {
+			if !m.panels[PanelSearch].loading {
+				return top + "\n" + style.SubtleText.Render("Search for Homebrew packages...")
+			}
+			return top + "\n" + m.spinner.View() + style.SubtleText.Render(" Searching...")
 		}
-		return m.renderSearchInfo(width, height)
+		if m.searchInfoContent != "" {
+			return top + "\n" + m.renderSearchInfo(width, height-3)
+		}
+		return top + "\n" + style.SubtleText.Render("Select a result to see details")
 	}
 
 	return panel.renderList(width, height, nil)

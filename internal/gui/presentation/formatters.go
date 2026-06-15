@@ -107,11 +107,23 @@ func FormatStatusDashboard(
 		lines = append(lines, fmt.Sprintf("Prefix: %s", prefix))
 	}
 	lines = append(lines, "")
-	lines = append(lines, fmt.Sprintf("Formulae: %d installed", formulaeCount))
-	lines = append(lines, fmt.Sprintf("Casks: %d installed", casksCount))
-	lines = append(lines, fmt.Sprintf("Outdated: %d packages", outdatedCount))
-	lines = append(lines, fmt.Sprintf("Taps: %d (%d official, %d third-party)", tapsCount, officialTaps, thirdPartyTaps))
-	lines = append(lines, fmt.Sprintf("Services: %d (%d running, %d stopped)", servicesCount, servicesStarted, servicesCount-servicesStarted))
+	lines = append(lines, fmt.Sprintf("Formulae:  %d installed", formulaeCount))
+	lines = append(lines, fmt.Sprintf("Casks:     %d installed", casksCount))
+	if outdatedCount > 0 {
+		lines = append(lines, fmt.Sprintf("Outdated:  %d packages", outdatedCount))
+	} else {
+		lines = append(lines, "Outdated:  0 packages")
+	}
+	lines = append(lines, "")
+	lines = append(lines, fmt.Sprintf("Taps:      %d total", tapsCount))
+	lines = append(lines, fmt.Sprintf("           %d official, %d third-party", officialTaps, thirdPartyTaps))
+	lines = append(lines, "")
+	if servicesCount > 0 {
+		lines = append(lines, fmt.Sprintf("Services:  %d total", servicesCount))
+		lines = append(lines, fmt.Sprintf("           %d running, %d stopped", servicesStarted, servicesCount-servicesStarted))
+	} else {
+		lines = append(lines, "Services:  0")
+	}
 	lines = append(lines, "")
 	lines = append(lines, "R to refresh")
 	return lines

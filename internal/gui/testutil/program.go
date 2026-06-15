@@ -17,3 +17,12 @@ func NewTestModel(t *testing.T, opts ...teatest.TestOption) *teatest.TestModel {
 	tm := teatest.NewTestModel(t, m, opts...)
 	return tm
 }
+
+func NewTestModelWithRunner(t *testing.T, runner brew.Runner, opts ...teatest.TestOption) *teatest.TestModel {
+	t.Helper()
+	cfg := config.Default()
+	client := brew.NewClient(runner)
+	m := gui.New(client, cfg)
+	tm := teatest.NewTestModel(t, m, opts...)
+	return tm
+}
