@@ -154,7 +154,7 @@ Post-Milestone Gate section = verification checklist before marking complete.
 
 ## Legacy milestones (M1–M17 in lazybrew)
 
-Older milestones may predate this template. See [milestone-legacy-index.md](../milestone-legacy-index.md).
+Older milestones may predate this template. See [milestone-legacy-index.md](../archive/milestone-legacy-index.md).
 
 | Action | When |
 |---|---|

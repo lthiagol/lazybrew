@@ -9,7 +9,7 @@
 
 ## Active Work Routing
 
-> **Format:** Legacy ([milestone-legacy-index.md](../milestone-legacy-index.md)). Do not execute open items from steps below.
+> **Format:** Legacy ([milestone-legacy-index.md](../archive/milestone-legacy-index.md)). Do not execute open items from steps below.
 
 | Open item | Execute in |
 |---|---|

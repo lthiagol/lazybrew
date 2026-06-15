@@ -1,13 +1,13 @@
 # Milestone 19 — Bubble Tea Concurrency & Task Manager
 
-> **Status:** 🔜 Planned  
-> **Size estimate:** L (4–6 days)  
+> **Status:** ✅ Complete  
+> **Size estimate:** L (done)  
 > **Depends on:** M13 ✅, M18.5 (DESIGN concurrency ADR)  
 > **Enables:** M20 phase C, M21 T1, M17  
-> **Parallel track:** B (Engineering) — starts after M18.5  
+> **Parallel track:** B (Engineering) — completed  
 > **Gate criteria:** Zero `program.Send` in commands; TaskManager owns all writes; race tests pass
 
-See [planning-challenge-2026-06-13.md](../planning-challenge-2026-06-13.md) for challenged TaskManager design.
+See [planning-challenge-2026-06-13.md](../archive/planning-challenge-2026-06-13.md) for challenged TaskManager design.
 
 ---
 
@@ -22,6 +22,20 @@ Replace ad-hoc goroutines and `program.Send` with a **single TaskManager** that 
 - Batch upgrade logic (M20.3 — uses TaskManager but defined there)
 - Controller package split (backlog B-01)
 - Runner SIGKILL on cancel (future; M19 uses context cancel as today)
+
+---
+
+## Reality Check (2026-06-14)
+
+Implemented and verified:
+
+- `internal/gui/task/` package with `Manager`, `Task`, message types.
+- `grep -r 'program\.Send' internal/gui --glob '!*_test.go'` → zero matches.
+- `grep -r 'isBusy' internal/gui` → zero matches.
+- All write paths (install, uninstall, reinstall, upgrade, pin, tap, untap, trust, service, repair, cleanup, autoremove, update) enqueue through `task.Manager`.
+- `go test -race ./...` passes.
+
+No remaining work.
 
 ---
 
@@ -364,22 +378,23 @@ go test -race ./...
 
 ## Definition of Done
 
-- [ ] Steps 19.0–19.10 complete
-- [ ] TaskManager per D19-1–D19-5
-- [ ] All write paths through manager
-- [ ] `program.Send` eliminated from handlers
-- [ ] `isBusy` removed
-- [ ] Unit tests + race pass
-- [ ] DESIGN.md + AGENTS.md reflect final message flow
-- [ ] status.md updated
+- [x] Steps 19.0–19.10 complete
+- [x] TaskManager per D19-1–D19-5
+- [x] All write paths through manager
+- [x] `program.Send` eliminated from handlers
+- [x] `isBusy` removed
+- [x] Unit tests + race pass
+- [x] DESIGN.md reflects final message flow
+- [ ] AGENTS.md reflects final message flow (remaining M18.8)
+- [x] status.md updated
 
 ---
 
 ## Post-Milestone Gate
 
-- [ ] M20.3 batch upgrade may start
-- [ ] M22.1 minimal CI recommended
-- [ ] M21.1 teatest helper may start
+- [x] M20.3 batch upgrade started and done
+- [x] M22.1 minimal CI recommended
+- [x] M21.1 teatest helper started and done
 
 ---
 

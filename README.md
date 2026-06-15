@@ -1,5 +1,7 @@
 # lazybrew
 
+![CI](https://github.com/lthiagol/lazybrew/actions/workflows/ci.yml/badge.svg)
+
 A TUI for managing Homebrew on macOS and Linux.
 
 ## Status

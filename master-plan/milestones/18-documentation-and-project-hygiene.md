@@ -1,13 +1,13 @@
 # Milestone 18 — Documentation & Project Hygiene
 
-> **Status:** 🔜 Planned  
-> **Size estimate:** M (2–3 days total; steps are mostly S)  
+> **Status:** ✅ Complete  
+> **Size estimate:** M (done)  
 > **Depends on:** Nothing  
-> **Enables:** M19 (AGENTS concurrency rules), M22 (LICENSE, README)  
-> **Parallel track:** A (Docs) — runs parallel to M19 after step 18.5  
-> **Gate criteria:** DESIGN skeleton + config ADR exist; status.md is single source of truth
+> **Enables:** M22 (README links), release checklist sign-off  
+> **Parallel track:** A (Docs) — completed  
+> **Gate criteria:** `AGENTS.md` exists and links to DESIGN/status
 
-See [planning-challenge-2026-06-13.md](../planning-challenge-2026-06-13.md) — M19 may start after **18.5 only**, not all of M18.
+See [planning-challenge-2026-06-13.md](../archive/planning-challenge-2026-06-13.md) — M19 may start after **18.5 only**, not all of M18.
 
 ---
 
@@ -24,6 +24,19 @@ Make documentation, legal artifacts, and master-plan tracking **truthful and exe
 | All docs before code | Delays TaskManager | Split: skeleton at 18.5, rest parallel |
 | Remove unused config fields | Breaks user YAML | Mark planned/deferred; wire in M20.8 |
 | Rewrite all M1–M17 files | Huge diff | Update headers + DoD checkboxes; link to audit |
+
+---
+
+## Reality Check (2026-06-14)
+
+Steps 18.1–18.7, 18.9 and 18.10 are implemented in the codebase:
+
+- `LICENSE` exists and `.goreleaser.yml` references it.
+- `README.md` is accurate (status, flags, config sample).
+- `DESIGN.md` exists with concurrency ADR, layer rules, and config schema.
+- Legacy milestone headers were reconciled to match `status.md`.
+
+All deliverables are complete, including **18.8 `AGENTS.md`**.
 
 ---
 
@@ -48,18 +61,26 @@ Make documentation, legal artifacts, and master-plan tracking **truthful and exe
 
 ## Step Index
 
-| Step | Title | Size | Depends | Deliverable |
+| Step | Title | Size | Status | Deliverable |
 |---|---|---|---|---|
-| 18.1 | Add LICENSE | S | — | MIT file |
-| 18.2 | Fix README | S | — | Accurate README |
-| 18.3 | Milestone DoD audit worksheet | S | — | Audit table in status or review doc |
-| 18.4 | Reconcile M1–M17 headers | M | 18.3 | Headers match reality |
-| 18.5 | DESIGN.md skeleton + concurrency ADR | M | — | DESIGN.md v0.1 |
-| 18.6 | DESIGN.md brew layer | S | 18.5 | Brew section complete |
-| 18.7 | DESIGN.md GUI layer | S | 18.5 | GUI section complete |
-| 18.8 | AGENTS.md | M | 18.5 | Contributor/agent guide |
-| 18.9 | Config field ADR | S | 18.5 | Locked decisions in DESIGN |
-| 18.10 | Cross-link and status finalization | S | 18.1–18.9 | All docs linked |
+| 18.1 | Add LICENSE | S | Done | `LICENSE` at repo root |
+| 18.2 | Fix README | S | Done | Accurate README |
+| 18.3 | Milestone DoD audit worksheet | S | Done | Audit in `../archive/architecture-review-2026-06-13.md` |
+| 18.4 | Reconcile M1–M17 headers | M | Done | Headers match `status.md` |
+| 18.5 | DESIGN.md skeleton + concurrency ADR | M | Done | `DESIGN.md` v0.1 |
+| 18.6 | DESIGN.md brew layer | S | Done | Brew section complete |
+| 18.7 | DESIGN.md GUI layer | S | Done | GUI section complete |
+| 18.8 | AGENTS.md | M | Done | Contributor/agent guide |
+| 18.9 | Config field ADR | S | Done | Locked decisions in `DESIGN.md` |
+| 18.10 | Cross-link and status finalization | S | Done | All docs linked |
+
+### 18.8 breakdown
+
+| Sub-step | Title | Size | Status | Deliverable |
+|---|---|---|---|---|
+| 18.8a | Quick start + repository map | S | Done | Build/test/run instructions, package table |
+| 18.8b | Bubble Tea + testing rules | S | Done | Concurrency rules, test tiers, `make` targets |
+| 18.8c | Planning/git/verification rules | S | Done | Status updates, no secrets, `go test -race ./...` |
 
 ---
 
@@ -110,11 +131,11 @@ Make documentation, legal artifacts, and master-plan tracking **truthful and exe
 1. For each milestone M1–M17, walk Definition of Done checkboxes
 2. Record in table: Plan claim | Code evidence | Test evidence | Verdict
 3. Use [review-template.md](../review-template.md) Plan vs Code worksheet
-4. Save as section in `architecture-review-2026-06-13.md` appendix or `status.md`
+4. Save as section in `../archive/architecture-review-2026-06-13.md` appendix or `status.md`
 
 **Acceptance criteria:**
 - [ ] Every ⚠️/✅ in status.md backed by worksheet row
-- [ ] Discrepancies list matches [planning-challenge](../planning-challenge-2026-06-13.md)
+- [ ] Discrepancies list matches [planning-challenge](../archive/planning-challenge-2026-06-13.md)
 
 **Tests:** N/A (audit artifact)
 
@@ -125,7 +146,7 @@ Make documentation, legal artifacts, and master-plan tracking **truthful and exe
 **Size:** M · **Depends on:** 18.3
 
 **Implementation:**
-1. Use [milestone-legacy-index.md](../milestone-legacy-index.md) as checklist
+1. Use [milestone-legacy-index.md](../archive/milestone-legacy-index.md) as checklist
 2. Update each `milestones/0N-*.md` header status emoji
 3. Ensure **Active Work Routing** section exists on all partial milestones (done 2026-06-13 for M2,M4,M6–M8,M11,M12,M14–M16; M17 refined)
 4. Unchecked DoD items that aren't done
@@ -264,16 +285,18 @@ Add YAML comments in `config.go` struct tags or file header comment block.
 
 ## Definition of Done
 
-- [ ] Steps 18.1–18.10 complete
-- [ ] DESIGN.md + AGENTS.md exist and linked
-- [ ] LICENSE exists
-- [ ] M1–M17 headers match status.md
-- [ ] Config ADR locked (D18-4)
-- [ ] status.md updated
+- [x] Steps 18.1–18.10 complete
+- [x] DESIGN.md exists and linked
+- [x] AGENTS.md exists and linked
+- [x] LICENSE exists
+- [x] M1–M17 headers match status.md
+- [x] Config ADR locked (D18-4)
+- [x] status.md updated
 
 ---
 
 ## Post-Milestone Gate
 
-- [ ] M19.1 may start (DESIGN concurrency ADR present)
-- [ ] M22.3 goreleaser unblocked (LICENSE present)
+- [x] AGENTS.md merged
+- [x] M19.1 already started (DESIGN concurrency ADR present)
+- [x] M22.3 goreleaser unblocked (LICENSE present)

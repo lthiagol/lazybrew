@@ -4,7 +4,7 @@
 > **Stack:** Go + Bubble Tea + Lip Gloss + Bubbles  
 > **Platforms:** macOS + Linux  
 > **Created:** 2026-06-11  
-> **Last Updated:** 2026-06-14 (milestone 23 complete)  
+> **Last Updated:** 2026-06-14 (plan synced to code reality; release readiness tracked)  
 > **Target Homebrew:** 6.0.0+
 
 ---
@@ -13,11 +13,11 @@
 
 | Document | Purpose |
 |---|---|
-| [architecture-review-2026-06-13.md](architecture-review-2026-06-13.md) | First-pass findings |
-| [planning-challenge-2026-06-13.md](planning-challenge-2026-06-13.md) | Challenged decisions + revised sequencing |
+| [architecture-review-2026-06-13.md](archive/architecture-review-2026-06-13.md) | First-pass findings |
+| [planning-challenge-2026-06-13.md](archive/planning-challenge-2026-06-13.md) | Challenged decisions + revised sequencing |
 | [review-template.md](review-template.md) | **Project-agnostic** template for future reviews |
 | [templates/](templates/) | Milestone, status, and step templates + conventions |
-| [milestone-legacy-index.md](milestone-legacy-index.md) | M1–M17 format audit + routing to M18–M22 |
+| [milestone-legacy-index.md](archive/milestone-legacy-index.md) | M1–M17 format audit + routing to M18–M22 |
 | [backlog.md](backlog.md) | Deferred items (out of M18–M22 scope) |
 | [smoke-checklist.md](smoke-checklist.md) | Manual verification (M20.11) |
 | [coverage-audit.md](coverage-audit.md) | Brew command coverage |
@@ -38,18 +38,18 @@
 [X]  Milestone 13  — Critical Bug Fixes
 [~]  Milestone 14–16 — Wire/cleanup/tests (partial)
 [X]  Milestone 23  — TUI Layout Rework & Debug Logging
-[ ]  Milestone 17  — Lazygit UI (after M19–M22)
-[ ]  Milestone 18  — Documentation & Hygiene
-[ ]  Milestone 19  — Concurrency & TaskManager
-[ ]  Milestone 20  — Functional & UX (phases A–F)
-[ ]  Milestone 21  — Test Strategy v2 (tiers T0–T3)
-[ ]  Milestone 22  — CI & Release
+[~]  Milestone 17  — Lazygit UI (parse summary toast → 17.3)
+[X]  Milestone 18  — Documentation & Hygiene
+[X]  Milestone 19  — Concurrency & TaskManager
+[X]  Milestone 20  — Functional & UX (phases A–F)
+[~]  Milestone 21  — Test Strategy v2 (2 teatest flows remaining)
+[~]  Milestone 22  — CI & Release (22.1a/22.2/22.5 done; 22.1b/22.3/22.4 remaining)
 ```
 
 **Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
 
-**Current phase:** Milestone 23 complete  
-**Execution entry point:** M18.1 + M19.0 in parallel, then M18.5 → M19.1
+**Current phase:** Release readiness  
+**Execution entry point:** M22.1b (verify CI green), then M17.3 + M21.2a/b in parallel, then M22.3 → M22.4
 
 ---
 
@@ -59,39 +59,40 @@ Tracks can run concurrently when dependencies allow.
 
 | Track | Milestones | Owner focus | Starts | Blocks |
 |---|---|---|---|---|
-| **A — Docs** | M18 | README, DESIGN, AGENTS, audit | Day 1 | M19.6 needs 18.8 |
-| **B — Concurrency** | M19 | TaskManager | After M18.5 | M20.3, M17 |
-| **C — UX** | M20 | Tab cache, Info, batch | M20.A during M19.8 | M17 |
-| **D — Quality** | M21 T0–T3 | tests | T0 immediately | M22 full |
-| **E — Ops** | M22.1 early | CI | After M19.5 | Release |
+| **A — Docs** | M18 | Complete | — | — |
+| **B — Polish** | M17.3 | Update summary toast | Now | none |
+| **C — Quality** | M21.2a/b | Install + uninstall teatest flows | After M22.1 green | Release tag |
+| **D — Ops** | M22 | Verify CI green, goreleaser, release checklist | Now | Release tag |
 
 ### Critical path
 
 ```
-M18.5 → M19.1 → M19.5 → M19.6 → M20.A → M20.B → M21.T2 → M22.4 → M17
+M22.1b → M21.2a/b → M22.3a → M22.3b → M22.4
 ```
+
+M17.3 can land in parallel with the critical path.
 
 ---
 
-## Milestone Index (M18–M22 detail)
+## Milestone Index (M17–M23 detail)
 
-| # | Milestone | Steps | Size | Gate |
-|---|---|---|---|---|
-| 18 | [Documentation](milestones/18-documentation-and-project-hygiene.md) | 18.1–18.10 | M | DESIGN + AGENTS exist |
-| 19 | [TaskManager](milestones/19-bubble-tea-concurrency-and-task-manager.md) | 19.0–19.10 | L | No program.Send |
-| 20 | [Functional UX](milestones/20-functional-completeness-and-ux.md) | 20.1–20.11 | L | smoke-checklist pass |
-| 21 | [Tests v2](milestones/21-test-strategy-v2.md) | 21.0–21.5 | M–L | 8 E2E + 5 integration |
-| 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1–22.6 | M | CI green + goreleaser |
-| 23 | [TUI Layout Rework](milestones/23-tui-layout-and-debug-logging.md) | 23.1–23.8 | M | Layout fills space, two-line bar, debug log |
-| 17 | [Lazygit UI](milestones/17-lazygit-tui-and-auto-update.md) | 17.1–17.11 (phases A–D) | L | After M19–M22; refined template |
+| # | Milestone | Steps | Size | Gate | Status |
+|---|---|---|---|---|---|
+| 17 | [Lazygit UI](milestones/17-lazygit-tui-and-auto-update.md) | 17.1–17.3 (phases A–D) | S remaining | Update summary toast | ~95% done |
+| 18 | [Documentation](milestones/18-documentation-and-project-hygiene.md) | 18.1–18.10 | Done | `AGENTS.md` | Done |
+| 19 | [TaskManager](milestones/19-bubble-tea-concurrency-and-task-manager.md) | 19.0–19.10 | L | No `program.Send` | Done |
+| 20 | [Functional UX](milestones/20-functional-completeness-and-ux.md) | 20.1–20.11 | L | smoke-checklist pass | Done |
+| 21 | [Tests v2](milestones/21-test-strategy-v2.md) | 21.0–21.5 | S remaining | 8 E2E flows | ~80% done |
+| 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1a–22.4 | M | CI green + goreleaser | Partial |
+| 23 | [TUI Layout Rework](milestones/23-tui-layout-and-debug-logging.md) | 23.1–23.8 | M | Layout fills space, two-line bar, debug log | Done |
 
-Legacy milestones M1–M17: see [milestone-legacy-index.md](milestone-legacy-index.md)
+Legacy milestones M1–M16: see [milestone-legacy-index.md](archive/milestone-legacy-index.md). Open items from M1–M16 are either done in M17–M23 or tracked in the backlog.
 
 ---
 
 ## Challenged Decisions (summary)
 
-Full rationale: [planning-challenge-2026-06-13.md](planning-challenge-2026-06-13.md)
+Full rationale: [planning-challenge-2026-06-13.md](archive/planning-challenge-2026-06-13.md)
 
 | Decision | Outcome |
 |---|---|
@@ -105,17 +106,19 @@ Full rationale: [planning-challenge-2026-06-13.md](planning-challenge-2026-06-13
 
 ---
 
-## Metrics Baseline (2026-06-13)
+## Metrics Baseline (2026-06-14)
 
 | Metric | Value |
 |---|---|
-| Go lines | ~7,821 |
-| Test functions | 162 |
-| `brew/` coverage | 65.2% |
-| `gui/` coverage | 31.5% |
-| Integration tests | 0 |
-| teatest E2E | 0 |
-| CI workflows | 0 |
+| Go lines | ~8,200 |
+| Test functions | ~180 |
+| `brew/` coverage | 62.2% |
+| `gui/` coverage | 36.6% |
+| `gui/presentation/` coverage | 91.6% |
+| `gui/modal/` coverage | 41.4% |
+| Integration tests | 5 |
+| teatest E2E | 6 |
+| CI workflows | 2 (ci.yml + integration.yml) |
 
 ---
 
@@ -143,19 +146,25 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-13 | backlog.md | B-01–B-10 deferred explicitly |
 | 2026-06-13 | M17 last | Visual work after correctness + CI |
 | 2026-06-14 | M23 complete | TUI layout rework (fill, command log, two-line bar, spinner, debug log) |
+| 2026-06-14 | Plan/code reality sync | M17/M19–M21/M23 found implemented; status + milestones updated to truth |
+| 2026-06-14 | Release readiness focus | Remaining work: AGENTS.md, CI, 2 teatest flows, update summary toast |
 
 ---
 
-## Adoption Readiness
+## Release Readiness
 
-Planning for M18–M22 is **execution-ready** when:
+Before tagging v0.2.0:
 
-- [x] Each step has size, deps, acceptance criteria, tests
-- [x] Challenged decisions documented
-- [x] Parallel tracks defined
-- [x] Out-of-scope in backlog.md
-- [x] Review template for future audits
-- [x] Milestone/status templates in [templates/](templates/)
-- [ ] Human sign-off on config ADR (ShowIcons deferred — see M18.9)
+- [x] M19 TaskManager done; zero `program.Send`
+- [x] M20 functional correctness done; smoke-checklist pass
+- [x] M21 T0–T1 done; regression tests linked to architecture review
+- [x] M18.8 `AGENTS.md` exists and linked
+- [ ] M17.3 update summary toast implemented
+- [ ] M21.2 8 teatest flows (6 done, 2 remaining)
+- [ ] M22.1b CI green on push/PR
+- [x] M22.2 integration workflow file exists
+- [ ] M22.3 goreleaser snapshot succeeds
+- [ ] M22.4 release checklist signed off
+- [x] Coverage floors raised to current actuals
 
-**Ready for execution:** ☑ Yes (pending ShowIcons sign-off only)
+**Ready for release:** ☐ No — remaining items above block v0.2.0 tag

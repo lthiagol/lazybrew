@@ -1,12 +1,12 @@
 # Milestone 21 — Test Strategy v2
 
-> **Status:** 🔜 Planned  
-> **Size estimate:** M–L (4–5 days, can split across M19–M20)  
-> **Depends on:** M19.5 (teatest against stable Model), M20 phase A (tab tests)  
+> **Status:** ⚠️ Partial (~80% done)  
+> **Size estimate:** S remaining (2 teatest flows)  
+> **Depends on:** M19.5 (done), M20 phase A (done)  
 > **Enables:** M22 full gates, M17 safe refactor  
-> **Parallel track:** D (Quality) — tiers T0–T3 start at different times
+> **Parallel track:** D (Quality) — T2 remaining
 
-See [planning-challenge-2026-06-13.md](../planning-challenge-2026-06-13.md) — do not wait for all of M20.
+See [planning-challenge-2026-06-13.md](../archive/planning-challenge-2026-06-13.md) — do not wait for all of M20.
 
 ---
 
@@ -35,6 +35,21 @@ Build a **layered test pyramid** where failures indicate real regressions. Cover
 
 ---
 
+## Reality Check (2026-06-14)
+
+Implemented:
+
+- **21.0** `MockRunner` records calls (used by batch upgrade regression test).
+- **21.1** `internal/gui/testutil/program.go` helper exists.
+- **21.3** `internal/brew/runner_integration_test.go` with 5 integration tests.
+- **21.4** `internal/gui/regression_test.go` covers C1/C3/H1–H3 findings.
+- **21.5** `make cover-check` + `scripts/check-coverage.sh` exist.
+- **21.2** 6 teatest flows exist in `internal/gui/flows/` (navigation, search, help, refresh, modal, tabs).
+
+Remaining: 2 flow tests from the original 8 (install, uninstall).
+
+---
+
 ## Architecture Decisions (ADRs)
 
 | ID | Decision |
@@ -48,16 +63,23 @@ Build a **layered test pyramid** where failures indicate real regressions. Cover
 
 ## Step Index
 
-| Step | Title | Size | Tier | Depends |
-|---|---|---|---|---|
-| 21.0 | MockRunner call recorder | S | T0 | — |
-| 21.6 | Concurrent cache expiry test | S | T0 | — |
-| 21.7 | (Moved to M19.0) TypedCache | — | T0 | done in M19 |
-| 21.1 | teatest helper + fixtures | M | T1 | M19.5 |
-| 21.3 | Integration test suite | M | T1 | — |
-| 21.2 | Core E2E flows | L | T2 | 21.1, M20.1 |
-| 21.4 | Regression tests from review | M | T2 | M19.6, M20 |
-| 21.5 | Coverage gates in Makefile | S | T3 | 21.2 |
+| Step | Title | Size | Tier | Status | Depends |
+|---|---|---|---|---|---|
+| 21.0 | MockRunner call recorder | S | T0 | Done | — |
+| 21.6 | Concurrent cache expiry test | S | T0 | Done | — |
+| 21.7 | (Moved to M19.0) TypedCache | — | T0 | Done | M19.0 |
+| 21.1 | teatest helper + fixtures | M | T1 | Done | M19.5 |
+| 21.3 | Integration test suite | M | T1 | Done | — |
+| 21.2 | Core E2E flows | S remaining | T2 | **Partial** | 21.1, M20.1 |
+| 21.4 | Regression tests from review | M | T2 | Done | M19.6, M20 |
+| 21.5 | Coverage gates in Makefile | S | T3 | Done | 21.2 |
+
+### 21.2 breakdown (remaining work)
+
+| Sub-step | Title | Size | Assertion |
+|---|---|---|---|
+| 21.2a | Install flow teatest | S | Search `/` → `i` → mock install called |
+| 21.2b | Uninstall flow teatest | S | `x` → confirm → mock uninstall called |
 
 ---
 
@@ -258,12 +280,13 @@ Raise floors only when tests land — script reads actual and compares.
 
 ## Definition of Done
 
-- [ ] T0–T3 complete (21.7 satisfied by M19.0)
-- [ ] ≥8 teatest flows
-- [ ] ≥5 integration tests
-- [ ] Regression tests for C1, C3, H1–H3
-- [ ] `make cover-check` exists
-- [ ] Test tiers documented in DESIGN + AGENTS
+- [x] T0–T3 complete (21.7 satisfied by M19.0)
+- [ ] ≥8 teatest flows (6 done, 2 remaining)
+- [x] ≥5 integration tests
+- [x] Regression tests for C1, C3, H1–H3
+- [x] `make cover-check` exists
+- [x] Test tiers documented in DESIGN
+- [ ] Test tiers documented in AGENTS (remaining M18.8)
 
 ---
 

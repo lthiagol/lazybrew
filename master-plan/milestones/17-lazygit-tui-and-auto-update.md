@@ -1,14 +1,14 @@
 # Milestone 17 — Lazygit-Inspired TUI & Auto-Update
 
-> **Status:** 🔜 Planned  
-> **Size estimate:** L (5–8 days)  
-> **Depends on:** M19 ✅, M20 ✅, M21 T2 (E2E baseline), M22 recommended  
+> **Status:** ⚠️ Partial (~95% done)  
+> **Size estimate:** S remaining (17.3 only)  
+> **Depends on:** M19 ✅, M20 ✅, M21 T2 (baseline done)  
 > **Enables:** v0.3.0 UX release, `ShowIcons` (backlog B-10)  
-> **Parallel track:** F (Polish) — **last** on critical path  
-> **Gate criteria:** M19–M22 gates pass; smoke-checklist green; auto-update uses TaskManager pattern  
+> **Parallel track:** F (Polish)  
+> **Gate criteria:** Update summary toast shown after `brew update`; no new `program.Send`  
 > **Format:** Refined 2026-06-13 ([templates/milestone.md](../templates/milestone.md))
 
-See [planning-challenge-2026-06-13.md](../planning-challenge-2026-06-13.md) — M17 runs after correctness + CI, not after M15/M16 alone.
+See [planning-challenge-2026-06-13.md](../archive/planning-challenge-2026-06-13.md) — M17 runs after correctness + CI, not after M15/M16 alone.
 
 ---
 
@@ -21,6 +21,22 @@ Redesign the TUI to feel more like lazygit: per-panel bordered sidebar boxes, ac
 ## Why Now
 
 Visual polish on top of broken concurrency or stale tab content wastes rework. This milestone runs last so layout changes sit on TaskManager (M19), correct Info/tabs (M20), and teatest coverage (M21).
+
+---
+
+## Reality Check (2026-06-14)
+
+Implemented and verified:
+
+- **17.1/17.2** Auto-update messages, model fields, Init/Update handlers, `R` key behavior.
+- **17.4/17.5/17.6/17.9/17.10** Sidebar per-panel boxes, accordion height math, compact sidebar renderer, loading/empty/error states, visual integration.
+- **17.7** Two-line bottom bar with update status + 10s ticker.
+- **17.8** Main panel breadcrumb (`Panel › Tab`).
+- **17.11** Search result info preview in main panel.
+
+Remaining:
+
+- **17.3** `parseUpdateSummary` + toast after `brew update` completes. The code collects `updateOutput` but never parses it.
 
 ---
 
@@ -74,19 +90,19 @@ Execute **in order**. Complete phase gate before next phase.
 
 ## Step Index
 
-| Step | Title | Size | Phase | Depends | Deliverable |
+| Step | Title | Size | Phase | Status | Deliverable |
 |---|---|---|---|---|---|
-| 17.1 | Messages + model fields | S | A | M19 | `StartUpdateMsg`, `UpdateCompleteMsg`, fields |
-| 17.2 | Auto-update Init + handlers | M | A | 17.1, M19 | Non-blocking update; R key behavior |
-| 17.3 | `parseUpdateSummary` | S | A | 17.2 | Toast summary strings |
-| 17.4 | `renderSidebarContent` | M | B | — | Compact sidebar list renderer |
-| 17.5 | `computeContentHeights` | M | B | 17.4 | Accordion row math |
-| 17.6 | Per-panel sidebar boxes | L | B | 17.4, 17.5 | `box.go`, rewrite `renderSidebar` |
-| 17.7 | Bottom bar + update ticker | M | A | 17.2 | Hints left; status right; 10s tick |
-| 17.8 | Main panel breadcrumb | S | C | — | `Panel › Tab` line |
-| 17.9 | Sidebar loading/empty/error | S | B | 17.4 | States inside boxes |
-| 17.10 | Visual integration / alignment | M | B | 17.6, 17.8 | No gaps; height match main panel |
-| 17.11 | Search info preview | L | D | M20.1, 17.8 | `SearchInfoLoadedMsg`, render |
+| 17.1 | Messages + model fields | S | A | Done | `StartUpdateMsg`, `UpdateCompleteMsg`, fields |
+| 17.2 | Auto-update Init + handlers | M | A | Done | Non-blocking update; R key behavior |
+| 17.3 | `parseUpdateSummary` | S | A | **Remaining** | Toast summary strings |
+| 17.4 | `renderSidebarContent` | M | B | Done | Compact sidebar list renderer |
+| 17.5 | `computeContentHeights` | M | B | Done | Accordion row math |
+| 17.6 | Per-panel sidebar boxes | L | B | Done | `box.go`, rewrite `renderSidebar` |
+| 17.7 | Bottom bar + update ticker | M | A | Done | Hints left; status right; 10s tick |
+| 17.8 | Main panel breadcrumb | S | C | Done | `Panel › Tab` line |
+| 17.9 | Sidebar loading/empty/error | S | B | Done | States inside boxes |
+| 17.10 | Visual integration / alignment | M | B | Done | No gaps; height match main panel |
+| 17.11 | Search info preview | L | D | Done | `SearchInfoLoadedMsg`, render |
 
 ---
 
@@ -1282,13 +1298,14 @@ go test -race ./internal/gui/...
 
 ## Definition of Done
 
-- [ ] Phases A–D complete; step acceptance criteria met
-- [ ] Auto-update uses TaskManager (D17-2) — no new `program.Send`
-- [ ] All tests in Test Plan exist and pass
-- [ ] `go test -race ./...` passes
-- [ ] [smoke-checklist.md](../smoke-checklist.md) re-run after visual changes
-- [ ] Renders at 80×24 without clip (17.10)
-- [ ] [status.md](../status.md) updated; header matches ✅ when done
+- [x] Phases A–D complete except 17.3
+- [x] Auto-update uses TaskManager (D17-2) — no new `program.Send`
+- [ ] 17.3 `parseUpdateSummary` + toast implemented and tested
+- [x] All other tests in Test Plan exist and pass
+- [x] `go test -race ./...` passes
+- [x] [smoke-checklist.md](../smoke-checklist.md) re-run after visual changes
+- [x] Renders at 80×24 without clip (17.10)
+- [x] [status.md](../status.md) updated
 
 ---
 

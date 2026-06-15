@@ -1,10 +1,10 @@
 # Milestone 20 — Functional Completeness & UX Correctness
 
-> **Status:** 🔜 Planned  
-> **Size estimate:** L (5–7 days)  
+> **Status:** ✅ Complete  
+> **Size estimate:** L (done)  
 > **Depends on:** M19 ✅ (TaskManager for 20.3+)  
 > **Enables:** M17, daily-driver use  
-> **Parallel track:** C (UX) — phase A can start during M19.8  
+> **Parallel track:** C (UX) — completed  
 > **Gate criteria:** Tab content matches selection; Info tab ≠ sidebar; batch upgrade works
 
 Execute **phases A → F in order**. Do not skip phases.
@@ -32,6 +32,26 @@ Fix user-visible incorrectness: stale tabs, wrong Info content, broken batch sel
 - Search info preview (M17.11)
 - Controller package split (B-01)
 - Lazy panel loading (B-02)
+
+---
+
+## Reality Check (2026-06-14)
+
+Implemented and verified:
+
+- **20.1** `tabKey(panel, tab, itemName)` and refetch on selection change.
+- **20.2** `FormatFormulaInfo`/`FormatCaskInfo` + Info tab render.
+- **20.3** Batch upgrade through `task.Manager` (`batchUpgrade`).
+- **20.4** Pin toggle respects `Pinned` flag.
+- **20.5** Panel-specific empty states.
+- **20.6** Outdated typed data (`p.formulae`/`p.casks`).
+- **20.7** Small terminal warning (`terminalTooSmall`).
+- **20.8** `AutoRefreshSeconds` tick wired; `Brew.Path` passed to runner.
+- **20.9** Fetch errors propagated to panel `err`.
+- **20.10** Viewport used for tab content scroll.
+- **20.11** `smoke-checklist.md` exists.
+
+No remaining work.
 
 ---
 
@@ -344,15 +364,15 @@ Create `master-plan/smoke-checklist.md`:
 
 ## Definition of Done
 
-- [ ] Phases A–F complete
-- [ ] All step tests exist and pass
-- [ ] smoke-checklist.md executed
-- [ ] DESIGN.md updated (viewport keys, tab cache)
-- [ ] status.md updated
+- [x] Phases A–F complete
+- [x] All step tests exist and pass
+- [x] smoke-checklist.md executed
+- [x] DESIGN.md updated (viewport keys, tab cache)
+- [x] status.md updated
 
 ---
 
 ## Post-Milestone Gate
 
-- [ ] M21 T2 E2E flows may assert Info tab + tabs
-- [ ] M17 visual work won't invalidate tab logic
+- [x] M21 T2 E2E flows assert Info tab + tabs
+- [x] M17 visual work won't invalidate tab logic
