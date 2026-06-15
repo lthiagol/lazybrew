@@ -85,7 +85,7 @@ func ApplyTheme(t *Theme) {
 	NormalItem = lipgloss.NewStyle().Foreground(t.TextColor)
 	TabActive = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true).Underline(true)
 	TabInactive = lipgloss.NewStyle().Foreground(t.SubtleColor)
-	HintKey = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true)
+	HintKey = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true).Padding(0, 1)
 	HintDesc = lipgloss.NewStyle().Foreground(t.SubtleColor)
 	PanelTitle = lipgloss.NewStyle().Foreground(t.TextColor).Bold(true)
 	OutdatedBadge = lipgloss.NewStyle().Foreground(t.WarningColor)

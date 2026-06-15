@@ -4,6 +4,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sync/atomic"
 )
 
@@ -27,4 +28,20 @@ func SetDebug(enabled bool) {
 	} else {
 		logger.Store(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	}
+}
+
+func EnableFileLogging(path string) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	w := io.MultiWriter(os.Stderr, f)
+	logger.Store(slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})))
+	return nil
 }

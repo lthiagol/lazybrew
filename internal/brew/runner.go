@@ -239,3 +239,59 @@ func (m *MockRunner) BrewPath() string {
 func NewMockRunner() *MockRunner {
 	return &MockRunner{}
 }
+
+type CommandCallback func(args []string, err error)
+
+type LoggingRunner struct {
+	inner   Runner
+	OnExec  CommandCallback
+	OnStart CommandCallback
+}
+
+func NewLoggingRunner(inner Runner, onStart, onExec CommandCallback) *LoggingRunner {
+	return &LoggingRunner{
+		inner:   inner,
+		OnStart: onStart,
+		OnExec:  onExec,
+	}
+}
+
+func (r *LoggingRunner) Execute(ctx context.Context, args ...string) ([]byte, error) {
+	if r.OnStart != nil {
+		r.OnStart(args, nil)
+	}
+	out, err := r.inner.Execute(ctx, args...)
+	if r.OnExec != nil {
+		r.OnExec(args, err)
+	}
+	return out, err
+}
+
+func (r *LoggingRunner) ExecuteJSON(ctx context.Context, result any, args ...string) error {
+	if r.OnStart != nil {
+		r.OnStart(args, nil)
+	}
+	err := r.inner.ExecuteJSON(ctx, result, args...)
+	if r.OnExec != nil {
+		r.OnExec(args, err)
+	}
+	return err
+}
+
+func (r *LoggingRunner) ExecuteStream(ctx context.Context, args ...string) (<-chan string, <-chan error) {
+	if r.OnStart != nil {
+		r.OnStart(args, nil)
+	}
+	stdoutChan, errChan := r.inner.ExecuteStream(ctx, args...)
+	if r.OnExec != nil {
+		go func() {
+			err := <-errChan
+			r.OnExec(args, err)
+		}()
+	}
+	return stdoutChan, errChan
+}
+
+func (r *LoggingRunner) BrewPath() string {
+	return r.inner.BrewPath()
+}

@@ -17,7 +17,8 @@ func (m Model) renderSidebar() string {
 
 	var boxes []string
 	for i, p := range m.panels {
-		title := p.title
+		prefix := strconv.Itoa(i+1) + " "
+		title := prefix + p.title
 		if p.loading {
 			title += style.SubtleText.Render("  …")
 		} else if count := p.itemCount(); count > 0 {
@@ -50,9 +51,23 @@ func (m Model) renderMainPanel() string {
 	}
 
 	tabBar := m.renderTabBar(mw)
-	content := m.renderContent(mw, mh-4)
 
-	panel := lipgloss.JoinVertical(lipgloss.Top, breadcrumb, tabBar, content)
+	totalContentHeight := mh - 4
+	cmdLogHeight := totalContentHeight / 5
+	if cmdLogHeight < 2 {
+		cmdLogHeight = 0
+	}
+	mainContentHeight := totalContentHeight - cmdLogHeight
+
+	content := m.renderContent(mw, mainContentHeight)
+	content = lipgloss.NewStyle().Width(mw).Height(mainContentHeight).Render(content)
+
+	var cmdLog string
+	if cmdLogHeight > 0 {
+		cmdLog = style.SubtleText.Render(m.commandLog.View(mw, cmdLogHeight))
+	}
+
+	panel := lipgloss.JoinVertical(lipgloss.Top, breadcrumb, tabBar, content, cmdLog)
 
 	return lipgloss.NewStyle().
 		Width(mw + 2).
@@ -131,7 +146,7 @@ func (m Model) renderContentInViewport(content string) string {
 func (m Model) renderContent(width, height int) string {
 	panel := m.panels[m.activePanel]
 	if panel.loading {
-		return style.SubtleText.Render("Loading...")
+		return m.spinner.View() + style.SubtleText.Render(" Loading...")
 	}
 
 	switch m.activePanel {
@@ -150,7 +165,7 @@ func (m Model) renderContent(width, height int) string {
 			if content, ok := m.tabContent[key]; ok {
 				return m.renderContentInViewport(content)
 			}
-			return style.SubtleText.Render("Loading...")
+			return m.spinner.View() + style.SubtleText.Render(" Loading...")
 		case 3:
 			f := panel.selectedFormula()
 			if f == nil || f.Caveats == "" {
@@ -203,14 +218,14 @@ func (m Model) renderContent(width, height int) string {
 			if content, ok := m.tabContent[key]; ok {
 				return m.renderContentInViewport(content)
 			}
-			return style.SubtleText.Render("Loading...")
+			return m.spinner.View() + style.SubtleText.Render(" Loading...")
 		case 2:
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				return m.renderContentInViewport(content)
 			}
-			return style.SubtleText.Render("Loading...")
+			return m.spinner.View() + style.SubtleText.Render(" Loading...")
 		}
 
 	case PanelTaps:
@@ -333,27 +348,38 @@ func boolStr(b bool) string {
 }
 
 func (m Model) renderBottomBar() string {
-	hints := panelHints(m.activePanel)
+	panelHints := panelHints(m.activePanel)
 	globalHints := []keyHint{{"Tab", "next"}, {"S-Tab", "prev"}, {"1-7", "jump"}, {"/", "search"}, {"?", "help"}, {"R", "refresh"}, {"q", "quit"}}
 
-	var parts []string
-	for _, h := range hints {
-		parts = append(parts, style.HintKey.Render(h.key)+" "+style.HintDesc.Render(h.desc))
-	}
-	for _, h := range globalHints {
-		parts = append(parts, style.HintKey.Render(h.key)+" "+style.HintDesc.Render(h.desc))
+	styleHint := func(k, d string) string {
+		return style.HintKey.Render(k) + " " + style.HintDesc.Render(d)
 	}
 
+	var globalParts []string
+	for _, h := range globalHints {
+		globalParts = append(globalParts, styleHint(h.key, h.desc))
+	}
 	updateStatus := m.updateStatusText()
 	if updateStatus != "" {
-		parts = append(parts, style.SubtleText.Render("│"), updateStatus)
+		globalParts = append(globalParts, style.SubtleText.Render("│"), updateStatus)
+	}
+	line1 := lipgloss.JoinHorizontal(lipgloss.Top, globalParts...)
+
+	line2 := ""
+	if len(panelHints) > 0 {
+		var panelParts []string
+		for _, h := range panelHints {
+			panelParts = append(panelParts, styleHint(h.key, h.desc))
+		}
+		line2 = lipgloss.JoinHorizontal(lipgloss.Top, panelParts...)
 	}
 
-	bar := lipgloss.JoinHorizontal(lipgloss.Top, parts...)
-	return lipgloss.NewStyle().
-		Width(m.width - 2).
-		Padding(0, 1).
-		Render(bar)
+	barWidth := m.width - 2
+	combined := lipgloss.JoinVertical(lipgloss.Top,
+		lipgloss.NewStyle().Width(barWidth).Padding(0, 1).Render(line1),
+		lipgloss.NewStyle().Width(barWidth).Padding(0, 1).Render(line2),
+	)
+	return lipgloss.NewStyle().Width(m.width).Render(combined)
 }
 
 func (m Model) updateStatusText() string {

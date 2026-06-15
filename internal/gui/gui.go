@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -52,7 +53,9 @@ type Model struct {
 	searchResults      []brew.SearchResult
 	searchInfoContent  string
 
-	tasks *task.Manager
+	tasks      *task.Manager
+	commandLog *CommandLog
+	spinner    spinner.Model
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -63,6 +66,8 @@ func (m *Model) SetProgram(p *tea.Program) {
 
 func New(client *brew.Client, cfg *config.Config) *Model {
 	panels := initPanels()
+	cl := NewCommandLog(20)
+	s := spinner.New(spinner.WithStyle(style.SubtleText))
 	return &Model{
 		client:      client,
 		cfg:         cfg,
@@ -73,27 +78,52 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		batch:       newBatchState(),
 		tabContent:  make(map[string]string),
 		tasks:       task.NewManager(task.DefaultMaxQueue),
+		commandLog:  cl,
+		spinner:     s,
+	}
+}
+
+func (m *Model) CommandLogCallback() brew.CommandCallback {
+	cl := m.commandLog
+	return func(args []string, err error) {
+		cmd := brewCommandString(args)
+		cl.Append(cmd)
+		if err != nil {
+			cl.SetStatus(cmd, CommandError)
+		} else {
+			cl.SetStatus(cmd, CommandSuccess)
+		}
+	}
+}
+
+func (m *Model) CommandLogStartCallback() brew.CommandCallback {
+	cl := m.commandLog
+	return func(args []string, _ error) {
+		cl.Append(brewCommandString(args))
 	}
 }
 
 func (m Model) Init() tea.Cmd {
+	var cmds []tea.Cmd
 	if m.cfg.Brew.UpdateOnStart {
-		return tea.Batch(
+		cmds = append(cmds,
 			func() tea.Msg { return StartUpdateMsg{} },
 			m.updateTickerCmd(),
 		)
+	} else {
+		cmds = append(cmds,
+			fetchPanelData(m.client, PanelFormulae),
+			fetchPanelData(m.client, PanelCasks),
+			fetchPanelData(m.client, PanelOutdated),
+			fetchPanelData(m.client, PanelTaps),
+			fetchPanelData(m.client, PanelServices),
+			fetchStatusData(m.client),
+		)
+		if tick := m.autoRefreshCmd(); tick != nil {
+			cmds = append(cmds, tick)
+		}
 	}
-	cmds := []tea.Cmd{
-		fetchPanelData(m.client, PanelFormulae),
-		fetchPanelData(m.client, PanelCasks),
-		fetchPanelData(m.client, PanelOutdated),
-		fetchPanelData(m.client, PanelTaps),
-		fetchPanelData(m.client, PanelServices),
-		fetchStatusData(m.client),
-	}
-	if tick := m.autoRefreshCmd(); tick != nil {
-		cmds = append(cmds, tick)
-	}
+	cmds = append(cmds, func() tea.Msg { return m.spinner.Tick() })
 	return tea.Batch(cmds...)
 }
 
@@ -127,6 +157,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, nil
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 
 	case SearchDoneMsg:
 		p := m.panels[PanelSearch]
@@ -391,18 +426,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.tasks.Enqueue(t)
 				return m, m.tasks.RunNext()
-			return m, tea.Batch(
-				m.updateTickerCmd(),
-				func() tea.Msg { return RefreshMsg{} },
-			)
-		}
-		if m.cfg.Brew.UpdateOnStart {
-			return m, tea.Batch(
-				m.updateTickerCmd(),
-				func() tea.Msg { return RefreshMsg{} },
-			)
-		}
-		return m, func() tea.Msg { return RefreshMsg{} }
+			}
+			if m.cfg.Brew.UpdateOnStart {
+				return m, tea.Batch(
+					m.updateTickerCmd(),
+					func() tea.Msg { return RefreshMsg{} },
+				)
+			}
+			return m, func() tea.Msg { return RefreshMsg{} }
 
 		case "tab":
 			m.nextPanel()
