@@ -1,7 +1,7 @@
 # Milestone 22 — CI & Release Hardening
 
 > **Status:** ⚠️ Partial (~60% done)  
-> **Size estimate:** S remaining (22.1b, 22.3a/b, 22.4, 22.6)  
+> **Size estimate:** S remaining (22.1b, 22.3a/b, 22.4)  
 > **Depends on:** M18.1 (done), M19.5 (done), M21.3 (done)  
 > **Enables:** Public v0.2.0 tag  
 > **Parallel track:** E (Ops) — in progress
@@ -59,7 +59,7 @@ This milestone is the **primary remaining engineering blocker** for v0.2.0.
 | 22.3b | Fix goreleaser config if needed | S | **Remaining** | Snapshot result |
 | 22.4 | Release checklist sign-off | S | **Remaining** | — |
 | 22.5 | Dependabot | S | Done | — |
-| 22.6 | Branch protection recommendations | S | **Remaining** | — |
+| 22.6 | Branch protection recommendations | S | Done | — |
 
 ---
 
@@ -279,7 +279,7 @@ Not enforced by agent — human GitHub settings.
 - [ ] 22.3b goreleaser config fixed if needed
 - [ ] 22.4 release checklist signed off
 - [x] 22.5 dependabot configured
-- [ ] 22.6 branch protection recommendations documented
+- [x] 22.6 branch protection recommendations documented
 - [ ] CI green on default branch
 - [ ] Integration workflow runnable
 - [ ] Goreleaser snapshot succeeds

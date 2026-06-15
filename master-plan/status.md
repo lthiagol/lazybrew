@@ -148,6 +148,7 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-14 | M23 complete | TUI layout rework (fill, command log, two-line bar, spinner, debug log) |
 | 2026-06-14 | Plan/code reality sync | M17/M19–M21/M23 found implemented; status + milestones updated to truth |
 | 2026-06-14 | Release readiness focus | Remaining work: AGENTS.md, CI, 2 teatest flows, update summary toast |
+| 2026-06-14 | Retire first-version branch | Merged to main; default branch changed to main; branch deleted |
 
 ---
 
@@ -161,10 +162,12 @@ Before tagging v0.2.0:
 - [x] M18.8 `AGENTS.md` exists and linked
 - [ ] M17.3 update summary toast implemented
 - [ ] M21.2 8 teatest flows (6 done, 2 remaining)
-- [ ] M22.1b CI green on push/PR
+- [ ] M22.1b CI green on push/PR (triggered by latest push)
 - [x] M22.2 integration workflow file exists
+- [x] first-version branch retired
 - [ ] M22.3 goreleaser snapshot succeeds
 - [ ] M22.4 release checklist signed off
+- [x] M22.6 branch protection recommendations documented
 - [x] Coverage floors raised to current actuals
 
 **Ready for release:** ☐ No — remaining items above block v0.2.0 tag
