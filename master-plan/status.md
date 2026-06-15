@@ -171,3 +171,38 @@ Before tagging v0.2.0:
 - [x] Coverage floors raised to current actuals
 
 **Ready for release:** ☐ No — remaining items above block v0.2.0 tag
+
+---
+
+## Release Readiness Execution Plan
+
+Remaining work is small and mostly parallelizable. Suggested order:
+
+### Phase 1 — Independent implementation (can run in parallel)
+
+| Step | Owner | Deliverable | Notes |
+|---|---|---|---|
+| **M17.3** | Any | `parseUpdateSummary` + toast | See milestone file for exact handler change and tests |
+| **M21.2a** | Any | `install_test.go` teatest | Requires custom MockRunner to record install args |
+| **M21.2b** | Any | `uninstall_test.go` teatest | Seed Formulae panel with one item, confirm modal, assert uninstall args |
+
+### Phase 2 — External verification (wait after push)
+
+| Step | Owner | Deliverable | Notes |
+|---|---|---|---|
+| **M22.1b** | GitHub Actions | CI badge green | Already triggered; check Actions tab. Fix any flakiness before release |
+| **M22.3a** | Human/agent | `goreleaser release --snapshot --clean` green | Install goreleaser CLI first |
+| **M22.3b** | Human/agent | `.goreleaser.yml` fixed if needed | Only if 22.3a fails |
+
+### Phase 3 — Final gate
+
+| Step | Owner | Deliverable | Notes |
+|---|---|---|---|
+| **M22.4** | Human | Signed `release-checklist.md` | All pre-release checkboxes verified |
+| **Tag** | Human | `v0.2.0` tag + goreleaser publish | Needs `GITHUB_TOKEN` |
+
+### Risks to watch
+
+- **CI flakiness:** `-race` on GitHub Actions can be slower than locally; if it times out, increase test timeout or split jobs.
+- **Goreleaser version:** The config uses `version: 2`. Ensure installed goreleaser is v2.x.
+- **SSH/agent:** Future pushes from this environment may need `SSH_AUTH_SOCK` pointed at the active socket.

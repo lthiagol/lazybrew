@@ -176,14 +176,35 @@ jobs:
 
 **Size:** S · **Depends on:** 22.1b, M18.1
 
+**Prerequisite:** `goreleaser` CLI installed. Options:
+- `brew install goreleaser/tap/goreleaser`
+- `go install github.com/goreleaser/goreleaser/v2@latest`
+- Download binary from GitHub releases
+
 **Steps:**
-1. Install/run `goreleaser release --snapshot --clean`
-2. Verify tarball contains: binary, LICENSE, checksums
-3. Record any errors
+1. Ensure `LICENSE` exists at repo root (M18.1 done).
+2. Run `goreleaser release --snapshot --clean`.
+3. Inspect the generated artifacts in `dist/`:
+   - Binary for each OS/arch
+   - Tarball containing binary + LICENSE + checksums
+   - `checksums.txt`
+4. Verify `main.version` is set via ldflags by checking the binary:
+   ```bash
+   ./dist/lazybrew_linux_amd64_v1/lazybrew --version
+   ```
+5. Record any errors.
+
+**Expected artifacts:**
+- `dist/lazybrew_<os>_<arch>/lazybrew`
+- `dist/lazybrew_<version>_<os>_<arch>.tar.gz`
+- `dist/checksums.txt`
 
 **Acceptance criteria:**
 - [ ] Snapshot build succeeds locally
-- [ ] `main.version` ldflag matches tag pattern
+- [ ] `main.version` ldflag matches tag pattern (`v0.2.0` or `v0.2.0-next` for snapshot)
+- [ ] Each tarball contains binary + LICENSE + checksums
+
+**Tests:** Manual artifact inspection
 
 ---
 
@@ -192,13 +213,18 @@ jobs:
 **Size:** S · **Depends on:** 22.3a
 
 **Steps:**
-1. If 22.3a failed, fix `.goreleaser.yml` (owner/name, paths, ldflags).
+1. If 22.3a failed, diagnose the error:
+   - Owner/name mismatch → update `.goreleaser.yml` `release.github.owner`/`name`
+   - Missing LICENSE → re-verify M18.1
+   - Go version mismatch → update `go.mod` or CI workflow
+   - ldflag issue → verify `main.version` variable exists in `cmd/lazybrew/main.go`
 2. Re-run snapshot until clean.
-3. Add optional tag-push CI job for releases (needs `GITHUB_TOKEN` secret).
+3. Optional: add a tag-push release job to `.github/workflows/release.yml` (requires `GITHUB_TOKEN` secret with contents:write). This is optional for v0.2.0; manual `goreleaser release` is acceptable.
 
 **Acceptance criteria:**
 - [ ] Snapshot build succeeds after any fixes
-- [ ] Config matches actual GitHub remote
+- [ ] Config matches actual GitHub remote (`github.com/lthiagol/lazybrew`)
+- [ ] No secrets in `.goreleaser.yml`
 
 ---
 

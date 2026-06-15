@@ -185,31 +185,93 @@ func requireBrew(t *testing.T) *DefaultRunner
 
 ### 21.2 — Core E2E Flows
 
-**Size:** L · **Tier:** T2 · **Depends on:** 21.1, M20.1
+**Size:** L · **Tier:** T2 · **Depends on:** 21.1, M20.1 · **Status:** Partial (6 done, 2 remaining)
 
 **Directory:** `internal/gui/flows/`
 
-| # | Test file | Flow | Key assertions |
-|---|---|---|---|
-| 1 | `navigation_test.go` | Tab between panels | View contains "Formulae" |
-| 2 | `search_test.go` | `/` query Enter | Search panel active |
-| 3 | `install_test.go` | Search → i | Mock install called |
-| 4 | `uninstall_test.go` | x → confirm | Mock uninstall |
-| 5 | `refresh_test.go` | R | Mock list called again |
-| 6 | `modal_test.go` | Modal open | `q` doesn't quit |
-| 7 | `tabs_test.go` | `]` Deps tab | View contains mock deps string |
-| 8 | `help_test.go` | `?` | View contains help text |
+| # | Test file | Flow | Status | Key assertions |
+|---|---|---|---|---|
+| 1 | `navigation_test.go` | Tab between panels | Done | View contains "Formulae" |
+| 2 | `search_test.go` | `/` query Enter | Done | Search panel active |
+| 3 | `install_test.go` | Search → `i` | **Remaining** | Mock install called |
+| 4 | `uninstall_test.go` | `x` → confirm | **Remaining** | Mock uninstall called |
+| 5 | `refresh_test.go` | `R` | Done | Mock list called again |
+| 6 | `modal_test.go` | Modal open | Done | `q` doesn't quit |
+| 7 | `tabs_test.go` | `]` Deps tab | Done | View contains mock deps string |
+| 8 | `help_test.go` | `?` | Done | View contains help text |
 
 **Pattern:**
 ```go
-tm := teatest.NewTestModel(t, newTestModel(), teatest.WithInitialTermSize(120, 40))
-tm.Send(tea.KeyMsg{...})
-tm.WaitTeatestExpectedTerminals(t, expectedViewSubstring)
+tm := teatest.NewTestModel(t, testutil.NewTestModel(t), teatest.WithInitialTermSize(120, 40))
+tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+out := readOutput(t, tm.FinalOutput(t))
+// assert on `out`
 ```
 
 **Acceptance criteria:**
 - [ ] ≥8 flow tests with View assertions (not just model field checks)
 - [ ] All pass `-race`
+
+---
+
+#### 21.2a — Install Flow Teatest
+
+**Size:** S · **Tier:** T2
+
+**What:** Verify that searching for a package and pressing `i` triggers a mock install.
+
+**File:** `internal/gui/flows/install_test.go`
+
+**Implementation plan:**
+1. Create a custom `MockRunner` that records `install` calls.
+2. Build a `*brew.Client` with that runner.
+3. Use `testutil.NewTestModel(t, ...)` with the custom client.
+4. Send keys: `/`, type a query, `Enter`, wait for Search panel, press `i`.
+5. Wait for model to finish or timeout.
+6. Assert that the runner received `install <query>`.
+
+**Edge cases / considerations:**
+- The test should not require real Homebrew.
+- Use a short final timeout (2–3s) so failures are fast.
+- The search modal closes on `Enter`; the search results panel becomes active.
+- `i` on Search panel uses `m.executeSearchInstall()` or similar path; verify the exact handler name before writing the test.
+
+**Acceptance criteria:**
+- [ ] Test compiles and passes with `go test -race ./internal/gui/flows/...`
+- [ ] Test asserts the install command was recorded by the mock runner.
+
+**Tests:** `TestInstallFlow`
+
+---
+
+#### 21.2b — Uninstall Flow Teatest
+
+**Size:** S · **Tier:** T2
+
+**What:** Verify that pressing `x` on an installed formula opens a confirm modal and confirming triggers a mock uninstall.
+
+**File:** `internal/gui/flows/uninstall_test.go`
+
+**Implementation plan:**
+1. Create a custom `MockRunner` that records `uninstall` calls.
+2. Seed the Formulae panel with one item via the mock client.
+3. Start the test model.
+4. Send `2` to switch to Formulae panel, then `x`.
+5. Confirm the modal appears in the View output.
+6. Send `Enter` or `y` to confirm.
+7. Assert that the runner received `uninstall <formula>`.
+
+**Edge cases / considerations:**
+- The modal blocks `q` until dismissed; use `Enter` to confirm.
+- The selected formula name must be parseable from the seeded item string.
+- If the handler uses a confirmation modal, wait for the modal state in the output.
+
+**Acceptance criteria:**
+- [ ] Test compiles and passes with `go test -race ./internal/gui/flows/...`
+- [ ] Test asserts the uninstall command was recorded by the mock runner.
+
+**Tests:** `TestUninstallFlow`
 
 ---
 

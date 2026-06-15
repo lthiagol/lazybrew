@@ -309,51 +309,63 @@ case "R":
 
 ### 17.3 — Update Output Parsing
 
-**What:** Extract a human-readable summary from `brew update` output.
+**Size:** S · **Phase:** A · **Status:** Remaining
 
-**File:** `internal/gui/commands.go` — new function `parseUpdateSummary()`
+**What:** Extract a human-readable summary from `brew update` output and show it as a toast when the update completes successfully.
 
-```go
-func parseUpdateSummary(lines []string) string {
-    for _, line := range lines {
-        line = strings.TrimSpace(line)
-        if line == "" {
-            continue
-        }
-        // "Already up-to-date." → "Already up to date"
-        if strings.Contains(line, "Already up-to-date") {
-            return "Already up to date"
-        }
-        // "Updated N formulae (M casks)." → "Updated N formulae"
-        // "Updated N formulae." → "Updated N formulae"
-        if strings.HasPrefix(line, "Updated") {
-            // Strip trailing period
-            clean := strings.TrimRight(line, ".")
-            return clean
-        }
-        // "Error: ..." → "Update failed"
-        if strings.HasPrefix(line, "Error:") {
-            return ""
-        }
-    }
-    return ""
-}
-```
+**Files:**
 
-**For non-English Homebrew output:** brew hardcodes English update messages internally, so this is safe. If brew ever localizes, the fallback is an empty string (no toast at all).
+| File | Action |
+|---|---|
+| `internal/gui/commands.go` | Add `parseUpdateSummary(lines []string) string` |
+| `internal/gui/gui.go` | In `UpdateCompleteMsg` handler, call parser and set toast |
+| `internal/gui/commands_test.go` (new) | Unit tests for parser |
+
+**Implementation detail:**
+
+1. Add parser function:
+   ```go
+   func parseUpdateSummary(lines []string) string {
+       for _, line := range lines {
+           line = strings.TrimSpace(line)
+           if line == "" { continue }
+           if strings.Contains(line, "Already up-to-date") {
+               return "Already up to date"
+           }
+           if strings.HasPrefix(line, "Updated") {
+               return strings.TrimRight(line, ".")
+           }
+           if strings.HasPrefix(line, "Error:") {
+               return ""
+           }
+       }
+       return ""
+   }
+   ```
+
+2. In `gui.go` `UpdateCompleteMsg` handler, after `m.lastUpdate = time.Now()`:
+   ```go
+   summary := parseUpdateSummary(m.updateOutput)
+   if summary != "" {
+       m.toast = modal.NewToast(summary, modal.ToastSuccess)
+   }
+   ```
 
 **Edge cases:**
-- No lines → `""` (no toast shown)
-- Multiple "Updated" lines → first one wins
-- Already up-to-date → proper toast
-- Non-English → empty string, no toast
+- No lines → no toast.
+- Multiple "Updated" lines → first one wins.
+- `Error:` prefix → return empty; existing error toast already handles `msg.Err != nil`.
+- Non-English output → empty string (safe fallback).
 
 **Acceptance criteria:**
-- [ ] `"Already up-to-date."` → `"Already up to date"`
-- [ ] `"Updated 3 formulae."` → `"Updated 3 formulae"`
-- [ ] `"Updated 5 formulae (2 casks)."` → `"Updated 5 formulae (2 casks)"`
-- [ ] `"Error: ..."` → `""`
-- [ ] Empty input → `""`
+- [ ] Parser unit tests pass for all listed cases.
+- [ ] Successful update shows a toast matching parser output.
+- [ ] Failed update still shows the existing error toast, not the summary.
+- [ ] No new `program.Send` introduced.
+
+**Tests:**
+- `TestParseUpdateSummary` table-driven unit test in `internal/gui/commands_test.go`.
+- `TestUpdateCompleteShowsSummary` model-level test (optional; depends on existing mock setup).
 
 ---
 
