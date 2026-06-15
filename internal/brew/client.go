@@ -5,21 +5,21 @@ import (
 )
 
 type Client struct {
-	Runner            Runner
-	Formulae          FormulaeReader
-	FormulaeWrite     FormulaeWriter
-	Casks             CasksReader
-	CasksWrite        CasksWriter
-	Taps              TapsReader
-	TapsWrite         TapsWriter
-	Services          ServicesReader
-	ServicesWrite     ServicesWriter
-	Search            SearchService
-	Trust             TrustReader
-	TrustWrite        TrustWriter
-	Diagnostics       DiagnosticsReader
-	DiagnosticsWrite  DiagnosticsWriter
-	Cache             *Cache
+	Runner           Runner
+	Formulae         FormulaeReader
+	FormulaeWrite    FormulaeWriter
+	Casks            CasksReader
+	CasksWrite       CasksWriter
+	Taps             TapsReader
+	TapsWrite        TapsWriter
+	Services         ServicesReader
+	ServicesWrite    ServicesWriter
+	Search           SearchService
+	Trust            TrustReader
+	TrustWrite       TrustWriter
+	Diagnostics      DiagnosticsReader
+	DiagnosticsWrite DiagnosticsWriter
+	Cache            *Cache
 }
 
 func NewClient(runner Runner) *Client {

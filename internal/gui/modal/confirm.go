@@ -8,14 +8,14 @@ import (
 )
 
 type ConfirmModal struct {
-	title    string
-	message  string
-	selected int
-	done     bool
+	title     string
+	message   string
+	selected  int
+	done      bool
 	cancelled bool
-	result   bool
-	viewport viewport.Model
-	ready    bool
+	result    bool
+	viewport  viewport.Model
+	ready     bool
 }
 
 func NewConfirmModal(title, message string) *ConfirmModal {
@@ -98,8 +98,8 @@ func (m *ConfirmModal) View() string {
 		Render(content)
 }
 
-func (m *ConfirmModal) Done() bool        { return m.done }
-func (m *ConfirmModal) Cancelled() bool   { return m.cancelled }
+func (m *ConfirmModal) Done() bool      { return m.done }
+func (m *ConfirmModal) Cancelled() bool { return m.cancelled }
 func (m *ConfirmModal) Result() interface{} {
 	return &ConfirmResult{Confirmed: m.result}
 }

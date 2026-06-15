@@ -6,33 +6,33 @@ import (
 
 // Formula represents an installed Homebrew formula
 type Formula struct {
-	Name            string    `json:"name"`
-	FullName        string    `json:"full_name"` // e.g., "homebrew/core/neovim"
-	Tap             string    `json:"tap"`
-	Version         string    `json:"version"`
-	Description     string    `json:"desc"`
-	Homepage        string    `json:"homepage"`
-	License         string    `json:"license"`
-	Pinned          bool      `json:"pinned"`
-	Outdated        bool      `json:"outdated"`
-	NewVersion      string    `json:"new_version"` // populated when outdated
-	InstalledOn     time.Time `json:"installed_on"`
-	Dependencies    []string  `json:"dependencies"`
-	BuildDeps       []string  `json:"build_dependencies"`
-	Caveats         string    `json:"caveats"`
-	KegOnly         bool      `json:"keg_only"`
-	Bottled         bool      `json:"bottled"`
-	InstalledOnReq  bool      `json:"installed_on_request"` // installed on request vs as dep
-	InstalledAsDep  bool      `json:"installed_as_dependency"`
-	InstallPath     string    `json:"install_path"`
-	Size            int64     `json:"size"` // bytes
+	Name           string    `json:"name"`
+	FullName       string    `json:"full_name"` // e.g., "homebrew/core/neovim"
+	Tap            string    `json:"tap"`
+	Version        string    `json:"version"`
+	Description    string    `json:"desc"`
+	Homepage       string    `json:"homepage"`
+	License        string    `json:"license"`
+	Pinned         bool      `json:"pinned"`
+	Outdated       bool      `json:"outdated"`
+	NewVersion     string    `json:"new_version"` // populated when outdated
+	InstalledOn    time.Time `json:"installed_on"`
+	Dependencies   []string  `json:"dependencies"`
+	BuildDeps      []string  `json:"build_dependencies"`
+	Caveats        string    `json:"caveats"`
+	KegOnly        bool      `json:"keg_only"`
+	Bottled        bool      `json:"bottled"`
+	InstalledOnReq bool      `json:"installed_on_request"` // installed on request vs as dep
+	InstalledAsDep bool      `json:"installed_as_dependency"`
+	InstallPath    string    `json:"install_path"`
+	Size           int64     `json:"size"` // bytes
 	// 6.0.0 additions
 	Aliases             []string `json:"aliases,omitempty"`
-	Binaries            []string `json:"binaries,omitempty"`              // executables installed by this formula
-	InstalledDependents []string `json:"installed_dependents,omitempty"`  // reverse deps (installed only)
-	ListVersions        []string `json:"list_versions,omitempty"`         // all installed version history
-	Revision            string   `json:"revision,omitempty"`              // formula revision
-	Shadowed            bool     `json:"shadowed,omitempty"`              // PATH shadowing warning
+	Binaries            []string `json:"binaries,omitempty"`             // executables installed by this formula
+	InstalledDependents []string `json:"installed_dependents,omitempty"` // reverse deps (installed only)
+	ListVersions        []string `json:"list_versions,omitempty"`        // all installed version history
+	Revision            string   `json:"revision,omitempty"`             // formula revision
+	Shadowed            bool     `json:"shadowed,omitempty"`             // PATH shadowing warning
 }
 
 // Cask represents an installed Homebrew cask
@@ -76,10 +76,10 @@ type Tap struct {
 type TrustStatus int
 
 const (
-	TrustUnknown TrustStatus = iota
-	TrustOfficial             // homebrew/* — always trusted
-	TrustTrusted              // explicitly trusted via `brew trust`
-	TrustUntrusted            // default for third-party
+	TrustUnknown   TrustStatus = iota
+	TrustOfficial              // homebrew/* — always trusted
+	TrustTrusted               // explicitly trusted via `brew trust`
+	TrustUntrusted             // default for third-party
 )
 
 // String returns the string representation of TrustStatus

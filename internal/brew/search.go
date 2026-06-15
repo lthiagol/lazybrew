@@ -24,11 +24,11 @@ type searchJSON struct {
 }
 
 type searchItemJSON struct {
-	Name        string `json:"name"`
-	FullName    string `json:"full_name"`
-	Description string `json:"desc"`
-	Tap         string `json:"tap"`
-	Homepage    string `json:"homepage"`
+	Name        string        `json:"name"`
+	FullName    string        `json:"full_name"`
+	Description string        `json:"desc"`
+	Tap         string        `json:"tap"`
+	Homepage    string        `json:"homepage"`
 	Installed   []interface{} `json:"installed"`
 }
 

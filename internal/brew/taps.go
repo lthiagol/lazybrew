@@ -36,16 +36,16 @@ func NewTapsWriter(runner Runner, cache *Cache) TapsWriter {
 }
 
 type tapInfoJSON struct {
-	Name         string   `json:"name"`
-	Remote       string   `json:"remote"`
-	FormulaCount int      `json:"formula_count"`
-	CaskCount    int      `json:"cask_count"`
-	CommandCount int      `json:"command_count"`
-	Private      bool     `json:"private"`
-	Installed    bool     `json:"installed"`
-	Manifest     bool     `json:"manifest"`
-	API          bool     `json:"api"`
-	AutoPublish  bool     `json:"auto_publish"`
+	Name         string `json:"name"`
+	Remote       string `json:"remote"`
+	FormulaCount int    `json:"formula_count"`
+	CaskCount    int    `json:"cask_count"`
+	CommandCount int    `json:"command_count"`
+	Private      bool   `json:"private"`
+	Installed    bool   `json:"installed"`
+	Manifest     bool   `json:"manifest"`
+	API          bool   `json:"api"`
+	AutoPublish  bool   `json:"auto_publish"`
 
 	Trusted      bool     `json:"trusted,omitempty"`
 	FormulaNames []string `json:"formula_names,omitempty"`

@@ -10,14 +10,14 @@ import (
 )
 
 type ProgressModal struct {
-	title    string
-	lines    []string
-	cancel   context.CancelFunc
-	done     bool
+	title     string
+	lines     []string
+	cancel    context.CancelFunc
+	done      bool
 	cancelled bool
-	err      error
-	viewport viewport.Model
-	ready    bool
+	err       error
+	viewport  viewport.Model
+	ready     bool
 }
 
 func NewProgressModal(title string, cancel context.CancelFunc) *ProgressModal {
@@ -115,8 +115,8 @@ func (m *ProgressModal) View() string {
 		Render(content)
 }
 
-func (m *ProgressModal) Done() bool        { return m.done && !m.cancelled }
-func (m *ProgressModal) Cancelled() bool   { return m.cancelled }
+func (m *ProgressModal) Done() bool      { return m.done && !m.cancelled }
+func (m *ProgressModal) Cancelled() bool { return m.cancelled }
 func (m *ProgressModal) Result() interface{} {
 	return m.err
 }

@@ -10,13 +10,13 @@ import (
 )
 
 type MenuModal struct {
-	title    string
-	items    []string
-	selected int
-	done     bool
+	title     string
+	items     []string
+	selected  int
+	done      bool
 	cancelled bool
-	viewport viewport.Model
-	ready    bool
+	viewport  viewport.Model
+	ready     bool
 }
 
 func NewMenuModal(title string, items []string) *MenuModal {
@@ -94,8 +94,8 @@ func (m *MenuModal) View() string {
 		Render(content)
 }
 
-func (m *MenuModal) Done() bool        { return m.done }
-func (m *MenuModal) Cancelled() bool   { return m.cancelled }
+func (m *MenuModal) Done() bool      { return m.done }
+func (m *MenuModal) Cancelled() bool { return m.cancelled }
 func (m *MenuModal) Result() interface{} {
 	return &MenuResult{SelectedIndex: m.selected, Cancelled: m.cancelled}
 }

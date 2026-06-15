@@ -9,10 +9,10 @@ import (
 
 func TestFormatFormula(t *testing.T) {
 	f := brew.Formula{
-		Name:    "ripgrep",
-		Version: "14.1.1",
-		Bottled: true,
-		Outdated: true,
+		Name:       "ripgrep",
+		Version:    "14.1.1",
+		Bottled:    true,
+		Outdated:   true,
 		NewVersion: "14.1.2",
 	}
 	got := FormatFormula(f, 0)
@@ -38,9 +38,9 @@ func TestFormatFormulaPinned(t *testing.T) {
 
 func TestFormatCask(t *testing.T) {
 	c := brew.Cask{
-		Name:    "firefox",
-		Version: "135.0",
-		Outdated: true,
+		Name:       "firefox",
+		Version:    "135.0",
+		Outdated:   true,
 		NewVersion: "136.0",
 	}
 	got := FormatCask(c, 0)
@@ -142,12 +142,12 @@ func TestFormatFormulaInfoSnapshot(t *testing.T) {
 
 func TestFormatFormulaInfoOutdated(t *testing.T) {
 	f := brew.Formula{
-		Name:        "neovim",
-		Version:     "0.10.4",
-		Outdated:    true,
-		NewVersion:  "0.11.0",
-		KegOnly:     false,
-		Bottled:     true,
+		Name:       "neovim",
+		Version:    "0.10.4",
+		Outdated:   true,
+		NewVersion: "0.11.0",
+		KegOnly:    false,
+		Bottled:    true,
 	}
 	got := FormatFormulaInfo(f, 60)
 	if !strings.Contains(got, "outdated") {

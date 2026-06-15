@@ -114,10 +114,10 @@ func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
 
 	var data struct {
 		Casks []struct {
-			Name             string   `json:"name"`
-			FullName         string   `json:"full_name"`
+			Name              string   `json:"name"`
+			FullName          string   `json:"full_name"`
 			InstalledVersions []string `json:"installed_versions"`
-			CurrentVersion   string   `json:"current_version"`
+			CurrentVersion    string   `json:"current_version"`
 		} `json:"casks"`
 	}
 	if err := json.Unmarshal(output, &data); err != nil {
@@ -127,9 +127,9 @@ func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
 	outdated := make([]Cask, 0, len(data.Casks))
 	for _, oc := range data.Casks {
 		cask := Cask{
-			Name:      oc.Name,
-			FullName:  oc.FullName,
-			Outdated:  true,
+			Name:       oc.Name,
+			FullName:   oc.FullName,
+			Outdated:   true,
 			NewVersion: oc.CurrentVersion,
 		}
 		if len(oc.InstalledVersions) > 0 {
@@ -213,17 +213,17 @@ func parseCask(c caskJSON) Cask {
 	}
 
 	return Cask{
-		Name:         c.Name,
-		FullName:     c.FullName,
-		Tap:          c.Tap,
-		Version:      version,
-		Description:  c.Desc,
-		Homepage:     c.Homepage,
-		AutoUpdates:  c.AutoUpdates,
-		Pinned:       c.Pinned,
-		Sha256:       c.Sha256,
-		URL:          c.URL,
-		Artifacts:    artifactNames,
-		DependsOn:    c.DependsOn,
+		Name:        c.Name,
+		FullName:    c.FullName,
+		Tap:         c.Tap,
+		Version:     version,
+		Description: c.Desc,
+		Homepage:    c.Homepage,
+		AutoUpdates: c.AutoUpdates,
+		Pinned:      c.Pinned,
+		Sha256:      c.Sha256,
+		URL:         c.URL,
+		Artifacts:   artifactNames,
+		DependsOn:   c.DependsOn,
 	}
 }

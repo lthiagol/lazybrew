@@ -48,26 +48,26 @@ type formulaeJSON struct {
 }
 
 type formulaJSON struct {
-	Name              string           `json:"name"`
-	FullName          string           `json:"full_name"`
-	Tap               string           `json:"tap"`
-	Versions          versionsJSON     `json:"versions"`
-	Desc              string           `json:"desc"`
-	Homepage          string           `json:"homepage"`
-	License           string           `json:"license"`
-	Installed         []installedJSON  `json:"installed"`
-	Dependencies      []dependencyJSON `json:"dependencies"`
-	BuildDependencies []string         `json:"build_dependencies"`
-	Caveats           string           `json:"caveats"`
-	KegOnly           bool             `json:"keg_only"`
-	Bottle            bottleJSON       `json:"bottle"`
-	Pinned            bool             `json:"pinned"`
-	Aliases           []string         `json:"aliases,omitempty"`
-	Binaries          []string         `json:"binaries,omitempty"`
-	InstalledDependents []string       `json:"installed_dependents,omitempty"`
-	ListVersions      []string         `json:"list_versions,omitempty"`
-	Revision          string           `json:"revision,omitempty"`
-	Shadowed          bool             `json:"shadowed,omitempty"`
+	Name                string           `json:"name"`
+	FullName            string           `json:"full_name"`
+	Tap                 string           `json:"tap"`
+	Versions            versionsJSON     `json:"versions"`
+	Desc                string           `json:"desc"`
+	Homepage            string           `json:"homepage"`
+	License             string           `json:"license"`
+	Installed           []installedJSON  `json:"installed"`
+	Dependencies        []dependencyJSON `json:"dependencies"`
+	BuildDependencies   []string         `json:"build_dependencies"`
+	Caveats             string           `json:"caveats"`
+	KegOnly             bool             `json:"keg_only"`
+	Bottle              bottleJSON       `json:"bottle"`
+	Pinned              bool             `json:"pinned"`
+	Aliases             []string         `json:"aliases,omitempty"`
+	Binaries            []string         `json:"binaries,omitempty"`
+	InstalledDependents []string         `json:"installed_dependents,omitempty"`
+	ListVersions        []string         `json:"list_versions,omitempty"`
+	Revision            string           `json:"revision,omitempty"`
+	Shadowed            bool             `json:"shadowed,omitempty"`
 }
 
 type versionsJSON struct {
@@ -76,10 +76,10 @@ type versionsJSON struct {
 }
 
 type installedJSON struct {
-	Version            string   `json:"version"`
-	InstalledOnRequest bool     `json:"installed_on_request"`
-	InstalledAsDep     bool     `json:"installed_as_dependency"`
-	Time               int64    `json:"time"`
+	Version             string   `json:"version"`
+	InstalledOnRequest  bool     `json:"installed_on_request"`
+	InstalledAsDep      bool     `json:"installed_as_dependency"`
+	Time                int64    `json:"time"`
 	RuntimeDependencies []string `json:"runtime_dependencies"`
 }
 
@@ -104,11 +104,11 @@ type outdatedJSON struct {
 }
 
 type outdatedFormulaJSON struct {
-	Name             string   `json:"name"`
-	FullName         string   `json:"full_name"`
+	Name              string   `json:"name"`
+	FullName          string   `json:"full_name"`
 	InstalledVersions []string `json:"installed_versions"`
-	CurrentVersion   string   `json:"current_version"`
-	Pinned           bool     `json:"pinned"`
+	CurrentVersion    string   `json:"current_version"`
+	Pinned            bool     `json:"pinned"`
 }
 
 func (s *formulaeReader) List(ctx context.Context) ([]Formula, error) {
@@ -170,10 +170,10 @@ func (s *formulaeReader) Outdated(ctx context.Context) ([]Formula, error) {
 	outdated := make([]Formula, 0, len(data.Formulae))
 	for _, of := range data.Formulae {
 		formula := Formula{
-			Name:      of.Name,
-			FullName:  of.FullName,
-			Pinned:    of.Pinned,
-			Outdated:  true,
+			Name:       of.Name,
+			FullName:   of.FullName,
+			Pinned:     of.Pinned,
+			Outdated:   true,
 			NewVersion: of.CurrentVersion,
 		}
 		if len(of.InstalledVersions) > 0 {
@@ -288,27 +288,27 @@ func parseFormula(f formulaJSON) Formula {
 	bottled := len(f.Bottle.Stable.Files) > 0
 
 	return Formula{
-		Name:              f.Name,
-		FullName:          f.FullName,
-		Tap:               f.Tap,
-		Version:           version,
-		Description:       f.Desc,
-		Homepage:          f.Homepage,
-		License:           f.License,
-		Pinned:            f.Pinned,
-		Dependencies:      deps,
-		BuildDeps:         buildDeps,
-		Caveats:           f.Caveats,
-		KegOnly:           f.KegOnly,
-		Bottled:           bottled,
-		InstalledOnReq:    installedOnReq,
-		InstalledAsDep:    installedAsDep,
-		InstalledOn:       installedOn,
-		Aliases:           f.Aliases,
-		Binaries:          f.Binaries,
+		Name:                f.Name,
+		FullName:            f.FullName,
+		Tap:                 f.Tap,
+		Version:             version,
+		Description:         f.Desc,
+		Homepage:            f.Homepage,
+		License:             f.License,
+		Pinned:              f.Pinned,
+		Dependencies:        deps,
+		BuildDeps:           buildDeps,
+		Caveats:             f.Caveats,
+		KegOnly:             f.KegOnly,
+		Bottled:             bottled,
+		InstalledOnReq:      installedOnReq,
+		InstalledAsDep:      installedAsDep,
+		InstalledOn:         installedOn,
+		Aliases:             f.Aliases,
+		Binaries:            f.Binaries,
 		InstalledDependents: f.InstalledDependents,
-		ListVersions:      f.ListVersions,
-		Revision:          f.Revision,
-		Shadowed:          f.Shadowed,
+		ListVersions:        f.ListVersions,
+		Revision:            f.Revision,
+		Shadowed:            f.Shadowed,
 	}
 }

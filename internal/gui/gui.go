@@ -24,17 +24,17 @@ const (
 )
 
 type Model struct {
-	client      *brew.Client
-	cfg         *config.Config
-	width       int
-	height      int
+	client           *brew.Client
+	cfg              *config.Config
+	width            int
+	height           int
 	terminalTooSmall bool
-	activePanel PanelID
-	panels      []*panelData
-	activeTab   int
-	tabs        []tabInfo
-	viewport    viewport.Model
-	ready       bool
+	activePanel      PanelID
+	panels           []*panelData
+	activeTab        int
+	tabs             []tabInfo
+	viewport         viewport.Model
+	ready            bool
 
 	activeModal     modal.Modal
 	toast           *modal.Toast
@@ -50,8 +50,8 @@ type Model struct {
 	isUpdating      bool
 	updateOutput    []string
 
-	searchResults      []brew.SearchResult
-	searchInfoContent  string
+	searchResults     []brew.SearchResult
+	searchInfoContent string
 
 	tasks      *task.Manager
 	commandLog *CommandLog
@@ -126,8 +126,6 @@ func (m Model) Init() tea.Cmd {
 	cmds = append(cmds, func() tea.Msg { return m.spinner.Tick() })
 	return tea.Batch(cmds...)
 }
-
-
 
 func (m Model) updateTickerCmd() tea.Cmd {
 	return tea.Tick(10*time.Second, func(t time.Time) tea.Msg {

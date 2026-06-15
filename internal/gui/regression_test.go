@@ -94,5 +94,3 @@ func TestPinRespectsPinnedFlag(t *testing.T) {
 		t.Fatalf("expected TaskStartedMsg, got %T", msg)
 	}
 }
-
-

@@ -399,7 +399,7 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 	}
 
 	names := make([]struct {
-		name  string
+		name   string
 		isCask bool
 	}, 0, len(m.batch.selected))
 
@@ -416,7 +416,7 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 			isCask = true
 		}
 		names = append(names, struct {
-			name  string
+			name   string
 			isCask bool
 		}{itemName, isCask})
 	}
@@ -477,28 +477,28 @@ func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
 	if len(result.Formulae) > 0 {
 		f := result.Formulae[0]
 		return &pkgInfo{
-			Name:        f.Name,
-			Version:     f.Version,
-			Type:        "formula",
-			Bottled:     f.Bottled,
-			Installed:   f.InstalledOnReq || f.InstalledAsDep,
-			InstallPath: f.InstallPath,
-			License:     f.License,
-			Description: f.Description,
-			Homepage:    f.Homepage,
+			Name:         f.Name,
+			Version:      f.Version,
+			Type:         "formula",
+			Bottled:      f.Bottled,
+			Installed:    f.InstalledOnReq || f.InstalledAsDep,
+			InstallPath:  f.InstallPath,
+			License:      f.License,
+			Description:  f.Description,
+			Homepage:     f.Homepage,
 			Dependencies: append(f.Dependencies, f.BuildDeps...),
-			Caveats:     f.Caveats,
+			Caveats:      f.Caveats,
 		}, nil
 	}
 	if len(result.Casks) > 0 {
 		c := result.Casks[0]
 		return &pkgInfo{
-			Name:        c.Name,
-			Version:     c.Version,
-			Type:        "cask",
-			Installed:   false,
-			Description: c.Description,
-			Homepage:    c.Homepage,
+			Name:         c.Name,
+			Version:      c.Version,
+			Type:         "cask",
+			Installed:    false,
+			Description:  c.Description,
+			Homepage:     c.Homepage,
 			Dependencies: c.DependsOn,
 		}, nil
 	}
@@ -814,16 +814,16 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 					result = "No dependents"
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: result}
-		case 4:
-			output, err := client.Runner.Execute(ctx, "list", name)
-			if err != nil {
-				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
-			}
-			content := string(output)
-			if content == "" {
-				content = "No files installed"
-			}
-			return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: content}
+			case 4:
+				output, err := client.Runner.Execute(ctx, "list", name)
+				if err != nil {
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
+				}
+				content := string(output)
+				if content == "" {
+					content = "No files installed"
+				}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: content}
 			}
 		}
 		return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: ""}

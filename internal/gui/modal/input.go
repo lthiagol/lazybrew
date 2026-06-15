@@ -68,8 +68,8 @@ func (m *InputModal) View() string {
 		Render(content)
 }
 
-func (m *InputModal) Done() bool        { return m.done }
-func (m *InputModal) Cancelled() bool   { return m.cancelled }
+func (m *InputModal) Done() bool      { return m.done }
+func (m *InputModal) Cancelled() bool { return m.cancelled }
 func (m *InputModal) Result() interface{} {
 	return &InputResult{Value: m.input.Value(), Cancelled: m.cancelled}
 }

@@ -14,11 +14,11 @@ type Config struct {
 }
 
 type GUIConfig struct {
-	Theme             string `yaml:"theme"`
-	SidebarWidth      int    `yaml:"sidebar_width"`
-	ShowIcons         bool   `yaml:"show_icons"`
-	Mouse             bool   `yaml:"mouse"`
-	AutoRefreshSeconds int   `yaml:"auto_refresh_seconds"`
+	Theme              string `yaml:"theme"`
+	SidebarWidth       int    `yaml:"sidebar_width"`
+	ShowIcons          bool   `yaml:"show_icons"`
+	Mouse              bool   `yaml:"mouse"`
+	AutoRefreshSeconds int    `yaml:"auto_refresh_seconds"`
 }
 
 type BrewConfig struct {
@@ -29,10 +29,10 @@ type BrewConfig struct {
 func Default() *Config {
 	return &Config{
 		GUI: GUIConfig{
-			Theme:             "dark",
-			SidebarWidth:      30,
-			ShowIcons:         true,
-			Mouse:             true,
+			Theme:              "dark",
+			SidebarWidth:       30,
+			ShowIcons:          true,
+			Mouse:              true,
 			AutoRefreshSeconds: 60,
 		},
 		Brew: BrewConfig{

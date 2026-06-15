@@ -18,9 +18,9 @@ const (
 )
 
 type Toast struct {
-	Message string
-	Type    ToastType
-	created time.Time
+	Message   string
+	Type      ToastType
+	created   time.Time
 	dismissed bool
 }
 

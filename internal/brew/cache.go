@@ -13,10 +13,10 @@ const (
 	KeyOutdatedFormulae CacheKey = "outdated:formulae"
 	KeyOutdatedCasks    CacheKey = "outdated:casks"
 	KeyTapsList         CacheKey = "taps:list"
-	KeyServicesList CacheKey = "services:list"
-	KeyTrustList    CacheKey = "trust:list"
-	KeyDoctorResult CacheKey = "doctor:result"
-	KeyConfig       CacheKey = "config"
+	KeyServicesList     CacheKey = "services:list"
+	KeyTrustList        CacheKey = "trust:list"
+	KeyDoctorResult     CacheKey = "doctor:result"
+	KeyConfig           CacheKey = "config"
 )
 
 var InvalidateGroups = map[string][]CacheKey{
