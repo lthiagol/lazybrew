@@ -1,7 +1,7 @@
 # Milestone 22 — CI & Release Hardening
 
-> **Status:** ⚠️ Partial (~60% done)  
-> **Size estimate:** S remaining (22.1b, 22.3a/b, 22.4)  
+> **Status:** ⚠️ Partial (~90% done)  
+> **Size estimate:** S remaining (22.4)  
 > **Depends on:** M18.1 (done), M19.5 (done), M21.3 (done)  
 > **Enables:** Public v0.2.0 tag  
 > **Parallel track:** E (Ops) — in progress
@@ -52,11 +52,11 @@ This milestone is the **primary remaining engineering blocker** for v0.2.0.
 | Step | Title | Size | Status | Depends |
 |---|---|---|---|---|
 | 22.1a | Minimal CI workflow file (Ubuntu) | S | Done | M19 tests done |
-| 22.1b | Verify CI green on push/PR | S | **Remaining** | CI file merged |
+| 22.1b | Verify CI green on push/PR | S | Done | CI file merged |
 | 22.1c | Add CI badge to README | S | Done | Green CI run |
 | 22.2 | Integration workflow | M | Done | M21.3 |
-| 22.3a | Goreleaser snapshot local validation | S | **Remaining** | LICENSE |
-| 22.3b | Fix goreleaser config if needed | S | **Remaining** | Snapshot result |
+| 22.3a | Goreleaser snapshot local validation | S | Done | LICENSE |
+| 22.3b | Fix goreleaser config if needed | S | Done | Snapshot result |
 | 22.4 | Release checklist sign-off | S | **Remaining** | — |
 | 22.5 | Dependabot | S | Done | — |
 | 22.6 | Branch protection recommendations | S | Done | — |
@@ -115,8 +115,8 @@ jobs:
 3. If flaky, fix root cause; do not disable CI.
 
 **Acceptance criteria:**
-- [ ] Green run on push to current branch
-- [ ] Matches local `make test` behavior
+- [x] Green run on push to current branch
+- [x] Matches local `make test` behavior
 
 **Tests:** CI itself
 
@@ -200,9 +200,9 @@ jobs:
 - `dist/checksums.txt`
 
 **Acceptance criteria:**
-- [ ] Snapshot build succeeds locally
-- [ ] `main.version` ldflag matches tag pattern (`v0.2.0` or `v0.2.0-next` for snapshot)
-- [ ] Each tarball contains binary + LICENSE + checksums
+- [x] Snapshot build succeeds locally
+- [x] `main.version` ldflag matches tag pattern (`v0.2.0` or `v0.2.0-next` for snapshot)
+- [x] Each tarball contains binary + LICENSE + checksums
 
 **Tests:** Manual artifact inspection
 
@@ -222,9 +222,9 @@ jobs:
 3. Optional: add a tag-push release job to `.github/workflows/release.yml` (requires `GITHUB_TOKEN` secret with contents:write). This is optional for v0.2.0; manual `goreleaser release` is acceptable.
 
 **Acceptance criteria:**
-- [ ] Snapshot build succeeds after any fixes
-- [ ] Config matches actual GitHub remote (`github.com/lthiagol/lazybrew`)
-- [ ] No secrets in `.goreleaser.yml`
+- [x] Snapshot build succeeds after any fixes
+- [x] Config matches actual GitHub remote (`github.com/lthiagol/lazybrew`)
+- [x] No secrets in `.goreleaser.yml`
 
 ---
 
@@ -298,17 +298,17 @@ Not enforced by agent — human GitHub settings.
 ## Definition of Done
 
 - [x] 22.1a CI workflow file committed
-- [ ] 22.1b CI green on push/PR
+- [x] 22.1b CI green on push/PR
 - [x] 22.1c CI badge added to README
 - [x] 22.2 integration workflow file committed
-- [ ] 22.3a goreleaser snapshot succeeds locally
-- [ ] 22.3b goreleaser config fixed if needed
+- [x] 22.3a goreleaser snapshot succeeds locally
+- [x] 22.3b goreleaser config fixed if needed
 - [ ] 22.4 release checklist signed off
 - [x] 22.5 dependabot configured
 - [x] 22.6 branch protection recommendations documented
-- [ ] CI green on default branch
+- [x] CI green on default branch
 - [ ] Integration workflow runnable
-- [ ] Goreleaser snapshot succeeds
+- [x] Goreleaser snapshot succeeds
 - [ ] release-checklist.md exists and verified
 - [x] status.md updated
 

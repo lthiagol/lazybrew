@@ -1,10 +1,10 @@
 # Milestone 21 — Test Strategy v2
 
-> **Status:** ⚠️ Partial (~80% done)  
-> **Size estimate:** S remaining (2 teatest flows)  
+> **Status:** ✅ Done  
+> **Size estimate:** —  
 > **Depends on:** M19.5 (done), M20 phase A (done)  
 > **Enables:** M22 full gates, M17 safe refactor  
-> **Parallel track:** D (Quality) — T2 remaining
+> **Parallel track:** D (Quality) — complete
 
 See [planning-challenge-2026-06-13.md](../archive/planning-challenge-2026-06-13.md) — do not wait for all of M20.
 
@@ -44,9 +44,7 @@ Implemented:
 - **21.3** `internal/brew/runner_integration_test.go` with 5 integration tests.
 - **21.4** `internal/gui/regression_test.go` covers C1/C3/H1–H3 findings.
 - **21.5** `make cover-check` + `scripts/check-coverage.sh` exist.
-- **21.2** 6 teatest flows exist in `internal/gui/flows/` (navigation, search, help, refresh, modal, tabs).
-
-Remaining: 2 flow tests from the original 8 (install, uninstall).
+- **21.2** 8 teatest flows exist in `internal/gui/flows/` (navigation, search, help, refresh, modal, tabs, install, uninstall).
 
 ---
 
@@ -70,16 +68,16 @@ Remaining: 2 flow tests from the original 8 (install, uninstall).
 | 21.7 | (Moved to M19.0) TypedCache | — | T0 | Done | M19.0 |
 | 21.1 | teatest helper + fixtures | M | T1 | Done | M19.5 |
 | 21.3 | Integration test suite | M | T1 | Done | — |
-| 21.2 | Core E2E flows | S remaining | T2 | **Partial** | 21.1, M20.1 |
+| 21.2 | Core E2E flows | L | T2 | Done | 21.1, M20.1 |
 | 21.4 | Regression tests from review | M | T2 | Done | M19.6, M20 |
 | 21.5 | Coverage gates in Makefile | S | T3 | Done | 21.2 |
 
-### 21.2 breakdown (remaining work)
+### 21.2 breakdown
 
-| Sub-step | Title | Size | Assertion |
-|---|---|---|---|
-| 21.2a | Install flow teatest | S | Search `/` → `i` → mock install called |
-| 21.2b | Uninstall flow teatest | S | `x` → confirm → mock uninstall called |
+| Sub-step | Title | Size | Assertion | Status |
+|---|---|---|---|---|
+| 21.2a | Install flow teatest | S | Search `/` → `i` → mock install called | Done |
+| 21.2b | Uninstall flow teatest | S | `x` → confirm → mock uninstall called | Done |
 
 ---
 
@@ -185,7 +183,7 @@ func requireBrew(t *testing.T) *DefaultRunner
 
 ### 21.2 — Core E2E Flows
 
-**Size:** L · **Tier:** T2 · **Depends on:** 21.1, M20.1 · **Status:** Partial (6 done, 2 remaining)
+**Size:** L · **Tier:** T2 · **Depends on:** 21.1, M20.1 · **Status:** Done
 
 **Directory:** `internal/gui/flows/`
 
@@ -193,8 +191,8 @@ func requireBrew(t *testing.T) *DefaultRunner
 |---|---|---|---|---|
 | 1 | `navigation_test.go` | Tab between panels | Done | View contains "Formulae" |
 | 2 | `search_test.go` | `/` query Enter | Done | Search panel active |
-| 3 | `install_test.go` | Search → `i` | **Remaining** | Mock install called |
-| 4 | `uninstall_test.go` | `x` → confirm | **Remaining** | Mock uninstall called |
+| 3 | `install_test.go` | Search → `i` | Done | Mock install called |
+| 4 | `uninstall_test.go` | `x` → confirm | Done | Mock uninstall called |
 | 5 | `refresh_test.go` | `R` | Done | Mock list called again |
 | 6 | `modal_test.go` | Modal open | Done | `q` doesn't quit |
 | 7 | `tabs_test.go` | `]` Deps tab | Done | View contains mock deps string |
@@ -210,8 +208,8 @@ out := readOutput(t, tm.FinalOutput(t))
 ```
 
 **Acceptance criteria:**
-- [ ] ≥8 flow tests with View assertions (not just model field checks)
-- [ ] All pass `-race`
+- [x] ≥8 flow tests with View assertions (not just model field checks)
+- [x] All pass `-race`
 
 ---
 
@@ -238,8 +236,8 @@ out := readOutput(t, tm.FinalOutput(t))
 - `i` on Search panel uses `m.executeSearchInstall()` or similar path; verify the exact handler name before writing the test.
 
 **Acceptance criteria:**
-- [ ] Test compiles and passes with `go test -race ./internal/gui/flows/...`
-- [ ] Test asserts the install command was recorded by the mock runner.
+- [x] Test compiles and passes with `go test -race ./internal/gui/flows/...`
+- [x] Test asserts the install command was recorded by the mock runner.
 
 **Tests:** `TestInstallFlow`
 
@@ -268,8 +266,8 @@ out := readOutput(t, tm.FinalOutput(t))
 - If the handler uses a confirmation modal, wait for the modal state in the output.
 
 **Acceptance criteria:**
-- [ ] Test compiles and passes with `go test -race ./internal/gui/flows/...`
-- [ ] Test asserts the uninstall command was recorded by the mock runner.
+- [x] Test compiles and passes with `go test -race ./internal/gui/flows/...`
+- [x] Test asserts the uninstall command was recorded by the mock runner.
 
 **Tests:** `TestUninstallFlow`
 
@@ -343,7 +341,7 @@ Raise floors only when tests land — script reads actual and compares.
 ## Definition of Done
 
 - [x] T0–T3 complete (21.7 satisfied by M19.0)
-- [ ] ≥8 teatest flows (6 done, 2 remaining)
+- [x] ≥8 teatest flows
 - [x] ≥5 integration tests
 - [x] Regression tests for C1, C3, H1–H3
 - [x] `make cover-check` exists

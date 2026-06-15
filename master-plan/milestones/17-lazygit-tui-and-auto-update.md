@@ -1,11 +1,10 @@
 # Milestone 17 — Lazygit-Inspired TUI & Auto-Update
 
-> **Status:** ⚠️ Partial (~95% done)  
-> **Size estimate:** S remaining (17.3 only)  
+> **Status:** ✅ Done  
 > **Depends on:** M19 ✅, M20 ✅, M21 T2 (baseline done)  
 > **Enables:** v0.3.0 UX release, `ShowIcons` (backlog B-10)  
 > **Parallel track:** F (Polish)  
-> **Gate criteria:** Update summary toast shown after `brew update`; no new `program.Send`  
+> **Gate criteria:** ✅ Update summary toast shown after `brew update`; no new `program.Send`  
 > **Format:** Refined 2026-06-13 ([templates/milestone.md](../templates/milestone.md))
 
 See [planning-challenge-2026-06-13.md](../archive/planning-challenge-2026-06-13.md) — M17 runs after correctness + CI, not after M15/M16 alone.
@@ -34,9 +33,7 @@ Implemented and verified:
 - **17.8** Main panel breadcrumb (`Panel › Tab`).
 - **17.11** Search result info preview in main panel.
 
-Remaining:
-
-- **17.3** `parseUpdateSummary` + toast after `brew update` completes. The code collects `updateOutput` but never parses it.
+- **17.3** `parseUpdateSummary` + toast after `brew update` completes. ✅ Done.
 
 ---
 
@@ -94,7 +91,7 @@ Execute **in order**. Complete phase gate before next phase.
 |---|---|---|---|---|---|
 | 17.1 | Messages + model fields | S | A | Done | `StartUpdateMsg`, `UpdateCompleteMsg`, fields |
 | 17.2 | Auto-update Init + handlers | M | A | Done | Non-blocking update; R key behavior |
-| 17.3 | `parseUpdateSummary` | S | A | **Remaining** | Toast summary strings |
+| 17.3 | `parseUpdateSummary` | S | A | Done | Toast summary strings |
 | 17.4 | `renderSidebarContent` | M | B | Done | Compact sidebar list renderer |
 | 17.5 | `computeContentHeights` | M | B | Done | Accordion row math |
 | 17.6 | Per-panel sidebar boxes | L | B | Done | `box.go`, rewrite `renderSidebar` |
@@ -309,7 +306,7 @@ case "R":
 
 ### 17.3 — Update Output Parsing
 
-**Size:** S · **Phase:** A · **Status:** Remaining
+**Size:** S · **Phase:** A · **Status:** Done
 
 **What:** Extract a human-readable summary from `brew update` output and show it as a toast when the update completes successfully.
 
@@ -358,10 +355,10 @@ case "R":
 - Non-English output → empty string (safe fallback).
 
 **Acceptance criteria:**
-- [ ] Parser unit tests pass for all listed cases.
-- [ ] Successful update shows a toast matching parser output.
-- [ ] Failed update still shows the existing error toast, not the summary.
-- [ ] No new `program.Send` introduced.
+- [x] Parser unit tests pass for all listed cases.
+- [x] Successful update shows a toast matching parser output.
+- [x] Failed update still shows the existing error toast, not the summary.
+- [x] No new `program.Send` introduced.
 
 **Tests:**
 - `TestParseUpdateSummary` table-driven unit test in `internal/gui/commands_test.go`.
@@ -1310,9 +1307,9 @@ go test -race ./internal/gui/...
 
 ## Definition of Done
 
-- [x] Phases A–D complete except 17.3
+- [x] Phases A–D complete
 - [x] Auto-update uses TaskManager (D17-2) — no new `program.Send`
-- [ ] 17.3 `parseUpdateSummary` + toast implemented and tested
+- [x] 17.3 `parseUpdateSummary` + toast implemented and tested
 - [x] All other tests in Test Plan exist and pass
 - [x] `go test -race ./...` passes
 - [x] [smoke-checklist.md](../smoke-checklist.md) re-run after visual changes

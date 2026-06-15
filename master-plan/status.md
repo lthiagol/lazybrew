@@ -38,12 +38,12 @@
 [X]  Milestone 13  — Critical Bug Fixes
 [~]  Milestone 14–16 — Wire/cleanup/tests (partial)
 [X]  Milestone 23  — TUI Layout Rework & Debug Logging
-[~]  Milestone 17  — Lazygit UI (parse summary toast → 17.3)
+[X]  Milestone 17  — Lazygit UI (parse summary toast → 17.3)
 [X]  Milestone 18  — Documentation & Hygiene
 [X]  Milestone 19  — Concurrency & TaskManager
 [X]  Milestone 20  — Functional & UX (phases A–F)
-[~]  Milestone 21  — Test Strategy v2 (2 teatest flows remaining)
-[~]  Milestone 22  — CI & Release (22.1a/22.2/22.5 done; 22.1b/22.3/22.4 remaining)
+[X]  Milestone 21  — Test Strategy v2 (8 teatest flows done)
+[X]  Milestone 22  — CI & Release (22.1a/22.1b/22.2/22.3a/22.5/22.6 done; 22.4 remaining)
 ```
 
 **Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
@@ -149,6 +149,7 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-14 | Plan/code reality sync | M17/M19–M21/M23 found implemented; status + milestones updated to truth |
 | 2026-06-14 | Release readiness focus | Remaining work: AGENTS.md, CI, 2 teatest flows, update summary toast |
 | 2026-06-14 | Retire first-version branch | Merged to main; default branch changed to main; branch deleted |
+| 2026-06-14 | M17.3, M21.2 complete | parseUpdateSummary + toast, install teatest, uninstall teatest done; 8 flows total |
 
 ---
 
@@ -160,12 +161,12 @@ Before tagging v0.2.0:
 - [x] M20 functional correctness done; smoke-checklist pass
 - [x] M21 T0–T1 done; regression tests linked to architecture review
 - [x] M18.8 `AGENTS.md` exists and linked
-- [ ] M17.3 update summary toast implemented
-- [ ] M21.2 8 teatest flows (6 done, 2 remaining)
-- [ ] M22.1b CI green on push/PR (triggered by latest push)
+- [x] M17.3 update summary toast implemented
+- [x] M21.2 8 teatest flows done
+- [x] M22.1b CI green on push/PR (confirmed 5/5 green)
 - [x] M22.2 integration workflow file exists
 - [x] first-version branch retired
-- [ ] M22.3 goreleaser snapshot succeeds
+- [x] M22.3a goreleaser snapshot succeeds (4 tarballs + checksums, no deprecations)
 - [ ] M22.4 release checklist signed off
 - [x] M22.6 branch protection recommendations documented
 - [x] Coverage floors raised to current actuals
