@@ -17,6 +17,7 @@
 | B-09 | Homebrew formula for lazybrew | User install | Post v1.0 | Low |
 | B-11 | TypedCache serialization for config hot-reload | Planning | If config reload is added | Low |
 | B-12 | Config migration path for renamed fields | Planning | If `ShowIcons` semantics change | Low |
+| B-13 | Command log border frame | M23 — border causes teatest height mismatch | After M21 E2E tests are stable | Low |
 
 ---
 

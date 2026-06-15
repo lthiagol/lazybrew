@@ -4,7 +4,7 @@
 > **Stack:** Go + Bubble Tea + Lip Gloss + Bubbles  
 > **Platforms:** macOS + Linux  
 > **Created:** 2026-06-11  
-> **Last Updated:** 2026-06-13 (planning pass 2)  
+> **Last Updated:** 2026-06-14 (milestone 23 complete)  
 > **Target Homebrew:** 6.0.0+
 
 ---
@@ -37,6 +37,7 @@
 [~]  Milestone 12  — Test Infrastructure (E2E → M21)
 [X]  Milestone 13  — Critical Bug Fixes
 [~]  Milestone 14–16 — Wire/cleanup/tests (partial)
+[X]  Milestone 23  — TUI Layout Rework & Debug Logging
 [ ]  Milestone 17  — Lazygit UI (after M19–M22)
 [ ]  Milestone 18  — Documentation & Hygiene
 [ ]  Milestone 19  — Concurrency & TaskManager
@@ -47,7 +48,7 @@
 
 **Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
 
-**Current phase:** Planning complete for M18–M22 — ready for execution  
+**Current phase:** Milestone 23 complete  
 **Execution entry point:** M18.1 + M19.0 in parallel, then M18.5 → M19.1
 
 ---
@@ -81,6 +82,7 @@ M18.5 → M19.1 → M19.5 → M19.6 → M20.A → M20.B → M21.T2 → M22.4 →
 | 20 | [Functional UX](milestones/20-functional-completeness-and-ux.md) | 20.1–20.11 | L | smoke-checklist pass |
 | 21 | [Tests v2](milestones/21-test-strategy-v2.md) | 21.0–21.5 | M–L | 8 E2E + 5 integration |
 | 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1–22.6 | M | CI green + goreleaser |
+| 23 | [TUI Layout Rework](milestones/23-tui-layout-and-debug-logging.md) | 23.1–23.8 | M | Layout fills space, two-line bar, debug log |
 | 17 | [Lazygit UI](milestones/17-lazygit-tui-and-auto-update.md) | 17.1–17.11 (phases A–D) | L | After M19–M22; refined template |
 
 Legacy milestones M1–M17: see [milestone-legacy-index.md](milestone-legacy-index.md)
@@ -140,6 +142,7 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-13 | M22.1 early CI | Don't wait for full test pyramid |
 | 2026-06-13 | backlog.md | B-01–B-10 deferred explicitly |
 | 2026-06-13 | M17 last | Visual work after correctness + CI |
+| 2026-06-14 | M23 complete | TUI layout rework (fill, command log, two-line bar, spinner, debug log) |
 
 ---
 
