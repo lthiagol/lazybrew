@@ -4,7 +4,7 @@
 > **Stack:** Go + Bubble Tea + Lip Gloss + Bubbles  
 > **Platforms:** macOS + Linux  
 > **Created:** 2026-06-11  
-> **Last Updated:** 2026-06-14 (plan synced to code reality; release readiness tracked)  
+> **Last Updated:** 2026-06-15 (M25 adoption order set; M24–M27 performance pass ready)  
 > **Target Homebrew:** 6.0.0+
 
 ---
@@ -38,6 +38,10 @@
 [X]  Milestone 13  — Critical Bug Fixes
 [~]  Milestone 14–16 — Wire/cleanup/tests (partial)
 [X]  Milestone 23  — TUI Layout Rework & Debug Logging
+[ ]  Milestone 24  — Outdated Panel Performance
+[ ]  Milestone 25  — Diagnostics Error Handling
+[ ]  Milestone 26  — Taps Panel Batch Loading
+[ ]  Milestone 27  — Tiered Refresh & Polling Strategy
 [X]  Milestone 17  — Lazygit UI (parse summary toast → 17.3)
 [X]  Milestone 18  — Documentation & Hygiene
 [X]  Milestone 19  — Concurrency & TaskManager
@@ -48,8 +52,8 @@
 
 **Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
 
-**Current phase:** Release readiness  
-**Execution entry point:** M22.1b (verify CI green), then M17.3 + M21.2a/b in parallel, then M22.3 → M22.4
+**Current phase:** Post-v0.2.0 performance pass — adopt M25 first  
+**Execution entry point:** M25 → M24 / M26 → M27
 
 ---
 
@@ -63,18 +67,35 @@ Tracks can run concurrently when dependencies allow.
 | **B — Polish** | M17.3 | Update summary toast | Now | none |
 | **C — Quality** | M21.2a/b | Install + uninstall teatest flows | After M22.1 green | Release tag |
 | **D — Ops** | M22 | Verify CI green, goreleaser, release checklist | Now | Release tag |
+| **E — Performance** | M25 → M24/M26 → M27 | Fix doctor error, reduce brew call volume | Now | — |
 
 ### Critical path
+
+**v0.2.0 release:**
 
 ```
 M22.1b → M21.2a/b → M22.3a → M22.3b → M22.4
 ```
 
-M17.3 can land in parallel with the critical path.
+M17.3 can land in parallel with the release critical path.
+
+**Post-release performance pass:**
+
+```
+M25 → M24 / M26 → M27
+```
+
+M24 and M26 can run in parallel after M25; both must complete before M27.
+
+### Adoption order
+
+1. **Start M25** — `brew doctor` exit=1 fix; smallest, unblocks cleaner debug logs.
+2. **M24 and M26 in parallel** — Outdated combine/coalescing and Taps batch loading; independent except they both benefit from M24.2 coalescing.
+3. **Finish with M27** — tiered refresh and lazy loading everywhere; depends on M24/M25/M26.
 
 ---
 
-## Milestone Index (M17–M23 detail)
+## Milestone Index (M17–M27 detail)
 
 | # | Milestone | Steps | Size | Gate | Status |
 |---|---|---|---|---|---|
@@ -85,6 +106,10 @@ M17.3 can land in parallel with the critical path.
 | 21 | [Tests v2](milestones/21-test-strategy-v2.md) | 21.0–21.5 | S remaining | 8 E2E flows | ~80% done |
 | 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1a–22.4 | M | CI green + goreleaser | Partial |
 | 23 | [TUI Layout Rework](milestones/23-tui-layout-and-debug-logging.md) | 23.1–23.8 | M | Layout fills space, two-line bar, debug log | Done |
+| 24 | [Outdated Panel Performance](milestones/24-outdated-panel-performance.md) | 24.1–24.5 | M | `brew outdated` called once, lazy-loaded, cached | Planned |
+| 25 | [Diagnostics Error Handling](milestones/25-diagnostics-error-handling.md) | 25.1–25.2 | S | `brew doctor` exit=1 parsed as warnings | Planned |
+| 26 | [Taps Panel Batch Loading](milestones/26-taps-panel-batch-loading.md) | 26.1–26.3 | S | One `tap-info --json` call, lazy detail | Planned |
+| 27 | [Tiered Refresh & Polling Strategy](milestones/27-tiered-refresh-and-polling-strategy.md) | 27.1–27.6 | M | Per-class TTLs, lazy panels, pause on interaction | Planned |
 
 Legacy milestones M1–M16: see [milestone-legacy-index.md](archive/milestone-legacy-index.md). Open items from M1–M16 are either done in M17–M23 or tracked in the backlog.
 
@@ -150,6 +175,12 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-14 | Release readiness focus | Remaining work: AGENTS.md, CI, 2 teatest flows, update summary toast |
 | 2026-06-14 | Retire first-version branch | Merged to main; default branch changed to main; branch deleted |
 | 2026-06-14 | M17.3, M21.2 complete | parseUpdateSummary + toast, install teatest, uninstall teatest done; 8 flows total |
+| 2026-06-15 | M24 created | Outdated panel performance: single `brew outdated` call, request coalescing, lazy load, configurable TTL; routes backlog B-02 |
+| 2026-06-15 | M25 created | Diagnostics error handling: `brew doctor` exit=1 parsed as warnings |
+| 2026-06-15 | M26 created | Taps panel batch loading: one `tap-info --json`, lazy FormulaNames/CaskNames |
+| 2026-06-15 | M27 created | Tiered refresh & polling: data classes, per-class TTLs, lazy all panels, pause on interaction |
+| 2026-06-15 | M24–M27 refined | Concrete designs: `Client.Outdated()`, cache promise coalescing, `tap-info --json` verification, config fallback chain, readiness blocks added |
+| 2026-06-15 | Adoption order set | M25 first → M24/M26 parallel → M27 last; status updated |
 
 ---
 
