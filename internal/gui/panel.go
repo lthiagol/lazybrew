@@ -200,7 +200,7 @@ func emptyPanel(width, height int) string {
 	)
 }
 
-func (p *panelData) renderSidebarContent(width, maxRows int) string {
+func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool) string {
 	if p.loading {
 		return lipgloss.NewStyle().Width(width).Render(style.SubtleText.Render("..."))
 	}
@@ -232,8 +232,15 @@ func (p *panelData) renderSidebarContent(width, maxRows int) string {
 		idx := p.offset + i
 		prefix := "  "
 		itemStyle := style.NormalItem
+		if batch != nil && batch[idx] {
+			prefix = "● "
+		}
 		if idx == p.selected {
 			prefix = "▸ "
+			itemStyle = style.SelectedItem
+		}
+		if batch != nil && batch[idx] && idx == p.selected {
+			prefix = "▸●"
 			itemStyle = style.SelectedItem
 		}
 		text := truncateWithEllipsis(prefix+item, width)

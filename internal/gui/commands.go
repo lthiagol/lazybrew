@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,12 +13,6 @@ import (
 	"github.com/thiago/lazybrew/internal/gui/presentation"
 	"github.com/thiago/lazybrew/internal/gui/task"
 )
-
-func (m *Model) startSearch() (tea.Model, tea.Cmd) {
-	inputModal := modal.NewInputModal("Search:")
-	m.activeModal = inputModal
-	return m, inputModal.Init()
-}
 
 func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, tea.Cmd) {
 	switch r := result.(type) {
@@ -34,6 +29,20 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 					label = "Zap"
 				}
 				return m.doMutation(m.pendingMutType, label)
+			case "mutation":
+				labels := map[mutationType]string{
+					mutInstall:   "Install",
+					mutReinstall: "Reinstall",
+					mutUpgrade:   "Upgrade",
+					mutUpgradeAll: "Upgrade All",
+				}
+				label := labels[m.pendingMutType]
+				if label == "" {
+					label = "Install"
+				}
+				return m.doMutation(m.pendingMutType, label)
+			case "batch-upgrade":
+				return m.batchUpgrade()
 			case "untap":
 				return m.executeUntap()
 			case "repair":
@@ -894,6 +903,43 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 		}
 		return DepCheckMsg{MutType: mutType, Name: name, Label: label, Message: message}
 	}
+}
+
+func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {
+	panel := m.panels[m.activePanel]
+	if panel.selected >= len(panel.items) {
+		return m, nil
+	}
+	name := extractPackageName(panel.items[panel.selected])
+	if name == "" {
+		return m, nil
+	}
+
+	actionLabel := label
+	confirmLabel := label + " " + name
+	message := confirmLabel + "?"
+	if mutType == mutUpgradeAll {
+		actionLabel = "Upgrade All"
+		message = "Upgrade all packages?"
+	} else if mutType == mutReinstall {
+		message = "Reinstall " + name + "?"
+	}
+
+	m.pendingAction = "mutation"
+	m.pendingMutType = mutType
+	modal := modal.NewConfirmModal("Confirm "+actionLabel, message)
+	m.activeModal = modal
+	return m, m.activeModal.Init()
+}
+
+func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
+	n := len(m.batch.selected)
+	message := "Upgrade " + strconv.Itoa(n) + " selected packages?"
+
+	m.pendingAction = "batch-upgrade"
+	modal := modal.NewConfirmModal("Confirm Batch Upgrade", message)
+	m.activeModal = modal
+	return m, m.activeModal.Init()
 }
 
 func (m Model) runDoctor() (tea.Model, tea.Cmd) {

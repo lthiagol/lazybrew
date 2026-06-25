@@ -4,7 +4,7 @@
 > **Stack:** Go + Bubble Tea + Lip Gloss + Bubbles  
 > **Platforms:** macOS + Linux  
 > **Created:** 2026-06-11  
-> **Last Updated:** 2026-06-14 (plan synced to code reality; release readiness tracked)  
+> **Last Updated:** 2026-06-15 (M24 created from smoke test findings)  
 > **Target Homebrew:** 6.0.0+
 
 ---
@@ -43,13 +43,14 @@
 [X]  Milestone 19  — Concurrency & TaskManager
 [X]  Milestone 20  — Functional & UX (phases A–F)
 [X]  Milestone 21  — Test Strategy v2 (8 teatest flows done)
-[X]  Milestone 22  — CI & Release (22.1a/22.1b/22.2/22.3a/22.5/22.6 done; 22.4 remaining)
+[X]  Milestone 22  — CI & Release (22.1a/22.1b/22.2/22.3a/22.5/22.6 done; blocked by M24)
+[ ]  Milestone 24  — Smoke Test Fixes (13 findings from M22.4 smoke test)
 ```
 
 **Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
 
-**Current phase:** Release readiness  
-**Execution entry point:** M22.1b (verify CI green), then M17.3 + M21.2a/b in parallel, then M22.3 → M22.4
+**Current phase:** M24 — Smoke test fixes (blocks v0.2.0 release)  
+**Execution entry point:** M24.1 → M24.2 → M24.3–24.4 → M24.5–24.7 → M24.8–24.10 → M24.11–24.12 → M24.13
 
 ---
 
@@ -59,18 +60,14 @@ Tracks can run concurrently when dependencies allow.
 
 | Track | Milestones | Owner focus | Starts | Blocks |
 |---|---|---|---|---|
-| **A — Docs** | M18 | Complete | — | — |
-| **B — Polish** | M17.3 | Update summary toast | Now | none |
-| **C — Quality** | M21.2a/b | Install + uninstall teatest flows | After M22.1 green | Release tag |
-| **D — Ops** | M22 | Verify CI green, goreleaser, release checklist | Now | Release tag |
+| **A — Smoke Fixes** | M24 | All 13 smoke test findings | Now | v0.2.0 release |
+| **B — Ops** | M22.4 | Release checklist sign-off | After M24 | v0.2.0 tag |
 
 ### Critical path
 
 ```
-M22.1b → M21.2a/b → M22.3a → M22.3b → M22.4
+M24.1 → M24.2 → M24.3–24.4 → M24.5–24.7 → M24.8–24.10 → M24.11–24.12 → M24.13 → M22.4
 ```
-
-M17.3 can land in parallel with the critical path.
 
 ---
 
@@ -85,6 +82,7 @@ M17.3 can land in parallel with the critical path.
 | 21 | [Tests v2](milestones/21-test-strategy-v2.md) | 21.0–21.5 | S remaining | 8 E2E flows | ~80% done |
 | 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1a–22.4 | M | CI green + goreleaser | Partial |
 | 23 | [TUI Layout Rework](milestones/23-tui-layout-and-debug-logging.md) | 23.1–23.8 | M | Layout fills space, two-line bar, debug log | Done |
+| 24 | [Smoke Test Fixes](milestones/24-smoke-test-fixes.md) | 24.1–24.13 | M | All smoke checklist items pass | Planned |
 
 Legacy milestones M1–M16: see [milestone-legacy-index.md](archive/milestone-legacy-index.md). Open items from M1–M16 are either done in M17–M23 or tracked in the backlog.
 
@@ -150,15 +148,20 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-14 | Release readiness focus | Remaining work: AGENTS.md, CI, 2 teatest flows, update summary toast |
 | 2026-06-14 | Retire first-version branch | Merged to main; default branch changed to main; branch deleted |
 | 2026-06-14 | M17.3, M21.2 complete | parseUpdateSummary + toast, install teatest, uninstall teatest done; 8 flows total |
+| 2026-06-15 | M24 created | 13 smoke test findings from M22.4 pre-release; blocks v0.2.0 |
 
 ---
 
 ## Release Readiness
 
+**⚠️ Blocked by M24 — 13 smoke test findings discovered during M22.4 pre-release test.**
+See [milestones/24-smoke-test-fixes.md](milestones/24-smoke-test-fixes.md) for details and fix plan.
+
 Before tagging v0.2.0:
 
+- [ ] M24 all steps complete; smoke test re-passed
 - [x] M19 TaskManager done; zero `program.Send`
-- [x] M20 functional correctness done; smoke-checklist pass
+- [x] M20 functional correctness done (smoke-checklist pass — will re-verify in M24.13)
 - [x] M21 T0–T1 done; regression tests linked to architecture review
 - [x] M18.8 `AGENTS.md` exists and linked
 - [x] M17.3 update summary toast implemented
@@ -177,25 +180,27 @@ Before tagging v0.2.0:
 
 ## Release Readiness Execution Plan
 
-Remaining work is small and mostly parallelizable. Suggested order:
+M24 must complete before M22.4 sign-off. Suggested order:
 
-### Phase 1 — Independent implementation (can run in parallel)
-
-| Step | Owner | Deliverable | Notes |
-|---|---|---|---|
-| **M17.3** | Any | `parseUpdateSummary` + toast | See milestone file for exact handler change and tests |
-| **M21.2a** | Any | `install_test.go` teatest | Requires custom MockRunner to record install args |
-| **M21.2b** | Any | `uninstall_test.go` teatest | Seed Formulae panel with one item, confirm modal, assert uninstall args |
-
-### Phase 2 — External verification (wait after push)
+### Phase 1 — M24 Implementation (phases A–E in order)
 
 | Step | Owner | Deliverable | Notes |
 |---|---|---|---|
-| **M22.1b** | GitHub Actions | CI badge green | Already triggered; check Actions tab. Fix any flakiness before release |
-| **M22.3a** | Human/agent | `goreleaser release --snapshot --clean` green | Install goreleaser CLI first |
-| **M22.3b** | Human/agent | `.goreleaser.yml` fixed if needed | Only if 22.3a fails |
+| **M24.1** | Any | Operation output in right panel instead of floating modal | Core architecture change |
+| **M24.2** | Any | Command log shows executed brew commands | Wire callbacks, fix ring buffer |
+| **M24.3** | Any | Fix `/` search keybind | Always activate PanelSearch |
+| **M24.4** | Any | Info & install keybinds on search results | `i` / `I` in Search panel |
+| **M24.5** | Any | Fix Deps tab loading | Debug fetch + cache |
+| **M24.6** | Any | Fix R refresh with toast feedback | Visual confirmation |
+| **M24.7** | Any | Handle doctor/vulns non-zero exit gracefully | Show output even on exit 1 |
+| **M24.8** | Any | Fix Space selection indicator in Outdated | Bullet prefix rendering |
+| **M24.9** | Any | Fix multi-select batch upgrade | Batch selection + upgrade |
+| **M24.10** | Any | Add confirmation prompts for mutations | Confirm modal before install/upgrade |
+| **M24.11** | Any | Graceful cancel (no red error toast) | context.Canceled handling |
+| **M24.12** | Any | Loading spinner on panels on data load | Animated spinner during fetch |
+| **M24.13** | Human | Manual smoke test pass | All checklist items |
 
-### Phase 3 — Final gate
+### Phase 2 — Final gate
 
 | Step | Owner | Deliverable | Notes |
 |---|---|---|---|
@@ -204,6 +209,6 @@ Remaining work is small and mostly parallelizable. Suggested order:
 
 ### Risks to watch
 
-- **CI flakiness:** `-race` on GitHub Actions can be slower than locally; if it times out, increase test timeout or split jobs.
+- **M24.1 scope creep:** Output architecture change could cascade; keep focused on right-panel rendering, don't redesign the full task system
+- **CI flakiness:** `-race` on GitHub Actions can be slower than locally; if it times out, increase test timeout or split jobs
 - **Goreleaser version:** The config uses `version: 2`. Ensure installed goreleaser is v2.x.
-- **SSH/agent:** Future pushes from this environment may need `SSH_AUTH_SOCK` pointed at the active socket.

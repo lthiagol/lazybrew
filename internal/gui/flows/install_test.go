@@ -68,8 +68,8 @@ func TestInstallFlow(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
 	time.Sleep(100 * time.Millisecond)
-	tm.Send(tea.KeyMsg{Type: tea.KeyEnter})
-	time.Sleep(50 * time.Millisecond)
+	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+	time.Sleep(300 * time.Millisecond)
 	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
 

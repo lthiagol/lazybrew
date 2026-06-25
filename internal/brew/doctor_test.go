@@ -24,6 +24,37 @@ func TestDiagnosticsDoctorClean(t *testing.T) {
 	}
 }
 
+func TestDiagnosticsDoctorExitCode1(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte("Warning: Your Homebrew is outdated.\nRun `brew update` to get the latest.\n"), &BrewExitError{Command: "doctor", ExitCode: 1}
+	}
+	cache := NewCache(time.Minute)
+	diag := NewDiagnosticsReader(r, cache)
+
+	warnings, err := diag.Doctor(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 1 {
+		t.Fatalf("expected 1 warning, got %d", len(warnings))
+	}
+}
+
+func TestDiagnosticsDoctorRealError(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return nil, &BrewExitError{Command: "doctor", ExitCode: 2}
+	}
+	cache := NewCache(time.Minute)
+	diag := NewDiagnosticsReader(r, cache)
+
+	_, err := diag.Doctor(context.Background())
+	if err == nil {
+		t.Fatal("expected error for exit code 2")
+	}
+}
+
 func TestDiagnosticsDoctorWarnings(t *testing.T) {
 	r := NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {

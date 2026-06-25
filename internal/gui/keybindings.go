@@ -19,6 +19,8 @@ func panelHints(id PanelID) []keyHint {
 		return []keyHint{{"R", "refresh"}, {"c", "cleanup"}, {"d", "doctor"}, {"A", "autoremove"}, {"B", "brewfile"}, {"v", "vulns"}, {"m", "missing"}}
 	case PanelOutdated:
 		return []keyHint{{"j/k", "navigate"}, {"u", "upgrade"}, {"Space", "select"}}
+	case PanelSearch:
+		return []keyHint{{"j/k", "navigate"}, {"Enter", "search"}, {"i", "info"}, {"I", "install"}}
 	default:
 		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}}
 	}

@@ -39,3 +39,31 @@ type ProgressCompleteMsg struct {
 	Err  error
 	Name string
 }
+
+type opStatus int
+
+const (
+	opRunning opStatus = iota
+	opSuccess
+	opError
+	opCancelled
+)
+
+type Operation struct {
+	Title  string
+	Lines  []string
+	Status opStatus
+	Err    error
+}
+
+func (o *Operation) AppendLine(line string) {
+	o.Lines = append(o.Lines, line)
+}
+
+func (o *Operation) Running() bool {
+	return o.Status == opRunning
+}
+
+func (o *Operation) Done() bool {
+	return o.Status != opRunning
+}

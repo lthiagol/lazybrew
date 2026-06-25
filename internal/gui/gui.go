@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -58,6 +59,10 @@ type Model struct {
 	tasks      *task.Manager
 	commandLog *CommandLog
 	spinner    spinner.Model
+	opState    *Operation
+	opDoneAt   time.Time
+	taskID     string
+	refreshing int
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -188,15 +193,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case ProgressLineMsg:
-		if m.activeModal != nil {
-			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
-				p.AppendLine(msg.Line)
-			}
+		if m.opState != nil {
+			m.opState.AppendLine(msg.Line)
 		}
 		return m, nil
 
 	case TaskStartedMsg:
-		m.activeModal = modal.NewProgressModal(msg.Title, m.tasks.CancelCurrent)
+		m.opState = &Operation{
+			Title:  msg.Title,
+			Status: opRunning,
+		}
+		m.opDoneAt = time.Time{}
+		m.taskID = msg.ID
 		return m, m.tasks.RunNext()
 
 	case UpdateTickMsg:
@@ -226,10 +234,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.isUpdating {
 			m.updateOutput = append(m.updateOutput, msg.Line)
 		}
-		if m.activeModal != nil {
-			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
-				p.AppendLine(msg.Line)
-			}
+		if m.opState != nil {
+			m.opState.AppendLine(msg.Line)
 		}
 		return m, m.tasks.RunNext()
 
@@ -237,6 +243,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.ID == "brew-update" {
 			m.isUpdating = false
 			m.lastUpdate = time.Now()
+			m.opState = nil
 			if msg.Err != nil {
 				m.toast = modal.NewToast("Update: "+msg.Err.Error(), modal.ToastError)
 			} else {
@@ -250,13 +257,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				func() tea.Msg { return RefreshMsg{} },
 			)
 		}
-		if m.activeModal != nil {
-			if p, ok := m.activeModal.(*modal.ProgressModal); ok {
-				p.SetDone(msg.Err)
+		if m.opState != nil {
+			if msg.Err != nil {
+				if errors.Is(msg.Err, context.Canceled) {
+					m.opState.Status = opCancelled
+				} else {
+					m.opState.Status = opError
+					m.opState.Err = msg.Err
+				}
+			} else {
+				m.opState.Status = opSuccess
 			}
+			m.opDoneAt = time.Now()
 		}
-		if msg.Err != nil {
+		if msg.Err != nil && !errors.Is(msg.Err, context.Canceled) {
 			m.toast = modal.NewToast(msg.Title+": "+msg.Err.Error(), modal.ToastError)
+			return m, m.tasks.RunNext()
+		}
+		if errors.Is(msg.Err, context.Canceled) {
 			return m, m.tasks.RunNext()
 		}
 		switch msg.ID {
@@ -342,11 +360,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.activeModal.Init()
 
 	case TabContentMsg:
-		if msg.Err != nil && msg.Content == "" {
-			return m, nil
-		}
 		key := tabKey(msg.PanelID, msg.TabIndex, msg.ItemName)
-		m.tabContent[key] = msg.Content
+		if msg.Err != nil {
+			m.tabContent[key] = "Error: " + msg.Err.Error()
+		} else if msg.Content != "" {
+			m.tabContent[key] = msg.Content
+		} else {
+			m.tabContent[key] = "No data"
+		}
 		return m, nil
 
 	case tea.WindowSizeMsg:
@@ -380,10 +401,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.clearPanelTabContent(msg.PanelID)
+		if m.refreshing > 0 {
+			m.refreshing--
+			if m.refreshing == 0 {
+				m.toast = modal.NewToast("Data refreshed", modal.ToastSuccess)
+			}
+		}
 		return m, nil
 
 	case RefreshMsg:
 		m.clearTabContent()
+		m.refreshing = 6
 		cmds := []tea.Cmd{
 			fetchPanelData(m.client, PanelFormulae),
 			fetchPanelData(m.client, PanelCasks),
@@ -441,6 +469,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "esc":
+			if m.opState != nil && m.opState.Running() {
+				m.tasks.CancelCurrent()
+				return m, nil
+			}
+			if m.opState != nil && m.opState.Done() {
+				m.opState = nil
+				return m, nil
+			}
 			if m.showHelp {
 				m.showHelp = false
 			}
@@ -515,15 +551,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = m.nextTab()
 
 		case "/":
-			if m.activePanel == PanelSearch {
-				m.searchInput.Focus()
-				return m, m.searchInput.Cursor.BlinkCmd()
-			}
-			m, cmd := m.startSearch()
-			return m, cmd
+			m.switchPanel(PanelSearch)
+			m.searchInput.Focus()
+			return m, m.searchInput.Cursor.BlinkCmd()
 
 		case "enter":
-			if m.activePanel == PanelSearch && m.searchInput.Value() != "" {
+			if m.activePanel == PanelSearch && m.searchInput.Focused() {
 				m.searchInput.Blur()
 				return m, m.executeSearch(m.searchInput.Value())
 			}
@@ -537,7 +570,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "i":
 			if m.activePanel == PanelSearch {
-				return m.doMutation(mutInstall, "Install")
+				return m.confirmMutation(mutInstall, "Install")
 			}
 		case "x":
 			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
@@ -552,7 +585,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "r":
 			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
-				return m.doMutation(mutReinstall, "Reinstall")
+				return m.confirmMutation(mutReinstall, "Reinstall")
 			}
 			if m.activePanel == PanelTaps {
 				return m.confirmRepair()
@@ -564,15 +597,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "u":
 			if m.activePanel == PanelOutdated {
 				if len(m.batch.selected) > 0 {
-					return m.batchUpgrade()
+					return m.confirmBatchUpgrade()
 				}
-				return m.doMutation(mutUpgrade, "Upgrade")
+				return m.confirmMutation(mutUpgrade, "Upgrade")
 			}
 			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
-				return m.doMutation(mutUpgrade, "Upgrade")
+				return m.confirmMutation(mutUpgrade, "Upgrade")
 			}
 		case "U":
-			return m.doMutation(mutUpgradeAll, "Upgrade All")
+			return m.confirmMutation(mutUpgradeAll, "Upgrade All")
 		case " ":
 			if m.activePanel == PanelOutdated {
 				p := m.panels[PanelOutdated]

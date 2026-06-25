@@ -51,7 +51,10 @@ func (s *diagnosticsReader) Doctor(ctx context.Context) ([]DoctorWarning, error)
 
 	output, err := s.runner.Execute(ctx, "doctor")
 	if err != nil {
-		return nil, err
+		// brew doctor exits 1 when warnings are found — still parse output
+		if !IsExitCode(err, 1) {
+			return nil, err
+		}
 	}
 
 	text := string(output)
@@ -131,7 +134,9 @@ func (s *diagnosticsReader) parseMissingOutput(text string) []MissingDep {
 func (s *diagnosticsReader) Vulns(ctx context.Context) (string, error) {
 	output, err := s.runner.Execute(ctx, "vulns")
 	if err != nil {
-		return "", err
+		if !IsExitCode(err, 1) {
+			return "", err
+		}
 	}
 	return string(output), nil
 }

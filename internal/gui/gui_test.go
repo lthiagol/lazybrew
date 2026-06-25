@@ -1,7 +1,9 @@
 package gui
 
 import (
+	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -210,8 +212,43 @@ func TestSearchFlow(t *testing.T) {
 	m := newTestModel()
 
 	m = sendKey(m, "/")
-	if m.activeModal == nil {
-		t.Fatal("search modal should be active after /")
+	if m.activePanel != PanelSearch {
+		t.Fatalf("expected PanelSearch after /, got %v", m.activePanel)
+	}
+	if !m.searchInput.Focused() {
+		t.Fatal("search input should be focused after /")
+	}
+}
+
+func TestSearchEnterShowsInfo(t *testing.T) {
+	m := newTestModel()
+	m.switchPanel(PanelSearch)
+	m.searchInput.SetValue("lolcat")
+	m.searchInput.Blur()
+	m.searchResults = []brew.SearchResult{
+		{Name: "lolcat", IsFormula: true},
+	}
+	m.panels[PanelSearch].items = []string{"lolcat  formula  installed  lolcat description"}
+	m.panels[PanelSearch].selected = 0
+
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected command from Enter on search result")
+	}
+}
+
+func TestSearchInstallKeybind(t *testing.T) {
+	m := newTestModel()
+	m.switchPanel(PanelSearch)
+	m.searchResults = []brew.SearchResult{
+		{Name: "lolcat", IsFormula: true},
+	}
+	m.panels[PanelSearch].items = []string{"lolcat  formula  installed  lolcat description"}
+	m.panels[PanelSearch].selected = 0
+
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	if cmd == nil {
+		t.Fatal("expected command from i on search result")
 	}
 }
 
@@ -594,23 +631,26 @@ func TestModelTaskStartedOpensModal(t *testing.T) {
 	m := newTestModel()
 	msg := TaskStartedMsg{ID: "t1", Title: "Test Task"}
 	m = updateModel(m, msg)
-	if m.activeModal == nil {
-		t.Fatal("expected modal to be opened")
+	if m.opState == nil {
+		t.Fatal("expected opState to be set")
 	}
-	if _, ok := m.activeModal.(*modal.ProgressModal); !ok {
-		t.Fatalf("expected ProgressModal, got %T", m.activeModal)
+	if m.opState.Title != "Test Task" {
+		t.Fatalf("expected Title 'Test Task', got %q", m.opState.Title)
+	}
+	if !m.opState.Running() {
+		t.Fatal("expected opState to be running")
 	}
 }
 
 func TestModelTaskOutputAppendsLine(t *testing.T) {
 	m := newTestModel()
-	m.activeModal = modal.NewProgressModal("Test", nil)
+	m.opState = &Operation{Title: "Test", Status: opRunning, Lines: []string{}}
 
 	msg := TaskOutputMsg{ID: "t1", Line: "hello"}
 	m = updateModel(m, msg)
 
-	if m.activeModal == nil {
-		t.Fatal("modal should remain open")
+	if len(m.opState.Lines) != 1 || m.opState.Lines[0] != "hello" {
+		t.Fatalf("expected line 'hello', got %v", m.opState.Lines)
 	}
 }
 
@@ -686,5 +726,190 @@ func TestOutdatedPanelTypedData(t *testing.T) {
 	}
 	if f.NewVersion != "2.0" {
 		t.Errorf("NewVersion = %q, want %q", f.NewVersion, "2.0")
+	}
+}
+
+func TestOperationOutputRendersInline(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, TaskStartedMsg{ID: "t1", Title: "Install foo"})
+	m = updateModel(m, TaskOutputMsg{ID: "t1", Line: "==> Downloading foo"})
+	m = updateModel(m, TaskOutputMsg{ID: "t1", Line: "==> Installing foo"})
+
+	content := m.renderContent(60, 20)
+	if !strings.Contains(content, "Install foo") {
+		t.Fatal("expected operation title in content")
+	}
+	if !strings.Contains(content, "Downloading foo") {
+		t.Fatal("expected output line in content")
+	}
+	if !strings.Contains(content, "Installing foo") {
+		t.Fatal("expected output line in content")
+	}
+}
+
+func TestOperationCancelShowsCancelled(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, TaskStartedMsg{ID: "t1", Title: "Install foo"})
+	m = updateModel(m, TaskCompletedMsg{ID: "t1", Title: "Install foo", Err: context.Canceled})
+
+	if m.opState == nil {
+		t.Fatal("expected opState to be set")
+	}
+	if m.opState.Status != opCancelled {
+		t.Fatalf("expected opCancelled, got %v", m.opState.Status)
+	}
+	if m.toast != nil {
+		t.Fatal("expected no error toast on cancel")
+	}
+
+	content := m.renderContent(60, 20)
+	if !strings.Contains(content, "Cancelled") {
+		t.Fatal("expected Cancelled message, got:", content)
+	}
+}
+
+func TestOperationCompletedNotCancelledOnRealError(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, TaskStartedMsg{ID: "t1", Title: "Install foo"})
+	m = updateModel(m, TaskCompletedMsg{ID: "t1", Title: "Install foo", Err: assertAnError})
+
+	if m.opState == nil {
+		t.Fatal("expected opState to be set")
+	}
+	if m.opState.Status != opError {
+		t.Fatalf("expected opError, got %v", m.opState.Status)
+	}
+	if m.toast == nil {
+		t.Fatal("expected error toast for real error")
+	}
+	content := m.renderContent(60, 20)
+	if !strings.Contains(content, "Error:") {
+		t.Fatal("expected Error message, got:", content)
+	}
+}
+
+func TestOperationSuccessDismissOnEsc(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, TaskStartedMsg{ID: "t1", Title: "Install foo"})
+	m = updateModel(m, TaskCompletedMsg{ID: "t1", Title: "Install foo", Err: nil})
+
+	if m.opState == nil || !m.opState.Done() {
+		t.Fatal("expected completed opState")
+	}
+
+	m = sendSpecial(m, tea.KeyEsc)
+	if m.opState != nil {
+		t.Fatal("expected opState to be nil after Esc dismiss")
+	}
+}
+
+func TestCommandLogShowsExecutedCommands(t *testing.T) {
+	cl := NewCommandLog(20)
+	cl.Append("install lolcat")
+	cl.Append("list --formula")
+
+	view := cl.View(40, 10)
+	if !strings.Contains(view, "install lolcat") {
+		t.Fatal("expected 'install lolcat' in command log view")
+	}
+	if !strings.Contains(view, "list --formula") {
+		t.Fatal("expected 'list --formula' in command log view")
+	}
+	if !strings.Contains(view, "⟳") {
+		t.Fatal("expected running indicator in command log view")
+	}
+
+	cl.SetStatus("install lolcat", CommandSuccess)
+	view = cl.View(40, 10)
+	if !strings.Contains(view, "✓") {
+		t.Fatal("expected success indicator in command log view")
+	}
+}
+
+func TestCommandLogRendersInMainPanel(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.commandLog.Append("test command")
+
+	panel := m.renderMainPanel()
+	if !strings.Contains(panel, "test command") {
+		t.Fatal("expected command log entry in main panel render")
+	}
+	if !strings.Contains(panel, "brew") {
+		t.Fatal("expected 'brew' prefix in command log render")
+	}
+}
+
+func TestBatchSelectionShowsIndicator(t *testing.T) {
+	p := &panelData{
+		items: []string{"a  1.0", "b  2.0", "c  3.0"},
+	}
+	batch := map[int]bool{0: true, 2: true}
+
+	// Check sidebar content shows batch indicator
+	sidebar := p.renderSidebarContent(20, 5, batch)
+	if !strings.Contains(sidebar, "●") {
+		t.Fatal("expected batch indicator in sidebar for selected items")
+	}
+
+	// Check renderList shows batch indicator
+	list := p.renderList(20, 5, batch)
+	if !strings.Contains(list, "●") {
+		t.Fatal("expected batch indicator in renderList for selected items")
+	}
+
+	// Item at cursor that's also selected shows combined indicator
+	p.selected = 0
+	sidebar = p.renderSidebarContent(20, 5, batch)
+	if !strings.Contains(sidebar, "▸●") {
+		t.Fatal("expected combined cursor+batch indicator, got:", sidebar)
+	}
+}
+
+func TestDepsTabContentSavedOnSuccess(t *testing.T) {
+	m := newTestModel()
+	msg := TabContentMsg{
+		PanelID:  PanelFormulae,
+		TabIndex: 1,
+		ItemName: "formula-a",
+		Content:  "formula-a depends on: openssl",
+	}
+	m = updateModel(m, msg)
+
+	key := tabKey(PanelFormulae, 1, "formula-a")
+	if m.tabContent[key] != "formula-a depends on: openssl" {
+		t.Fatalf("expected tab content, got %q", m.tabContent[key])
+	}
+}
+
+func TestDepsTabErrorShowsErrorMessage(t *testing.T) {
+	m := newTestModel()
+	msg := TabContentMsg{
+		PanelID:  PanelFormulae,
+		TabIndex: 1,
+		ItemName: "formula-a",
+		Err:      errors.New("brew deps failed"),
+	}
+	m = updateModel(m, msg)
+
+	key := tabKey(PanelFormulae, 1, "formula-a")
+	if !strings.Contains(m.tabContent[key], "Error") {
+		t.Fatalf("expected error message, got %q", m.tabContent[key])
+	}
+}
+
+func TestDepsTabShowsNoDataOnEmptyResult(t *testing.T) {
+	m := newTestModel()
+	msg := TabContentMsg{
+		PanelID:  PanelFormulae,
+		TabIndex: 1,
+		ItemName: "formula-a",
+		Content:  "",
+	}
+	m = updateModel(m, msg)
+
+	key := tabKey(PanelFormulae, 1, "formula-a")
+	if m.tabContent[key] != "No data" {
+		t.Fatalf("expected 'No data', got %q", m.tabContent[key])
 	}
 }
