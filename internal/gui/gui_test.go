@@ -961,3 +961,43 @@ func TestRefreshSetsPanelsLoading(t *testing.T) {
 		}
 	}
 }
+
+func TestMutationShowsConfirmModal(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.panels[PanelFormulae].items = []string{"foo  1.0"}
+	m.panels[PanelFormulae].selected = 0
+
+	nm, _ := m.confirmMutation(mutInstall, "Install")
+	result := nm.(Model)
+	if result.activeModal == nil {
+		t.Fatal("expected confirm modal after confirmMutation")
+	}
+	if result.pendingAction != "mutation" {
+		t.Fatalf("expected pendingAction 'mutation', got %q", result.pendingAction)
+	}
+	if result.pendingMutType != mutInstall {
+		t.Fatalf("expected pendingMutType mutInstall, got %v", result.pendingMutType)
+	}
+}
+
+func TestBatchUpgradeUpgradesAllSelected(t *testing.T) {
+	m := newTestModel()
+	panel := m.panels[PanelOutdated]
+	panel.items = []string{"foo  1.0", "bar  2.0", "baz  3.0"}
+	panel.formulae = []brew.Formula{
+		{Name: "foo", Version: "1.0"},
+		{Name: "bar", Version: "2.0"},
+		{Name: "baz", Version: "3.0"},
+	}
+	m.batch.selected = map[int]bool{0: true, 2: true}
+
+	nm, _ := m.batchUpgrade()
+	result := nm.(Model)
+	if result.batchCount != 2 {
+		t.Fatalf("expected batchCount 2 for 2 selected, got %d", result.batchCount)
+	}
+	if len(result.batch.selected) != 0 {
+		t.Fatalf("expected batch selection cleared after upgrade, got %d remaining", len(result.batch.selected))
+	}
+}

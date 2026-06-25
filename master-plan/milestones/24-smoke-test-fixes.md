@@ -1,6 +1,6 @@
 # Milestone 24 — Smoke Test Fixes
 
-> **Status:** ⚠️ In Progress
+> **Status:** ✅ Code complete (24.1–24.12) — ⏳ 24.13 manual smoke pending
 > **Size estimate:** M (2–3 days)
 > **Depends on:** M23 ✅ (command log, spinner, debug logging)
 > **Enables:** v0.2.0 release (unblocks M22.4)
@@ -12,6 +12,8 @@
 ## Goal
 
 Resolve all 13 findings from the M22.4 smoke test so that the TUI is reliable, the output pattern is consistent (operations render in the right panel), and mutation workflows (search → info → install, batch upgrade) work end-to-end without UI breakage.
+
+> **Status note (2026-06-25):** Steps 24.1–24.12 are implemented and tested across commits `c1d5301` and `90a69cd`. M24.2 required no code change — `CommandLog` callbacks were already wired in `app.go`. Only 24.13 (manual smoke) remains.
 
 ---
 
