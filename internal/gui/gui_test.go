@@ -913,3 +913,51 @@ func TestDepsTabShowsNoDataOnEmptyResult(t *testing.T) {
 		t.Fatalf("expected 'No data', got %q", m.tabContent[key])
 	}
 }
+
+func TestFetchDepsTabReturnsContent(t *testing.T) {
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 3 && args[0] == "deps" && args[1] == "--tree" && args[2] == "ripgrep" {
+			return []byte("openssl\n└── ca-certificates\n"), nil
+		}
+		return nil, nil
+	}
+	client := brew.NewClient(r)
+
+	cmd := fetchTabContentCmd(client, PanelFormulae, 1, "ripgrep")
+	if cmd == nil {
+		t.Fatal("fetchTabContentCmd returned nil cmd")
+	}
+	msg := cmd()
+	tMsg, ok := msg.(TabContentMsg)
+	if !ok {
+		t.Fatalf("expected TabContentMsg, got %T", msg)
+	}
+	if tMsg.Err != nil {
+		t.Fatalf("unexpected error: %v", tMsg.Err)
+	}
+	if !strings.Contains(tMsg.Content, "openssl") {
+		t.Fatalf("expected deps content to contain 'openssl', got %q", tMsg.Content)
+	}
+}
+
+func TestRefreshSetsPanelsLoading(t *testing.T) {
+	m := newTestModel()
+	for _, p := range m.panels {
+		p.loading = false
+	}
+
+	m = updateModel(m, RefreshMsg{})
+
+	for _, p := range m.panels {
+		if p.id == PanelSearch {
+			if p.loading {
+				t.Errorf("PanelSearch should not be loading after refresh")
+			}
+			continue
+		}
+		if !p.loading {
+			t.Errorf("panel %v should be loading after refresh", p.id)
+		}
+	}
+}

@@ -412,6 +412,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case RefreshMsg:
 		m.clearTabContent()
 		m.refreshing = 6
+		for _, p := range m.panels {
+			if p.id != PanelSearch {
+				p.loading = true
+			}
+		}
 		cmds := []tea.Cmd{
 			fetchPanelData(m.client, PanelFormulae),
 			fetchPanelData(m.client, PanelCasks),
