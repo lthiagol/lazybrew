@@ -1,0 +1,68 @@
+[project]
+name = "lazybrew"
+description = "lazybrew"
+stack = ["go"]
+platforms = []
+created = "2026-06-27"
+target_version = ""
+planning_status = "planning"
+planning_phase = "milestones"
+
+[charter]
+goals = [
+    "Ship v0.2.0 (release gate: M24.13 manual smoke + release checklist sign-off)",
+    "Performance pass — reduce brew call volume, fix diagnostics error handling, batch tap loading, tiered refresh strategy (M25-M28)",
+]
+non_goals = [
+    "Replace Homebrew CLI — all mutations delegate to brew CLI",
+    "Visual screenshot testing",
+    "Performance benchmarks in CI",
+    "Re-planning M1-M24 (historical, already complete)",
+]
+deferred = []
+principles = []
+
+[metrics]
+lines_of_code = 0
+unit_tests = 0
+integration_tests = 0
+coverage_percent = 0.0
+checked_at = ""
+
+[execution]
+strategy = "resume_then_ready"
+interleave = "milestone"
+mode = "planning"
+handoff_at = ""
+handoff_by = ""
+focus_milestone = ""
+focus_through_step = ""
+adoption_order = []
+
+[[milestones]]
+id = "01"
+title = "Outdated Panel Performance"
+spec_status = "review"
+execution_status = "planned"
+blocked_by = ""
+
+[[milestones]]
+id = "02"
+title = "Diagnostics Error Handling"
+spec_status = "review"
+execution_status = "planned"
+blocked_by = ""
+
+[[milestones]]
+id = "03"
+title = "Taps Panel Batch Loading"
+spec_status = "review"
+execution_status = "planned"
+blocked_by = ""
+
+[[milestones]]
+id = "04"
+title = "Tiered Refresh & Polling Strategy"
+spec_status = "review"
+execution_status = "planned"
+blocked_by = ""

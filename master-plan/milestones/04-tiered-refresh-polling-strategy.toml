@@ -1,0 +1,206 @@
+success_criteria = []
+assumptions = []
+design_decisions = []
+open_questions = []
+risks = []
+follow_ups = []
+
+[milestone]
+id = "04"
+title = "Tiered Refresh & Polling Strategy"
+slug = "tiered-refresh-polling-strategy"
+spec_status = "ready"
+execution_status = "planned"
+depends_on = [
+    "01",
+    "02",
+    "03",
+]
+effort = "S"
+risk = "low"
+change_kind = ""
+priority = "normal"
+created = "2026-06-27"
+updated = "2026-06-27"
+blocked_at = ""
+block_reason = ""
+blocked_by = ""
+
+[intent]
+outcome = "lazybrew no longer hammers Homebrew on a fixed 60 s loop; different data classes refresh at appropriate rates and panels only fetch when viewed."
+
+[problem]
+description = "The current model refreshes everything every 60 seconds, including expensive tap-info, config, and doctor calls. M25-M27 fix per-panel call volume, but without a refresh strategy the app still refreshes everything on the same schedule."
+
+[context]
+related = []
+references = []
+
+[behavior]
+scenarios = []
+edge_cases = []
+
+[requirements]
+functional = []
+needs_clarification = []
+
+[interface]
+endpoints = []
+config_keys = []
+cli_commands = []
+entities = []
+
+[scope]
+in_scope = [
+    "Define data classes (volatile/stable/manual) and per-class TTLs",
+    "Wire refresh policy config with fallback chain",
+    "Lazy-load all panels on first focus",
+    "Pause auto-refresh during tasks/modals",
+    "Manual refresh keys (r/R) bypass TTL",
+]
+out_of_scope = [
+    "Controller refactor (deferred to backlog B-01)",
+    "Background prefetch / predictive refresh (future enhancement)",
+    "Network/offline behavior (not a Homebrew concern)",
+]
+
+[[acceptance_criteria]]
+id = "AC-01"
+description = "Different data classes refresh at appropriate rates"
+verification = "TestCacheTTLByDataClass"
+status = "pending"
+evidence = ""
+
+[[acceptance_criteria]]
+id = "AC-02"
+description = "Panels only fetch when viewed"
+verification = "TestStartupOnlyFetchesStatus"
+status = "pending"
+evidence = ""
+
+[[acceptance_criteria]]
+id = "AC-03"
+description = "Auto-refresh pauses during tasks/modals"
+verification = "TestRefreshPausedDuringTask + TestRefreshPausedDuringModal"
+status = "pending"
+evidence = ""
+
+[technical_context]
+language = ""
+dependencies = []
+storage = ""
+testing = ""
+target_platform = ""
+constraints = []
+performance_goals = []
+
+[[work_packages]]
+id = "WP1"
+name = "Main"
+goal = ""
+rollback = ""
+
+[[steps]]
+id = "S1"
+work_package = "WP1"
+order = 1
+action = "Define data classes and per-class TTLs"
+files = [
+    "internal/brew/cache.go",
+    "internal/brew/client.go",
+]
+tests = "TestCacheTTLByDataClass"
+done_when = "Volatile keys expire quickly; stable keys expire slowly; manual keys never expire"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[[steps]]
+id = "S2"
+work_package = "WP1"
+order = 2
+action = "Wire refresh policy config"
+files = [
+    "internal/config/config.go",
+    "internal/brew/client.go",
+    "internal/app/app.go",
+    "internal/gui/gui.go",
+]
+tests = "TestRefreshConfigDisablesAutoRefresh,TestRefreshConfigUsesClassIntervals,TestRefreshConfigFallbackChain"
+done_when = "Config values control refresh cadence; fallback chain works"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[[steps]]
+id = "S3"
+work_package = "WP1"
+order = 3
+action = "Lazy-load all panels on first focus"
+files = [
+    "internal/gui/gui.go",
+    "internal/gui/commands.go",
+]
+tests = "TestLazyLoadAllPanels,TestStartupOnlyFetchesStatus"
+done_when = "Startup brew calls limited to Status + active panel"
+status = "pending"
+covers_ac = ["AC-02"]
+depends_on_steps = []
+
+[[steps]]
+id = "S4"
+work_package = "WP1"
+order = 4
+action = "Pause auto-refresh during tasks/modals"
+files = [
+    "internal/gui/gui.go",
+    "internal/gui/task/manager.go",
+]
+tests = "TestRefreshPausedDuringTask,TestRefreshPausedDuringModal"
+done_when = "Auto-refresh does not fetch while task running or modal open"
+status = "pending"
+covers_ac = ["AC-03"]
+depends_on_steps = []
+
+[[steps]]
+id = "S5"
+work_package = "WP1"
+order = 5
+action = "Manual refresh keys bypass TTL"
+files = [
+    "internal/gui/gui.go",
+    "internal/brew/cache.go",
+]
+tests = "TestManualRefreshBypassesCache"
+done_when = "r key fetches fresh data even if cache TTL not expired"
+status = "pending"
+covers_ac = ["AC-02"]
+depends_on_steps = []
+
+[[steps]]
+id = "S6"
+work_package = "WP1"
+order = 6
+action = "Regression tests and smoke"
+files = []
+tests = "Existing E2E flows, make test, go test -race"
+done_when = "All tests pass; debug log shows far fewer brew calls per minute"
+status = "pending"
+covers_ac = [
+    "AC-01",
+    "AC-02",
+    "AC-03",
+]
+depends_on_steps = []
+
+[verification]
+date = ""
+branch = ""
+evidence = ""
+
+[delta]
+domain = ""
+base_version = 0
+added = []
+modified = []
+removed = []
