@@ -30,7 +30,7 @@ mp is already installed locally (`/home/thiago/.agents/master-plan/bin/mp`, v1.4
 - Reproducible plan reads/writes for agents (`mp … --format json`).
 
 ### Non-goals
-- Re-planning the product roadmap — the *content* (M24–M28, backlog) is preserved, only re-shaped.
+- Re-planning the product roadmap — the *content* (M25–M28 + backlog) is re-shaped, not re-thought. M24 and M1–M23 stay historical (see D2).
 - Migrating operational docs (release/smoke/coverage checklists) into mp.
 - Changing application source code.
 
@@ -42,14 +42,13 @@ mp is already installed locally (`/home/thiago/.agents/master-plan/bin/mp`, v1.4
 |---|---|---|
 | `status.md` header (project/stack/platforms) | Distill | **brief** |
 | `status.md` "Challenged Decisions" + release scope | Distill | **charter** goals/non-goals |
-| `milestones/24-smoke-test-fixes.md` (code-complete) | Import | **milestone** — `spec_status: ready`, steps done except S24.13 |
-| `milestones/25-outdated-panel-performance.md` | Import | **milestone** (greenfield-style, planned) |
+| `milestones/24-smoke-test-fixes.md` (code-complete; smoke pending) | **Archive, do not import** | release gate stays in `release-checklist.md`; noted in brief/charter |
+| `milestones/25-outdated-panel-performance.md` | Import | **milestone** (planned) |
 | `milestones/26-diagnostics-error-handling.md` | Import | **milestone** (planned) |
 | `milestones/27-taps-panel-batch-loading.md` | Import | **milestone** (planned) |
 | `milestones/28-tiered-refresh-and-polling-strategy.md` | Import | **milestone** (planned) |
 | `milestones/01–23-*.md` (all complete) | **Archive, do not import** | keep `archive/milestone-legacy-index.md` as history |
-| `backlog.md` B-01, B-07 (Medium, near-term) | Import | **tracks** |
-| `backlog.md` B-09, B-11, B-12, B-13 (Low/conditional) | Import | **ideas** |
+| `backlog.md` B-01 … B-13 | Import | **`mp backlog add`** (native B-xx IDs — match yours) |
 | Milestone prose (why-now, ADRs, rollback, phase gates) | Preserve | **`context.references`** + milestone notes / `DESIGN.md` |
 | `templates/` (custom) | **Retire** | mp ships its own |
 | `release-checklist.md`, `smoke-checklist.md`, `coverage-audit.md`, `review-template.md` | **Keep as repo docs** (outside mp) | operational, not plan artifacts |
@@ -64,10 +63,10 @@ Documented as **recommended defaults**. D2 and D3 have real trade-offs — **con
 | ID | Decision | Adopted | Rationale / trade-off |
 |---|---|---|---|
 | **D1** | Profile | **`full`** | Project has multi-step milestones with specs/ADRs/ACs. `hybrid`/`session` are too lightweight. |
-| **D2** | Historical milestones M1–M23 | **Archive; import only M24–M28** ⚠️ confirm | mp plans forward. Importing 23 done milestones is heavy and low-value. Alternative: import all as `complete` (full history in mp, but noisy). |
+| **D2** | Historical milestones M1–M24 | **Archive; import only M25–M28** ⚠️ confirm | mp plans forward. M24 is code-complete (only human smoke remains) — importing done work fights mp's spec-before-code gates (G1/G6/G7) for little value. The v0.2.0 gate stays in `release-checklist.md` and is noted in the charter. |
 | **D3** | Plan-dir location during migration | **Parallel `.mp/`, cutover later** ⚠️ confirm | Rebuilding `master-plan/` in place is irreversible and mixes old+new during transition. `.mp/` lets you validate mp output first, then rename at cutover. |
 | **D4** | Operational checklists | **Keep outside mp** | They are runbooks, not plan artifacts. mp has no concept for them. |
-| **D5** | Backlog routing | **B-01, B-07 → tracks; rest → ideas** | Tracks = near-term work; ideas = parking lot. Matches backlog priorities. |
+| **D5** | Backlog routing | **All B-xx → `mp backlog add`** | mp has a native backlog with **B-xx IDs** (matching yours). Tracks are for in-flight `bugfix`/`tweak` work; ideas are quick reminders — wrong fit for deferred backlog items. |
 | **D6** | Plan committed to git? | **Yes — `workflow.plan.in_repo = true`** ⚠️ confirm | mp can gitignore the plan dir (`workflow.plan.in_repo`; when `false`, `mp init` appends it to `.gitignore`). lazybrew's bespoke `master-plan/` is committed and shared across agents/CI, so commit the mp plan too. Verify mp's default for the `full` profile and set `in_repo` explicitly in Phase 1. |
 
 ---
@@ -80,10 +79,9 @@ lazybrew/
 │   ├── brief.md            # from status.md header
 │   ├── charter.*           # goals/non-goals
 │   ├── milestones/
-│   │   ├── 24/ …          # mp milestone artifacts (M24–M28)
+│   │   ├── 25/ …          # mp milestone artifacts (M25–M28)
 │   │   └── 28/
-│   ├── ideas.toml          # B-09, B-11, B-12, B-13
-│   ├── tracks/             # B-01, B-07
+│   ├── backlog.toml        # B-01 … B-13 (native mp backlog, B-xx IDs)
 │   └── config (mp-managed)
 ├── docs/operational/       # (or repo root) release-checklist, smoke-checklist, coverage-audit, review-template
 ├── master-plan-archive/    # OLD bespoke docs (kept until confident, then deleted)
@@ -91,7 +89,7 @@ lazybrew/
 └── DESIGN.md               # + adoption ADR in decision log
 ```
 
-`mp validate` is green; `mp status` reflects M24 (near-done) + M25–M28 (planned).
+`mp validate` is green; `mp status` reflects M25–M28 (planned). The M24/v0.2.0 release gate stays in `release-checklist.md` (operational).
 
 ---
 
@@ -106,9 +104,12 @@ lazybrew/
   "scope": { "in_scope": ["..."], "out_of_scope": ["...", "..."] },
   "acceptance_criteria": [
     { "description": "Observable behavior", "verification": "test command or manual check" }
-  ]
+  ],
+  "depends_on": ["25", "26"]          // optional: milestone IDs this depends on (G8)
 }
 ```
+
+**Strictness & AC coverage (G10):** the `full` profile defaults `workflow.gates.strictness = full`, so `mp validate` **errors** if any AC has no covering step. During the bulk import (Phase 3), temporarily `mp config set workflow.gates.strictness relaxed`, then restore `full` afterward. When decomposing, link steps to ACs via `mp step … --covers-ac AC-01,AC-02`.
 
 ### Field mapping (existing milestone → mp)
 | Existing section | mp field |
@@ -119,6 +120,7 @@ lazybrew/
 | `## Architecture Decisions (ADRs)` | `context.references` + `DESIGN.md` decision log |
 | `Gate criteria` (header) | `acceptance_criteria[]` (one per observable criterion) |
 | `## Step Index` / `## Steps` | generated by `mp milestone decompose` → `S1`, `S1.1`, … |
+| `Depends on:` (header) / inter-milestone deps | `depends_on` (e.g. `["25","26","27"]`) — M28 depends on M25/M26/M27 |
 | `## Why Now`, `## Challenged Assumptions`, `## Rollback Plan` | `context.references` / milestone notes |
 
 ### Worked example — M26 (Diagnostics)
@@ -169,40 +171,48 @@ Execute in order. Each phase has acceptance criteria. Run `mp validate` after ev
       git ls-files master-plan | sort > /tmp/mp-pre-manifest.txt
       ```
 - [ ] **1.2 Init into `.mp/`:** `mp init --profile full --from-repo --plan-dir .mp` (the flag is what avoids the `master-plan/` collision).
+- [ ] **Expect (not collisions):** `--from-repo` scans the repo and **drafts a charter** (and may propose backlog candidates) — that's Phase 2/4 input, not a problem. `mp doctor` may *note* the existing `master-plan/` folder; with `--plan-dir .mp` that's benign — confirm it's a note, not an error.
 - [ ] **1.3 Collision guard — VERIFY (hard gate):**
       - `.mp/` exists and contains mp artifacts.
       - `master-plan/` is **byte-identical** to pre-init: `git status` still clean **and** `git ls-files master-plan | sort` matches `/tmp/mp-pre-manifest.txt`.
       - **If mp wrote anything into `master-plan/`, or refused init because it "detected" an existing plan dir: ABORT.** Do not retry blindly. Log the exact behavior, move any stray mp files out, re-run with `--plan-dir .mp`, and re-confirm with the user before retrying.
 - [ ] `mp doctor --format json` → healthy.
-- [ ] `mp config show --format json` → confirms plan dir is `.mp/`; set `workflow.plan.in_repo` per **D6** (expect `true`) via `mp config set workflow.plan.in_repo true`, and confirm `.gitignore` was **not** given the plan path.
+- [ ] `mp config show --format json` → confirms plan dir is `.mp/`; set `workflow.plan.in_repo` per **D6** via `mp config set workflow.plan.in_repo true` (verify the `full`-profile default first), and confirm `.gitignore` was **not** given the plan path.
 - **AC:** `mp doctor` healthy; `.mp/` exists; `master-plan/` **provably unchanged** (guard passed).
 - **Checkpoint ☐:** re-run the 1.3 assertions; `git status` clean; `mp validate`; append Phase 1 entry to log including the discovered location-forcing mechanism, mp's actual init behavior, and any doc mismatch.
 
-### Phase 2 — Brief & charter
-- [ ] `mp brief todo --format json`
-- [ ] Fill brief topics from current `status.md` header (`mp brief edit`)
-- [ ] `mp brief done`
-- [ ] `mp interview checklist --checklist-type charter` → goals (ship v0.2.0 → perf pass) / non-goals (from Challenged Decisions)
-- **AC:** `mp validate` green; brief `status: done`.
+### Phase 2 — Brief & charter (review the `--from-repo` draft)
+> `mp init --from-repo` already drafted a charter (and may have proposed backlog candidates) from the repo. Don't build from zero — review and refine the draft against the source docs.
+
+- [ ] `mp brief todo --format json` → fill topics from current `status.md` header (`mp brief edit`) → `mp brief done`.
+- [ ] **Review the `--from-repo` charter draft** against `status.md` "Challenged Decisions": goals = ship v0.2.0 → perf pass; non-goals from challenged decisions. Refine via `mp interview checklist --checklist-type charter`.
+- [ ] **Record the current release gate** in charter/brief: *"v0.2.0 is blocked by M24.13 manual smoke (human), tracked in `release-checklist.md`. mp forward plan starts at M25."*
+- [ ] **Reconcile backlog:** if `--from-repo` proposed backlog candidates, dedupe against the explicit B-01…B-13 import in Phase 4.
+- **AC:** `mp validate` green; brief `status: done`; charter reflects goals/non-goals + the M24 gate note.
 - **Gotcha:** charter requires `brief done` first (error `B1`/`B3` otherwise).
-- **Checkpoint ☐:** verify brief done + validate green; append Phase 2 entry (commands run + any gotcha/error hit).
+- **Checkpoint ☐:** verify brief done + validate green; append Phase 2 entry (note what `--from-repo` drafted vs what you changed).
 
-### Phase 3 — Import forward milestones (M24–M28)
-- [ ] M24: `mp milestone create --json @-` → `set-spec-status review` → `approve` → `decompose`; mark steps `done` except the manual smoke step (S24.13 stays pending).
-- [ ] M25, M26, M27, M28: create from §5 mapping → `approve` → `decompose`.
-- [ ] Set statuses: M24 `in-progress` (or appropriate); M25–M28 planned.
-- [ ] `mp validate`
-- **AC:** 5 milestones exist with `spec_status: ready`; steps decomposed; ACs present.
-- **Gotcha:** mp blocks `in-progress` until `spec_status: ready` (error `G1`). M24 is already code-complete — import carefully so this doesn't flag.
-- **Gotcha:** each milestone needs ≥2 out-of-scope items (error `G4`) — existing Out-of-Scope sections satisfy this.
-- **Checkpoint ☐:** verify 5 milestones ready; `git status` shows only `.mp/` changes; append Phase 3 entry — log **each** create/decompose and every validation error (code + trigger + resolution).
+### Phase 3 — Import forward milestones (M25–M28)
+> M24 is **not** imported (D2) — it's historical; the release gate lives in `release-checklist.md`.
 
-### Phase 4 — Import backlog
-- [ ] B-01, B-07 → `mp track add` (near-term, Medium)
-- [ ] B-09, B-11, B-12, B-13 → `mp idea create` (parking lot)
+- [ ] **Relax gates for bulk import:** `mp config set workflow.gates.strictness relaxed` (avoids G3/G4/G10 friction during import; restore at end of phase).
+- [ ] For each of M25, M26, M27, M28: `mp milestone create --json @-` (§5 mapping) → `set-spec-status review` → `approve` → `decompose`.
+- [ ] **Set dependencies:** M28 `depends_on = ["25","26","27"]` (G8) — via create JSON or `mp milestone` update.
+- [ ] **Link steps → ACs:** when decomposing, `--covers-ac AC-xx` so every AC is covered (required once `strictness` is back to `full`).
+- [ ] **Preserve per-step detail** (implementation checklists, file tables, test names) in step notes / `context.references` — mp's step fields are tighter than the current prose.
+- [ ] **Restore:** `mp config set workflow.gates.strictness full`; then `mp validate`.
+- **AC:** 4 milestones (M25–M28) with `spec_status: ready`; steps decomposed; ACs covered; M28 deps set.
+- **Gotcha:** ≥2 out-of-scope items per milestone (error `G4`) — existing Out-of-Scope sections satisfy this.
+- **Gotcha:** leave M25–M28 steps `pending` (planned, not implemented) — don't push them to `done`, or G6/G7 (evidence/verified) will block.
+- **Checkpoint ☐:** verify 4 milestones ready + M28 deps; `git status` shows only `.mp/` changes; append Phase 3 entry — log **each** create/decompose, the strictness relax/restore, and every validation error (code + trigger + resolution).
+
+### Phase 4 — Import backlog (`mp backlog`, B-xx IDs)
+- [ ] For each backlog item (B-01, B-07, B-09, B-11, B-12, B-13): `mp backlog add --desc "…" --priority <medium|low> --source "backlog.md"`.
+- [ ] mp assigns B-xx IDs itself — they may not match the old numbers. Record an **old→new ID map** in the log so nothing is lost.
+- [ ] Dedupe against any candidates `--from-repo` proposed in Phase 2.
 - [ ] `mp validate`
-- **AC:** backlog items present as tracks/ideas; `master-plan/backlog.md` content fully represented.
-- **Checkpoint ☐:** cross-check every B-xx item is represented; append Phase 4 entry (note the `mp idea create` vs `add` gotcha if it bit).
+- **AC:** every backlog item appears in `mp list backlog`; content matches `master-plan/backlog.md`.
+- **Checkpoint ☐:** cross-check every old B-xx maps to an mp backlog item (old→new table in log); append Phase 4 entry.
 
 ### Phase 5 — Cutover ⚠️ confirm D2/D3 with user first
 - [ ] **Pause and confirm D2 (history) + D3 (location) with the user before any irreversible action.**
@@ -210,6 +220,8 @@ Execute in order. Each phase has acceptance criteria. Run `mp validate` after ev
 - [ ] Rename `.mp/` → `master-plan/` **or** keep `.mp/` and set `config.workflow.plan.location`.
 - [ ] Move operational docs (`release-checklist.md`, `smoke-checklist.md`, `coverage-audit.md`, `review-template.md`) out of the plan dir to `docs/operational/` (or repo root).
 - [ ] Rewrite `AGENTS.md` "Planning Rules": replace hand-edit rules with the mp session-start sequence (see §8) and "all plan I/O via `mp`; never hand-edit plan files".
+  - **Scope:** edit ONLY the "Planning Rules" section. Do **not** touch Git Rules, Bubble Tea Rules, Testing Rules, or Verification Commands.
+  - **Dual AGENTS.md:** mp manages its own `<plan-dir>/AGENTS.md` — leave that alone; only the **root** `AGENTS.md` is edited here.
 - [ ] Add adoption ADR to `DESIGN.md` decision log.
 - [ ] `mp validate`
 - **AC:** `master-plan/` is mp-managed and the single source of truth; `AGENTS.md` reflects mp workflow; old docs archived.
@@ -230,7 +242,7 @@ Execute in order. Each phase has acceptance criteria. Run `mp validate` after ev
 | Risk | Mitigation |
 |---|---|
 | Narrative loss (mp schema is tighter than current prose) | Preserve why-now/ADR/rollback in `context.references` and `DESIGN.md`; don't discard. |
-| "Spec before code" flags M24 (already code-complete) | Import M24 with `spec_status: ready` and steps already `done`; only S24.13 pending. |
+| "Spec before code" fights imported milestones | Relax `strictness` during bulk import (Phase 3); leave M25–M28 steps `pending`. M24 stays out of mp entirely (D2). |
 | Step ID renumbering breaks external references | mp generates stable IDs; re-map any stray refs. (This is what mp exists to prevent.) |
 | Big-bang doc commit / merge conflicts | Do on dedicated branch; one PR; not during active `wip` work. |
 | mp version drift | Pin to v1.4.0+; record version in adoption ADR. |
@@ -263,8 +275,9 @@ mp execution status              # should be mode=planning
 | `mp idea add` | `mp idea create` |
 | `mp interview --type X` | `--checklist-type X` |
 | `mp plan show --all` | `mp plan show` (no flag) |
-| `mp step done --evidence "x"` | no `--evidence` flag on `step done` |
+| `mp step done --evidence "x"` | **verify + log**: skill says no flag; `AGENT-PLAYBOOK` shows `step done <m> <s> --evidence "…"` |
 | `mp milestone criterion pass --evidence "x"` | `--evidence` is **positional**, not a flag |
+| backlog import | use **`mp backlog add`** (B-xx IDs), not tracks/ideas |
 
 ### Key validation errors
 | Code | Meaning |
@@ -277,7 +290,7 @@ mp execution status              # should be mode=planning
 
 ### What "done" looks like
 - §10 DoD all checked.
-- `mp status` shows M24 (near-complete) + M25–M28 (planned).
+- `mp status` shows M25–M28 (planned); the M24/v0.2.0 gate remains in `release-checklist.md`.
 - `mp validate` green.
 - This file (`mp-adoption-plan.md`) **deleted** (the log is retained).
 
@@ -317,8 +330,8 @@ The bespoke `master-plan/` on `main` is untouched until Phase 5 cutover, so pre-
 
 - [ ] mp bootstrapped (`full` profile), `mp doctor` healthy
 - [ ] Brief + charter imported from `status.md`
-- [ ] M24–M28 imported as mp milestones with specs, steps, ACs
-- [ ] Backlog B-01/B-07 → tracks; B-09/B-11/B-12/B-13 → ideas
+- [ ] M25–M28 imported as mp milestones with specs, steps, ACs, deps (M24 historical — not imported)
+- [ ] Backlog B-01…B-13 → `mp backlog` (B-xx IDs)
 - [ ] `master-plan/` is mp-managed and the single source of truth
 - [ ] Operational checklists moved out of plan dir
 - [ ] `AGENTS.md` Planning Rules rewritten for mp workflow

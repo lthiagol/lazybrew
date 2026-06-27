@@ -77,30 +77,30 @@ Append every concrete mp improvement idea here as you find it (also reference it
 
 ## Phase 3 — Import milestones (M24–M28)
 - **Started / ended:** _
+- **Strictness relax/restore:** _did `mp config set workflow.gates.strictness relaxed` work before import? restored to `full` after?_
 - **Per-milestone log (repeat block):**
 
-  **M24 — Smoke Test Fixes**
+  **M25 — Outdated**
   - `mp milestone create` JSON shape used: _
   - Approve → decompose result: _
-  - Step import (mark done except S24.13): _did mp allow steps to be marked done at import? how?_
-  - Errors hit (G1 spec-before-code on a code-complete milestone? G4 out-of-scope?): _trigger + resolution_
+  - Steps → ACs (`--covers-ac`) linked? _
+  - Errors hit (G4 out-of-scope? G10 coverage?): _trigger + resolution_
 
-  **M25 — Outdated** _(same fields)_
   **M26 — Diagnostics** _(...)_
   **M27 — Taps** _(...)_
-  **M28 — Tiered Refresh** _(...)_
+  **M28 — Tiered Refresh** — `depends_on = ["25","26","27"]` set? _errors (G8)?_
 - **Schema mapping friction** (§5 mapping — what fit cleanly, what didn't): _
 - **Validation errors hit:** _
 - **Friction / surprises:** _e.g. where did why-now / ADRs / rollback prose have to go?_
-- **Checkpoint passed:** ☐ · 5 milestones `ready`: ☐
+- **Checkpoint passed:** ☐ · 4 milestones `ready` + M28 deps: ☐
 - **`[IMPROVE]` items raised:** _
 
-## Phase 4 — Import backlog
+## Phase 4 — Import backlog (`mp backlog`)
 - **Started / ended:** _
-- **Commands run:** _
-- **Tracks created (B-01, B-07):** _
-- **Ideas created (B-09, B-11, B-12, B-13):** _
-- **Gotcha check — `mp idea create` vs `add`:** _did it bite?_
+- **Commands run:** _(`mp backlog add --desc --priority --source`)_
+- **Old → new B-xx ID map:** _(record every reassignment so nothing is lost)_
+  - B-01 → _ · B-07 → _ · B-09 → _ · B-11 → _ · B-12 → _ · B-13 → _
+- **Dedupe vs `--from-repo` backlog candidates:** _
 - **Every backlog item represented:** ☐
 - **Checkpoint passed:** ☐
 - **`[IMPROVE]` items raised:** _
