@@ -4,7 +4,7 @@
 > **Stack:** Go + Bubble Tea + Lip Gloss + Bubbles  
 > **Platforms:** macOS + Linux  
 > **Created:** 2026-06-11  
-> **Last Updated:** 2026-06-14 (plan synced to code reality; release readiness tracked)  
+> **Last Updated:** 2026-06-26 (M24 smoke-fixes code complete; M25–M28 performance milestones planned)
 > **Target Homebrew:** 6.0.0+
 
 ---
@@ -28,28 +28,33 @@
 
 ```
 [X]  Milestone 1   — Foundation
-[~]  Milestone 2   — TUI Shell (small terminal → M20.7)
+[X]  Milestone 2   — TUI Shell (routed to M20.7 + M17; smoke in M24.13)
 [X]  Milestone 3   — Brew Data Layer
-[~]  Milestone 4   — Read-Only Panels (Info tab → M20.2)
+[X]  Milestone 4   — Read-Only Panels (routed to M20.2/M20.5)
 [X]  Milestone 5   — Modals & Search
-[~]  Milestone 6   — Package Mutations (TaskManager → M19)
-[~]  Milestone 7–11 — Features (verify DoD during M20 smoke)
-[~]  Milestone 12  — Test Infrastructure (E2E → M21)
+[X]  Milestone 6   — Package Mutations (routed to M19/M20.3)
+[X]  Milestone 7–11 — Features (code routed; smoke in M24.13)
+[X]  Milestone 12  — Test Infrastructure (routed to M21)
 [X]  Milestone 13  — Critical Bug Fixes
-[~]  Milestone 14–16 — Wire/cleanup/tests (partial)
-[X]  Milestone 23  — TUI Layout Rework & Debug Logging
+[X]  Milestone 14–16 — Wire/cleanup/tests (routed to M18.4/M19.0/M21)
 [X]  Milestone 17  — Lazygit UI (parse summary toast → 17.3)
 [X]  Milestone 18  — Documentation & Hygiene
 [X]  Milestone 19  — Concurrency & TaskManager
 [X]  Milestone 20  — Functional & UX (phases A–F)
 [X]  Milestone 21  — Test Strategy v2 (8 teatest flows done)
-[X]  Milestone 22  — CI & Release (22.1a/22.1b/22.2/22.3a/22.5/22.6 done; 22.4 remaining)
+[X]  Milestone 22  — CI & Release (22.1a/22.1b/22.2/22.3a/22.5/22.6 done; 22.4 blocked by M24.13)
+[X]  Milestone 23  — TUI Layout Rework & Debug Logging
+[~]  Milestone 24  — Smoke Test Fixes (24.1–24.12 code complete; 24.13 manual smoke pending)
+[ ]  Milestone 25  — Outdated Panel Performance
+[ ]  Milestone 26  — Diagnostics Error Handling
+[ ]  Milestone 27  — Taps Panel Batch Loading
+[ ]  Milestone 28  — Tiered Refresh & Polling Strategy
 ```
 
 **Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
 
-**Current phase:** Release readiness  
-**Execution entry point:** M22.1b (verify CI green), then M17.3 + M21.2a/b in parallel, then M22.3 → M22.4
+**Current phase:** M24.13 — manual smoke test (last gate before v0.2.0)  
+**Execution entry point:** M24.13 (human) → M22.4 (release sign-off) → tag v0.2.0 → performance pass (M26 → M25/M27 → M28)
 
 ---
 
@@ -59,22 +64,35 @@ Tracks can run concurrently when dependencies allow.
 
 | Track | Milestones | Owner focus | Starts | Blocks |
 |---|---|---|---|---|
-| **A — Docs** | M18 | Complete | — | — |
-| **B — Polish** | M17.3 | Update summary toast | Now | none |
-| **C — Quality** | M21.2a/b | Install + uninstall teatest flows | After M22.1 green | Release tag |
-| **D — Ops** | M22 | Verify CI green, goreleaser, release checklist | Now | Release tag |
+| **A — Smoke** | M24.13 | Manual smoke test pass | Now | v0.2.0 release |
+| **B — Ops** | M22.4 | Release checklist sign-off + tag | After M24.13 | v0.2.0 tag |
+| **C — Performance** | M26 → M25/M27 → M28 | Fix doctor error, reduce brew call volume | After v0.2.0 tag | — |
 
 ### Critical path
 
+**v0.2.0 release:**
+
 ```
-M22.1b → M21.2a/b → M22.3a → M22.3b → M22.4
+M24.13 (manual smoke) → M22.4 (sign-off + tag v0.2.0)
 ```
 
-M17.3 can land in parallel with the critical path.
+**Post-release performance pass:**
+
+```
+M26 → M25 / M27 → M28
+```
+
+M25 and M27 can run in parallel after M26; both must complete before M28.
+
+### Adoption order
+
+1. **Start M26** — `brew doctor` exit=1 fix; smallest, unblocks cleaner debug logs.
+2. **M25 and M27 in parallel** — Outdated combine/coalescing and Taps batch loading; independent except they both benefit from M25.2 coalescing.
+3. **Finish with M28** — tiered refresh and lazy loading everywhere; depends on M25/M26/M27.
 
 ---
 
-## Milestone Index (M17–M23 detail)
+## Milestone Index (M17–M28 detail)
 
 | # | Milestone | Steps | Size | Gate | Status |
 |---|---|---|---|---|---|
@@ -83,8 +101,13 @@ M17.3 can land in parallel with the critical path.
 | 19 | [TaskManager](milestones/19-bubble-tea-concurrency-and-task-manager.md) | 19.0–19.10 | L | No `program.Send` | Done |
 | 20 | [Functional UX](milestones/20-functional-completeness-and-ux.md) | 20.1–20.11 | L | smoke-checklist pass | Done |
 | 21 | [Tests v2](milestones/21-test-strategy-v2.md) | 21.0–21.5 | S remaining | 8 E2E flows | ~80% done |
-| 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1a–22.4 | M | CI green + goreleaser | Partial |
+| 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1a–22.4 | M | CI green + goreleaser | Code done; 22.4 blocked by M24.13 |
 | 23 | [TUI Layout Rework](milestones/23-tui-layout-and-debug-logging.md) | 23.1–23.8 | M | Layout fills space, two-line bar, debug log | Done |
+| 24 | [Smoke Test Fixes](milestones/24-smoke-test-fixes.md) | 24.1–24.13 | M | All smoke checklist items pass | Code complete (24.1–24.12); 24.13 manual smoke pending |
+| 25 | [Outdated Panel Performance](milestones/25-outdated-panel-performance.md) | 25.1–25.5 | M | `brew outdated` called once, lazy-loaded, cached | Planned |
+| 26 | [Diagnostics Error Handling](milestones/26-diagnostics-error-handling.md) | 26.1–26.2 | S | `brew doctor` exit=1 parsed as warnings | Planned |
+| 27 | [Taps Panel Batch Loading](milestones/27-taps-panel-batch-loading.md) | 27.1–27.3 | S | One `tap-info --json` call, lazy detail | Planned |
+| 28 | [Tiered Refresh & Polling Strategy](milestones/28-tiered-refresh-and-polling-strategy.md) | 28.1–28.6 | M | Per-class TTLs, lazy panels, pause on interaction | Planned |
 
 Legacy milestones M1–M16: see [milestone-legacy-index.md](archive/milestone-legacy-index.md). Open items from M1–M16 are either done in M17–M23 or tracked in the backlog.
 
@@ -150,15 +173,28 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-14 | Release readiness focus | Remaining work: AGENTS.md, CI, 2 teatest flows, update summary toast |
 | 2026-06-14 | Retire first-version branch | Merged to main; default branch changed to main; branch deleted |
 | 2026-06-14 | M17.3, M21.2 complete | parseUpdateSummary + toast, install teatest, uninstall teatest done; 8 flows total |
+| 2026-06-15 | M24 created | 13 smoke test findings from M22.4 pre-release; blocks v0.2.0 |
+| 2026-06-15 | M25 created | Outdated panel performance: single `brew outdated` call, request coalescing, lazy load, configurable TTL; routes backlog B-02 |
+| 2026-06-15 | M26 created | Diagnostics error handling: `brew doctor` exit=1 parsed as warnings |
+| 2026-06-15 | M27 created | Taps panel batch loading: one `tap-info --json`, lazy FormulaNames/CaskNames |
+| 2026-06-15 | M28 created | Tiered refresh & polling: data classes, per-class TTLs, lazy all panels, pause on interaction |
+| 2026-06-15 | M25–M28 refined | Concrete designs: `Client.Outdated()`, cache promise coalescing, `tap-info --json` verification, config fallback chain, readiness blocks added |
+| 2026-06-15 | Adoption order set | M26 first → M25/M27 parallel → M28 last; status updated |
+| 2026-06-25 | M24 code complete | 24.1–24.12 implemented + tested; 24.2 confirmed wired (no code needed); legacy partials M2/M4/M6/M7–M11/M12/M14–M16 closed (routing targets M18–M21 all done); only M24.13 manual smoke remains |
+| 2026-06-26 | Merge origin/wip | Integrated divergent performance-milestone planning; renumbered perf set M24–M27 → M25–M28 to resolve number collision with M24 Smoke Test Fixes |
 
 ---
 
 ## Release Readiness
 
+**⚠️ Blocked by M24.13 — manual smoke test. All M24 code (24.1–24.12) is implemented and tested.**
+See [milestones/24-smoke-test-fixes.md](milestones/24-smoke-test-fixes.md) for details and fix plan.
+
 Before tagging v0.2.0:
 
+- [x] M24 code steps 24.1–24.12 complete and tested (24.13 manual smoke remaining)
 - [x] M19 TaskManager done; zero `program.Send`
-- [x] M20 functional correctness done; smoke-checklist pass
+- [x] M20 functional correctness done (smoke-checklist pass — will re-verify in M24.13)
 - [x] M21 T0–T1 done; regression tests linked to architecture review
 - [x] M18.8 `AGENTS.md` exists and linked
 - [x] M17.3 update summary toast implemented
@@ -177,33 +213,36 @@ Before tagging v0.2.0:
 
 ## Release Readiness Execution Plan
 
-Remaining work is small and mostly parallelizable. Suggested order:
+M24 code (24.1–24.12) is complete and tested. Remaining work is human-only.
 
-### Phase 1 — Independent implementation (can run in parallel)
+### Phase 1 — M24 Implementation ✅ Complete
+
+| Step | Status | Notes |
+|---|---|---|
+| **M24.1** | ✅ | Inline Operation panel replacing ProgressModal |
+| **M24.2** | ✅ | Command log callbacks already wired in `app.go`; tests cover it (no code needed) |
+| **M24.3** | ✅ | `/` always activates PanelSearch |
+| **M24.4** | ✅ | `i`/`I` keybinds on search results |
+| **M24.5** | ✅ | Deps fetch path wired; error/empty fallbacks + `TestFetchDepsTabReturnsContent` |
+| **M24.6** | ✅ | Refresh toast feedback |
+| **M24.7** | ✅ | `brew doctor`/`vulns` exit 1 handled gracefully |
+| **M24.8** | ✅ | Batch selection indicator (`●`) |
+| **M24.9** | ✅ | Batch upgrade with confirm |
+| **M24.10** | ✅ | Confirm prompts for all mutations |
+| **M24.11** | ✅ | Graceful cancel (no error toast on `context.Canceled`) |
+| **M24.12** | ✅ | Spinner in sidebar titles; panels reset to loading on `R` refresh |
+| **M24.13** | ⏳ | **Manual smoke test — requires human + real Homebrew** |
+
+### Phase 2 — Final gate (human)
 
 | Step | Owner | Deliverable | Notes |
 |---|---|---|---|
-| **M17.3** | Any | `parseUpdateSummary` + toast | See milestone file for exact handler change and tests |
-| **M21.2a** | Any | `install_test.go` teatest | Requires custom MockRunner to record install args |
-| **M21.2b** | Any | `uninstall_test.go` teatest | Seed Formulae panel with one item, confirm modal, assert uninstall args |
-
-### Phase 2 — External verification (wait after push)
-
-| Step | Owner | Deliverable | Notes |
-|---|---|---|---|
-| **M22.1b** | GitHub Actions | CI badge green | Already triggered; check Actions tab. Fix any flakiness before release |
-| **M22.3a** | Human/agent | `goreleaser release --snapshot --clean` green | Install goreleaser CLI first |
-| **M22.3b** | Human/agent | `.goreleaser.yml` fixed if needed | Only if 22.3a fails |
-
-### Phase 3 — Final gate
-
-| Step | Owner | Deliverable | Notes |
-|---|---|---|---|
+| **M24.13** | Human | Manual smoke test pass | All `smoke-checklist.md` items |
 | **M22.4** | Human | Signed `release-checklist.md` | All pre-release checkboxes verified |
 | **Tag** | Human | `v0.2.0` tag + goreleaser publish | Needs `GITHUB_TOKEN` |
 
 ### Risks to watch
 
-- **CI flakiness:** `-race` on GitHub Actions can be slower than locally; if it times out, increase test timeout or split jobs.
+- **M24.13 smoke regressions:** First end-to-end run since the Operation-panel refactor; watch for layout/render issues only visible in a real terminal
+- **CI flakiness:** `-race` on GitHub Actions can be slower than locally; if it times out, increase test timeout or split jobs
 - **Goreleaser version:** The config uses `version: 2`. Ensure installed goreleaser is v2.x.
-- **SSH/agent:** Future pushes from this environment may need `SSH_AUTH_SOCK` pointed at the active socket.

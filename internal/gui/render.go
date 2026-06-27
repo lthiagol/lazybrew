@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
@@ -20,14 +21,14 @@ func (m Model) renderSidebar() string {
 		prefix := strconv.Itoa(i+1) + " "
 		title := prefix + p.title
 		if p.loading {
-			title += style.SubtleText.Render("  …")
+			title += style.SubtleText.Render("  " + m.spinner.View())
 		} else if count := p.itemCount(); count > 0 {
 			title += style.SubtleText.Render("  " + strconv.Itoa(count))
 		}
 		titleLine := style.PanelTitle.Render(title)
 		itemsMaxRows := max(0, heights[i]-1)
 		p.visibleRows = itemsMaxRows
-		itemsContent := p.renderSidebarContent(contentWidth, itemsMaxRows)
+		itemsContent := p.renderSidebarContent(contentWidth, itemsMaxRows, m.batch.selected)
 		fullContent := lipgloss.JoinVertical(lipgloss.Top, titleLine, itemsContent)
 		box := renderBox(fullContent, contentWidth, heights[i], i == int(m.activePanel))
 		boxes = append(boxes, box)
@@ -151,6 +152,10 @@ func (m Model) renderContentInViewport(content string) string {
 }
 
 func (m Model) renderContent(width, height int) string {
+	if m.opState != nil {
+		return m.renderOperation(width, height)
+	}
+
 	panel := m.panels[m.activePanel]
 	if panel.loading {
 		return m.spinner.View() + style.SubtleText.Render(" Loading...")
@@ -373,6 +378,40 @@ func (m Model) renderSearchInfo(width, height int) string {
 	return style.NormalItem.Render(result)
 }
 
+func (m Model) renderOperation(width, height int) string {
+	op := m.opState
+	if op == nil {
+		return ""
+	}
+
+	title := style.AccentText.Render("⟳ " + op.Title)
+	statusLine := ""
+	switch op.Status {
+	case opRunning:
+		statusLine = style.SubtleText.Render("Running... (Esc to cancel)")
+	case opSuccess:
+		statusLine = style.InstalledBadge.Render("Completed")
+	case opError:
+		statusLine = style.ErrorBadge.Render("Error: " + op.Err.Error())
+	case opCancelled:
+		statusLine = style.SubtleText.Render("Cancelled")
+	}
+
+	bodyLines := op.Lines
+	if len(bodyLines) > height-5 {
+		bodyLines = bodyLines[len(bodyLines)-(height-5):]
+	}
+	body := strings.Join(bodyLines, "\n")
+
+	return lipgloss.JoinVertical(lipgloss.Top,
+		title,
+		"",
+		body,
+		"",
+		statusLine,
+	)
+}
+
 func boolStr(b bool) string {
 	if b {
 		return "yes"
@@ -416,6 +455,12 @@ func (m Model) renderBottomBar() string {
 }
 
 func (m Model) updateStatusText() string {
+	if m.opState != nil && m.opState.Running() {
+		return style.AccentText.Render("⟳ " + m.opState.Title)
+	}
+	if m.refreshing > 0 {
+		return style.SubtleText.Render("⟳ Refreshing...")
+	}
 	if m.isUpdating {
 		return style.SubtleText.Render("⟳ Updating...")
 	}

@@ -3,7 +3,7 @@
 > Items identified during reviews but **explicitly out of scope** for M18–M22.  
 > Prevents scope creep during execution.
 >
-> **Last cleaned:** 2026-06-13 — resolved B-03, B-04, B-05, B-06, B-08, B-10 into milestones or closed.
+> **Last cleaned:** 2026-06-26 — resolved B-02 into M25/M28; created M25, M26, M27, M28 for performance/debug-log findings; previously resolved B-03, B-04, B-05, B-06, B-08, B-10.
 
 ---
 
@@ -12,7 +12,6 @@
 | ID | Item | Source | Suggested when | Priority |
 |----|------|--------|---------------|----------|
 | B-01 | Split `internal/gui/controllers/` per panel | Architecture review | Sprint after v0.2.0 tag | Medium |
-| B-02 | Lazy panel loading (fetch active panel first) | Performance review | Performance pass after M22 | Low |
 | B-07 | Runner SIGKILL after 5s on cancel | M6 plan | After M19 TaskManager stable + release | Medium |
 | B-09 | Homebrew formula for lazybrew | User install | Post v1.0 | Low |
 | B-11 | TypedCache serialization for config hot-reload | Planning | If config reload is added | Low |
@@ -25,6 +24,7 @@
 
 | ID | Item | Resolution |
 |----|------|-----------|
+| B-02 | Lazy panel loading (fetch active panel first) | Covered by **M25** (Outdated) and **M28** (all panels, tiered refresh). |
 | B-03 | `tabContent` LRU / max entries | Conditional — no memory issues observed. Close. |
 | B-04 | Search info preview in main panel | Covered by **M17.11** — tracked in milestone. |
 | B-05 | Adopt `testify` assertions | Decided: stdlib sufficient. Won't fix. |

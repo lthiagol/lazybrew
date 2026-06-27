@@ -33,7 +33,7 @@ func Default() *Config {
 			SidebarWidth:       30,
 			ShowIcons:          true,
 			Mouse:              true,
-			AutoRefreshSeconds: 60,
+			AutoRefreshSeconds: 0,
 		},
 		Brew: BrewConfig{
 			Path:          "",
