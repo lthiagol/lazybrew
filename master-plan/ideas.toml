@@ -1,0 +1,12 @@
+# Quick captures — reminders to refine or work on later.
+# Written by mp idea commands (planned P1.6).
+
+[[ideas]]
+id = ""
+title = ""
+body = ""
+status = "open"              # open | refined | promoted | dismissed | archived
+tags = []
+source = "conversation"      # conversation | planning | review
+created = ""
+promoted_to = ""             # milestone:04 | backlog:B-03 | track:bugfix:BF-02

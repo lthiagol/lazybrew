@@ -1,0 +1,69 @@
+[[items]]
+id = "B-01"
+description = "Split internal/gui/controllers/ per panel"
+source = "backlog.md"
+suggested_when = "Sprint after v0.2.0 tag"
+priority = "medium"
+status = "active"
+resolution = ""
+resolved_at = ""
+
+[[items]]
+id = "B-02"
+description = "Runner SIGKILL after 5s on cancel"
+source = "backlog.md"
+suggested_when = "After M19 TaskManager stable + release"
+priority = "medium"
+status = "active"
+resolution = ""
+resolved_at = ""
+
+[[items]]
+id = "B-03"
+description = "Homebrew formula for lazybrew"
+source = "backlog.md"
+suggested_when = "Post v1.0"
+priority = "low"
+status = "active"
+resolution = ""
+resolved_at = ""
+
+[[items]]
+id = "B-04"
+description = "TypedCache serialization for config hot-reload"
+source = "backlog.md"
+suggested_when = "If config reload is added"
+priority = "low"
+status = "active"
+resolution = ""
+resolved_at = ""
+
+[[items]]
+id = "B-05"
+description = "Config migration path for renamed fields"
+source = "backlog.md"
+suggested_when = "If ShowIcons semantics change"
+priority = "low"
+status = "active"
+resolution = ""
+resolved_at = ""
+
+[[items]]
+id = "B-06"
+description = "Command log border frame (M23 — border causes teatest height mismatch)"
+source = "backlog.md"
+suggested_when = "After M21 E2E tests are stable"
+priority = "low"
+status = "active"
+resolution = ""
+resolved_at = ""
+
+[[items]]
+id = "B-07"
+description = "Split internal/gui/controllers/ per panel"
+source = "backlog.md"
+suggested_when = ""
+priority = "medium"
+status = "resolved"
+resolution = "wont-fix: Duplicate of B-01 (created by double-run of mp backlog add)"
+resolved_at = "2026-06-27"

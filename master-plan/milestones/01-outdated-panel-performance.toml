@@ -1,0 +1,172 @@
+success_criteria = []
+assumptions = []
+design_decisions = []
+open_questions = []
+risks = []
+follow_ups = []
+
+[milestone]
+id = "01"
+title = "Outdated Panel Performance"
+slug = "outdated-panel-performance"
+spec_status = "ready"
+execution_status = "planned"
+depends_on = []
+effort = "S"
+risk = "low"
+change_kind = ""
+priority = "normal"
+created = "2026-06-27"
+updated = "2026-06-27"
+blocked_at = ""
+block_reason = ""
+blocked_by = ""
+
+[intent]
+outcome = "The Outdated panel should appear quickly when the user opens it."
+
+[problem]
+description = "Today it is one of the slowest parts of startup because it triggers redundant brew outdated subprocesses. This milestone removes those redundancies: combine the formula/cask outdated fetch into a single Homebrew call, deduplicate concurrent requests, and only fetch Outdated data when the panel is first viewed."
+
+[context]
+related = []
+references = []
+
+[behavior]
+scenarios = []
+edge_cases = []
+
+[requirements]
+functional = []
+needs_clarification = []
+
+[interface]
+endpoints = []
+config_keys = []
+cli_commands = []
+entities = []
+
+[scope]
+in_scope = [
+    "Combine formula/cask outdated fetch into single brew outdated --json=v2 call",
+    "Request coalescing for in-flight Outdated() calls",
+    "Lazy-load Outdated panel on first focus instead of Init()",
+    "Configurable cache TTL (cache_ttl_seconds, default 30)",
+]
+out_of_scope = [
+    "General controller refactor (deferred to backlog B-01)",
+    "Lazy loading for other panels (covered by M28)",
+    "Background prefetch / auto-refresh policy redesign (covered by M28)",
+    "brew doctor exit-code bug (covered by M26)",
+    "Taps tap-info batch loading (covered by M27)",
+]
+
+[[acceptance_criteria]]
+id = "AC-01"
+description = "brew outdated perceived load time is measurably reduced without regressing correctness or mutation side effects"
+verification = "Unit tests prove one subprocess returns both lists; teatest confirms lazy load on focus"
+status = "pending"
+evidence = ""
+
+[technical_context]
+language = ""
+dependencies = []
+storage = ""
+testing = ""
+target_platform = ""
+constraints = []
+performance_goals = []
+
+[[work_packages]]
+id = "WP1"
+name = "Main"
+goal = ""
+rollback = ""
+
+[[steps]]
+id = "S1"
+work_package = "WP1"
+order = 1
+action = "Add combined Outdated reader (Client.Outdated())"
+files = [
+    "internal/brew/outdated.go",
+    "internal/brew/formulae.go",
+    "internal/brew/casks.go",
+    "internal/brew/client.go",
+    "internal/gui/commands.go",
+]
+tests = "TestCombinedOutdatedReturnsBothTypes,TestOutdatedPanelFetchUsesSingleBrewCall"
+done_when = "brew outdated --json=v2 is invoked once when the Outdated panel loads"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[[steps]]
+id = "S2"
+work_package = "WP1"
+order = 2
+action = "Request coalescing for Outdated"
+files = [
+    "internal/brew/cache.go",
+    "internal/brew/cache_test.go",
+]
+tests = "TestCacheCoalescesConcurrentOutdatedCalls"
+done_when = "Two concurrent Outdated() calls result in exactly one brew outdated subprocess"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[[steps]]
+id = "S3"
+work_package = "WP1"
+order = 3
+action = "Lazy-load Outdated panel"
+files = [
+    "internal/gui/gui.go",
+    "internal/gui/commands.go",
+]
+tests = "TestOutdatedLazyLoadedOnFocus,TestStatusUpdatesAfterOutdatedLoads"
+done_when = "brew outdated is not invoked during Init(); switching to Outdated triggers fetch"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[[steps]]
+id = "S4"
+work_package = "WP1"
+order = 4
+action = "Configurable cache TTL"
+files = [
+    "internal/config/config.go",
+    "internal/brew/client.go",
+    "internal/app/app.go",
+]
+tests = "TestCacheTTLFromConfig,TestDefaultCacheTTL"
+done_when = "Config file cache_ttl_seconds controls cache expiry"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[[steps]]
+id = "S5"
+work_package = "WP1"
+order = 5
+action = "Regression tests and smoke"
+files = []
+tests = "Existing Outdated test suite"
+done_when = "All tests pass, race detector clean"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[verification]
+date = ""
+branch = ""
+evidence = ""
+
+[delta]
+domain = ""
+base_version = 0
+added = []
+modified = []
+removed = []

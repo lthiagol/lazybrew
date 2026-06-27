@@ -3,7 +3,7 @@
 > **Purpose:** Operational conventions for humans and coding agents working on lazybrew.  
 > **Audience:** Anyone opening a PR, running an agent session, or doing a code review.  
 > **Architectural context:** See [DESIGN.md](DESIGN.md).  
-> **Planning context:** See [master-plan/status.md](master-plan/status.md).
+> **Planning context:** See [master-plan/](master-plan/) (mp-managed). All plan I/O via `mp` CLI; never hand-edit plan files.
 
 ---
 
@@ -40,7 +40,7 @@ make test-integration
 | `internal/gui/task/` | TaskManager for serializing write operations | `go test ./internal/gui/task/...` |
 | `internal/gui/flows/` | `teatest` E2E flows | `go test ./internal/gui/flows/...` |
 | `internal/gui/testutil/` | Test helper for E2E flows | — |
-| `master-plan/` | Milestones, status, decision logs | — |
+| `master-plan/` | mp-managed — milestones, backlog, specs, status | `mp validate` |
 | `scripts/` | Build/test helpers (e.g. coverage floor check) | — |
 
 ---
@@ -88,12 +88,23 @@ Rules:
 
 ## Planning Rules
 
-1. **Source of truth:** [master-plan/status.md](master-plan/status.md).
-2. **New milestone:** Use [templates/milestone.md](master-plan/templates/milestone.md).
-3. **Step size:** Every step must have size, dependencies, acceptance criteria, and tests.
-4. **Out of scope:** If a finding is not in the current milestone, add it to [master-plan/backlog.md](master-plan/backlog.md) unless it is critical.
-5. **Status updates:** Mark steps complete in the milestone file **and** `status.md`.
-6. **Decision log:** Non-obvious architectural choices go in `DESIGN.md` decision log and the milestone ADR table.
+1. **Source of truth:** [master-plan/](master-plan/) — mp CLI-driven.
+2. **All plan I/O via `mp`:** Never hand-edit files under `master-plan/`.
+3. **New milestone:** `mp milestone create --json @-` with spec fields → `set-spec-status review` → `approve` → `decompose`.
+4. **Step size:** Every step must have size, dependencies, acceptance criteria, and tests. `mp step add` with `--covers-ac` links steps to ACs.
+5. **Out of scope:** If a finding is not in the current milestone, use `mp backlog add --desc "..." --priority <medium|low>`.
+6. **Status updates:** `mp status --format json` is the single source of truth.
+7. **Decision log:** Non-obvious architectural choices go in `DESIGN.md` decision log.
+8. **Validate after every write:** `mp validate`.
+
+### mp session start sequence (for agents)
+
+```bash
+mp doctor --format json          # toolkit + project readiness
+mp config show --format json     # confirm profile + plan dir
+mp status --format json          # current state
+mp list milestones --filter ready  # next work
+```
 
 ---
 
@@ -146,6 +157,6 @@ Before v0.2.0 tag:
 ## References
 
 - [DESIGN.md](DESIGN.md) — architecture and concurrency ADR
-- [master-plan/status.md](master-plan/status.md) — current milestone status
-- [master-plan/review-template.md](master-plan/review-template.md) — future audit template
-- [master-plan/backlog.md](master-plan/backlog.md) — deferred work
+- [master-plan/](master-plan/) — mp-managed milestones, backlog, specs, status
+- [master-plan-archive/](master-plan-archive/) — pre-mp plan history
+- [docs/operational/](docs/operational/) — release checklists, smoke checks, coverage audit

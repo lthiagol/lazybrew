@@ -1,0 +1,92 @@
+[brief]
+status = "done"
+created = "2026-06-27"
+completed = "2026-06-27"
+
+[[topics]]
+id = "T01"
+key = "problem"
+title = "Problem & motivation"
+prompt = "What problem are you solving? Why does this project exist? Why now?"
+body = "Lazybrew is a terminal UI for managing Homebrew packages. It wraps brew CLI commands, caches outputs, and presents them in a Bubble Tea TUI with panels for formulae, casks, taps, services, search, and diagnostics."
+status = "filled"
+builtin = true
+required = true
+order = 1
+
+[[topics]]
+id = "T02"
+key = "audience"
+title = "Who is it for?"
+prompt = "Primary users or consumers. Who is explicitly NOT the audience?"
+body = "macOS and Linux users who manage packages with Homebrew and prefer a keyboard-driven TUI over the CLI."
+status = "filled"
+builtin = true
+required = true
+order = 2
+
+[[topics]]
+id = "T03"
+key = "capabilities"
+title = "Rough capabilities"
+prompt = "What might it do? Brainstorm features or behaviors — rough is fine, no ordering yet."
+body = "Cache brew command outputs with TTL; TUI panels for formulae, casks, taps, services, search, diagnostics; install/uninstall/reinstall/upgrade/pin mutations; service start/stop; task serialization via TaskManager; auto-refresh; dark/light theme."
+status = "filled"
+builtin = true
+required = true
+order = 3
+
+[[topics]]
+id = "T04"
+key = "constraints"
+title = "Constraints"
+prompt = "Time, budget, stack preferences, platform, team size, legal, or technical limits."
+body = "Stack: Go + Bubble Tea + Lip Gloss + Bubbles. Platforms: macOS + Linux. Target Homebrew: 6.0.0+. Bubble Tea rules: no program.Send, no raw goroutines, all write ops through task.Manager."
+status = "filled"
+builtin = true
+required = true
+order = 4
+
+[[topics]]
+id = "T05"
+key = "inspiration"
+title = "Inspiration & references"
+prompt = "Similar products, links, repos, or experiences you want to learn from or avoid."
+body = "Inspired by lazygit TUI patterns. Homebrew CLI UX conventions."
+status = "filled"
+builtin = true
+required = false
+order = 5
+
+[[topics]]
+id = "T06"
+key = "unknowns"
+title = "Unknowns & open questions"
+prompt = "What don't you know yet? What needs research or a spike?"
+body = "Detailed unknowns captured in M25-M28 milestone specs. No blocking unknowns at brief level."
+status = "filled"
+builtin = true
+required = true
+order = 6
+
+[[topics]]
+id = "T07"
+key = "success"
+title = "What success looks like"
+prompt = "How will you know this worked? Vague is OK — we'll sharpen this in the charter."
+body = "v0.2.0 release with M24.13 manual smoke pass (release-checklist.md gate). Post-release: M25-M28 performance pass reduces brew call volume and fixes diagnostics error handling."
+status = "filled"
+builtin = true
+required = true
+order = 7
+
+[[topics]]
+id = "T08"
+key = "non_starters"
+title = "Explicit non-starters"
+prompt = "What are you probably NOT doing in v1? Ideas to park, not reject forever."
+body = "Not replacing Homebrew CLI. No visual screenshot testing. No performance benchmarks in scope. M1-M24 complete/historical milestones not re-planned."
+status = "filled"
+builtin = true
+required = true
+order = 8

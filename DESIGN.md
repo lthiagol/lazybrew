@@ -116,3 +116,4 @@ See [config ADR in M18.9](master-plan/milestones/18-documentation-and-project-hy
 | 2026-06-13 | Integration tag; never in default CI | D21-2 |
 | 2026-06-13 | TypedCache safe get before concurrency | Moved from M21 to M19.0 |
 | 2026-06-13 | M17 deferred until M19–M22 done | Visual polish after correctness |
+| 2026-06-26 | **[mp Adoption]** Migrate bespoke `master-plan/` to mp CLI v1.4.0. D1=`full` profile, D2=archive M1–M24 (import M25–M28 only), D3=parallel `.mp/` bootstrap (cutover later), D4=operational checklists outside mp, D5=B-xx backlog → `mp backlog add`, D6=plan in_repo=true. See `mp-adoption-plan.md` for full plan. | Adoption ADR |

@@ -1,0 +1,126 @@
+success_criteria = []
+assumptions = []
+design_decisions = []
+open_questions = []
+risks = []
+follow_ups = []
+
+[milestone]
+id = "02"
+title = "Diagnostics Error Handling"
+slug = "diagnostics-error-handling"
+spec_status = "ready"
+execution_status = "planned"
+depends_on = []
+effort = "S"
+risk = "low"
+change_kind = ""
+priority = "normal"
+created = "2026-06-27"
+updated = "2026-06-27"
+blocked_at = ""
+block_reason = ""
+blocked_by = ""
+
+[intent]
+outcome = "brew doctor warnings display correctly and the debug log stops filling with false failures."
+
+[problem]
+description = "brew doctor returns exit code 1 whenever it has warnings, but lazybrew treats that as a hard failure and logs a WARN every refresh cycle."
+
+[context]
+related = []
+references = []
+
+[behavior]
+scenarios = []
+edge_cases = []
+
+[requirements]
+functional = []
+needs_clarification = []
+
+[interface]
+endpoints = []
+config_keys = []
+cli_commands = []
+entities = []
+
+[scope]
+in_scope = [
+    "Accept exit=1 from brew doctor and parse stdout for warnings",
+    "Audit other readers for non-zero-exit misclassification",
+]
+out_of_scope = [
+    "Reducing how often doctor runs (covered by M28)",
+    "Changing doctor parsing format",
+    "Other diagnostics commands — unless audit reveals a similar pattern",
+]
+
+[[acceptance_criteria]]
+id = "AC-01"
+description = "exit=1 yields parsed warnings, no error"
+verification = "TestDoctorExitOneReturnsWarnings"
+status = "pending"
+evidence = ""
+
+[[acceptance_criteria]]
+id = "AC-02"
+description = "exit=2 yields error"
+verification = "TestDoctorExitTwoReturnsError"
+status = "pending"
+evidence = ""
+
+[technical_context]
+language = ""
+dependencies = []
+storage = ""
+testing = ""
+target_platform = ""
+constraints = []
+performance_goals = []
+
+[[work_packages]]
+id = "WP1"
+name = "Main"
+goal = ""
+rollback = ""
+
+[[steps]]
+id = "S1"
+work_package = "WP1"
+order = 1
+action = "Accept exit=1 from brew doctor"
+files = [
+    "internal/brew/doctor.go",
+    "internal/brew/doctor_test.go",
+]
+tests = "TestDoctorExitOneReturnsWarnings"
+done_when = "Mock runner exit=1 returns warnings, no error"
+status = "pending"
+covers_ac = ["AC-01"]
+depends_on_steps = []
+
+[[steps]]
+id = "S2"
+work_package = "WP1"
+order = 2
+action = "Audit non-zero exit semantics"
+files = ["internal/brew/"]
+tests = "Manual review (test/log review signed off)"
+done_when = "Audit list recorded; no other recurring false errors"
+status = "pending"
+covers_ac = ["AC-02"]
+depends_on_steps = []
+
+[verification]
+date = ""
+branch = ""
+evidence = ""
+
+[delta]
+domain = ""
+base_version = 0
+added = []
+modified = []
+removed = []
