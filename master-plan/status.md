@@ -4,7 +4,7 @@
 > **Stack:** Go + Bubble Tea + Lip Gloss + Bubbles  
 > **Platforms:** macOS + Linux  
 > **Created:** 2026-06-11  
-> **Last Updated:** 2026-06-25 (M24 code complete; only 24.13 manual smoke remains)
+> **Last Updated:** 2026-06-26 (M24 smoke-fixes code complete; M25–M28 performance milestones planned)
 > **Target Homebrew:** 6.0.0+
 
 ---
@@ -37,20 +37,24 @@
 [X]  Milestone 12  — Test Infrastructure (routed to M21)
 [X]  Milestone 13  — Critical Bug Fixes
 [X]  Milestone 14–16 — Wire/cleanup/tests (routed to M18.4/M19.0/M21)
-[X]  Milestone 23  — TUI Layout Rework & Debug Logging
 [X]  Milestone 17  — Lazygit UI (parse summary toast → 17.3)
 [X]  Milestone 18  — Documentation & Hygiene
 [X]  Milestone 19  — Concurrency & TaskManager
 [X]  Milestone 20  — Functional & UX (phases A–F)
 [X]  Milestone 21  — Test Strategy v2 (8 teatest flows done)
 [X]  Milestone 22  — CI & Release (22.1a/22.1b/22.2/22.3a/22.5/22.6 done; 22.4 blocked by M24.13)
+[X]  Milestone 23  — TUI Layout Rework & Debug Logging
 [~]  Milestone 24  — Smoke Test Fixes (24.1–24.12 code complete; 24.13 manual smoke pending)
+[ ]  Milestone 25  — Outdated Panel Performance
+[ ]  Milestone 26  — Diagnostics Error Handling
+[ ]  Milestone 27  — Taps Panel Batch Loading
+[ ]  Milestone 28  — Tiered Refresh & Polling Strategy
 ```
 
 **Legend:** `[X]` complete · `[~]` partial · `[ ]` not started
 
 **Current phase:** M24.13 — manual smoke test (last gate before v0.2.0)  
-**Execution entry point:** M24.13 (human) → M22.4 (release sign-off) → tag v0.2.0
+**Execution entry point:** M24.13 (human) → M22.4 (release sign-off) → tag v0.2.0 → performance pass (M26 → M25/M27 → M28)
 
 ---
 
@@ -62,16 +66,33 @@ Tracks can run concurrently when dependencies allow.
 |---|---|---|---|---|
 | **A — Smoke** | M24.13 | Manual smoke test pass | Now | v0.2.0 release |
 | **B — Ops** | M22.4 | Release checklist sign-off + tag | After M24.13 | v0.2.0 tag |
+| **C — Performance** | M26 → M25/M27 → M28 | Fix doctor error, reduce brew call volume | After v0.2.0 tag | — |
 
 ### Critical path
+
+**v0.2.0 release:**
 
 ```
 M24.13 (manual smoke) → M22.4 (sign-off + tag v0.2.0)
 ```
 
+**Post-release performance pass:**
+
+```
+M26 → M25 / M27 → M28
+```
+
+M25 and M27 can run in parallel after M26; both must complete before M28.
+
+### Adoption order
+
+1. **Start M26** — `brew doctor` exit=1 fix; smallest, unblocks cleaner debug logs.
+2. **M25 and M27 in parallel** — Outdated combine/coalescing and Taps batch loading; independent except they both benefit from M25.2 coalescing.
+3. **Finish with M28** — tiered refresh and lazy loading everywhere; depends on M25/M26/M27.
+
 ---
 
-## Milestone Index (M17–M23 detail)
+## Milestone Index (M17–M28 detail)
 
 | # | Milestone | Steps | Size | Gate | Status |
 |---|---|---|---|---|---|
@@ -83,6 +104,10 @@ M24.13 (manual smoke) → M22.4 (sign-off + tag v0.2.0)
 | 22 | [CI & Release](milestones/22-ci-and-release-hardening.md) | 22.1a–22.4 | M | CI green + goreleaser | Code done; 22.4 blocked by M24.13 |
 | 23 | [TUI Layout Rework](milestones/23-tui-layout-and-debug-logging.md) | 23.1–23.8 | M | Layout fills space, two-line bar, debug log | Done |
 | 24 | [Smoke Test Fixes](milestones/24-smoke-test-fixes.md) | 24.1–24.13 | M | All smoke checklist items pass | Code complete (24.1–24.12); 24.13 manual smoke pending |
+| 25 | [Outdated Panel Performance](milestones/25-outdated-panel-performance.md) | 25.1–25.5 | M | `brew outdated` called once, lazy-loaded, cached | Planned |
+| 26 | [Diagnostics Error Handling](milestones/26-diagnostics-error-handling.md) | 26.1–26.2 | S | `brew doctor` exit=1 parsed as warnings | Planned |
+| 27 | [Taps Panel Batch Loading](milestones/27-taps-panel-batch-loading.md) | 27.1–27.3 | S | One `tap-info --json` call, lazy detail | Planned |
+| 28 | [Tiered Refresh & Polling Strategy](milestones/28-tiered-refresh-and-polling-strategy.md) | 28.1–28.6 | M | Per-class TTLs, lazy panels, pause on interaction | Planned |
 
 Legacy milestones M1–M16: see [milestone-legacy-index.md](archive/milestone-legacy-index.md). Open items from M1–M16 are either done in M17–M23 or tracked in the backlog.
 
@@ -149,7 +174,14 @@ Future reviews: use [review-template.md](review-template.md).
 | 2026-06-14 | Retire first-version branch | Merged to main; default branch changed to main; branch deleted |
 | 2026-06-14 | M17.3, M21.2 complete | parseUpdateSummary + toast, install teatest, uninstall teatest done; 8 flows total |
 | 2026-06-15 | M24 created | 13 smoke test findings from M22.4 pre-release; blocks v0.2.0 |
+| 2026-06-15 | M25 created | Outdated panel performance: single `brew outdated` call, request coalescing, lazy load, configurable TTL; routes backlog B-02 |
+| 2026-06-15 | M26 created | Diagnostics error handling: `brew doctor` exit=1 parsed as warnings |
+| 2026-06-15 | M27 created | Taps panel batch loading: one `tap-info --json`, lazy FormulaNames/CaskNames |
+| 2026-06-15 | M28 created | Tiered refresh & polling: data classes, per-class TTLs, lazy all panels, pause on interaction |
+| 2026-06-15 | M25–M28 refined | Concrete designs: `Client.Outdated()`, cache promise coalescing, `tap-info --json` verification, config fallback chain, readiness blocks added |
+| 2026-06-15 | Adoption order set | M26 first → M25/M27 parallel → M28 last; status updated |
 | 2026-06-25 | M24 code complete | 24.1–24.12 implemented + tested; 24.2 confirmed wired (no code needed); legacy partials M2/M4/M6/M7–M11/M12/M14–M16 closed (routing targets M18–M21 all done); only M24.13 manual smoke remains |
+| 2026-06-26 | Merge origin/wip | Integrated divergent performance-milestone planning; renumbered perf set M24–M27 → M25–M28 to resolve number collision with M24 Smoke Test Fixes |
 
 ---
 
