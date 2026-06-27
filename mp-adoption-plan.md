@@ -68,6 +68,7 @@ Documented as **recommended defaults**. D2 and D3 have real trade-offs — **con
 | **D3** | Plan-dir location during migration | **Parallel `.mp/`, cutover later** ⚠️ confirm | Rebuilding `master-plan/` in place is irreversible and mixes old+new during transition. `.mp/` lets you validate mp output first, then rename at cutover. |
 | **D4** | Operational checklists | **Keep outside mp** | They are runbooks, not plan artifacts. mp has no concept for them. |
 | **D5** | Backlog routing | **B-01, B-07 → tracks; rest → ideas** | Tracks = near-term work; ideas = parking lot. Matches backlog priorities. |
+| **D6** | Plan committed to git? | **Yes — `workflow.plan.in_repo = true`** ⚠️ confirm | mp can gitignore the plan dir (`workflow.plan.in_repo`; when `false`, `mp init` appends it to `.gitignore`). lazybrew's bespoke `master-plan/` is committed and shared across agents/CI, so commit the mp plan too. Verify mp's default for the `full` profile and set `in_repo` explicitly in Phase 1. |
 
 ---
 
@@ -161,19 +162,19 @@ Execute in order. Each phase has acceptance criteria. Run `mp validate` after ev
 ### Phase 1 — Bootstrap (with collision guard)
 > The repo already has a `master-plan/` folder. mp defaults to that **same name**. You must force mp to use `.mp/` and **prove** the bespoke folder is never touched. This is the highest-risk step — verify before advancing.
 
-- [ ] **1.0 Discover:** run `mp init --help`, `mp config --help`, and `mp help init`. Determine how to set `config.workflow.plan.location` to `.mp/` **before** init (env var, CLI flag, or pre-created config file). Record the exact mechanism that worked in the log — this is prime mp feedback.
+- [ ] **1.0 Confirm the mechanism (known — verify it):** mp resolves the plan dir in priority order — **(1) `--plan-dir` CLI flag** > (2) `config.workflow.plan.location` > (3) `<root>/master-plan/` (default, **collides with the bespoke folder**). The config key lives in `master-plan/config.toml` (`[workflow]` → `plan.location`), settable via `mp config set workflow.plan.location .mp` — but that file lives *inside* the plan dir, so to bootstrap a non-default location you **must use the flag**, not a pre-edited file. Confirm `mp init --help` lists `--plan-dir` and record whether reality matches the docs (prime feedback).
 - [ ] **1.1 Snapshot (baseline):** capture the existing plan dir so any change is detectable:
       ```bash
       git status --short                         # must be clean
       git ls-files master-plan | sort > /tmp/mp-pre-manifest.txt
       ```
-- [ ] **1.2 Init (forced to `.mp/`):** run `mp init --profile full --from-repo` with the plan location forced to `.mp/` per 1.0.
+- [ ] **1.2 Init into `.mp/`:** `mp init --profile full --from-repo --plan-dir .mp` (the flag is what avoids the `master-plan/` collision).
 - [ ] **1.3 Collision guard — VERIFY (hard gate):**
       - `.mp/` exists and contains mp artifacts.
       - `master-plan/` is **byte-identical** to pre-init: `git status` still clean **and** `git ls-files master-plan | sort` matches `/tmp/mp-pre-manifest.txt`.
-      - **If mp wrote anything into `master-plan/`, or refused init because it "detected" an existing plan dir: ABORT.** Do not retry blindly. Log the exact behavior, move any stray mp files out, set `config.workflow.plan.location=.mp/`, and re-confirm with the user before retrying.
+      - **If mp wrote anything into `master-plan/`, or refused init because it "detected" an existing plan dir: ABORT.** Do not retry blindly. Log the exact behavior, move any stray mp files out, re-run with `--plan-dir .mp`, and re-confirm with the user before retrying.
 - [ ] `mp doctor --format json` → healthy.
-- [ ] `mp config show --format json` → confirms plan dir is `.mp/`; decide gitignore policy (ignore vs track) and apply it.
+- [ ] `mp config show --format json` → confirms plan dir is `.mp/`; set `workflow.plan.in_repo` per **D6** (expect `true`) via `mp config set workflow.plan.in_repo true`, and confirm `.gitignore` was **not** given the plan path.
 - **AC:** `mp doctor` healthy; `.mp/` exists; `master-plan/` **provably unchanged** (guard passed).
 - **Checkpoint ☐:** re-run the 1.3 assertions; `git status` clean; `mp validate`; append Phase 1 entry to log including the discovered location-forcing mechanism, mp's actual init behavior, and any doc mismatch.
 
