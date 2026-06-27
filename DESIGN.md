@@ -83,7 +83,7 @@ cmd/lazybrew/main.go
 
 ## Configuration Schema
 
-See [config ADR in M18.9](master-plan/milestones/18-documentation-and-project-hygiene.md).
+See [config ADR in M18.9](master-plan-archive/milestones/18-documentation-and-project-hygiene.md).
 
 | Field | Status | Notes |
 |---|---|---|

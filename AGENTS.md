@@ -82,7 +82,7 @@ Rules:
 - Unit tests must pass with `-race` (`make test`).
 - E2E flows must assert on `View()` output, not just model fields.
 - Coverage floors are enforced by `make cover-check`. Do not lower them without a decision log entry.
-- New brew command support requires: service method, cache invalidation, unit test, and a row in `master-plan/coverage-audit.md`.
+- New brew command support requires: service method, cache invalidation, unit test, and a row in `docs/operational/coverage-audit.md`.
 
 ---
 
