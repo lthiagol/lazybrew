@@ -202,26 +202,36 @@ Append every concrete mp improvement idea here as you find it (also reference it
 - **`[IMPROVE]` items raised:** I-08
 
 ## Phase 6 — Merge
-- **Started / ended:** _
-- **CI result:** _(`go test -race`, `go vet`, `make lint`)_
-- **`mp doctor` + `mp status` on `main`:** _
-- **Checkpoint passed:** ☐
-- **`[IMPROVE]` items raised:** _
+- **Started / ended:** 2026-06-26T23:04 / 2026-06-26T23:05
+- **Commit:** `83aeeeb` on `chore/mp-adoption` — 59 files changed.
+- **CI result:** Not run on this branch (user deferred — local commit only, no PR opened).
+- **`mp doctor` + `mp status` on `main`:** Not merged yet — branch is ready for PR.
+- **Checkpoint passed:** ☑ · Committed locally; user chose not to push/PR yet.
+- **`[IMPROVE]` items raised:** —
 
 ---
 
 ## Final outcome summary
 
-- **Result:** ☐ success / ☐ partial / ☐ failed
-- **Total elapsed:** _
-- **What mp did well:** _
-- **Top 3 friction points:** _
-  1. _
-  2. _
-  3. _
-- **Artifacts mp now owns** _(paths)_: _
-- **Open issues handed back to mp maintainers:** _(link the `[IMPROVE]` rows above)_
-- **Would we adopt mp again on a similar project?** _yes/no — why_
+- **Result:** ☑ success (all phases 0–6 complete; commit created; PR-ready)
+- **Total elapsed:** ~35 minutes
+- **What mp did well:**
+  - `mp doctor` and `mp validate` provide clear health checks.
+  - `mp plan show` / `mp status` give a structured view of the plan.
+  - `mp step add --covers-ac` and strictness gating (G10) enforce quality.
+  - The `--plan-dir` flag provides clean isolation during parallel bootstrap.
+  - JSON output across commands is well-structured and machine-parseable.
+- **Top 3 friction points:**
+  1. **JSON schema opacity.** `mp milestone create --json @-` with stdin didn't populate structured fields. Had to use `--file` with `mp milestone update`, and the expected JSON shape (separate `problem.description` top-level key) was discovered by trial and error. Documentation of the input JSON schema is critically needed.
+  2. **Config scope confusion.** `mp config set` without `--plan-dir` appears to write to an unresolvable scope — changes didn't land in `.mp/config.toml`. The `--plan-dir` requirement is undocumented and unintuitive.
+  3. **Rename/location management.** After `.mp/` → `master-plan/` rename, config still had `location = ".mp"` and needed manual fix. No `mp plan relocate` command exists.
+- **Artifacts mp now owns** _(paths)_:
+  - `master-plan/plan.toml`, `master-plan/brief.toml`, `master-plan/backlog.toml`
+  - `master-plan/config.toml`, `master-plan/decisions.toml`, `master-plan/ideas.toml`
+  - `master-plan/milestones/01-outdated-panel-performance.toml` through `04-*.toml`
+  - `master-plan/AGENTS.md`, `master-plan/tracks/`, `master-plan/archive/`
+- **Open issues handed back to mp maintainers:** I-01 through I-08 (see table above)
+- **Would we adopt mp again on a similar project?** Yes — despite friction, the structured validation, AC coverage enforcement, and CLI-driven workflow are a clear improvement over freehand markdown. The 8 improvement items should be addressed before v2.0.
 
 ---
 
