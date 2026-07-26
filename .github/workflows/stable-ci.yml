@@ -1,0 +1,129 @@
+name: stable-ci
+
+on:
+  push:
+    branches: [stable]
+    tags: ['v*']
+  pull_request:
+    branches: [stable]
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: lint + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: gofmt check
+        run: |
+          if [ "$(gofmt -l . | wc -l)" -ne 0 ]; then
+            echo "Files needing gofmt:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./... -count=1
+
+      - name: go build
+        run: go build -o /dev/null .
+
+  tap-update:
+    name: open homebrew-tap bump PR
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Resolve tag + commit SHA + SHA256
+        id: meta
+        run: |
+          # Strip leading 'v' from tag for use as the version string.
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Resolve the tag to its commit SHA (for the dev formula URL).
+          COMMIT=$(git rev-list -n 1 "${GITHUB_REF_NAME}")
+          # Both tag archive and commit archive return the same tarball
+          # content (the tag is just a pointer to the commit), so one
+          # SHA256 covers both formulas.
+          SHA=$(curl -sL "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz" | sha256sum | cut -d' ' -f1)
+          # Bump date in YYYYMMDD for the dev formula's version string.
+          DATE=$(date -u +%Y%m%d)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "commit=${COMMIT}"    >> "$GITHUB_OUTPUT"
+          echo "sha=${SHA}"          >> "$GITHUB_OUTPUT"
+          echo "date=${DATE}"        >> "$GITHUB_OUTPUT"
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: lthiagol/homebrew-tap
+          ref: stable
+          path: homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update both formulas on a new branch
+        working-directory: homebrew-tap
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          COMMIT:  ${{ steps.meta.outputs.commit }}
+          SHA:     ${{ steps.meta.outputs.sha }}
+          DATE:    ${{ steps.meta.outputs.date }}
+        run: |
+          BRANCH="bump-lazybrew-v${VERSION}"
+          git remote set-url origin "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/lthiagol/homebrew-tap.git"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git checkout -b "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
+
+          # Update Formula/lazybrew.rb (stable, tag URL).
+          sed -i.bak -E \
+            -e "s|^  homepage \".*\"|  homepage \"https://github.com/${GITHUB_REPOSITORY}\"|" \
+            -e "s|^  url \".*\"|      url \"https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/v${VERSION}.tar.gz\"|" \
+            -e "s|^  sha256 \".*\"|  sha256 \"${SHA}\"|" \
+            Formula/lazybrew.rb
+
+          # Update Formula/lazybrew-dev.rb (dev, commit URL, dated version).
+          sed -i.bak -E \
+            -e "s|^  homepage \".*\"|  homepage \"https://github.com/${GITHUB_REPOSITORY}\"|" \
+            -e "s|^  url \".*\"|      url \"https://github.com/${GITHUB_REPOSITORY}/archive/${COMMIT}.tar.gz\"|" \
+            -e "s|^  version \".*\"|  version \"${VERSION}-dev.${DATE}\"|" \
+            -e "s|^  sha256 \".*\"|  sha256 \"${SHA}\"|" \
+            Formula/lazybrew-dev.rb
+
+          rm -f Formula/*.bak
+          git add Formula/lazybrew.rb Formula/lazybrew-dev.rb
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "lazybrew: bump to v${VERSION} (and lazybrew-dev to ${VERSION}-dev.${DATE})"
+          git push -u origin "$BRANCH" --force
+
+      - name: Open PR against homebrew-tap:stable
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          BRANCH="bump-lazybrew-v${{ steps.meta.outputs.version }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          DATE="${{ steps.meta.outputs.date }}"
+          SHA="${{ steps.meta.outputs.sha }}"
+          COMMIT="${{ steps.meta.outputs.commit }}"
+          cat > /tmp/pr_body.md <<PRBODY
+          Auto-bump from ${{ github.repository }} tag v${VERSION}.
+
+          * lazybrew.rb -> v${VERSION} tarball
+          * lazybrew-dev.rb -> v${VERSION}-dev.${DATE} (tracks the tagged commit ${COMMIT:0:7})
+          * SHA256: ${SHA}
+
+          This PR targets stable. CI runs brew audit + style on the formulas.
+          PRBODY
+          gh pr create --repo lthiagol/homebrew-tap --base stable --head "$BRANCH" --title "lazybrew: bump to v${VERSION}" --body-file /tmp/pr_body.md || echo "PR already exists for this bump"

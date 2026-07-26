@@ -1,0 +1,97 @@
+{
+  "brief": {
+    "status": "done",
+    "created": "2026-07-19",
+    "completed": "2026-07-19"
+  },
+  "topics": [
+    {
+      "id": "T01",
+      "key": "problem",
+      "title": "Problem & motivation",
+      "prompt": "What problem are you solving? Why does this project exist? Why now?",
+      "body": "Manage Homebrew on a local machine through a TUI instead of the CLI. The TUI must cover the everyday flows: listing and inspecting installed packages, listing taps, and toggling tap trust/untrust. The motivation is a faster, less-typing experience for the routine operations the user already does by hand with `brew`. No remote/cloud, no automation daemon — local machine, local user, terminal-first.",
+      "status": "filled",
+      "builtin": true,
+      "required": true,
+      "order": 1
+    },
+    {
+      "id": "T02",
+      "key": "audience",
+      "title": "Who is it for?",
+      "prompt": "Primary users or consumers. Who is explicitly NOT the audience?",
+      "body": "Anyone using Homebrew on their local machine — macOS or Linux — who is comfortable in a terminal. Concretely: developers, hobbyists, and power users who already run `brew` by hand and want a faster keyboard-driven alternative. NOT the audience: Windows users (no native Homebrew), users who need a graphical app, automation/CI pipelines that need scripted APIs, anyone managing multiple machines remotely, and anyone who does not use Homebrew at all.",
+      "status": "filled",
+      "builtin": true,
+      "required": true,
+      "order": 2
+    },
+    {
+      "id": "T03",
+      "key": "capabilities",
+      "title": "Rough capabilities",
+      "prompt": "What might it do? Brainstorm features or behaviors — rough is fine, no ordering yet.",
+      "body": "The capability surface is the union of `brew` CLI operations the user does by hand, presented as a TUI. Rough categories:\n\n**Package lifecycle**\n- Browse installed packages (leaves, all, by tap)\n- Search and discover packages (search by name, formula/cask, descriptions)\n- Install / uninstall / reinstall\n- Upgrade (selected, all outdated, all)\n- Pin / unpin versions\n- Switch installed version\n- View dependency graph (deps / uses)\n\n**Maintenance**\n- List outdated packages and selectively upgrade\n- Cleanup old versions / download caches\n- Autoremove unused dependencies\n- `brew update` (refresh homebrew + taps)\n- `brew doctor` summary view\n\n**Taps**\n- List taps and their installed formulas\n- Tap / untap\n- Trust / untrust taps (verified by GitHub)\n- Tap info / readme preview\n\n**Services (if supported)**\n- List brew services\n- Start / stop / restart\n\n**Configuration**\n- Show homebrew config (prefix, cellar, env, analytics)\n- View system info (macOS/Linux, arch, shell)\n\n**Modern TUI qualities**\n- Consistent visual style via Lip Gloss (colors, indicators, status icons)\n- Search-as-you-type filters\n- Detail panel / preview pane for selected item\n- Keyboard-driven navigation with discoverable shortcuts\n- Streaming output panel for long-running ops with progress\n- Toast notifications for completed ops\n- Mouse support where useful (selectable, scrollable)\n\nThe bar is \"do everything you can do with `brew` at the CLI, but with nicer visuals and less typing.\" Nothing that requires network beyond what `brew` itself does; nothing that requires the user to leave the terminal.",
+      "status": "filled",
+      "builtin": true,
+      "required": true,
+      "order": 3
+    },
+    {
+      "id": "T04",
+      "key": "constraints",
+      "title": "Constraints",
+      "prompt": "Time, budget, stack preferences, platform, team size, legal, or technical limits.",
+      "body": "**Stack**\n- Currently Go + Bubble Tea / Lip Gloss. Not married to it — explicitly open to a future migration to Rust + ratatui, or to opentui (whichever the ecosystem gravitates to). The TUI stack is replaceable; the product behavior is what matters.\n- Homebrew invocation goes through the `brew` CLI as a subprocess; the project is not a re-implementation of brew.\n\n**Platforms**\n- macOS (primary, where Homebrew is most used).\n- Linux (Homebrew on Linux is a real path, and supporting it costs little extra).\n- No Windows. No native GUI. Terminal-only.\n\n**Team**\n- Solo maintainer. No expectation of outside contributors in v1.\n- No org-level process, no CODEOWNERS, no required review beyond what GitHub PRs naturally provide.\n\n**Release cadence**\n- None. No schedule, no sprints, no fixed interval.\n- Branch model is the release trigger: `stable` holds the released line, `wip` holds in-progress work. When wip work is done and merged to stable, that's the release — a `vX.Y.Z` tag is cut from the merge commit, and the homebrew tap formula is auto-bumped via the Release workflow.\n- No hard versioning policy beyond semver on the tag. No backport commitments to old versions.\n\n**Legal / licensing**\n- MIT license (matches existing formula).\n- No telemetry, no analytics, no remote services, no account system.",
+      "status": "filled",
+      "builtin": true,
+      "required": true,
+      "order": 4
+    },
+    {
+      "id": "T05",
+      "key": "inspiration",
+      "title": "Inspiration & references",
+      "prompt": "Similar products, links, repos, or experiences you want to learn from or avoid.",
+      "body": "**North star:** feel like lazygit and lazydocker.\n\nBoth are successful because they are simple, direct, and keyboard-driven. The aesthetic principles to imitate:\n\n- **Side-by-side panels**: list on one side, detail/preview on the other. Status bar at the bottom with the available commands for the current context.\n- **Single-letter shortcuts** for the common actions (`i` install, `u` uninstall, `U` upgrade, `r` refresh, `?` help). Multi-key only when the action is rare or destructive.\n- **Minimalist visual style**: function over decoration. Color used for state, not for show. No gratuitous gradients, animations, or ASCII art.\n- **Quick action, fewer prompts**: don't ask \"are you sure?\" for non-destructive ops. Reserve confirmation for things that remove or change many things at once.\n- **Mouse support where useful** (clicking panels, scrolling). Keyboard always primary.\n\n**Other references noted but lower priority:** broot (tree-shaped browsing), k9s (operator-focused dashboards). Pull from them only if a specific lazygit pattern doesn't fit; don't fragment the visual language.\n\n**Avoid:** anything that feels like a web app in the terminal — heavy nested menus, modal stacks, settings UIs that need scrolling. If a setting is needed, a config file beats an in-TUI form.",
+      "status": "filled",
+      "builtin": true,
+      "required": false,
+      "order": 5
+    },
+    {
+      "id": "T06",
+      "key": "unknowns",
+      "title": "Unknowns & open questions",
+      "prompt": "What don't you know yet? What needs research or a spike?",
+      "body": "**Confirmed decisions (lifted from this brief round, captured here for traceability, not unknowns):**\n- TUI stack: Go + Bubble Tea + Lip Gloss. No rewrite to Rust/ratatui/opentui at this moment. May revisit later; not on the v1 path.\n- Cask vs formula: separate panels. Cask is a distinct type from formula, with its own list and actions; do not merge them into one panel.\n- Branch model: `stable` ships released work; `wip` is where all development and testing happens. Merge wip → stable only when the work is releasable. (See T04.)\n\n**Open unknowns that need spikes or research before further milestones:**\n- **Status of M24–M28 (performance work)**: the maintainer does not remember whether the perf milestones from the prior plan landed. Need a quick review of `master-plan-bkp/milestones/24–28` against the current code before any new performance milestone is opened. Possible outcomes: (a) already done, retire the milestones; (b) partially done, restate as one new milestone; (c) not done, re-scope.\n- **Homebrew CLI / JSON-output stability**: how stable is brew's `--json` output across recent versions? This is the de facto API surface for lazybrew. Worth a spike to enumerate which endpoints we depend on and what their drift risk is.\n- **Streaming brew output UX**: long ops (`brew install`, `brew upgrade`) produce a lot of output. How to surface progress without overwhelming the TUI — tail-style, paginated, collapsible? Existing M19 work touched this; needs verification.\n- **TUI accessibility / screen reader support**: not investigated. Probably out of scope for v1, but worth confirming so we don't paint ourselves into a corner.\n- **Auto-update vs manual**: the user explicitly wants the stable tap formula auto-bumped on tag push, and the dev (`lazybrew-dev`) formula manually maintained. Already implemented; this is captured as a constraint, not an unknown.",
+      "status": "filled",
+      "builtin": true,
+      "required": true,
+      "order": 6
+    },
+    {
+      "id": "T07",
+      "key": "success",
+      "title": "What success looks like",
+      "prompt": "How will you know this worked? Vague is OK — we'll sharpen this in the charter.",
+      "body": "Success is personal-use: lazybrew should be the tool the maintainer reaches for instead of the `brew` CLI for daily operations.\n\nConcrete signals (informal — will sharpen in the charter):\n- The maintainer uses lazybrew as the default for routine ops (install, uninstall, upgrade, tap management, cleanup) without consciously choosing it over `brew`.\n- The TUI launches and is interactive in under ~1 second on the maintainer's machine.\n- Common operations complete in 1–2 keystrokes (no menu diving, no excessive prompts).\n- The TUI does not crash, freeze, or lose state during a normal session (list scrolls, ops stream, completion returns to the list cleanly).\n- The maintainer stops saying \"I'll just run `brew` for this.\"\n\nNon-goals for \"success\":\n- External adoption metrics (downloads, stars) are not a measure of success.\n- Compatibility benchmarks across many machines — only the maintainer's daily-use hardware needs to be supported.\n- Feature completeness for its own sake; a polished 80% beats a sprawling 100%.\n\nThe implicit test: would the maintainer recommend it to a friend without caveats? If yes, the project is succeeding.",
+      "status": "filled",
+      "builtin": true,
+      "required": true,
+      "order": 7
+    },
+    {
+      "id": "T08",
+      "key": "non_starters",
+      "title": "Explicit non-starters",
+      "prompt": "What are you probably NOT doing in v1? Ideas to park, not reject forever.",
+      "body": "Out of scope for v1 (parked, not rejected forever):\n\n- **GUI app / web UI / Electron wrapper.** Terminal-only. The product is a TUI; surrounding it with a graphical shell defeats the point.\n- **Plugin / extension system.** No third-party plugin hooks, no Lua/JS/WASM runtime inside the TUI. The CLI surface of `brew` itself is the integration boundary.\n- **Multi-machine management / remote orchestration.** Single machine, single user. No SSHing into other boxes from inside lazybrew.\n- **Cloud sync, account system, telemetry.** No backend, no analytics, no login.\n- **Windows support.** Homebrew does not run natively on Windows. Not chasing this even when WSL exists.\n- **GUI installation wizard / first-run setup flows.** Configuration is via a YAML file (or whatever the project standardizes on); not an in-TUI settings menu.\n- **Auto-update / self-update of the lazybrew binary itself.** Releases come through the homebrew tap. The TUI does not phone home to check for new versions.\n- **Anything that requires the TUI to fork into long-running background daemons.** Streaming work happens via the `brew` subprocess, not a lazybrew daemon.\n\nIf any of these become relevant later, they get re-scoped via a new milestone; they are not silently pulled into v1.",
+      "status": "filled",
+      "builtin": true,
+      "required": true,
+      "order": 8
+    }
+  ]
+}

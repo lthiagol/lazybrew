@@ -1,0 +1,115 @@
+{
+  "milestone": {
+    "id": "01",
+    "title": "Audit prior plan and open follow-up milestones",
+    "slug": "audit-prior-plan-and-open-follow-up-milestones",
+    "lifecycle": "approved",
+    "spec_status": "ready",
+    "execution_status": "planned",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-20",
+    "updated": "2026-07-20",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-07-20T01:36:31.253754+00:00"
+  },
+  "intent": {
+    "outcome": "After this ships, the maintainer has a single-document status snapshot of every bkp milestone (M01–M28) and at least one follow-up milestone or backlog entry is opened for any unfinished work."
+  },
+  "problem": {
+    "description": "The transition from manual planning (master-plan-bkp/) to mp-driven planning (master-plan/) leaves an open question: which of the 28 bkp milestones actually shipped, which are partial, which never started? Without that audit, future mp-driven milestones risk restating done work or missing incomplete work — and the brief's #1 unknown (status of M24–M28) stays unresolved."
+  },
+  "scope": {
+    "in_scope": [
+      "Read every file under master-plan-bkp/milestones/ (M01–M28) and produce a one-line summary per milestone.",
+      "For each bkp milestone, decide status: done | partial | unstarted, with brief evidence (file paths, test commands, commit refs where relevant).",
+      "For every milestone marked 'partial', document remaining work in a sub-section.",
+      "Write the audit document at master-plan/audit/2026-07-19-bkp-audit.md.",
+      "Open one or more follow-up milestones in master-plan/ for unfinished work, sized so each is interview-able in a single round.",
+      "Open backlog items (mp backlog add) for parked work discovered during the audit that is not yet ready for a milestone spec."
+    ],
+    "out_of_scope": [
+      "Implementing any unfinished work found in the audit (handled by the follow-up milestones opened as part of this milestone's outcome).",
+      "Modifying application source code under cmd/, internal/, or any other non-plan path.",
+      "Re-running or extending the existing test suite beyond what is needed to verify AC.",
+      "Renaming, reorganizing, or moving files under master-plan-bkp/.",
+      "Running mp commands against master-plan-bkp/ — it is read-only archival context, not part of the new mp plan."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Every bkp milestone (M01–M28) appears in the audit document with a status of done, partial, or unstarted.",
+      "verification": "manual: grep -cE '^## M[0-9]{2}' master-plan/audit/2026-07-19-bkp-audit.md returns 28.",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "Every milestone marked 'partial' has a 'Remaining work' subsection naming concrete unfinished sub-tasks.",
+      "verification": "manual: count of '### Remaining work' subsections equals the count of 'Status: partial' entries; assert both > 0 only if any partials exist.",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "At least one follow-up milestone is opened in the new master-plan/ for unfinished work discovered during the audit.",
+      "verification": "manual: mp list milestones shows new entries beyond M01 opened as a result of the audit.",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-04",
+      "description": "The audit document is committed under master-plan/audit/.",
+      "verification": "manual: git log --oneline -- master-plan/audit/2026-07-19-bkp-audit.md shows at least one commit.",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-05",
+      "description": "mp validate passes after the milestone is marked complete.",
+      "verification": "manual: mp validate returns ok=true with no errors or warnings.",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "design_decisions": [
+    {
+      "area": "status_determination",
+      "choice": "Manual review (read milestone spec + grep code / commit log) rather than automated test runs.",
+      "rationale": "Status requires knowing what each milestone was supposed to deliver, which means reading the spec, not just checking whether tests pass. Automated checks miss milestones whose outcome is a doc or a config change, not code."
+    },
+    {
+      "area": "granularity",
+      "choice": "Per-milestone, not per-step.",
+      "rationale": "Per-step audit triples the work and the bkp milestones are not consistently structured at step level. Per-milestone is good enough to unblock future planning and to surface leftover work."
+    },
+    {
+      "area": "audit_doc_location",
+      "choice": "master-plan/audit/2026-07-19-bkp-audit.md, not inside master-plan-bkp/.",
+      "rationale": "The audit is an mp-managed artifact going forward; putting it under master-plan-bkp/ couples it to a directory we will not touch. Date in the filename so re-audits don't overwrite."
+    },
+    {
+      "area": "follow_up_opening",
+      "choice": "Open follow-up milestones inside this milestone, not in a separate session.",
+      "rationale": "Without immediate follow-ups, the audit doc is a sketch. The user explicitly chose 'open follow-ups in this milestone' to make the audit actionable in one pass."
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}

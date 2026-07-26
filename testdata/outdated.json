@@ -1,0 +1,11 @@
+{
+  "formulae": [
+    {
+      "name": "ripgrep",
+      "full_name": "ripgrep",
+      "installed_versions": ["14.1.1"],
+      "current_version": "14.1.2",
+      "pinned": false
+    }
+  ]
+}

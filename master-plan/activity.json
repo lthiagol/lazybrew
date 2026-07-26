@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "events": [
+    {
+      "timestamp": "2026-07-20T01:04:34.983331+00:00",
+      "type": "milestone-created",
+      "subject": "01",
+      "summary": "milestone created (01)"
+    },
+    {
+      "timestamp": "2026-07-20T01:04:40.529055+00:00",
+      "type": "lifecycle-transition",
+      "subject": "01",
+      "summary": "lifecycle: draft → groomed"
+    },
+    {
+      "timestamp": "2026-07-20T01:04:40.543781+00:00",
+      "type": "validation-state",
+      "subject": "",
+      "summary": "validation state initialized (ok)",
+      "data": {
+        "cur_count": 0,
+        "cur_ok": true,
+        "prev_count": null,
+        "prev_ok": null
+      }
+    },
+    {
+      "timestamp": "2026-07-20T01:36:31.273459+00:00",
+      "type": "lifecycle-transition",
+      "subject": "01",
+      "summary": "lifecycle: groomed → approved"
+    }
+  ]
+}

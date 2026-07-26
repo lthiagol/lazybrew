@@ -1,6 +1,5 @@
 # Go build output
 lazybrew
-lazybrew-dev
 *.exe
 *.test
 *.out
@@ -11,7 +10,6 @@ coverage.out
 .vscode/
 *.swp
 *.swo
-*.swp
 .DS_Store
 Thumbs.db
 dist/
@@ -25,3 +23,6 @@ debug.log
 
 # Legacy CI config from Codeberg (replaced by .github/workflows/)
 .woodpecker/
+
+# Backup / archive directories (not source of truth)
+master-plan-bkp/
