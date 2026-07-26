@@ -11,7 +11,7 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui"
 )
 
-var version = "v0.1.0-dev"
+var version = "1.0.0-rc1"
 
 func main() {
 	showVersion := flag.Bool("version", false, "Print version and exit")
@@ -19,7 +19,7 @@ func main() {
 	enableDebug := flag.Bool("debug", false, "Enable debug logging")
 	flag.Parse()
 
-	if info, ok := debug.ReadBuildInfo(); ok && version == "v0.1.0-dev" {
+	if info, ok := debug.ReadBuildInfo(); ok && version == "1.0.0-rc1" {
 		if info.Main.Version != "(devel)" {
 			version = info.Main.Version
 		}
