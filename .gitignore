@@ -1,0 +1,27 @@
+# Go build output
+lazybrew
+lazybrew-dev
+*.exe
+*.test
+*.out
+coverage.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swp
+.DS_Store
+Thumbs.db
+dist/
+debug.log
+
+# mp CLI lock file (transient)
+.mp-project-write.lock
+
+# Session tooling (subagents) — never commit
+.pi-subagents/
+
+# Legacy CI config from Codeberg (replaced by .github/workflows/)
+.woodpecker/
