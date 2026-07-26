@@ -1,5 +1,6 @@
 # Go build output
-lazybrew
+/lazybrew
+/lazybrew-dev
 *.exe
 *.test
 *.out
