@@ -35,7 +35,7 @@ jobs:
         run: go test ./... -count=1
 
       - name: go build
-        run: go build -o /dev/null .
+        run: go build -o /dev/null ./cmd/lazybrew
 
   tap-update:
     name: open homebrew-tap bump PR
