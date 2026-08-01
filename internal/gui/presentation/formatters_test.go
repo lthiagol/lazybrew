@@ -236,3 +236,58 @@ func TestPadRightTruncation(t *testing.T) {
 		t.Errorf("expected 'caf', got %q", got)
 	}
 }
+
+func TestFormatOutdatedFormula(t *testing.T) {
+	got := FormatOutdatedFormula(brew.Formula{Name: "ripgrep", Version: "13.0.0", NewVersion: "14.0.0"})
+	want := "ripgrep                 13.0.0       -> 14.0.0"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFormatOutdatedCask(t *testing.T) {
+	got := FormatOutdatedCask(brew.Cask{Name: "firefox", Version: "120.0", NewVersion: "125.0"})
+	want := "firefox                 120.0        -> 125.0  cask"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestVersionDisplayNoList(t *testing.T) {
+	got := versionDisplay(brew.Formula{Version: "1.2.3"})
+	if got != "1.2.3" {
+		t.Errorf("got %q, want %q", got, "1.2.3")
+	}
+}
+
+func TestVersionDisplayWithList(t *testing.T) {
+	got := versionDisplay(brew.Formula{
+		Version:      "2.0.0",
+		ListVersions: []string{"1.0.0", "2.0.0"},
+	})
+	if got != "2.0.0 (1.0.0)" {
+		t.Errorf("got %q, want %q", got, "2.0.0 (1.0.0)")
+	}
+}
+
+func TestTruncateShort(t *testing.T) {
+	got := truncate("hello", 10)
+	if got != "hello" {
+		t.Errorf("got %q, want hello (no truncation)", got)
+	}
+}
+
+func TestTruncateLong(t *testing.T) {
+	got := truncate("hello world", 6)
+	if got != "hello…" {
+		t.Errorf("got %q, want %q", got, "hello…")
+	}
+}
+
+func TestTruncateUTF8(t *testing.T) {
+	got := truncate("café latte", 5)
+	want := "café…"
+	if got != want {
+		t.Errorf("got %q, want %q (utf-8 safe)", got, want)
+	}
+}

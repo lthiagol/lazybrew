@@ -219,3 +219,102 @@ func TestCasksWriterUnpin(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCasksWriterUninstall(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
+		if len(args) < 2 || args[0] != "uninstall" || args[1] != "--cask" {
+			t.Errorf("args = %v, want [uninstall --cask <name>]", args)
+		}
+		ch := make(chan string, 1)
+		errCh := make(chan error, 1)
+		ch <- "uninstalled"
+		close(ch)
+		close(errCh)
+		return ch, errCh
+	}
+	cache := NewCache(time.Minute)
+	writer := NewCasksWriter(r, cache)
+
+	ch, errCh := writer.Uninstall(context.Background(), "firefox")
+	if line := <-ch; line != "uninstalled" {
+		t.Errorf("got %q, want uninstalled", line)
+	}
+	if err := <-errCh; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCasksWriterReinstall(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
+		if len(args) < 2 || args[0] != "reinstall" || args[1] != "--cask" {
+			t.Errorf("args = %v, want [reinstall --cask <name>]", args)
+		}
+		ch := make(chan string, 1)
+		errCh := make(chan error, 1)
+		ch <- "reinstalled"
+		close(ch)
+		close(errCh)
+		return ch, errCh
+	}
+	cache := NewCache(time.Minute)
+	writer := NewCasksWriter(r, cache)
+
+	ch, errCh := writer.Reinstall(context.Background(), "firefox")
+	if line := <-ch; line != "reinstalled" {
+		t.Errorf("got %q, want reinstalled", line)
+	}
+	if err := <-errCh; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCasksWriterUpgrade(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
+		if len(args) < 2 || args[0] != "upgrade" || args[1] != "--cask" {
+			t.Errorf("args = %v, want [upgrade --cask <name>]", args)
+		}
+		ch := make(chan string, 1)
+		errCh := make(chan error, 1)
+		ch <- "upgraded"
+		close(ch)
+		close(errCh)
+		return ch, errCh
+	}
+	cache := NewCache(time.Minute)
+	writer := NewCasksWriter(r, cache)
+
+	ch, errCh := writer.Upgrade(context.Background(), "firefox")
+	if line := <-ch; line != "upgraded" {
+		t.Errorf("got %q, want upgraded", line)
+	}
+	if err := <-errCh; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCasksWriterUpgradeAll(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
+		if len(args) != 2 || args[0] != "upgrade" || args[1] != "--cask" {
+			t.Errorf("args = %v, want [upgrade --cask] (no name)", args)
+		}
+		ch := make(chan string, 1)
+		errCh := make(chan error, 1)
+		close(ch)
+		close(errCh)
+		return ch, errCh
+	}
+	cache := NewCache(time.Minute)
+	writer := NewCasksWriter(r, cache)
+
+	ch, errCh := writer.Upgrade(context.Background(), "")
+	if _, ok := <-ch; ok {
+		t.Error("expected closed output channel")
+	}
+	if err := <-errCh; err != nil {
+		t.Fatal(err)
+	}
+}
