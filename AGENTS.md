@@ -134,8 +134,8 @@ goreleaser release --snapshot --clean
 Before v0.2.0 tag:
 
 - [x] M18.8 AGENTS.md done (this file)
-- [ ] M17.3 update summary toast done
-- [ ] M21.2 ≥8 teatest flows done
+- [x] M17.3 update summary toast done
+- [x] M21.2 ≥8 teatest flows done
 - [ ] M22.1b CI green on push/PR
 - [x] M22.2 integration workflow file exists
 - [ ] M22.3 goreleaser snapshot succeeds
