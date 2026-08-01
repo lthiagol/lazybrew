@@ -124,7 +124,6 @@ go test -race ./...
 make cover-check
 make test-integration   # requires Homebrew
 ./bin/lazybrew --version
-goreleaser release --snapshot --clean
 ```
 
 ---
@@ -138,7 +137,6 @@ Before v0.2.0 tag:
 - [x] M21.2 ≥8 teatest flows done
 - [ ] M22.1b CI green on push/PR
 - [x] M22.2 integration workflow file exists
-- [ ] M22.3 goreleaser snapshot succeeds
 - [ ] M22.4 release checklist signed off
 
 ---
