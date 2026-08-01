@@ -43,7 +43,84 @@
     {
       "id": "01",
       "title": "Audit prior plan and open follow-up milestones",
-      "spec_status": "ready",
+      "spec_status": "verified",
+      "execution_status": "done",
+      "blocked_by": ""
+    },
+    {
+      "id": "02",
+      "title": "Verify M15 cleanup (TypedCache panic + Reader/Writer splits)",
+      "spec_status": "verified",
+      "execution_status": "done",
+      "blocked_by": ""
+    },
+    {
+      "id": "03",
+      "title": "Decide coverage floor (brew 62%, presentation 91%)",
+      "spec_status": "verified",
+      "execution_status": "done",
+      "blocked_by": ""
+    },
+    {
+      "id": "04",
+      "title": "Update AGENTS.md release readiness checklist (close M17.3)",
+      "spec_status": "verified",
+      "execution_status": "done",
+      "blocked_by": ""
+    },
+    {
+      "id": "05",
+      "title": "Update AGENTS.md release readiness checklist (close M21.2)",
+      "spec_status": "verified",
+      "execution_status": "done",
+      "blocked_by": ""
+    },
+    {
+      "id": "06",
+      "title": "Push v1.0.0-rc1 tag and bump homebrew-tap Formula/lazybrew.rb",
+      "spec_status": "verified",
+      "execution_status": "done",
+      "blocked_by": ""
+    },
+    {
+      "id": "07",
+      "title": "Decide goreleaser vs manual tap-update path",
+      "spec_status": "verified",
+      "execution_status": "done",
+      "blocked_by": ""
+    },
+    {
+      "id": "08",
+      "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
+      "spec_status": "draft",
+      "execution_status": "planned",
+      "blocked_by": ""
+    },
+    {
+      "id": "09",
+      "title": "M25 Outdated Panel Performance",
+      "spec_status": "draft",
+      "execution_status": "planned",
+      "blocked_by": ""
+    },
+    {
+      "id": "10",
+      "title": "M26 Diagnostics Error Handling",
+      "spec_status": "draft",
+      "execution_status": "planned",
+      "blocked_by": ""
+    },
+    {
+      "id": "11",
+      "title": "M27 Taps Panel Batch Loading",
+      "spec_status": "draft",
+      "execution_status": "planned",
+      "blocked_by": ""
+    },
+    {
+      "id": "12",
+      "title": "M28 Tiered Refresh and Polling Strategy",
+      "spec_status": "draft",
       "execution_status": "planned",
       "blocked_by": ""
     }

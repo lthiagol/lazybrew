@@ -1,0 +1,73 @@
+{
+  "milestone": {
+    "id": "09",
+    "title": "M25 Outdated Panel Performance",
+    "slug": "m25-outdated-panel-performance",
+    "lifecycle": "draft",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-07-30",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-07-30T21:05:15.753887+00:00"
+  },
+  "intent": {
+    "outcome": "Outdated panel only runs brew outdated once on demand or after TTL; request coalescing prevents duplicate concurrent calls; lazy load defers the call until the panel is shown."
+  },
+  "problem": {
+    "description": "Bkp M25 marked Planned; not implemented in wip. Without this, multiple navigation actions trigger multiple brew outdated calls and the panel is slow on cold start."
+  },
+  "scope": {
+    "in_scope": [
+      "M25.1 Single-call invariant: brew outdated runs at most once per TTL window",
+      "M25.2 Request coalescing: concurrent callers share one in-flight result",
+      "M25.3 Lazy load: call deferred until Outdated panel is selected",
+      "M25.4 Configurable TTL in config",
+      "Tests for each"
+    ],
+    "out_of_scope": [
+      "Tiered refresh (deferred to M28)",
+      "Taps panel changes (M27)"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Calling refresh twice within TTL window results in one brew outdated invocation.",
+      "verification": "manual: go test -run TestOutdatedCoalescing ./internal/brew/... shows 1 call recorded",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "Outdated panel does not call brew outdated until first time the panel is selected.",
+      "verification": "manual: go test -run TestOutdatedLazyLoad ./internal/gui/... shows 0 calls before panel select",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "TTL is configurable via config (default 30m).",
+      "verification": "manual: grep -q 'outdated.ttl' internal/config/",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}

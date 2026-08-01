@@ -1,0 +1,119 @@
+{
+  "milestone": {
+    "id": "02",
+    "title": "Verify M15 cleanup (TypedCache panic + Reader/Writer splits)",
+    "slug": "verify-m15-cleanup-typedcache-panic-reader-writer-splits",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T18:05:12.343760+00:00"
+  },
+  "intent": {
+    "outcome": "The two M15 'Mostly done' audit findings are evidence-backed: TypedCache type-mismatch behavior is verified to not panic, and every state-mutating service in internal/brew/ exposes both Reader and Writer interfaces symmetrically."
+  },
+  "problem": {
+    "description": "Master-plan audit (2026-07-19) marked M15 partial with two open items: (a) TypedCache panic path from M19.0 needs verification, (b) Reader/Writer split completeness needs audit. Without this milestone, M15 closure is unverified."
+  },
+  "scope": {
+    "in_scope": [
+      "Verify TypedCache returns zero value + invalidates key on type mismatch (existing TestTypedCacheWrongTypeReturnsMiss at internal/brew/cache_test.go:131).",
+      "Audit Reader/Writer split symmetry across internal/brew/ services (run grep + diff).",
+      "If gaps found, add minimal targeted tests OR add small documentation comment noting nil-cache behavior is intentional.",
+      "Record findings as mp milestone evidence."
+    ],
+    "out_of_scope": [
+      "Implementing new services or splitting existing ones.",
+      "Refactoring code unrelated to M15's two open items.",
+      "Changing TypedCache public API (e.g., adding Close method).",
+      "Performance work (deferred to M25/M28)."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "TypedCache.Get on a cache whose entry has a wrong type returns zero value, invalidates the stale entry, and does not panic.",
+      "verification": "manual: go test -run TestTypedCacheWrongTypeReturnsMiss ./internal/brew/... exit 0",
+      "status": "passed",
+      "evidence": "go test -race -run TestTypedCacheWrongTypeReturnsMiss ./internal/brew/ = PASS (1.278s). Test at internal/brew/cache_test.go:131 stores int in TypedCache[string], calls Get, asserts: (1) ok==false, (2) val=='' (zero value), (3) underlying cache no longer contains the key. Both observable behaviors verified; not a tautology."
+    },
+    {
+      "id": "AC-02",
+      "description": "Every state-mutating service in internal/brew/ exposes both Reader and Writer interfaces symmetrically.",
+      "verification": "manual: comm -23 <(grep -lE '^type [A-Z]\\w+Reader\\b' internal/brew/*.go | sort -u) <(grep -lE '^type [A-Z]\\w+Writer\\b' internal/brew/*.go | sort -u) returns no output (no Reader-only files); comm -13 returns no output (no Writer-only files)",
+      "status": "passed",
+      "evidence": "Reader files (6): casks.go, doctor.go, formulae.go, services.go, taps.go, trust.go. Writer files (6): same set. comm -23 (Reader-only): empty. comm -13 (Writer-only): empty. 12 interfaces total (6 Reader + 6 Writer), 1:1 symmetric across all state-mutating services."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Run go test -run TestTypedCacheWrongTypeReturnsMiss ./internal/brew/... to confirm the TypedCache type-mismatch fix is in place (originally added as part of the typed-cache cleanup step).",
+      "files": [
+        "internal/brew/cache.go"
+      ],
+      "tests": "manual: go test -run TestTypedCacheWrongTypeReturnsMiss ./internal/brew/... exit 0",
+      "done_when": "go test -run TestTypedCacheWrongTypeReturnsMiss ./internal/brew/... exits 0 and PASS",
+      "status": "done",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "Audit Reader/Writer split symmetry: every file with a Reader interface must also have a Writer, and vice versa.",
+      "files": [
+        "internal/brew"
+      ],
+      "tests": "manual: comm -23 and comm -13 of file lists returns empty (no asymmetric splits)",
+      "done_when": "Both comm commands return no output, confirming symmetric R/W splits across all internal/brew/ services",
+      "status": "done",
+      "covers_ac": [
+        "AC-02"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "2026-08-01",
+    "branch": "",
+    "evidence": "M02 self-verification: M15 'Mostly done' claims are evidence-backed. AC-01 (TypedCache no-panic on type mismatch): existing TestTypedCacheWrongTypeReturnsMiss at internal/brew/cache_test.go:131 passes. AC-02 (R/W split symmetry): all 6 services expose both interfaces; comm commands confirm no asymmetric splits. No code changes required."
+  }
+}

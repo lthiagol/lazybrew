@@ -1,0 +1,146 @@
+{
+  "milestone": {
+    "id": "03",
+    "title": "Decide coverage floor (brew 62%, presentation 91%)",
+    "slug": "decide-coverage-floor-brew-62-presentation-91",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T17:52:57.520949+00:00"
+  },
+  "intent": {
+    "outcome": "make cover-check exits 0 with no floor violations; the two pre-existing gaps (internal/brew at 61.7% < 62%, internal/gui/presentation at 90.6% < 91%) are closed by adding targeted unit tests rather than recalibrating floors."
+  },
+  "problem": {
+    "description": "make cover-check fails on two pre-existing coverage floors per master-plan/audit/2026-07-19-bkp-audit.md (M16 partial). Without resolution, v1.0.0 stable release is blocked. Decision: add tests (chosen 2026-08-01) rather than recalibrate."
+  },
+  "scope": {
+    "in_scope": [
+      "Add 1-3 unit tests in internal/brew/*_test.go to cover currently 0% functions (target: casks.Uninstall, casks.Reinstall, casks.Upgrade, services.Cleanup, doctor.Vulns, doctor.Update, doctor.Cleanup, doctor.Autoremove, trust.UntrustFormula, trust.UntrustCask).",
+      "Add 1-3 unit tests in internal/gui/presentation/*_test.go to cover currently 0%/low functions (target: FormatOutdatedFormula, FormatOutdatedCask, versionDisplay, truncate).",
+      "Run go test -cover ./internal/brew/ ./internal/gui/presentation/ and confirm each >= floor.",
+      "Do not modify the check-coverage.sh floors."
+    ],
+    "out_of_scope": [
+      "Lowering the coverage floors (the recalibrate option, declined).",
+      "Refactoring code purely to improve coverage.",
+      "Adding tests for uncovered-but-deletable dead code.",
+      "Updating coverage for other packages (internal/gui/modal at 41.4% already meets floor 41%)."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "internal/brew coverage is at least 62%.",
+      "verification": "manual: go test -cover -count=1 ./internal/brew/ shows 'coverage: >=62.0% of statements'",
+      "status": "passed",
+      "evidence": "go test -cover -count=1 ./internal/brew/ = 'coverage: 63.1% of statements' (was 61.7%, +1.4pp). Tests added: TestCasksWriterUninstall, TestCasksWriterReinstall, TestCasksWriterUpgrade, TestCasksWriterUpgradeAll."
+    },
+    {
+      "id": "AC-02",
+      "description": "internal/gui/presentation coverage is at least 91%.",
+      "verification": "manual: go test -cover -count=1 ./internal/gui/presentation/ shows 'coverage: >=91.0% of statements'",
+      "status": "passed",
+      "evidence": "go test -cover -count=1 ./internal/gui/presentation/ = 'coverage: 95.3% of statements' (was 90.6%, +4.7pp). Tests added: TestFormatOutdatedFormula, TestFormatOutdatedCask, TestVersionDisplayNoList, TestVersionDisplayWithList, TestTruncateShort, TestTruncateLong, TestTruncateUTF8."
+    },
+    {
+      "id": "AC-03",
+      "description": "make cover-check (or its underlying check-coverage.sh logic) reports all floors met.",
+      "verification": "manual: bash scripts/check-coverage.sh (run directly to bypass macOS bash 3.2 declare -A issue) reports 'All coverage floors met'",
+      "status": "passed",
+      "evidence": "make cover-check (and bash scripts/check-coverage.sh): exits 0, outputs 'All coverage floors met'. brew 63.1%, presentation 95.3%, gui 43.9%, modal 41.4%. Script rewritten to use parallel arrays instead of declare -A (fixes macOS bash 3.2 incompatibility); floors unchanged."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Add targeted unit tests to internal/brew/*_test.go to bring package coverage >= 62%. Targets: casks.Uninstall/Reinstall/Upgrade, services.Cleanup, doctor.Vulns/Update/Cleanup/Autoremove, trust.UntrustFormula/UntrustCask.",
+      "files": [
+        "internal/brew/casks_test.go"
+      ],
+      "tests": "manual: go test -cover -count=1 ./internal/brew/ shows coverage >= 62.0%",
+      "done_when": "go test -cover -count=1 ./internal/brew/ returns coverage >= 62.0%",
+      "status": "done",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "Add targeted unit tests to internal/gui/presentation/*_test.go to bring package coverage >= 91%. Targets: FormatOutdatedFormula, FormatOutdatedCask, versionDisplay, truncate.",
+      "files": [
+        "internal/gui/presentation"
+      ],
+      "tests": "manual: go test -cover -count=1 ./internal/gui/presentation/ shows coverage >= 91.0%",
+      "done_when": "go test -cover -count=1 ./internal/gui/presentation/ returns coverage >= 91.0%",
+      "status": "done",
+      "covers_ac": [
+        "AC-02"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1",
+      "work_package": "WP1",
+      "order": 3,
+      "action": "Run scripts/check-coverage.sh directly (bypassing make and macOS bash 3.2 declare -A issue) to confirm all floors pass.",
+      "files": [
+        "scripts/check-coverage.sh"
+      ],
+      "tests": "manual: bash scripts/check-coverage.sh reports 'All coverage floors met'",
+      "done_when": "bash scripts/check-coverage.sh outputs 'All coverage floors met' and exits 0",
+      "status": "done",
+      "covers_ac": [
+        "AC-03"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "2026-08-01",
+    "branch": "",
+    "evidence": "M03 self-verification: brew 61.7%->63.1%, presentation 90.6%->95.3%, both above floors. check-coverage.sh fixed (bash 3.2 compat). make cover-check exits 0. Full test suite -race passes, gofmt clean, go vet clean. 11 new tests added across 2 files."
+  }
+}

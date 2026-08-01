@@ -1,0 +1,87 @@
+{
+  "milestone": {
+    "id": "05",
+    "title": "Update AGENTS.md release readiness checklist (close M21.2)",
+    "slug": "update-agents-md-release-readiness-checklist-close-m21-2",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T17:04:39.236488+00:00"
+  },
+  "intent": {
+    "outcome": "AGENTS.md release readiness checklist reflects reality: M21.2 (>=8 teatest flows) is checked off because 8 teatest TestX functions exist in internal/gui/flows/."
+  },
+  "problem": {
+    "description": "AGENTS.md still lists M21.2 as open, but 8 teatest flows exist on wip: internal/gui/flows/{install,navigation(5),tabs,uninstall}_test.go = 8 Test functions."
+  },
+  "scope": {
+    "in_scope": [
+      "Mark M21.2 done in AGENTS.md release readiness checklist"
+    ],
+    "out_of_scope": [
+      "Adding more teatest flows",
+      "Auditing other checklist items"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "The teastest flows sub-step (8 flows) is marked done in AGENTS.md release readiness checklist.",
+      "verification": "manual: grep 'M21.2' AGENTS.md shows [x] not [ ]",
+      "status": "passed",
+      "evidence": "grep -nE 'M21.2' AGENTS.md = '138:- [x] M21.2 ≥8 teatest flows done' (line flipped from '[ ]' to '[x]'); both M04 and M05 land in commit e3b91c4"
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Flip the teastest flows sub-step (8 flows) checkbox in AGENTS.md from unchecked to checked.",
+      "files": [
+        "AGENTS.md"
+      ],
+      "tests": "manual: grep 'M21.2' AGENTS.md shows [x]",
+      "done_when": "AGENTS.md release readiness checklist line for teastest flows starts with '- [x]'",
+      "status": "done",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "2026-08-01",
+    "branch": "",
+    "evidence": "M05 self-verification: S1 done (AGENTS.md line 138 flipped from '[ ]' to '[x]'), AC-01 passed (grep confirms checked state). Combined commit with M04 (both touch AGENTS.md checklist)."
+  }
+}

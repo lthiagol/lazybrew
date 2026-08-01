@@ -1,0 +1,64 @@
+{
+  "milestone": {
+    "id": "08",
+    "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
+    "slug": "m24-13-manual-smoke-checklist-sign-off-human-gate",
+    "lifecycle": "draft",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-07-30",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-07-30T21:05:10.315082+00:00"
+  },
+  "intent": {
+    "outcome": "smoke-checklist.md is walked end-to-end on a real macOS machine by a human; the release blocker M24.13 is closed."
+  },
+  "problem": {
+    "description": "M24 code steps (24.1-24.12) are complete, but 24.13 is a manual smoke gate that cannot be executed by an agent. Without human sign-off, the v0.2.0/rc1 release is blocked."
+  },
+  "scope": {
+    "in_scope": [
+      "Human runs smoke-checklist.md on macOS",
+      "Human records pass/fail per item",
+      "Human commits the signed-off checklist"
+    ],
+    "out_of_scope": [
+      "Re-running automated tests",
+      "Implementing features to make smoke pass"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "smoke-checklist.md is signed off by a human; each item has a pass/fail annotation.",
+      "verification": "manual: git log --oneline -- smoke-checklist.md shows a commit by a human with 'Signed off' or equivalent",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "If any smoke item failed, the related follow-up milestone is opened or the failure is recorded as a finding.",
+      "verification": "manual: any failure references an open mp milestone or mp reviews finding",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}

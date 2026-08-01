@@ -1,0 +1,64 @@
+{
+  "milestone": {
+    "id": "11",
+    "title": "M27 Taps Panel Batch Loading",
+    "slug": "m27-taps-panel-batch-loading",
+    "lifecycle": "draft",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-07-30",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-07-30T21:05:22.719667+00:00"
+  },
+  "intent": {
+    "outcome": "Taps panel uses one brew tap-info --json call to populate all tap rows; FormulaNames and CaskNames are fetched lazily on tap detail open."
+  },
+  "problem": {
+    "description": "Bkp M27 marked Planned; not implemented in wip. Currently taps panel likely makes one call per tap, causing slow load with many taps."
+  },
+  "scope": {
+    "in_scope": [
+      "One batch tap-info --json call",
+      "Lazy FormulaNames/CaskNames on detail open",
+      "Tests for batch + lazy paths"
+    ],
+    "out_of_scope": [
+      "Outdated panel changes (M25)",
+      "Tiered refresh (M28)"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Taps panel uses a single tap-info --json call regardless of tap count.",
+      "verification": "manual: go test -run TestTapsBatchLoad ./internal/brew/... shows 1 call recorded",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "FormulaNames/CaskNames are fetched lazily on tap detail.",
+      "verification": "manual: go test -run TestTapsLazyDetail ./internal/brew/... shows 0 calls before detail open",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}

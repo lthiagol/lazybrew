@@ -1,1 +1,14 @@
-{}
+{
+  "items": [
+    {
+      "id": "B-01",
+      "description": "B-14: Update master-plan-bkp/milestones/23-tui-layout-and-debug-logging.md header from '🔜 Planned' to '✅ Done' for consistency with status.md (2026-06-14 decision log entry). Cosmetic; bkp is read-only archival context.",
+      "source": "audit 2026-07-19",
+      "suggested_when": "",
+      "priority": "medium",
+      "status": "active",
+      "resolution": "",
+      "resolved_at": ""
+    }
+  ]
+}

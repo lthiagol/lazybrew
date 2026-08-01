@@ -1,0 +1,118 @@
+{
+  "milestone": {
+    "id": "07",
+    "title": "Decide goreleaser vs manual tap-update path",
+    "slug": "decide-goreleaser-vs-manual-tap-update-path",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T18:09:36.043771+00:00"
+  },
+  "intent": {
+    "outcome": "stable-ci.yml's manual tap-update path is the single canonical release path. .goreleaser.yml is removed and the decision is recorded in DESIGN.md so future maintainers don't relitigate."
+  },
+  "problem": {
+    "description": ".goreleaser.yml exists at repo root (50 lines, configured for darwin/linux × amd64/arm64 + homebrew tap integration) but is not invoked from any workflow. stable-ci.yml has its own manual sed-based tap-update job that we just used successfully for v1.0.0-rc1. Two release paths co-existing is confusing and risks future drift."
+  },
+  "scope": {
+    "in_scope": [
+      "Delete .goreleaser.yml.",
+      "Add a release-path decision entry to DESIGN.md (manual tap-update path is canonical; goreleaser was considered and rejected because the manual path is already working and the release cadence is low).",
+      "Verify no workflow references goreleaser after removal."
+    ],
+    "out_of_scope": [
+      "Changing stable-ci.yml's tap-update job.",
+      "Re-introducing goreleaser.",
+      "Cutting a release.",
+      "Updating homebrew-tap repo."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": ".goreleaser.yml is deleted; stable-ci.yml manual tap-update path is the single canonical release path.",
+      "verification": "manual: test ! -f .goreleaser.yml; grep -L goreleaser .github/workflows/*.yml (no workflow references goreleaser)",
+      "status": "passed",
+      "evidence": "test ! -f .goreleaser.yml returns true (file deleted, HEAD 3759a5e); grep -l goreleaser .github/workflows/*.yml returns no matches (no workflow references goreleaser); drift sweep: no remaining 'goreleaser' references in AGENTS.md or check_dependencies.sh after M07 follow-up sweep"
+    },
+    {
+      "id": "AC-02",
+      "description": "DESIGN.md documents the release-path decision: manual tap-update path is canonical, goreleaser was considered and rejected.",
+      "verification": "manual: grep -i goreleaser DESIGN.md shows a decision-log entry explaining the choice",
+      "status": "passed",
+      "evidence": "M07 self-verification: .goreleaser.yml deleted, no workflow references goreleaser, DESIGN.md decision-log entry added. Release path: manual stable-ci.yml tap-update. .gitignore unaffected (file removed cleanly via git rm)."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Delete .goreleaser.yml from repo root and verify no workflow references goreleaser.",
+      "files": [
+        ".goreleaser.yml"
+      ],
+      "tests": "manual: test ! -f .goreleaser.yml; grep -L goreleaser .github/workflows/*.yml",
+      "done_when": ".goreleaser.yml is deleted and no .github/workflows/*.yml file references 'goreleaser'.",
+      "status": "done",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "Add a release-path decision entry to DESIGN.md explaining why manual tap-update is canonical and goreleaser was rejected.",
+      "files": [
+        "DESIGN.md"
+      ],
+      "tests": "manual: grep -i goreleaser DESIGN.md shows the decision entry",
+      "done_when": "DESIGN.md contains a decision-log entry about the release path that mentions goreleaser and the rationale.",
+      "status": "done",
+      "covers_ac": [
+        "AC-02"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "2026-08-01",
+    "branch": "",
+    "evidence": "M07 self-verification: .goreleaser.yml deleted, no workflow references goreleaser, DESIGN.md decision-log entry added. Release path: manual stable-ci.yml tap-update. .gitignore unaffected (file removed cleanly via git rm)."
+  }
+}
