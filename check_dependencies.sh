@@ -82,7 +82,6 @@ echo ""
 echo "── Development Tools ──"
 echo ""
 check_cmd "gofmt" "dev"
-check_cmd "goreleaser" "dev"
 
 echo ""
 total=$((pass + fail))
