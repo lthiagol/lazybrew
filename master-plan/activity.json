@@ -312,6 +312,24 @@
       "type": "lifecycle-transition",
       "subject": "15",
       "summary": "lifecycle: groomed → approved"
+    },
+    {
+      "timestamp": "2026-08-01T20:36:10.807580+00:00",
+      "type": "milestone-created",
+      "subject": "16",
+      "summary": "milestone created (16)"
+    },
+    {
+      "timestamp": "2026-08-01T20:36:14.792097+00:00",
+      "type": "lifecycle-transition",
+      "subject": "16",
+      "summary": "lifecycle: draft → groomed"
+    },
+    {
+      "timestamp": "2026-08-01T20:36:14.823097+00:00",
+      "type": "lifecycle-transition",
+      "subject": "16",
+      "summary": "lifecycle: groomed → approved"
     }
   ]
 }

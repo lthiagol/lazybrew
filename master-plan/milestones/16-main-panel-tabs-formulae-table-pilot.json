@@ -1,0 +1,323 @@
+{
+  "milestone": {
+    "id": "16",
+    "title": "Main panel tabs + Formulae table (pilot)",
+    "slug": "main-panel-tabs-formulae-table-pilot",
+    "lifecycle": "approved",
+    "spec_status": "ready",
+    "execution_status": "planned",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [
+      "14"
+    ],
+    "effort": "M",
+    "risk": "medium",
+    "change_kind": "",
+    "priority": "medium",
+    "created": "2026-08-01",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T20:36:14.805737+00:00"
+  },
+  "intent": {
+    "outcome": "The Formulae panel shows a Catppuccin-styled 4-column table (Name, Version, Status, Tap) with an underline tab bar at the top of the main pane. Outdated formulae appear first, then pinned, then alphabetical. Other panels keep their current rendering."
+  },
+  "problem": {
+    "description": "Currently the Formulae panel renders either a single-formula Info view or a plain-text list. There is no tabular presentation, no visual prioritization of outdated packages, and the tab bar lives at the bottom of the sidebar (not at the top of the main pane where modern TUIs put it). The result feels clunky and empty."
+  },
+  "scope": {
+    "in_scope": [
+      "Add a 'List' tab to the Formulae panel as tab 0 (table view), shifting the existing Info/Deps/Files/Used-by tabs to positions 1-4.",
+      "Render the formulae list as a 4-column table: Name | Version | Status | Tap.",
+      "Version column shows 'oldver -> newver' (e.g. '1.7.1 -> 1.7.2') for outdated formulae, just the version for installed/pinned.",
+      "Status column shows text labels: 'installed' / 'outdated' / 'pinned'.",
+      "Tap column shows shortened tap origin (e.g. 'hb/c' for homebrew/core).",
+      "Default sort: Outdated first, then Pinned, then alphabetical by name.",
+      "Empty state when 0 formulae: centered 'No formulae yet' + 'Press / to search & install' hint.",
+      "Move tab bar from bottom-of-sidebar to top of main pane (just below the breadcrumb).",
+      "Apply underline-tab style: active tab = bold + thick bottom border (lipgloss.ThickBorder bottom or equivalent); inactive tabs = dimmed text, no border.",
+      "Add tests: tab bar renders at top of main pane, formulae table renders with correct columns and sort, empty state shows hint, snapshot tests for tab bar and table rendering."
+    ],
+    "out_of_scope": [
+      "Tables for Casks, Outdated, Taps, Services, Status, Search panels (deferred to M17 roll-out).",
+      "Column-width auto-sizing across panels (compute per panel; only Formulae in M16).",
+      "In-tab filtering (e.g. type to filter formulae) — separate decision.",
+      "Multi-column sort or custom sort orders (always outdated>pinned>alpha in M16).",
+      "Light theme adjustments (theme inherits from M14's Mocha; light theme still unchanged)."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "The tab bar renders at the top of the main pane (below the breadcrumb, above content), not at the bottom of the sidebar.",
+      "verification": "manual: launch lazybrew, observe main pane; tab bar visible at top with [List] [Info] [Deps] [Files] [Used-by]",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "The active tab is bold with a thick bottom border; inactive tabs are dimmed with no border.",
+      "verification": "manual: launch lazybrew, switch between tabs; observe bold active tab with thick underline vs dimmed inactive tabs",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "Tab 0 'List' shows the formulae as a 4-column table with header row Name | Version | Status | Tap.",
+      "verification": "manual: launch lazybrew, ensure List tab is active; observe 4-column table with header",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-04",
+      "description": "Version column shows 'oldver -> newver' for outdated formulae; just the version for installed/pinned.",
+      "verification": "manual: launch lazybrew, find an outdated formula; its Version cell shows 'X.Y.Z -> A.B.C'",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-05",
+      "description": "Status column shows text labels: 'installed' / 'outdated' / 'pinned'.",
+      "verification": "manual: launch lazybrew, scan Status column; observe three distinct text values",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-06",
+      "description": "Default sort is Outdated first, then Pinned, then alphabetical by name.",
+      "verification": "manual: launch lazybrew on a machine with mixed outdated/pinned/installed formulae; confirm order is outdated > pinned > alpha",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-07",
+      "description": "Empty state when no formulae: centered 'No formulae yet' + 'Press / to search & install' hint.",
+      "verification": "manual: hard to test on real install; can verify via unit test with empty formulae list, or skip on smoke (visual check on stub fixture)",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-08",
+      "description": "Tests cover the new table rendering (header row, columns, sort, empty state) and tab bar move.",
+      "verification": "manual: go test -race ./internal/gui/... exit 0; new test functions for table render and tab bar position",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "design_decisions": [
+    {
+      "area": "tab_position",
+      "choice": "Move tab bar from sidebar-bottom to top of main pane",
+      "rationale": "Modern TUI pattern (lazygit, btop, k9s). Tab bar attached to content makes the 'active tab' visual relationship obvious. Sidebar-bottom tabs feel detached."
+    },
+    {
+      "area": "tab_default",
+      "choice": "List (table) is tab 0; existing Info/Deps/Files/Used-by shift to 1-4",
+      "rationale": "User picked preview that shows the table at top with existing tabs above. List is the most useful default view; Info is detail-on-demand."
+    },
+    {
+      "area": "table_columns",
+      "choice": "4 columns: Name | Version | Status | Tap (no source path column to keep widths manageable in narrow panes)",
+      "rationale": "All 4 columns meaningful; Tap origin useful for spotting custom-tap formulae. Source path kept in Info detail tab instead."
+    },
+    {
+      "area": "sort_order",
+      "choice": "Outdated > Pinned > Alphabetical (default, no user override in M16)",
+      "rationale": "Action-first view: see what needs updating immediately. Pinned next since they're often intentionally held. Alpha for the rest. No sort toggle yet — defer to M17."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    },
+    {
+      "id": "WP2",
+      "name": "Table renderer",
+      "goal": "Build a column-based renderer for Formulae List tab with header row and aligned columns.",
+      "rollback": ""
+    },
+    {
+      "id": "WP3",
+      "name": "Tab bar move + restyle",
+      "goal": "Move tab bar from sidebar-bottom to top of main pane with underline styling.",
+      "rollback": ""
+    },
+    {
+      "id": "WP4",
+      "name": "Tests",
+      "goal": "Add unit tests for the new table renderer, sort logic, tab bar move, and empty state.",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Add a sort key extractor for Formulae panel: each formula gets a tuple (outdatedRank, pinnedRank, nameLower). Outdated=0, Pinned=0, Installed=1. Sort tuples ascending then name. Apply sort in renderContent() when Formulae panel List tab is active.",
+      "files": [
+        "internal/gui/panel.go"
+      ],
+      "tests": "manual: go test -race ./internal/gui/... exit 0; visual: launch lazybrew with mixed formulae, confirm order is outdated > pinned > alpha",
+      "done_when": "Formulae panel list renders in outdated > pinned > alpha order",
+      "status": "pending",
+      "covers_ac": [
+        "AC-06"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1",
+      "work_package": "WP2",
+      "order": 2,
+      "action": "Add renderFormulaeTable(width, height int) function in internal/gui/panel.go (or new file internal/gui/table.go). Renders a 4-column table: header row (NAME | VERSION | STATUS | TAP, header style bold + subtle bg) + body rows (one per formula, sorted). Version shows 'oldver -> newver' for outdated, plain version for installed/pinned. Status is text label. Tap is shortened (e.g. 'hb/c' for homebrew/core). Empty list shows centered 'No formulae yet' + hint.",
+      "files": [
+        "internal/gui/panel.go"
+      ],
+      "tests": "manual: launch lazybrew with Formulae List tab active; observe header row + 4-column body",
+      "done_when": "Table renders correctly with header, columns, version arrow for outdated, empty state",
+      "status": "pending",
+      "covers_ac": [
+        "AC-03",
+        "AC-04",
+        "AC-05",
+        "AC-07"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S2",
+      "work_package": "WP3",
+      "order": 7,
+      "action": "In internal/gui/gui.go, add a new tab to the Formulae panel: List (index 0). Shift existing Info/Deps/Files/Used-by/Caveats tabs to indices 1-5. Verify m.tabs slice is updated wherever tabs are constructed for the Formulae panel.",
+      "files": [
+        "internal/gui/gui.go"
+      ],
+      "tests": "manual: launch lazybrew, observe Formulae panel tabs now read: [List] [Info] [Deps] [Files] [Used-by] [Caveats]",
+      "done_when": "Formulae panel has 6 tabs with List at index 0",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1",
+      "work_package": "WP3",
+      "order": 3,
+      "action": "Update internal/gui/render.go renderMainPanel(): move renderTabBar() output from sidebar-bottom position to top of main pane (below breadcrumb, above content). Apply underline styling: active tab gets lipgloss.NewStyle().Bold(true).Border(lipgloss.ThickBorder(), false, false, true, false).BorderForeground(AccentColor).Padding(0,1).Render(' TabName '); inactive tabs are dimmed SubtleText + no border. Bottom border should 'connect' to content area below.",
+      "files": [
+        "internal/gui/render.go"
+      ],
+      "tests": "manual: launch lazybrew; tab bar visible at top of main pane; active tab has thick underline; inactive tabs are dimmed",
+      "done_when": "renderMainPanel renders tab bar at top; underline style applied",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1.1",
+      "work_package": "WP3",
+      "order": 4,
+      "action": "Update internal/gui/render.go renderContent() for PanelFormulae: switch the switch statement so that m.activeTab == 0 dispatches to the new renderFormulaeTable() function. Existing Info/Deps/Files/Used-by/Caveats handlers shift to activeTab == 1..5.",
+      "files": [
+        "internal/gui/render.go"
+      ],
+      "tests": "manual: launch lazybrew, Formulae List tab active; observe table; switch to Info tab; observe old Info view",
+      "done_when": "Formulae tab 0 renders table; tabs 1-5 render existing handlers",
+      "status": "pending",
+      "covers_ac": [
+        "AC-03",
+        "AC-04",
+        "AC-05"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1.1.1",
+      "work_package": "WP4",
+      "order": 5,
+      "action": "Add tests in internal/gui/gui_test.go and/or a new internal/gui/table_test.go: (1) renderFormulaeTable with sample formulae produces output containing the header row and each column; (2) sort logic: formulae with outdated=true appear before pinned before alpha; (3) empty formulae list shows 'No formulae yet' + hint text; (4) renderMainPanel contains the tab bar (verify by string match); (5) snapshot the tab bar style at top.",
+      "files": [
+        "internal/gui/gui_test.go",
+        "internal/gui/table_test.go"
+      ],
+      "tests": "manual: go test -race ./internal/gui/... exit 0; new tests cover table, sort, empty state, tab bar",
+      "done_when": "All new tests pass; existing tests unbroken",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02",
+        "AC-03",
+        "AC-04",
+        "AC-05",
+        "AC-06",
+        "AC-07"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1.1.1.1",
+      "work_package": "WP4",
+      "order": 6,
+      "action": "Run full test suite, gofmt, go vet to confirm M16 doesn't regress.",
+      "files": [
+        "internal/gui"
+      ],
+      "tests": "manual: go test -race ./... exit 0; gofmt -l . empty; go vet ./... clean",
+      "done_when": "All checks green",
+      "status": "pending",
+      "covers_ac": [
+        "AC-08"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}
