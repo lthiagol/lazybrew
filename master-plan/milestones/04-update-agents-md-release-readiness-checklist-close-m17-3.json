@@ -1,0 +1,87 @@
+{
+  "milestone": {
+    "id": "04",
+    "title": "Update AGENTS.md release readiness checklist (close M17.3)",
+    "slug": "update-agents-md-release-readiness-checklist-close-m17-3",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T17:04:39.293800+00:00"
+  },
+  "intent": {
+    "outcome": "AGENTS.md release readiness checklist reflects reality: M17.3 (parseUpdateSummary toast) is checked off because the code is present in internal/gui/commands.go and wired in gui.go:250."
+  },
+  "problem": {
+    "description": "AGENTS.md still lists M17.3 as open, but the implementation is on wip: parseUpdateSummary in internal/gui/commands.go:1258 and wired at gui.go:250. Stale checklist misleads maintainers about release readiness."
+  },
+  "scope": {
+    "in_scope": [
+      "Mark M17.3 done in AGENTS.md release readiness checklist"
+    ],
+    "out_of_scope": [
+      "Re-implementing the toast UI",
+      "Auditing other checklist items"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "The parseUpdateSummary toast sub-step is marked done in AGENTS.md release readiness checklist.",
+      "verification": "manual: grep 'M17.3' AGENTS.md shows [x] not [ ]",
+      "status": "passed",
+      "evidence": "grep -nE 'M17.3' AGENTS.md = '137:- [x] M17.3 update summary toast done' (line flipped from '[ ]' to '[x]')"
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Flip the parseUpdateSummary toast sub-step checkbox in AGENTS.md from unchecked to checked.",
+      "files": [
+        "AGENTS.md"
+      ],
+      "tests": "manual: grep 'M17.3' AGENTS.md shows [x]",
+      "done_when": "AGENTS.md release readiness checklist line for parseUpdateSummary toast starts with '- [x]'",
+      "status": "done",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "2026-08-01",
+    "branch": "",
+    "evidence": "M04 self-verification: S1 done (AGENTS.md line 137 flipped from '[ ]' to '[x]'), AC-01 passed (grep confirms checked state)."
+  }
+}

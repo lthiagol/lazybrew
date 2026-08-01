@@ -1,0 +1,177 @@
+{
+  "milestone": {
+    "id": "06",
+    "title": "Push v1.0.0-rc1 tag and bump homebrew-tap Formula/lazybrew.rb",
+    "slug": "push-v1-0-0-rc1-tag-and-bump-homebrew-tap-formula-lazybrew-rb",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T17:39:53.409883+00:00"
+  },
+  "intent": {
+    "outcome": "v1.0.0-rc1 is published: tag on origin (GitHub), tap formula in lthiagol/homebrew-tap points at the rc1 tarball with the correct sha256. Users running `brew upgrade` on the tap get rc1."
+  },
+  "problem": {
+    "description": "v1.0.0-rc1 exists locally on wip (commit 71af1a1) but not pushed to origin. The tap Formula/lazybrew.rb still points at v0.2.0 on Codeberg (stale URL host: the project moved to GitHub per origin remote). Without this milestone, the rc1 release is not actually available to users."
+  },
+  "scope": {
+    "in_scope": [
+      "User pushes local v1.0.0-rc1 tag to origin (GitHub) — irreversible public action, user-driven per agreement.",
+      "Agent drafts Formula/lazybrew.rb diff (URL host codeberg.org → github.com, tag v0.2.0 → v1.0.0-rc1, sha256 placeholder).",
+      "User computes the tarball sha256 by running `curl -sL <url> | shasum -a 256` and pastes it to the agent.",
+      "Agent applies the diff to a clone of lthiagol/homebrew-tap, commits, opens a PR against :stable.",
+      "Agent verifies the merged formula via raw GitHub URL."
+    ],
+    "out_of_scope": [
+      "Cutting the stable v1.0.0 tag (separate milestone after rc1 ships and any rc1-only fixes land).",
+      "Updating Formula/lazybrew-dev.rb (separate track per AGENTS.md; not part of rc1 release).",
+      "Goreleaser integration (separate M07 decision).",
+      "Coverage floor decision (separate M03 — not blocking rc1 if floors are documented as pre-existing).",
+      "Manual smoke checklist (separate M08)."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "v1.0.0-rc1 tag is present on origin (GitHub).",
+      "verification": "manual: git ls-remote --tags origin | grep -E 'v1\\.0\\.0-rc1\\s' returns a 40-char SHA",
+      "status": "passed",
+      "evidence": "git ls-remote --tags origin | grep 'v1.0.0-rc1' returns '71af1a1c6bd9b915f6b3d0d0c3b8f98d7fb0fe3a refs/tags/v1.0.0-rc1^{}' (commit matches local HEAD on wip); gh api repos/lthiagol/lazybrew/git/refs/tags/v1.0.0-rc1 returns same ref"
+    },
+    {
+      "id": "AC-02",
+      "description": "Formula/lazybrew.rb sha256 matches the rc1 tarball bytes.",
+      "verification": "manual: curl -sL https://github.com/lthiagol/lazybrew/archive/refs/tags/v1.0.0-rc1.tar.gz | shasum -a 256 returns the same value as the formula's sha256 line",
+      "status": "passed",
+      "evidence": "Formula on stable: sha256 'cd5e29ee3f1d384e13a23eba88f56e41a4c28cb13bfdefbb24b5710569e7ba19'. Fresh download: curl -sL https://github.com/lthiagol/lazybrew/archive/refs/tags/v1.0.0-rc1.tar.gz | shasum -a 256 = 'cd5e29ee3f1d384e13a23eba88f56e41a4c28cb13bfdefbb24b5710569e7ba19'. Byte-for-byte match."
+    },
+    {
+      "id": "AC-03",
+      "description": "Formula/lazybrew.rb URL host switched from codeberg.org to github.com/lthiagol/lazybrew.",
+      "verification": "manual: curl -sL https://raw.githubusercontent.com/lthiagol/homebrew-tap/stable/Formula/lazybrew.rb | grep '^  url ' shows github.com host",
+      "status": "passed",
+      "evidence": "curl -sL https://raw.githubusercontent.com/lthiagol/homebrew-tap/stable/Formula/lazybrew.rb | grep '^  url ' returns 'url \"https://github.com/lthiagol/lazybrew/archive/refs/tags/v1.0.0-rc1.tar.gz\"'. grep -c codeberg against formula returns 0."
+    },
+    {
+      "id": "AC-04",
+      "description": "A PR is opened against lthiagol/homebrew-tap:stable with the formula change.",
+      "verification": "manual: gh pr list --repo lthiagol/homebrew-tap --state open --base stable shows a PR titled 'lazybrew: bump to v1.0.0-rc1' (or similar) with the URL and sha256 changes",
+      "status": "passed",
+      "evidence": "gh pr view 9 --repo lthiagol/homebrew-tap: state=MERGED, mergedAt=2026-08-01T17:38:46Z, mergeCommit=9a58398c4d21d25a88a9a0dcf4dcb479ec00759f, url=https://github.com/lthiagol/homebrew-tap/pull/9"
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Wait for user to push the v1.0.0-rc1 tag to origin (GitHub). Verify via git ls-remote --tags origin.",
+      "files": [
+        "master-plan/audit"
+      ],
+      "tests": "manual: git ls-remote --tags origin | grep -E 'v1\\.0\\.0-rc1\\s' returns a SHA",
+      "done_when": "git ls-remote --tags origin shows a SHA for refs/tags/v1.0.0-rc1.",
+      "status": "done",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "User runs curl|shasum on the rc1 tarball to compute the sha256, pastes the value to the agent. Agent drafts the Formula/lazybrew.rb diff (URL host codeberg->github, tag v0.2.0->v1.0.0-rc1, sha256) in a scratch file.",
+      "files": [
+        "master-plan/audit"
+      ],
+      "tests": "manual: scratch file exists with formula diff showing github URL and rc1 tag",
+      "done_when": "Scratch file contains the new Formula/lazybrew.rb body with github URL, rc1 tag, and the user-provided sha256.",
+      "status": "done",
+      "covers_ac": [
+        "AC-02",
+        "AC-03"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1",
+      "work_package": "WP1",
+      "order": 3,
+      "action": "Agent clones lthiagol/homebrew-tap, creates branch bump-lazybrew-v1.0.0-rc1, applies the formula diff, commits, pushes branch, opens PR against :stable via gh.",
+      "files": [
+        "master-plan/audit"
+      ],
+      "tests": "manual: gh pr list --repo lthiagol/homebrew-tap --state open --base stable shows the PR",
+      "done_when": "gh pr list returns the bump PR with title containing 'v1.0.0-rc1' and the URL/sha256 changes.",
+      "status": "done",
+      "covers_ac": [
+        "AC-04"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1.1",
+      "work_package": "WP1",
+      "order": 4,
+      "action": "After PR is merged by the tap maintainer, verify the formula via raw GitHub URL: URL host is github.com, sha256 matches the tarball.",
+      "files": [
+        "master-plan/audit"
+      ],
+      "tests": "manual: curl raw formula, grep URL host and sha256; re-run curl|shasum on tarball to confirm match",
+      "done_when": "curl https://raw.githubusercontent.com/lthiagol/homebrew-tap/stable/Formula/lazybrew.rb shows github URL and matching sha256.",
+      "status": "done",
+      "covers_ac": [
+        "AC-02",
+        "AC-03"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "2026-08-01",
+    "branch": "",
+    "evidence": "M06 self-verification: tag pushed (AC-01), PR opened+merged (AC-04), stable formula verified (AC-02 sha256 match, AC-03 github URL host). Merged via user click (PAT lacked merge scope); merge commit 9a58398c4d21d25a88a9a0dcf4dcb479ec00759f."
+  }
+}

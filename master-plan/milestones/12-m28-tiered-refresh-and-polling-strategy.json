@@ -1,0 +1,73 @@
+{
+  "milestone": {
+    "id": "12",
+    "title": "M28 Tiered Refresh and Polling Strategy",
+    "slug": "m28-tiered-refresh-and-polling-strategy",
+    "lifecycle": "draft",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-07-30",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-07-30T21:05:29.961765+00:00"
+  },
+  "intent": {
+    "outcome": "Each data class has its own TTL; lazy loading defers fetches until panels are shown; refresh pauses on user interaction; controller split (B-01) becomes feasible."
+  },
+  "problem": {
+    "description": "Bkp M28 marked Planned; not implemented in wip. Currently the GUI has no tiered strategy: every refresh fetches everything. Depends on M25 (lazy outdated + TTL), M26 (doctor warnings), M27 (taps batch)."
+  },
+  "scope": {
+    "in_scope": [
+      "Per-class TTLs in config (formulae, casks, outdated, taps, services, doctor)",
+      "Lazy all panels by default",
+      "Pause-on-interaction: refresh defers if user has typed or pressed a key recently",
+      "Tests"
+    ],
+    "out_of_scope": [
+      "Controller split (B-01)",
+      "Background sync features",
+      "Changes that supersede M25/M26/M27"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Each data class has an independent TTL setting in config.",
+      "verification": "manual: grep -E 'ttl|TTL' internal/config/*.go shows >= 4 class-scoped settings",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "No panel fetches data until it is selected.",
+      "verification": "manual: go test -run TestLazyPanels ./internal/gui/... shows 0 brew calls before any panel select",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "User keypress within 500ms defers scheduled refresh.",
+      "verification": "manual: go test -run TestPauseOnInteraction ./internal/gui/...",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "milestone": {
+    "id": "10",
+    "title": "M26 Diagnostics Error Handling",
+    "slug": "m26-diagnostics-error-handling",
+    "lifecycle": "draft",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "normal",
+    "created": "2026-07-30",
+    "updated": "2026-07-30",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-07-30T21:05:19.254781+00:00"
+  },
+  "intent": {
+    "outcome": "brew doctor exit code 1 is parsed as warnings (not error) in the diagnostics display; user sees the doctor output without a blocking error toast."
+  },
+  "problem": {
+    "description": "Bkp M26 marked Planned; not implemented in wip. Currently brew doctor exit=1 likely surfaces as an error rather than as informational output."
+  },
+  "scope": {
+    "in_scope": [
+      "Parse brew doctor exit code 1 as warnings, not errors",
+      "Surface doctor output in Diagnostics panel",
+      "Add unit test for exit code parsing"
+    ],
+    "out_of_scope": [
+      "Changing brew invocation",
+      "UI redesign of diagnostics panel"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "brew doctor exit=1 returns warnings, not errors.",
+      "verification": "manual: go test -run TestDoctorExitCode ./internal/brew/...",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "Doctor output renders in Diagnostics panel without error toast.",
+      "verification": "manual: launch lazybrew, run doctor via menu, no error toast appears",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}

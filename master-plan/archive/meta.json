@@ -1,3 +1,11 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "entity_type": "milestone",
+      "entity_id": "02",
+      "original_path": "milestones/02-test-milestone.json",
+      "archived_path": "archive/milestones/02-test-milestone.json",
+      "archived_at": "2026-07-30T21:04:02.230768+00:00"
+    }
+  ]
 }
