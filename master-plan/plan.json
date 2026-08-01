@@ -130,6 +130,20 @@
       "spec_status": "draft",
       "execution_status": "planned",
       "blocked_by": ""
+    },
+    {
+      "id": "14",
+      "title": "Sidebar polish + log pane box + Catppuccin Mocha theme",
+      "spec_status": "ready",
+      "execution_status": "planned",
+      "blocked_by": ""
+    },
+    {
+      "id": "15",
+      "title": "Loading state spinner upgrade",
+      "spec_status": "ready",
+      "execution_status": "planned",
+      "blocked_by": ""
     }
   ],
   "releases": []
