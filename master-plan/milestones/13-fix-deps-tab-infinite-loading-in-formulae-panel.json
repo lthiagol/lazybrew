@@ -1,0 +1,75 @@
+{
+  "milestone": {
+    "id": "13",
+    "title": "Fix Deps tab infinite loading in Formulae panel",
+    "slug": "fix-deps-tab-infinite-loading-in-formulae-panel",
+    "lifecycle": "draft",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [
+      "08"
+    ],
+    "effort": "S",
+    "risk": "medium",
+    "change_kind": "",
+    "priority": "high",
+    "created": "2026-08-01",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T19:17:32.504237+00:00"
+  },
+  "intent": {
+    "outcome": "Deps tab in the Formulae panel renders the dependency list for the selected formula within a reasonable time (no infinite 'loading' state)."
+  },
+  "problem": {
+    "description": "Smoke test 2026-08-01 (M08) found that switching to the Deps tab in the Formulae panel causes the view to hang in a 'loading' state indefinitely. Adjacent tabs (Used by, Files) render correctly; only Deps is broken. Failure observed manually on macOS, real Homebrew install, lazybrew built from wip@4366b36."
+  },
+  "scope": {
+    "in_scope": [
+      "Identify why the Deps tab never completes its fetch.",
+      "Fix the underlying bug (could be: tea.Cmd never sent, message never handled, dep-tree parsing issue, cache key collision).",
+      "Add a teatest E2E flow that selects a formula, switches to Deps tab, asserts deps text appears within a timeout.",
+      "Update smoke checklist: Deps tab item -> [x]."
+    ],
+    "out_of_scope": [
+      "Refactoring the Formulae panel beyond the Deps fix.",
+      "Changing dep tree output format.",
+      "Fixing other tabs (Used by, Files render correctly per smoke)."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Selecting a formula and switching to the Deps tab renders the dep list within 5 seconds.",
+      "verification": "manual: open lazybrew, select formula git, switch to Deps tab, observe dep list appears within 5s (no infinite loading); OR automated: teatest flow TestDepsTabLoads exits 0",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "Selecting a different formula updates the Deps tab to that formula's deps.",
+      "verification": "manual: with deps shown for A, press j/k to B, observe deps update; OR automated: teatest flow asserts deps change on selection",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "Regression coverage: a teatest flow guards this fix.",
+      "verification": "manual: go test -run TestDepsTab ./internal/gui/flows/... exit 0",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}

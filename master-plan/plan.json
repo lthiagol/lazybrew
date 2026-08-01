@@ -123,6 +123,13 @@
       "spec_status": "draft",
       "execution_status": "planned",
       "blocked_by": ""
+    },
+    {
+      "id": "13",
+      "title": "Fix Deps tab infinite loading in Formulae panel",
+      "spec_status": "draft",
+      "execution_status": "planned",
+      "blocked_by": ""
     }
   ],
   "releases": []

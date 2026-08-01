@@ -270,6 +270,12 @@
       "type": "lifecycle-transition",
       "subject": "07",
       "summary": "lifecycle: in-progress → complete"
+    },
+    {
+      "timestamp": "2026-08-01T19:17:32.525250+00:00",
+      "type": "milestone-created",
+      "subject": "13",
+      "summary": "milestone created (13)"
     }
   ]
 }
