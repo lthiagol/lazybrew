@@ -15,7 +15,7 @@
     "change_kind": "",
     "priority": "normal",
     "created": "2026-07-30",
-    "updated": "2026-07-30",
+    "updated": "2026-08-01",
     "blocked_at": "",
     "block_reason": "",
     "blocked_by": "",
@@ -24,34 +24,39 @@
     "lifecycle_at": "2026-07-30T21:05:10.315082+00:00"
   },
   "intent": {
-    "outcome": "smoke-checklist.md is walked end-to-end on a real macOS machine by a human; the release blocker M24.13 is closed."
+    "outcome": "master-plan-bkp/smoke-checklist.md is signed off by a human on a real macOS machine. v1.0.0 stable tag is unblocked. Any failing smoke item is captured as a follow-up milestone so the work is tracked, not silently deferred."
   },
   "problem": {
-    "description": "M24 code steps (24.1-24.12) are complete, but 24.13 is a manual smoke gate that cannot be executed by an agent. Without human sign-off, the v0.2.0/rc1 release is blocked."
+    "description": "M24 code steps (24.1-24.12) are complete but 24.13 is a manual smoke gate that cannot be executed by an agent. Without human sign-off, v1.0.0 stable release is blocked. This milestone defines what 'signed off' means and what happens on failure."
   },
   "scope": {
     "in_scope": [
-      "Human runs smoke-checklist.md on macOS",
-      "Human records pass/fail per item",
-      "Human commits the signed-off checklist"
+      "Human runs master-plan-bkp/smoke-checklist.md end-to-end on macOS.",
+      "Human annotates each checklist item as pass/fail and commits the signed-off file.",
+      "For any failing item: open a follow-up mp milestone sized to fix that item; record each failure as a separate milestone (one failure -> one milestone).",
+      "All follow-up milestones link back to this milestone as their parent (via depends_on).",
+      "M08 verdict = pass when zero items failed. M08 verdict = blocked when at least one item failed; unblock after follow-up milestones close.",
+      "After M08 pass: cut v1.0.0 stable tag from wip HEAD and repeat the tap-bump dance (separate milestone or M06-extension)."
     ],
     "out_of_scope": [
-      "Re-running automated tests",
-      "Implementing features to make smoke pass"
+      "Implementing fixes for failing smoke items (handled by the follow-up milestones opened as part of this milestone's outcome).",
+      "Re-running automated tests (the smoke gate is in addition to, not a replacement for, go test ./...).",
+      "Cutting v1.0.0 stable tag (separate decision after M08 passes).",
+      "Migrating smoke-checklist.md out of master-plan-bkp/ (it is read-only archival context)."
     ]
   },
   "acceptance_criteria": [
     {
       "id": "AC-01",
-      "description": "smoke-checklist.md is signed off by a human; each item has a pass/fail annotation.",
-      "verification": "manual: git log --oneline -- smoke-checklist.md shows a commit by a human with 'Signed off' or equivalent",
+      "description": "Every item in master-plan-bkp/smoke-checklist.md is annotated as pass (or has a follow-up milestone opened for the failure, with the milestone referencing the failing item).",
+      "verification": "manual: git log --oneline -- master-plan-bkp/smoke-checklist.md shows a commit after the run; each [ ] in the file is either [x] (pass) or paired with a follow-up milestone id; follow-up milestones all show execution_status=done OR this milestone is in 'blocked' state with the failure list captured",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-02",
-      "description": "If any smoke item failed, the related follow-up milestone is opened or the failure is recorded as a finding.",
-      "verification": "manual: any failure references an open mp milestone or mp reviews finding",
+      "description": "If any smoke item failed, a follow-up milestone exists for each failure with intent/scope/AC that fix that specific item.",
+      "verification": "manual: mp list milestones --filter ... shows one follow-up per failing item; each follow-up's intent.problem references the failing smoke item",
       "status": "pending",
       "evidence": ""
     }
