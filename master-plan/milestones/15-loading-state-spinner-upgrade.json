@@ -1,0 +1,158 @@
+{
+  "milestone": {
+    "id": "15",
+    "title": "Loading state spinner upgrade",
+    "slug": "loading-state-spinner-upgrade",
+    "lifecycle": "approved",
+    "spec_status": "ready",
+    "execution_status": "planned",
+    "blocked": false,
+    "needs_regrooming": false,
+    "cancelled": false,
+    "deferred": false,
+    "deferred_reason": "",
+    "depends_on": [
+      "14"
+    ],
+    "effort": "S",
+    "risk": "low",
+    "change_kind": "",
+    "priority": "low",
+    "created": "2026-08-01",
+    "updated": "2026-08-01",
+    "blocked_at": "",
+    "block_reason": "",
+    "blocked_by": "",
+    "target_version": "",
+    "executed_by": "",
+    "lifecycle_at": "2026-08-01T20:32:41.949772+00:00"
+  },
+  "intent": {
+    "outcome": "Loading indicators throughout the TUI use a Catppuccin-Mauve-accented braille dot spinner that's visually unmistakable, while the existing 'Loading...' text is preserved."
+  },
+  "problem": {
+    "description": "The current spinner is rendered in SubtleText (gray), which makes the loading state visually blend into the background. Users can't tell at a glance that something is loading — empty panels look the same as 'this is broken.'"
+  },
+  "scope": {
+    "in_scope": [
+      "Swap spinner initialization in internal/gui/gui.go from style.SubtleText to a Mauve AccentColor foreground.",
+      "Confirm the bubbles/spinner model uses the Dots (braille) frame set: U+283B U+2839 U+2839 U+2838 U+283C U+2834 U+2836 U+2837 U+2837 U+283F U+283F (10-frame cycling).",
+      "Apply the AccentColor at the spinner View() call sites in internal/gui/render.go (sidebar title row + main content loading state)."
+    ],
+    "out_of_scope": [
+      "M14 sidebar polish, log pane, theme swap (separate milestone, must land first).",
+      "Per-panel state indicators (skipped in M15).",
+      "Skeleton placeholders (skipped in M15).",
+      "Elapsed-time display (skipped in M15).",
+      "Spinner animation set change (Dots is the chosen series; not changing)."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "The spinner uses Mauve (Catppuccin AccentColor) foreground instead of SubtleText.",
+      "verification": "manual: cat internal/gui/gui.go spinner init shows style.AccentText or equivalent; visual: launch lazybrew, observe loading state shows colored spinner",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-02",
+      "description": "The spinner uses the braille Dots animation (10-frame cycling, unicode 0x283B-0x283F range).",
+      "verification": "manual: cat internal/gui/gui.go spinner model; visual: launch lazybrew during cold cache, observe braille dot cycling",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "Existing 'Loading...' text is preserved alongside the spinner.",
+      "verification": "manual: launch lazybrew, observe 'Loading...' text remains next to/below the spinner",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "design_decisions": [
+    {
+      "area": "spinner_visibility",
+      "choice": "Dots braille series + AccentColor",
+      "rationale": "Dots is the bubbles default — most-tested, terminal-portable (braille block chars), and doesn't compete visually with text. AccentColor (Mauve after M14) is bold enough to pop without screaming."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Main",
+      "goal": "",
+      "rollback": ""
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "In internal/gui/gui.go, change the spinner initialization from style.SubtleText to style.AccentText (or equivalent that resolves to AccentColor / Mauve). Confirm the spinner model is set to the braille Dots series (default for bubbles/spinner).",
+      "files": [
+        "internal/gui/gui.go"
+      ],
+      "tests": "manual: cat internal/gui/gui.go spinner init; grep for style.AccentText; spinner frames should be braille dots in 0x283B-0x283F range",
+      "done_when": "Spinner init uses AccentText style; braille Dots frames confirmed in code",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "Confirm spinner View() call sites in internal/gui/render.go still render alongside 'Loading...' text. No change needed if existing code preserves the message; if it was overwritten, restore it.",
+      "files": [
+        "internal/gui/render.go"
+      ],
+      "tests": "manual: cat internal/gui/render.go grep spinner.View; visual: launch lazybrew, 'Loading...' text remains visible during load",
+      "done_when": "Spinner + 'Loading...' text both render at sidebar title row and main content loading sites",
+      "status": "pending",
+      "covers_ac": [
+        "AC-03"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S1.1.1",
+      "work_package": "WP1",
+      "order": 3,
+      "action": "Run full test suite, gofmt, go vet to confirm M15 doesn't regress.",
+      "files": [
+        "internal/gui"
+      ],
+      "tests": "manual: go test -race ./... exit 0; gofmt -l . empty; go vet ./... clean",
+      "done_when": "All checks green",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02",
+        "AC-03"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    }
+  ],
+  "verification": {
+    "date": "",
+    "branch": "",
+    "evidence": ""
+  }
+}
