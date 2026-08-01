@@ -24,7 +24,7 @@
     "lifecycle_at": "2026-07-30T21:05:10.315082+00:00"
   },
   "intent": {
-    "outcome": "master-plan-bkp/smoke-checklist.md is signed off by a human on a real macOS machine. v1.0.0 stable tag is unblocked. Any failing smoke item is captured as a follow-up milestone so the work is tracked, not silently deferred."
+    "outcome": "master-plan/smoke-checklist.md is signed off by a human on a real macOS machine. v1.0.0 stable tag is unblocked. Any failing smoke item is captured as a follow-up milestone so the work is tracked, not silently deferred."
   },
   "problem": {
     "description": "M24 code steps (24.1-24.12) are complete but 24.13 is a manual smoke gate that cannot be executed by an agent. Without human sign-off, v1.0.0 stable release is blocked. This milestone defines what 'signed off' means and what happens on failure."
@@ -48,8 +48,8 @@
   "acceptance_criteria": [
     {
       "id": "AC-01",
-      "description": "Every item in master-plan-bkp/smoke-checklist.md is annotated as pass (or has a follow-up milestone opened for the failure, with the milestone referencing the failing item).",
-      "verification": "manual: git log --oneline -- master-plan-bkp/smoke-checklist.md shows a commit after the run; each [ ] in the file is either [x] (pass) or paired with a follow-up milestone id; follow-up milestones all show execution_status=done OR this milestone is in 'blocked' state with the failure list captured",
+      "description": "Every item in master-plan/smoke-checklist.md is annotated as pass (or has a follow-up milestone opened for the failure, with the milestone referencing the failing item).",
+      "verification": "manual: each [ ] in master-plan/smoke-checklist.md is either [x] (pass) or paired with a follow-up milestone id; follow-up milestones all show execution_status=done OR this milestone is in 'blocked' state with the failure list captured",
       "status": "pending",
       "evidence": ""
     },
