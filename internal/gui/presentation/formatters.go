@@ -227,6 +227,9 @@ func FormatDoctorStatus(warnings []brew.DoctorWarning, err error) string {
 	if len(warnings) == 0 {
 		return "Doctor: No issues"
 	}
+	if len(warnings) == 1 {
+		return "Doctor: 1 warning"
+	}
 	return fmt.Sprintf("Doctor: %d warnings", len(warnings))
 }
 

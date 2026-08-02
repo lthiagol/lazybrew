@@ -1394,13 +1394,72 @@ func TestStatusDashboardDoesNotWarnOnDoctorExitCode1(t *testing.T) {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
 	joined := strings.Join(dMsg.Items, "\n")
-	if !strings.Contains(joined, "1 warning") {
+	if !strings.Contains(joined, "Doctor: 1 warning") {
 		t.Errorf("expected 'Doctor: 1 warning' in dashboard items, got:\n%s", joined)
+	}
+	if strings.Contains(joined, "1 warnings") {
+		t.Errorf("singular must not use plural form, got:\n%s", joined)
 	}
 	for _, item := range dMsg.Items {
 		if strings.Contains(item, "⚠") && strings.Contains(item, "doctor") {
 			t.Errorf("did NOT expect '⚠ doctor: ...' on exit=1 (it's warnings), got: %s", item)
 		}
+	}
+}
+
+func TestDoctorTabExitCode1ShowsWarnings(t *testing.T) {
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "doctor" {
+			return []byte("Warning: Your Homebrew is outdated.\nRun brew update.\n"),
+				&brew.BrewExitError{Command: "doctor", ExitCode: 1}
+		}
+		return []byte{}, nil
+	}
+	client := brew.NewClient(r)
+
+	cmd := fetchTabContentCmd(client, PanelStatus, 2, "doctor")
+	if cmd == nil {
+		t.Fatal("fetchTabContentCmd returned nil")
+	}
+	msg := cmd()
+	tMsg, ok := msg.(TabContentMsg)
+	if !ok {
+		t.Fatalf("expected TabContentMsg, got %T", msg)
+	}
+	if tMsg.Err != nil {
+		t.Fatalf("exit=1 must not be Err on Doctor tab, got %v", tMsg.Err)
+	}
+	if !strings.Contains(tMsg.Content, "outdated") {
+		t.Errorf("expected warning content, got %q", tMsg.Content)
+	}
+}
+
+func TestDoctorTabRealErrorShowsError(t *testing.T) {
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "doctor" {
+			return nil, &brew.BrewExitError{Command: "doctor", ExitCode: 2}
+		}
+		return []byte{}, nil
+	}
+	client := brew.NewClient(r)
+
+	cmd := fetchTabContentCmd(client, PanelStatus, 2, "doctor")
+	msg := cmd()
+	tMsg, ok := msg.(TabContentMsg)
+	if !ok {
+		t.Fatalf("expected TabContentMsg, got %T", msg)
+	}
+	if tMsg.Err == nil {
+		t.Fatal("expected Err on Doctor tab for exit=2")
+	}
+
+	m := newTestModel()
+	m = updateModel(m, tMsg)
+	key := tabKey(PanelStatus, 2, "doctor")
+	if !strings.Contains(m.tabContent[key], "Error") {
+		t.Errorf("expected Error in tab body, got %q", m.tabContent[key])
 	}
 }
 

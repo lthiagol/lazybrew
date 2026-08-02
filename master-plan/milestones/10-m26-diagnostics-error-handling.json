@@ -3,9 +3,9 @@
     "id": "10",
     "title": "M26 Diagnostics Error Handling",
     "slug": "m26-diagnostics-error-handling",
-    "lifecycle": "complete",
-    "spec_status": "verified",
-    "execution_status": "done",
+    "lifecycle": "remediation",
+    "spec_status": "implemented",
+    "execution_status": "in-progress",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -15,7 +15,7 @@
     "effort": "S",
     "risk": "low",
     "change_kind": "",
-    "priority": "normal",
+    "priority": "high",
     "created": "2026-07-30",
     "updated": "2026-08-02",
     "blocked_at": "",
@@ -23,7 +23,8 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-02T11:19:25.615152+00:00"
+    "remediation_pre_state": "complete",
+    "lifecycle_at": "2026-08-02T11:22:23.900205+00:00"
   },
   "intent": {
     "outcome": "Doctor exit=1 is confirmed warning-path end-to-end: brew layer already parses warnings; GUI Status Doctor tab and d-key path never treat exit=1 as a hard error toast; residual swallowed errors on dashboard are fixed or explicitly accepted."
@@ -148,6 +149,61 @@
       "created": "2026-08-02",
       "resolved": "2026-08-02",
       "phase": "self"
+    },
+    {
+      "id": "F-02",
+      "severity": "low",
+      "category": "correctness",
+      "description": "FormatDoctorStatus returns fmt.Sprintf(\"Doctor: %d warnings\", n) for all n>0, so singular is 'Doctor: 1 warnings'. Tests use Contains(\"1 warning\") which also matches the plural form, so the bug is masked. Fix pluralization (1 warning / N warnings) and assert exact or non-plural for n=1.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/presentation/formatters.go",
+        "new_range": {
+          "start_line": 230,
+          "end_line": 230
+        },
+        "side": "new"
+      },
+      "summary": "FormatDoctorStatus always pluralizes 'warnings' (1 warnings)"
+    },
+    {
+      "id": "F-03",
+      "severity": "medium",
+      "category": "test-gap",
+      "description": "AC-02 covers Doctor tab and d-key. Dashboard exit=1 is tested (TestStatusDashboardDoesNotWarnOnDoctorExitCode1) but fetchTabContentCmd PanelStatus tab=2 has no test that exit=1 yields Content with warnings and Err=nil, or that exit=2 yields Err (terminal error body, not spinner). Add TestDoctorTabExitCode1ShowsWarnings and TestDoctorTabRealErrorShowsError.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/commands.go",
+        "new_range": {
+          "start_line": 846,
+          "end_line": 846
+        },
+        "side": "new"
+      },
+      "summary": "AC-02 Doctor tab path untested for exit=1 vs real error"
+    },
+    {
+      "id": "F-04",
+      "severity": "low",
+      "category": "process",
+      "description": "F-01 fixed_in=6e2f47a (docs plan checkpoint) but the err-beats-warnings test landed in e00cefa. Re-point fixed_in to the code commit when resolving; do not treat plan-only SHAs as code fixes.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "summary": "Self F-01 fixed_in points at docs plan commit, not M10 code"
     }
   ]
 }
