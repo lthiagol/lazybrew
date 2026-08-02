@@ -70,6 +70,18 @@
       "session_boundary": "",
       "evidence": "mp reviews finding list 13; go test -race ./internal/gui/... exit 0; git status shows unstaged M13 code",
       "created_at": "2026-08-02T11:02:44.852986+00:00"
+    },
+    {
+      "id": "H-02",
+      "milestone_id": "13",
+      "from_session": "opencode-remediate-m13-20260802",
+      "to_session": "",
+      "from_role": "runner",
+      "to_role": "coordinator",
+      "data": "Stage 9 remediation complete for M13. Resolved F-03..F-07 in ac5bac6. F-03 parseFormula BuildDeps; F-04 selection test; F-05 View non-Loading + TestDepsTabLoads unit; F-06 committed; F-07 backlog B-02. Also fixed tab/panel key fallthrough dropping loadTabContent cmd. Hand-off (d) → stage 10 re-review.",
+      "session_boundary": "",
+      "evidence": "git show ac5bac6; go test -race ./internal/brew/ ./internal/gui/...; mp reviews finding list 13 --summary",
+      "created_at": "2026-08-02T11:10:37.301970+00:00"
     }
   ]
 }
