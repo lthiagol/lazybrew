@@ -3,6 +3,7 @@ package brew
 import (
 	"context"
 	"strings"
+	"time"
 )
 
 type DiagnosticsReader interface {
@@ -11,6 +12,7 @@ type DiagnosticsReader interface {
 	Vulns(ctx context.Context) (string, error)
 	Config(ctx context.Context) (*BrewConfig, error)
 	Version(ctx context.Context) (string, error)
+	SetCacheTTLs(ttls CacheTTLs)
 }
 
 type DiagnosticsWriter interface {
@@ -25,8 +27,9 @@ type MissingDep struct {
 }
 
 type diagnosticsReader struct {
-	runner Runner
-	cache  *Cache
+	runner    Runner
+	cache     *Cache
+	doctorTTL time.Duration
 }
 
 type diagnosticsWriter struct {
@@ -59,13 +62,21 @@ func (s *diagnosticsReader) Doctor(ctx context.Context) ([]DoctorWarning, error)
 
 	text := string(output)
 	if strings.Contains(text, "Your system is ready to brew") {
-		s.cache.Set(KeyDoctorResult, []DoctorWarning{})
+		s.cache.SetWithTTL(KeyDoctorResult, []DoctorWarning{}, s.doctorTTL)
 		return []DoctorWarning{}, nil
 	}
 
 	warnings := parseDoctorWarnings(text)
-	s.cache.Set(KeyDoctorResult, warnings)
+	s.cache.SetWithTTL(KeyDoctorResult, warnings, s.doctorTTL)
 	return warnings, nil
+}
+
+// SetCacheTTLs configures the cache TTL for `brew doctor` results.
+// Implements TTLSetter.
+func (s *diagnosticsReader) SetCacheTTLs(ttls CacheTTLs) {
+	if ttls.Doctor > 0 {
+		s.doctorTTL = ttls.Doctor
+	}
 }
 
 func parseDoctorWarnings(text string) []DoctorWarning {

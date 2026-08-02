@@ -535,7 +535,7 @@ func TestFormulaeOutdatedCachesWithinTTL(t *testing.T) {
 	}
 	cache := NewCache(time.Minute)
 	reader := NewFormulaeReader(r, cache)
-	reader.SetOutdatedTTL(time.Hour)
+	reader.SetCacheTTLs(CacheTTLs{Outdated: time.Hour})
 
 	for i := 0; i < 5; i++ {
 		_, err := reader.Outdated(context.Background())
@@ -558,7 +558,7 @@ func TestFormulaeOutdatedRespectsOutdatedTTL(t *testing.T) {
 	// Cache default is 1 minute but we want a 50ms Outdated TTL.
 	cache := NewCache(time.Minute)
 	reader := NewFormulaeReader(r, cache)
-	reader.SetOutdatedTTL(50 * time.Millisecond)
+	reader.SetCacheTTLs(CacheTTLs{Outdated: 50 * time.Millisecond})
 
 	_, _ = reader.Outdated(context.Background())
 	time.Sleep(75 * time.Millisecond)
@@ -566,5 +566,65 @@ func TestFormulaeOutdatedRespectsOutdatedTTL(t *testing.T) {
 
 	if got := atomic.LoadInt32(&calls); got != 2 {
 		t.Errorf("expected 2 shell invocations (one after TTL expires), got %d", got)
+	}
+}
+
+// TestFormulaeListHonoursFormulaeTTL locks the M12 per-class TTL
+// behaviour: SetCacheTTLs{Formulae: ...} wires the formulae list cache,
+// independent of the Outdated TTL.
+func TestFormulaeListHonoursFormulaeTTL(t *testing.T) {
+	r := newMockFormulaeRunner()
+	var calls int32
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		atomic.AddInt32(&calls, 1)
+		return []byte(sampleFormulaeJSON), nil
+	}
+	// Cache default 50ms, formulae TTL 1h.
+	cache := NewCache(50 * time.Millisecond)
+	reader := NewFormulaeReader(r, cache)
+	reader.SetCacheTTLs(CacheTTLs{Formulae: time.Hour})
+
+	for i := 0; i < 3; i++ {
+		_, err := reader.List(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Errorf("expected 1 list shell call across 3 reads within formulae TTL, got %d", got)
+	}
+}
+
+// TestFormulaeTTLDontAffectOutdated: changing formulae TTL must not
+// accidentally widen the outdated TTL.
+func TestFormulaeTTLDontAffectOutdated(t *testing.T) {
+	r := newMockFormulaeRunner()
+	var formulaeCalls, outdatedCalls int32
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		switch {
+		case len(args) >= 1 && args[0] == "info":
+			atomic.AddInt32(&formulaeCalls, 1)
+			return []byte(sampleFormulaeJSON), nil
+		case len(args) >= 1 && args[0] == "outdated":
+			atomic.AddInt32(&outdatedCalls, 1)
+			return []byte(sampleOutdatedJSON), nil
+		}
+		return []byte{}, nil
+	}
+	cache := NewCache(50 * time.Millisecond)
+	reader := NewFormulaeReader(r, cache)
+	reader.SetCacheTTLs(CacheTTLs{Formulae: time.Hour}) // outdated TTL stays 0 → default 50ms
+
+	_, _ = reader.List(context.Background())
+	_, _ = reader.Outdated(context.Background())
+	time.Sleep(75 * time.Millisecond)
+	_, _ = reader.List(context.Background())     // formulae TTL 1h → hit
+	_, _ = reader.Outdated(context.Background()) // outdated TTL 50ms → miss
+
+	if formulaeCalls != 1 {
+		t.Errorf("expected 1 formulae list call, got %d", formulaeCalls)
+	}
+	if outdatedCalls != 2 {
+		t.Errorf("expected 2 outdated calls (initial + after TTL expiry), got %d", outdatedCalls)
 	}
 }

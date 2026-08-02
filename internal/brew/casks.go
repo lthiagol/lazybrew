@@ -10,7 +10,7 @@ type CasksReader interface {
 	List(ctx context.Context) ([]Cask, error)
 	Get(ctx context.Context, name string) (*Cask, error)
 	Outdated(ctx context.Context) ([]Cask, error)
-	SetOutdatedTTL(ttl time.Duration)
+	SetCacheTTLs(ttls CacheTTLs)
 }
 
 type CasksWriter interface {
@@ -26,6 +26,7 @@ type CasksWriter interface {
 type casksReader struct {
 	runner      Runner
 	cache       *Cache
+	casksTTL    time.Duration
 	outdatedTTL time.Duration
 	sf          *singleflight
 }
@@ -133,7 +134,7 @@ func (s *casksReader) List(ctx context.Context) ([]Cask, error) {
 		casks = append(casks, parseCask(c))
 	}
 
-	s.cache.Set(KeyCasksList, casks)
+	s.cache.SetWithTTL(KeyCasksList, casks, s.casksTTL)
 	return casks, nil
 }
 
@@ -213,11 +214,15 @@ func (s *casksReader) fetchOutdated(ctx context.Context) (any, error) {
 	return outdated, nil
 }
 
-// SetOutdatedTTL configures how long `brew outdated --cask` results are
-// reused. Implements TTLSetter. A value <= 0 preserves the cache default.
-func (s *casksReader) SetOutdatedTTL(ttl time.Duration) {
-	if ttl > 0 {
-		s.outdatedTTL = ttl
+// SetCacheTTLs configures how long `brew list --cask` and
+// `brew outdated --cask` results are reused. Implements TTLSetter.
+// Values <= 0 preserve the cache default for that class.
+func (s *casksReader) SetCacheTTLs(ttls CacheTTLs) {
+	if ttls.Casks > 0 {
+		s.casksTTL = ttls.Casks
+	}
+	if ttls.Outdated > 0 {
+		s.outdatedTTL = ttls.Outdated
 	}
 }
 

@@ -14,7 +14,7 @@ type FormulaeReader interface {
 	Leaves(ctx context.Context) ([]string, error)
 	Deps(ctx context.Context, name string) (string, error)
 	Uses(ctx context.Context, name string) ([]string, error)
-	SetOutdatedTTL(ttl time.Duration)
+	SetCacheTTLs(ttls CacheTTLs)
 }
 
 type FormulaeWriter interface {
@@ -29,6 +29,7 @@ type FormulaeWriter interface {
 type formulaeReader struct {
 	runner      Runner
 	cache       *Cache
+	formulaeTTL time.Duration
 	outdatedTTL time.Duration
 	sf          *singleflight
 }
@@ -132,7 +133,7 @@ func (s *formulaeReader) List(ctx context.Context) ([]Formula, error) {
 		formulae = append(formulae, formula)
 	}
 
-	s.cache.Set(KeyFormulaeList, formulae)
+	s.cache.SetWithTTL(KeyFormulaeList, formulae, s.formulaeTTL)
 	return formulae, nil
 }
 
@@ -206,13 +207,17 @@ func (s *formulaeReader) fetchOutdated(ctx context.Context) (any, error) {
 	return outdated, nil
 }
 
-// SetOutdatedTTL configures how long `brew outdated` results are reused.
-// Implements TTLSetter so *Client.SetOutdatedTTL can propagate config
-// without leaking the concrete type. A value <= 0 leaves the cache
-// default TTL (30s) in effect, preserving the pre-M9 behavior.
-func (s *formulaeReader) SetOutdatedTTL(ttl time.Duration) {
-	if ttl > 0 {
-		s.outdatedTTL = ttl
+// SetCacheTTLs configures how long `brew list` and `brew outdated` results
+// are reused. Implements TTLSetter so *Client.SetCacheTTLs can propagate
+// config without leaking the concrete type. Values <= 0 leave the cache
+// default TTL (30s) in effect for that class, preserving pre-M9/M12
+// behavior.
+func (s *formulaeReader) SetCacheTTLs(ttls CacheTTLs) {
+	if ttls.Formulae > 0 {
+		s.formulaeTTL = ttls.Formulae
+	}
+	if ttls.Outdated > 0 {
+		s.outdatedTTL = ttls.Outdated
 	}
 }
 

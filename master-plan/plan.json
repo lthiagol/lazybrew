@@ -594,8 +594,8 @@
     {
       "id": "12",
       "title": "M28 Tiered Refresh and Polling Strategy",
-      "spec_status": "ready",
-      "execution_status": "planned",
+      "spec_status": "verified",
+      "execution_status": "done",
       "blocked_by": ""
     },
     {

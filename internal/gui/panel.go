@@ -294,12 +294,11 @@ func initPanels() []*panelData {
 		{PanelSearch, "Search"},
 	}
 	for i, def := range panelDefs {
-		// Outdated is lazy (M9): Init does not fetch it, so it must not
-		// enter loading state until the user actually visits the panel.
-		loading := true
-		if def.id == PanelSearch || def.id == PanelOutdated {
-			loading = false
-		}
+		// M12: every panel starts with loading=false. Init only fetches
+		// the active panel (Status by default); everything else lazy-
+		// loads on first switchPanel via lazyLoadPanel(). RefreshMsg
+		// sets loading=true on the panels it re-fetches.
+		loading := false
 		panels[i] = &panelData{
 			id:      def.id,
 			title:   def.title,

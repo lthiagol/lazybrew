@@ -3,9 +3,9 @@
     "id": "12",
     "title": "M28 Tiered Refresh and Polling Strategy",
     "slug": "m28-tiered-refresh-and-polling-strategy",
-    "lifecycle": "approved",
-    "spec_status": "ready",
-    "execution_status": "planned",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -20,13 +20,13 @@
     "change_kind": "",
     "priority": "normal",
     "created": "2026-07-30",
-    "updated": "2026-08-01",
+    "updated": "2026-08-02",
     "blocked_at": "",
     "block_reason": "",
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-01T21:13:15.350672+00:00"
+    "lifecycle_at": "2026-08-02T12:53:06.767096+00:00"
   },
   "intent": {
     "outcome": "Refresh is tiered: per-data-class TTLs in config; panels fetch on first select (lazy); auto-refresh and scheduled work pause briefly after user key activity so typing/navigation is not janked by full refresh storms."
@@ -55,29 +55,29 @@
       "id": "AC-01",
       "description": "Config exposes independent TTL fields for at least formulae, casks, outdated, taps (and services or doctor); defaults applied in Default().",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M12 complete. S1-S5 done. 4/4 ACs passed. Self-finding F-01 (doc on fetchPanelData Status default-case) resolved inline. Code review clean. make test/vet/lint/cover-check all green. Found and fixed initPanels loading-default bug that would have blocked lazy loads."
     },
     {
       "id": "AC-02",
       "description": "With default config, Init does not fetch every panel; inactive panels fetch on first select.",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M12 complete. S1-S5 done. 4/4 ACs passed. Self-finding F-01 (doc on fetchPanelData Status default-case) resolved inline. Code review clean. make test/vet/lint/cover-check all green. Found and fixed initPanels loading-default bug that would have blocked lazy loads."
     },
     {
       "id": "AC-03",
       "description": "Auto-refresh tick defers when a key was handled within the pause window (default 500ms).",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M12 complete. S1-S5 done. 4/4 ACs passed. Self-finding F-01 (doc on fetchPanelData Status default-case) resolved inline. Code review clean. make test/vet/lint/cover-check all green. Found and fixed initPanels loading-default bug that would have blocked lazy loads."
     },
     {
       "id": "AC-04",
       "description": "Manual R refresh still forces refresh of the active panel (and documented related classes) even if TTL not expired.",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M12 complete. S1-S5 done. 4/4 ACs passed. Self-finding F-01 (doc on fetchPanelData Status default-case) resolved inline. Code review clean. make test/vet/lint/cover-check all green. Found and fixed initPanels loading-default bug that would have blocked lazy loads."
     }
   ],
   "design_decisions": [
@@ -112,7 +112,7 @@
       ],
       "tests": "go test -race ./internal/config/",
       "done_when": "Defaults + parse tests",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-01"
       ],
@@ -133,7 +133,7 @@
       ],
       "tests": "go test -race ./internal/gui/ -run Init\\|Lazy\\|Panel",
       "done_when": "Init brew call count reduced",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-02"
       ],
@@ -157,7 +157,7 @@
       ],
       "tests": "go test -race ./internal/gui/ -run Refresh\\|TTL",
       "done_when": "Stale-only auto path; R force",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-01",
         "AC-04"
@@ -181,7 +181,7 @@
       ],
       "tests": "go test -race ./internal/gui/ -run Pause\\|AutoRefresh\\|Interaction",
       "done_when": "TestPauseOnInteraction green",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-03"
       ],
@@ -222,8 +222,22 @@
     }
   ],
   "verification": {
-    "date": "",
+    "date": "2026-08-02",
     "branch": "",
-    "evidence": ""
-  }
+    "evidence": "M12 complete. S1-S5 done. 4/4 ACs passed. Self-finding F-01 (doc on fetchPanelData Status default-case) resolved inline. Code review clean. make test/vet/lint/cover-check all green. Found and fixed initPanels loading-default bug that would have blocked lazy loads."
+  },
+  "findings": [
+    {
+      "id": "F-01",
+      "severity": "low",
+      "category": "doc",
+      "description": "fetchPanelData(PanelStatus) default-case returns empty DataLoadedMsg. Init handles Status via fetchStatusData directly. Document this in fetchPanelData so future maintainers know to keep the explicit Status branch in Init. Low priority.",
+      "status": "fixed",
+      "author": "runner",
+      "fixed_in": "aae2b55322266b297876394e1ac22d7c673903f4",
+      "created": "2026-08-02",
+      "resolved": "2026-08-02",
+      "phase": "self"
+    }
+  ]
 }

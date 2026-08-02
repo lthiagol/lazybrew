@@ -204,3 +204,38 @@ func TestCacheSetWithoutTTLStillUsesDefault(t *testing.T) {
 		t.Error("expected miss after cache default TTL elapsed (plain Set, no per-entry ttl)")
 	}
 }
+
+// TestCacheSetWithTTLAllKeys locks the M12 promise: every per-class cache
+// key (formulae/casks/taps/services/doctor/outdated) can carry its own
+// TTL override without coupling the entries together.
+func TestCacheSetWithTTLAllKeys(t *testing.T) {
+	c := NewCache(50 * time.Millisecond)
+	c.SetWithTTL(KeyFormulaeList, "f", 1*time.Hour)
+	c.SetWithTTL(KeyCasksList, "c", 1*time.Hour)
+	c.SetWithTTL(KeyTapsList, "t", 1*time.Hour)
+	c.SetWithTTL(KeyServicesList, "s", 1*time.Hour)
+	c.SetWithTTL(KeyDoctorResult, "d", 1*time.Hour)
+	c.SetWithTTL(KeyOutdatedFormulae, "of", 1*time.Hour)
+	c.SetWithTTL(KeyOutdatedCasks, "oc", 1*time.Hour)
+
+	// Wait past cache default; per-entry TTL should keep all entries fresh.
+	time.Sleep(75 * time.Millisecond)
+	for key, want := range map[CacheKey]string{
+		KeyFormulaeList:     "f",
+		KeyCasksList:        "c",
+		KeyTapsList:         "t",
+		KeyServicesList:     "s",
+		KeyDoctorResult:     "d",
+		KeyOutdatedFormulae: "of",
+		KeyOutdatedCasks:    "oc",
+	} {
+		v, ok := c.Get(key)
+		if !ok {
+			t.Errorf("%s: expected hit (per-entry TTL 1h, cache default 50ms expired)", key)
+			continue
+		}
+		if s, _ := v.(string); s != want {
+			t.Errorf("%s: got %q, want %q", key, s, want)
+		}
+	}
+}
