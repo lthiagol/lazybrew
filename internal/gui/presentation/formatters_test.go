@@ -110,9 +110,17 @@ func TestFormatDoctorStatus(t *testing.T) {
 		t.Errorf("expected No issues, got: %s", clean)
 	}
 
-	warnings := FormatDoctorStatus([]brew.DoctorWarning{{Title: "test"}}, nil)
-	if !strings.Contains(warnings, "1 warning") {
-		t.Errorf("expected 1 warning, got: %s", warnings)
+	one := FormatDoctorStatus([]brew.DoctorWarning{{Title: "test"}}, nil)
+	if one != "Doctor: 1 warning" {
+		t.Errorf("singular want %q, got %q", "Doctor: 1 warning", one)
+	}
+	if strings.Contains(one, "warnings") {
+		t.Errorf("singular must not use plural 'warnings', got: %s", one)
+	}
+
+	many := FormatDoctorStatus([]brew.DoctorWarning{{Title: "a"}, {Title: "b"}}, nil)
+	if many != "Doctor: 2 warnings" {
+		t.Errorf("plural want %q, got %q", "Doctor: 2 warnings", many)
 	}
 
 	unavailable := FormatDoctorStatus(nil, errors.New("brew not found"))
