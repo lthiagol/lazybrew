@@ -19,20 +19,22 @@ func (m Model) renderSidebar() string {
 	var boxes []string
 	for i, p := range m.panels {
 		active := i == int(m.activePanel)
-		prefix := strconv.Itoa(i+1) + " "
-		title := prefix + p.title
-		if p.loading {
-			title += style.SubtleText.Render("  " + m.spinner.View())
-		} else if count := p.itemCount(); count > 0 {
-			title += style.SubtleText.Render("  " + strconv.Itoa(count))
-		}
+		// Style the label alone, then append spinner/count so title styles
+		// cannot override the spinner's Accent foreground (M15).
+		label := strconv.Itoa(i+1) + " " + p.title
 		var titleLine string
 		if active {
-			titleLine = style.ActivePanelBg.Width(contentWidth).Render(
-				style.PanelTitleActive.Render(title),
-			)
+			titleLine = style.PanelTitleActive.Render(label)
 		} else {
-			titleLine = style.PanelTitle.Render(title)
+			titleLine = style.PanelTitle.Render(label)
+		}
+		if p.loading {
+			titleLine += "  " + m.spinner.View()
+		} else if count := p.itemCount(); count > 0 {
+			titleLine += style.SubtleText.Render("  " + strconv.Itoa(count))
+		}
+		if active {
+			titleLine = style.ActivePanelBg.Width(contentWidth).Render(titleLine)
 		}
 		itemsMaxRows := max(0, heights[i]-1)
 		p.visibleRows = itemsMaxRows
@@ -200,7 +202,9 @@ func (m Model) renderContent(width, height int) string {
 	}
 
 	panel := m.panels[m.activePanel]
-	if panel.loading {
+	// PanelSearch has its own " Searching..." path below; skip the generic
+	// Loading... early-return so that label is reachable (M15 AC-03).
+	if panel.loading && m.activePanel != PanelSearch {
 		return m.spinner.View() + style.SubtleText.Render(" Loading...")
 	}
 

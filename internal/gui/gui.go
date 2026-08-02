@@ -87,7 +87,8 @@ func (m *Model) SetProgram(p *tea.Program) {
 func New(client *brew.Client, cfg *config.Config) *Model {
 	panels := initPanels()
 	cl := NewCommandLog(20)
-	s := spinner.New(spinner.WithStyle(style.SubtleText))
+	s := spinner.New(spinner.WithStyle(style.AccentText))
+	s.Spinner = spinner.Dot
 	ti := textinput.New()
 	ti.Placeholder = "Search packages..."
 	ti.Width = 40
