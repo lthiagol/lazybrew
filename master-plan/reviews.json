@@ -63,6 +63,14 @@
       "reviewed_at": "2026-08-02",
       "notes": "External review + remediation clean. F-02 pluralization fixed; F-03 Doctor tab tests added; F-04 process note closed. Core M10 doctor exit=1 + dashboard error surface solid (e00cefa + 6c18580).",
       "milestone_completed_at": "2026-08-02"
+    },
+    {
+      "milestone_id": "09",
+      "verdict": "ok",
+      "reviewer": "coordinator",
+      "reviewed_at": "2026-08-02",
+      "notes": "External review + remediation clean. F-03 refresh counter fixed; F-04 singleflight defer; F-05 process/backlog. Core M9 lazy+TTL+coalesce solid (5ae1373 + 367bbef).",
+      "milestone_completed_at": "2026-08-02"
     }
   ],
   "comments": [],
