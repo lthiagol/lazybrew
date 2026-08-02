@@ -43,13 +43,16 @@ func TestSearchFlow(t *testing.T) {
 func TestHelpFlow(t *testing.T) {
 	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
 	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	// Assert overlay-only copy before Esc/q — footer always has "? help",
+	// which must not count as proof the Help overlay opened.
+	teatest.WaitFor(t, tm.Output(), func(bts []byte) bool {
+		s := string(bts)
+		return strings.Contains(s, "Press ? or Esc to close") ||
+			(strings.Contains(s, "Help") && strings.Contains(s, "close"))
+	}, teatest.WithDuration(2*time.Second), teatest.WithCheckInterval(50*time.Millisecond))
 	tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
 	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
-	out := readOutput(t, tm.FinalOutput(t))
-	if !strings.Contains(out, "Help") && !strings.Contains(out, "?") {
-		t.Fatalf("expected Help overlay in output, got:\n%s", out[:min(len(out), 500)])
-	}
 }
 
 func TestRefreshFlow(t *testing.T) {
