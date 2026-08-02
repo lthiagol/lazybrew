@@ -124,27 +124,64 @@ func ansiPad(s string, width int) string {
 }
 
 func formulaeTableColWidths(total int) (nameW, verW, statusW, tapW int) {
-	// Min widths; Name flexes with the remainder.
-	verW, statusW, tapW = 16, 10, 8
-	const gaps = 3 // single spaces between 4 columns
-	minFixed := verW + statusW + tapW + gaps
-	if total < minFixed+8 {
-		// Shrink fixed columns on tiny panes.
-		verW, statusW, tapW = 12, 9, 6
-		minFixed = verW + statusW + tapW + gaps
-	}
-	nameW = total - minFixed
-	if nameW < 8 {
-		nameW = 8
-	}
-	// Reconcile if total is smaller than mins.
-	used := nameW + verW + statusW + tapW + gaps
-	if used > total && total > gaps {
-		over := used - total
-		nameW -= over
-		if nameW < 4 {
-			nameW = 4
+	// Min widths; Name flexes with the remainder. gaps = 3 spaces between 4 cols.
+	const gaps = 3
+	if total <= gaps+4 {
+		// Degenerate pane: give every column at least 1 cell.
+		each := max(1, (total-gaps)/4)
+		nameW, verW, statusW, tapW = each, each, each, each
+		// Fix remainder on Name.
+		nameW += total - (nameW + verW + statusW + tapW + gaps)
+		if nameW < 1 {
+			nameW = 1
 		}
+		return nameW, verW, statusW, tapW
+	}
+	verW, statusW, tapW = 16, 10, 8
+	if total < verW+statusW+tapW+gaps+8 {
+		verW, statusW, tapW = 12, 9, 6
+	}
+	nameW = total - (verW + statusW + tapW + gaps)
+	if nameW < 4 {
+		// Steal from fixed columns until Name has room or mins hit.
+		need := 4 - nameW
+		for need > 0 && (verW > 4 || statusW > 4 || tapW > 3) {
+			if verW > 4 {
+				verW--
+				need--
+				continue
+			}
+			if statusW > 4 {
+				statusW--
+				need--
+				continue
+			}
+			if tapW > 3 {
+				tapW--
+				need--
+			}
+		}
+		nameW = total - (verW + statusW + tapW + gaps)
+	}
+	if nameW < 1 {
+		nameW = 1
+		// Last resort: force exact sum by shrinking tap/status/ver.
+		for nameW+verW+statusW+tapW+gaps > total {
+			if tapW > 1 {
+				tapW--
+			} else if statusW > 1 {
+				statusW--
+			} else if verW > 1 {
+				verW--
+			} else {
+				break
+			}
+		}
+	}
+	// Exact fill: leftover → Name.
+	used := nameW + verW + statusW + tapW + gaps
+	if used < total {
+		nameW += total - used
 	}
 	return nameW, verW, statusW, tapW
 }
