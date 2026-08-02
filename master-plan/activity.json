@@ -330,6 +330,66 @@
       "type": "lifecycle-transition",
       "subject": "16",
       "summary": "lifecycle: groomed → approved"
+    },
+    {
+      "timestamp": "2026-08-01T21:13:15.238021+00:00",
+      "type": "lifecycle-transition",
+      "subject": "13",
+      "summary": "lifecycle: draft → approved"
+    },
+    {
+      "timestamp": "2026-08-01T21:13:15.274691+00:00",
+      "type": "lifecycle-transition",
+      "subject": "10",
+      "summary": "lifecycle: draft → approved"
+    },
+    {
+      "timestamp": "2026-08-01T21:13:15.304687+00:00",
+      "type": "lifecycle-transition",
+      "subject": "09",
+      "summary": "lifecycle: draft → approved"
+    },
+    {
+      "timestamp": "2026-08-01T21:13:15.337705+00:00",
+      "type": "lifecycle-transition",
+      "subject": "11",
+      "summary": "lifecycle: draft → approved"
+    },
+    {
+      "timestamp": "2026-08-01T21:13:15.360931+00:00",
+      "type": "lifecycle-transition",
+      "subject": "12",
+      "summary": "lifecycle: draft → approved"
+    },
+    {
+      "timestamp": "2026-08-01T21:13:15.395683+00:00",
+      "type": "lifecycle-transition",
+      "subject": "08",
+      "summary": "lifecycle: draft → approved"
+    },
+    {
+      "timestamp": "2026-08-02T01:34:10.385830+00:00",
+      "type": "execution-handoff",
+      "subject": "",
+      "summary": "execution handed off by runner-agent (0 milestone(s) ready)"
+    },
+    {
+      "timestamp": "2026-08-02T01:34:11.647004+00:00",
+      "type": "lifecycle-transition",
+      "subject": "13",
+      "summary": "lifecycle: approved → in-progress"
+    },
+    {
+      "timestamp": "2026-08-02T10:46:50.681730+00:00",
+      "type": "lifecycle-transition",
+      "subject": "13",
+      "summary": "lifecycle: in-progress → complete"
+    },
+    {
+      "timestamp": "2026-08-02T11:02:37.834595+00:00",
+      "type": "lifecycle-transition",
+      "subject": "13",
+      "summary": "lifecycle: complete → remediation"
     }
   ]
 }

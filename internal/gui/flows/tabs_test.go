@@ -21,3 +21,7 @@ func TestTabsFlow(t *testing.T) {
 		t.Log("output (first 500):", out[:min(len(out), 500)])
 	}
 }
+
+// AC-03 Deps load regression is covered by gui.TestDepsTabLoads (deterministic
+// Update/View path). teatest FinalOutput is cumulative/cleared on quit and was
+// a flaky host for the same assertion (see M13 F-05).

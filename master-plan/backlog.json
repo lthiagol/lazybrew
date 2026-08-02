@@ -9,6 +9,16 @@
       "status": "active",
       "resolution": "",
       "resolved_at": ""
+    },
+    {
+      "id": "B-02",
+      "description": "Apply context timeouts to remaining brew fetch paths (fetchPanelData, fetchStatusData, fetchSelectedSearchInfo, executeSearch) — residual from M13 F-02/F-07",
+      "source": "M13 external review F-07",
+      "suggested_when": "",
+      "priority": "medium",
+      "status": "active",
+      "resolution": "",
+      "resolved_at": ""
     }
   ]
 }

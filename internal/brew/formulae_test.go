@@ -146,6 +146,12 @@ func TestFormulaeReaderList(t *testing.T) {
 	if !python.Pinned {
 		t.Error("python@3.12 should be pinned")
 	}
+	if len(python.Dependencies) != 3 {
+		t.Errorf("python Dependencies = %v, want [openssl xz zlib]", python.Dependencies)
+	}
+	if len(python.BuildDeps) != 1 || python.BuildDeps[0] != "pkg-config" {
+		t.Errorf("python BuildDeps = %v, want [pkg-config] (from build_dependencies, not dependencies)", python.BuildDeps)
+	}
 
 	fish := formulae[2]
 	if fish.Version != "3.7.1" {
@@ -153,6 +159,43 @@ func TestFormulaeReaderList(t *testing.T) {
 	}
 	if fish.Bottled {
 		t.Error("fish should not be bottled (empty files map)")
+	}
+	if len(fish.Dependencies) != 0 {
+		t.Errorf("uninstalled fish Dependencies = %v, want empty (no installed runtime_dependencies)", fish.Dependencies)
+	}
+	if len(fish.BuildDeps) != 1 || fish.BuildDeps[0] != "cmake" {
+		t.Errorf("fish BuildDeps = %v, want [cmake]", fish.BuildDeps)
+	}
+}
+
+func TestParseFormulaBuildDepsFromBuildDependencies(t *testing.T) {
+	raw := `{
+		"name":"tool","full_name":"tool","tap":"homebrew/core",
+		"versions":{"stable":"1.0"},"desc":"","homepage":"","license":"",
+		"installed":[{"version":"1.0","installed_on_request":true,
+			"installed_as_dependency":false,"time":1700000000,
+			"runtime_dependencies":["runtime-a"]}],
+		"dependencies":[{"name":"runtime-a"}],
+		"build_dependencies":["build-only"],
+		"caveats":"","keg_only":false,
+		"bottle":{"stable":{"files":{}}},
+		"pinned":false
+	}`
+	var fj formulaJSON
+	if err := json.Unmarshal([]byte(raw), &fj); err != nil {
+		t.Fatal(err)
+	}
+	f := parseFormula(fj)
+	if len(f.Dependencies) != 1 || f.Dependencies[0] != "runtime-a" {
+		t.Errorf("Dependencies = %v, want [runtime-a]", f.Dependencies)
+	}
+	if len(f.BuildDeps) != 1 || f.BuildDeps[0] != "build-only" {
+		t.Errorf("BuildDeps = %v, want [build-only]", f.BuildDeps)
+	}
+	for _, d := range f.BuildDeps {
+		if d == "runtime-a" {
+			t.Error("BuildDeps must not contain runtime dependency runtime-a")
+		}
 	}
 }
 

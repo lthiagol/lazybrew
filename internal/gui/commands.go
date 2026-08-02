@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/lthiagol/lazybrew/internal/brew"
@@ -13,6 +14,12 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
+
+// fetchTabContentTimeout bounds the time a tab-content fetch (brew deps --tree,
+// brew uses, brew list, doctor, config) is allowed to run before it is
+// cancelled and surfaced as an error in the tab body. The default is generous
+// because brew deps --tree can be slow on big trees; tests override it.
+var fetchTabContentTimeout = 15 * time.Second
 
 func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, tea.Cmd) {
 	switch r := result.(type) {
@@ -769,14 +776,62 @@ func (m *Model) loadTabContent() tea.Cmd {
 		if _, ok := m.tabContent[key]; ok {
 			return nil
 		}
+		if content, ok := renderCachedTabContent(panelID, tabIdx, panel); ok {
+			m.tabContent[key] = content
+			return nil
+		}
 		return fetchTabContentCmd(m.client, panelID, tabIdx, name)
 	}
 	return nil
 }
 
+// renderCachedTabContent returns a body string for tabs whose content is
+// already on the model (avoids shelling out for data we already have).
+// Returns ok=false when no fast path applies so the caller falls through to
+// fetchTabContentCmd. The boolean lets the caller distinguish "rendered
+// something terminal" from "no fast path" — empty strings still count as
+// a terminal state (e.g. "No dependencies").
+func renderCachedTabContent(panelID PanelID, tabIdx int, panel *panelData) (string, bool) {
+	if panelID == PanelFormulae && tabIdx == 1 {
+		f := panel.selectedFormula()
+		if f == nil {
+			return "", false
+		}
+		return renderFormulaDeps(f), true
+	}
+	return "", false
+}
+
+// renderFormulaDeps formats the flat dependency list already on the
+// Formula model (runtime + build deps). Returns "No dependencies" when the
+// formula declares none, so the tab always reaches a terminal state without
+// shelling out.
+func renderFormulaDeps(f *brew.Formula) string {
+	runtime := f.Dependencies
+	build := f.BuildDeps
+	if len(runtime) == 0 && len(build) == 0 {
+		return "No dependencies"
+	}
+	var b strings.Builder
+	if len(runtime) > 0 {
+		b.WriteString("Runtime:\n")
+		for _, d := range runtime {
+			b.WriteString("  " + d + "\n")
+		}
+	}
+	if len(build) > 0 {
+		b.WriteString("Build:\n")
+		for _, d := range build {
+			b.WriteString("  " + d + "\n")
+		}
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
 func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string) tea.Cmd {
 	return func() tea.Msg {
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), fetchTabContentTimeout)
+		defer cancel()
 		switch panel {
 		case PanelStatus:
 			if tab == 1 {
