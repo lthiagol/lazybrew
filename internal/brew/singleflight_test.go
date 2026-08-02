@@ -181,7 +181,6 @@ func TestSingleflightPropagatesError(t *testing.T) {
 	}
 }
 
-
 func TestSingleflightPanicUnblocksWaiters(t *testing.T) {
 	sf := newSingleflight()
 	gate := make(chan struct{})

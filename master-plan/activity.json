@@ -492,6 +492,18 @@
       "type": "lifecycle-transition",
       "subject": "12",
       "summary": "lifecycle: remediation → complete"
+    },
+    {
+      "timestamp": "2026-08-02T13:03:35.681456+00:00",
+      "type": "lifecycle-transition",
+      "subject": "08",
+      "summary": "lifecycle: approved → in-progress"
+    },
+    {
+      "timestamp": "2026-08-02T13:09:49.196277+00:00",
+      "type": "lifecycle-transition",
+      "subject": "08",
+      "summary": "lifecycle: in-progress → complete"
     }
   ]
 }

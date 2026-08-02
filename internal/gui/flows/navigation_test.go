@@ -43,11 +43,12 @@ func TestSearchFlow(t *testing.T) {
 func TestHelpFlow(t *testing.T) {
 	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
 	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
 	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
 	out := readOutput(t, tm.FinalOutput(t))
 	if !strings.Contains(out, "Help") && !strings.Contains(out, "?") {
-		t.Log("output:", out)
+		t.Fatalf("expected Help overlay in output, got:\n%s", out[:min(len(out), 500)])
 	}
 }
 
