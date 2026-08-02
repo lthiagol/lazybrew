@@ -413,7 +413,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case RefreshMsg:
 		m.clearTabContent()
-		m.refreshing = 6
 		for _, p := range m.panels {
 			if p.id == PanelSearch || p.id == PanelOutdated {
 				continue
@@ -431,6 +430,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.panels[PanelOutdated].loading = true
 			cmds = append(cmds, fetchPanelData(m.client, PanelOutdated))
 		}
+		// Count only DataLoadedMsg producers so the "Data refreshed" toast
+		// fires when the last panel lands (M9: Outdated is optional).
+		m.refreshing = len(cmds)
 		if tick := m.autoRefreshCmd(); tick != nil {
 			cmds = append(cmds, tick)
 		}
