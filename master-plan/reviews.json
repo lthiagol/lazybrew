@@ -103,6 +103,14 @@
       "reviewed_at": "2026-08-02",
       "notes": "External review + remediation clean. Mocha theme, active sidebar, collapsible Log, busy border. F-03 AC-05 height via logLayoutHeights; F-04 commit. Self F-01 race + F-02 border budget in b70133a. 8/8 ACs green.",
       "milestone_completed_at": "2026-08-02"
+    },
+    {
+      "milestone_id": "15",
+      "verdict": "ok",
+      "reviewer": "coordinator",
+      "reviewed_at": "2026-08-02",
+      "notes": "External review + remediation. spinner.Dot + AccentText; Searching path fixed; F-02 Place bg pad preserves spinner Accent; F-01 Dot vs Dots naming. 3/3 ACs green.",
+      "milestone_completed_at": "2026-08-02"
     }
   ],
   "comments": [],
