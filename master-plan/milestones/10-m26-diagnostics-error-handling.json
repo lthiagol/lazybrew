@@ -3,9 +3,9 @@
     "id": "10",
     "title": "M26 Diagnostics Error Handling",
     "slug": "m26-diagnostics-error-handling",
-    "lifecycle": "remediation",
-    "spec_status": "implemented",
-    "execution_status": "in-progress",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -23,8 +23,7 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "remediation_pre_state": "complete",
-    "lifecycle_at": "2026-08-02T11:22:23.900205+00:00"
+    "lifecycle_at": "2026-08-02T11:23:10.757582+00:00"
   },
   "intent": {
     "outcome": "Doctor exit=1 is confirmed warning-path end-to-end: brew layer already parses warnings; GUI Status Doctor tab and d-key path never treat exit=1 as a hard error toast; residual swallowed errors on dashboard are fixed or explicitly accepted."
@@ -155,11 +154,11 @@
       "severity": "low",
       "category": "correctness",
       "description": "FormatDoctorStatus returns fmt.Sprintf(\"Doctor: %d warnings\", n) for all n>0, so singular is 'Doctor: 1 warnings'. Tests use Contains(\"1 warning\") which also matches the plural form, so the bug is masked. Fix pluralization (1 warning / N warnings) and assert exact or non-plural for n=1.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "6c18580a52c0cb5b626c640b9ad5c55e9ca4fe4f",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/gui/presentation/formatters.go",
@@ -176,11 +175,11 @@
       "severity": "medium",
       "category": "test-gap",
       "description": "AC-02 covers Doctor tab and d-key. Dashboard exit=1 is tested (TestStatusDashboardDoesNotWarnOnDoctorExitCode1) but fetchTabContentCmd PanelStatus tab=2 has no test that exit=1 yields Content with warnings and Err=nil, or that exit=2 yields Err (terminal error body, not spinner). Add TestDoctorTabExitCode1ShowsWarnings and TestDoctorTabRealErrorShowsError.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "6c18580a52c0cb5b626c640b9ad5c55e9ca4fe4f",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/gui/commands.go",
@@ -197,11 +196,11 @@
       "severity": "low",
       "category": "process",
       "description": "F-01 fixed_in=6e2f47a (docs plan checkpoint) but the err-beats-warnings test landed in e00cefa. Re-point fixed_in to the code commit when resolving; do not treat plan-only SHAs as code fixes.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "6c18580a52c0cb5b626c640b9ad5c55e9ca4fe4f",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "summary": "Self F-01 fixed_in points at docs plan commit, not M10 code"
     }
