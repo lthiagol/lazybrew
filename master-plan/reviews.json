@@ -58,5 +58,18 @@
     }
   ],
   "comments": [],
-  "handoffs": []
+  "handoffs": [
+    {
+      "id": "H-01",
+      "milestone_id": "13",
+      "from_session": "opencode-ext-review-m13-20260802",
+      "to_session": "",
+      "from_role": "coordinator",
+      "to_role": "runner",
+      "data": "Stage 8 external review of M13 complete. 5 external findings filed (F-03..F-07): F-03 medium correctness (BuildDeps parse/fast-path labeling), F-04 medium test-gap (AC-02), F-05 low test-reliability (AC-03 assert), F-06 medium process (uncommitted + bad fixed_in), F-07 low process (F-02 false fixed). auto_remediate=none (all record-only; runner decides). push_after_review=false. What works: timeout on fetchTabContentCmd + CommandContext, DataLoadedMsg re-kick, exclusive fast path stops infinite Loading, unit tests for timeout/fast-path/DataLoaded, tests green with -race. Hand-off (c) → stage 9 remediate.",
+      "session_boundary": "",
+      "evidence": "mp reviews finding list 13; go test -race ./internal/gui/... exit 0; git status shows unstaged M13 code",
+      "created_at": "2026-08-02T11:02:44.852986+00:00"
+    }
+  ]
 }

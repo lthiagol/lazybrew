@@ -280,7 +280,7 @@ func parseFormula(f formulaJSON) Formula {
 		version = f.Versions.Stable
 	}
 
-	buildDeps := []string(f.Dependencies)
+	buildDeps := append([]string(nil), f.BuildDependencies...)
 
 	bottled := len(f.Bottle.Stable.Files) > 0
 

@@ -6,7 +6,7 @@
     "platforms": [],
     "created": "2026-07-19",
     "target_version": "",
-    "planning_status": "planning",
+    "planning_status": "in-execution",
     "planning_phase": "charter"
   },
   "charter": {
@@ -25,18 +25,492 @@
   "execution": {
     "strategy": "resume_then_ready",
     "interleave": "milestone",
-    "mode": "planning",
-    "handoff_at": "",
-    "handoff_by": "",
+    "mode": "autonomous",
+    "handoff_at": "2026-08-02T01:34:10.373202+00:00",
+    "handoff_by": "runner-agent",
     "focus_milestone": "",
     "focus_through_step": "",
     "adoption_order": [],
     "handoff_changed_milestones": [],
     "handoff_baseline": {
-      "planning_status": "",
-      "execution_mode": "",
-      "milestone_index": [],
-      "milestones": []
+      "planning_status": "in-execution",
+      "execution_mode": "autonomous",
+      "milestone_index": [
+        {
+          "id": "01",
+          "title": "Audit prior plan and open follow-up milestones",
+          "spec_status": "verified",
+          "execution_status": "done"
+        },
+        {
+          "id": "02",
+          "title": "Verify M15 cleanup (TypedCache panic + Reader/Writer splits)",
+          "spec_status": "verified",
+          "execution_status": "done"
+        },
+        {
+          "id": "03",
+          "title": "Decide coverage floor (brew 62%, presentation 91%)",
+          "spec_status": "verified",
+          "execution_status": "done"
+        },
+        {
+          "id": "04",
+          "title": "Update AGENTS.md release readiness checklist (close M17.3)",
+          "spec_status": "verified",
+          "execution_status": "done"
+        },
+        {
+          "id": "05",
+          "title": "Update AGENTS.md release readiness checklist (close M21.2)",
+          "spec_status": "verified",
+          "execution_status": "done"
+        },
+        {
+          "id": "06",
+          "title": "Push v1.0.0-rc1 tag and bump homebrew-tap Formula/lazybrew.rb",
+          "spec_status": "verified",
+          "execution_status": "done"
+        },
+        {
+          "id": "07",
+          "title": "Decide goreleaser vs manual tap-update path",
+          "spec_status": "verified",
+          "execution_status": "done"
+        },
+        {
+          "id": "08",
+          "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "09",
+          "title": "M25 Outdated Panel Performance",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "10",
+          "title": "M26 Diagnostics Error Handling",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "11",
+          "title": "M27 Taps Panel Batch Loading",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "12",
+          "title": "M28 Tiered Refresh and Polling Strategy",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "13",
+          "title": "Fix Deps tab infinite loading in Formulae panel",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "14",
+          "title": "Sidebar polish + log pane box + Catppuccin Mocha theme",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "15",
+          "title": "Loading state spinner upgrade",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        },
+        {
+          "id": "16",
+          "title": "Main panel tabs + Formulae table (pilot)",
+          "spec_status": "ready",
+          "execution_status": "planned"
+        }
+      ],
+      "milestones": [
+        {
+          "id": "01",
+          "title": "Audit prior plan and open follow-up milestones",
+          "spec_status": "verified",
+          "execution_status": "done",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "done"
+            },
+            {
+              "id": "S2",
+              "status": "done"
+            },
+            {
+              "id": "S3",
+              "status": "done"
+            },
+            {
+              "id": "S4",
+              "status": "done"
+            },
+            {
+              "id": "S5",
+              "status": "done"
+            },
+            {
+              "id": "S6",
+              "status": "done"
+            },
+            {
+              "id": "S6.1",
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "02",
+          "title": "Verify M15 cleanup (TypedCache panic + Reader/Writer splits)",
+          "spec_status": "verified",
+          "execution_status": "done",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "done"
+            },
+            {
+              "id": "S1.1",
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "03",
+          "title": "Decide coverage floor (brew 62%, presentation 91%)",
+          "spec_status": "verified",
+          "execution_status": "done",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "done"
+            },
+            {
+              "id": "S1.1",
+              "status": "done"
+            },
+            {
+              "id": "S1.1.1",
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "04",
+          "title": "Update AGENTS.md release readiness checklist (close M17.3)",
+          "spec_status": "verified",
+          "execution_status": "done",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "05",
+          "title": "Update AGENTS.md release readiness checklist (close M21.2)",
+          "spec_status": "verified",
+          "execution_status": "done",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "06",
+          "title": "Push v1.0.0-rc1 tag and bump homebrew-tap Formula/lazybrew.rb",
+          "spec_status": "verified",
+          "execution_status": "done",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "done"
+            },
+            {
+              "id": "S1.1",
+              "status": "done"
+            },
+            {
+              "id": "S1.1.1",
+              "status": "done"
+            },
+            {
+              "id": "S1.1.1.1",
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "07",
+          "title": "Decide goreleaser vs manual tap-update path",
+          "spec_status": "verified",
+          "execution_status": "done",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "done"
+            },
+            {
+              "id": "S1.1",
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "08",
+          "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "09",
+          "title": "M25 Outdated Panel Performance",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            },
+            {
+              "id": "S4",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "10",
+          "title": "M26 Diagnostics Error Handling",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "11",
+          "title": "M27 Taps Panel Batch Loading",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "12",
+          "title": "M28 Tiered Refresh and Polling Strategy",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            },
+            {
+              "id": "S4",
+              "status": "pending"
+            },
+            {
+              "id": "S5",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "13",
+          "title": "Fix Deps tab infinite loading in Formulae panel",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            },
+            {
+              "id": "S4",
+              "status": "pending"
+            },
+            {
+              "id": "S5",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "14",
+          "title": "Sidebar polish + log pane box + Catppuccin Mocha theme",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            },
+            {
+              "id": "S4",
+              "status": "pending"
+            },
+            {
+              "id": "S5",
+              "status": "pending"
+            },
+            {
+              "id": "S6",
+              "status": "pending"
+            },
+            {
+              "id": "S7",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "15",
+          "title": "Loading state spinner upgrade",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "16",
+          "title": "Main panel tabs + Formulae table (pilot)",
+          "spec_status": "ready",
+          "execution_status": "planned",
+          "updated": "2026-08-01",
+          "steps": [
+            {
+              "id": "S1",
+              "status": "pending"
+            },
+            {
+              "id": "S2",
+              "status": "pending"
+            },
+            {
+              "id": "S3",
+              "status": "pending"
+            },
+            {
+              "id": "S4",
+              "status": "pending"
+            },
+            {
+              "id": "S5",
+              "status": "pending"
+            },
+            {
+              "id": "S6",
+              "status": "pending"
+            }
+          ]
+        }
+      ]
     }
   },
   "milestones": [
@@ -92,43 +566,43 @@
     {
       "id": "08",
       "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
-      "spec_status": "draft",
+      "spec_status": "ready",
       "execution_status": "planned",
       "blocked_by": ""
     },
     {
       "id": "09",
       "title": "M25 Outdated Panel Performance",
-      "spec_status": "draft",
+      "spec_status": "ready",
       "execution_status": "planned",
       "blocked_by": ""
     },
     {
       "id": "10",
       "title": "M26 Diagnostics Error Handling",
-      "spec_status": "draft",
+      "spec_status": "ready",
       "execution_status": "planned",
       "blocked_by": ""
     },
     {
       "id": "11",
       "title": "M27 Taps Panel Batch Loading",
-      "spec_status": "draft",
+      "spec_status": "ready",
       "execution_status": "planned",
       "blocked_by": ""
     },
     {
       "id": "12",
       "title": "M28 Tiered Refresh and Polling Strategy",
-      "spec_status": "draft",
+      "spec_status": "ready",
       "execution_status": "planned",
       "blocked_by": ""
     },
     {
       "id": "13",
       "title": "Fix Deps tab infinite loading in Formulae panel",
-      "spec_status": "draft",
-      "execution_status": "planned",
+      "spec_status": "verified",
+      "execution_status": "done",
       "blocked_by": ""
     },
     {

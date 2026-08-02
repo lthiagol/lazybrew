@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/lthiagol/lazybrew/internal/brew"
@@ -911,6 +912,338 @@ func TestDepsTabShowsNoDataOnEmptyResult(t *testing.T) {
 	key := tabKey(PanelFormulae, 1, "formula-a")
 	if m.tabContent[key] != "No data" {
 		t.Fatalf("expected 'No data', got %q", m.tabContent[key])
+	}
+}
+
+func TestDepsTabPopulatedAfterDataLoaded(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.activeTab = 1
+	p := m.panels[PanelFormulae]
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{
+		{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}},
+	}
+	p.selected = 0
+
+	_, cmd := m.Update(DataLoadedMsg{
+		PanelID:  PanelFormulae,
+		Items:    []string{"ripgrep  14.1.1  bottled"},
+		Formulae: []brew.Formula{{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}}},
+	})
+
+	key := tabKey(PanelFormulae, 1, "ripgrep")
+	if cmd == nil {
+		content, ok := m.tabContent[key]
+		if !ok || !strings.Contains(content, "pcre2") {
+			t.Fatalf("expected Deps tabContent populated after DataLoadedMsg, got cmd=nil content=%q ok=%v", content, ok)
+		}
+		return
+	}
+	msg := cmd()
+	tMsg, ok := msg.(TabContentMsg)
+	if !ok {
+		t.Fatalf("expected TabContentMsg from re-issued fetch, got %T", msg)
+	}
+	if tMsg.PanelID != PanelFormulae || tMsg.TabIndex != 1 || tMsg.ItemName != "ripgrep" {
+		t.Errorf("re-fetch meta = (%v, %d, %q), want (PanelFormulae, 1, ripgrep)",
+			tMsg.PanelID, tMsg.TabIndex, tMsg.ItemName)
+	}
+}
+
+func TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.activeTab = 2
+	p := m.panels[PanelFormulae]
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{
+		{Name: "ripgrep", Version: "14.1.1"},
+	}
+	p.selected = 0
+
+	_, cmd := m.Update(DataLoadedMsg{
+		PanelID:  PanelFormulae,
+		Items:    []string{"ripgrep  14.1.1  bottled"},
+		Formulae: []brew.Formula{{Name: "ripgrep", Version: "14.1.1"}},
+	})
+
+	if cmd == nil {
+		t.Fatal("expected loadTabContent cmd re-issued for Used By (no fast path) after DataLoadedMsg")
+	}
+	msg := cmd()
+	tMsg, ok := msg.(TabContentMsg)
+	if !ok {
+		t.Fatalf("expected TabContentMsg, got %T", msg)
+	}
+	if tMsg.TabIndex != 2 {
+		t.Errorf("expected Used By tab 2, got %d", tMsg.TabIndex)
+	}
+}
+
+func TestDataLoadedForDifferentPanelDoesNotReissueActivePanelFetch(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelCasks
+	m.activeTab = 0
+	p := m.panels[PanelFormulae]
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{
+		{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}},
+	}
+	p.selected = 0
+
+	_, cmd := m.Update(DataLoadedMsg{
+		PanelID:  PanelFormulae,
+		Items:    []string{"ripgrep  14.1.1  bottled"},
+		Formulae: []brew.Formula{{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}}},
+	})
+
+	if cmd != nil {
+		t.Errorf("did not expect re-fetch cmd (active panel Casks != msg panel Formulae), got %T", cmd())
+	}
+}
+
+func TestDataLoadedOnNonFetchTabDoesNotReissueFetch(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.activeTab = 0
+	p := m.panels[PanelFormulae]
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{
+		{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}},
+	}
+	p.selected = 0
+
+	_, cmd := m.Update(DataLoadedMsg{
+		PanelID:  PanelFormulae,
+		Items:    []string{"ripgrep  14.1.1  bottled"},
+		Formulae: []brew.Formula{{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}}},
+	})
+
+	if cmd != nil {
+		t.Errorf("did not expect re-fetch cmd on Info tab (tab 0 is not a fetch tab), got %T", cmd())
+	}
+}
+
+func TestFetchTabContentCmdTimesOut(t *testing.T) {
+	origTimeout := fetchTabContentTimeout
+	fetchTabContentTimeout = 50 * time.Millisecond
+	defer func() { fetchTabContentTimeout = origTimeout }()
+
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	client := brew.NewClient(r)
+
+	cmd := fetchTabContentCmd(client, PanelFormulae, 1, "ripgrep")
+	if cmd == nil {
+		t.Fatal("fetchTabContentCmd returned nil cmd")
+	}
+
+	done := make(chan tea.Msg, 1)
+	go func() {
+		done <- cmd()
+	}()
+	select {
+	case msg := <-done:
+		tMsg, ok := msg.(TabContentMsg)
+		if !ok {
+			t.Fatalf("expected TabContentMsg, got %T", msg)
+		}
+		if tMsg.Err == nil {
+			t.Fatal("expected timeout error from fetchTabContentCmd")
+		}
+		if !errors.Is(tMsg.Err, context.DeadlineExceeded) {
+			t.Errorf("expected context.DeadlineExceeded, got %v", tMsg.Err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("fetchTabContentCmd hung past fetchTabContentTimeout (infinite-Loading reproducer)")
+	}
+}
+
+func TestDepsFastPathRendersCachedDependencies(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.activeTab = 1
+	p := m.panels[PanelFormulae]
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{
+		{Name: "ripgrep", Version: "14.1.1",
+			Dependencies: []string{"pcre2", "rust"},
+			BuildDeps:    []string{"cmake"}},
+	}
+	p.selected = 0
+
+	cmd := m.loadTabContent()
+	if cmd != nil {
+		t.Fatal("expected nil cmd from fast path (Dependencies already on model)")
+	}
+
+	key := tabKey(PanelFormulae, 1, "ripgrep")
+	content, ok := m.tabContent[key]
+	if !ok {
+		t.Fatal("expected tabContent populated synchronously by fast path")
+	}
+	for _, want := range []string{"pcre2", "rust", "cmake"} {
+		if !strings.Contains(content, want) {
+			t.Errorf("fast-path content missing %q, got %q", want, content)
+		}
+	}
+}
+
+func TestDepsFastPathNoDependenciesShowsExplicitMessage(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.activeTab = 1
+	p := m.panels[PanelFormulae]
+	p.items = []string{"zlib  1.3.1  bottled"}
+	p.formulae = []brew.Formula{
+		{Name: "zlib", Version: "1.3.1"},
+	}
+	p.selected = 0
+
+	cmd := m.loadTabContent()
+	if cmd != nil {
+		t.Fatal("expected nil cmd from fast path (no deps means no shell call)")
+	}
+
+	key := tabKey(PanelFormulae, 1, "zlib")
+	content, ok := m.tabContent[key]
+	if !ok {
+		t.Fatal("expected tabContent populated by fast path even when deps are empty")
+	}
+	if !strings.Contains(strings.ToLower(content), "no dependencies") {
+		t.Errorf("expected explicit empty-state text, got %q", content)
+	}
+}
+
+func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.activePanel = PanelFormulae
+	m.activeTab = 1
+	m.tabs = panelTabs[PanelFormulae]
+	p := m.panels[PanelFormulae]
+	p.loading = false
+	p.items = []string{
+		"ripgrep  14.1.1  bottled",
+		"zlib  1.3.1  bottled",
+	}
+	p.formulae = []brew.Formula{
+		{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}},
+		{Name: "zlib", Version: "1.3.1", Dependencies: []string{"none-dep-marker"}},
+	}
+	p.selected = 0
+
+	if cmd := m.loadTabContent(); cmd != nil {
+		t.Fatal("expected fast-path nil cmd for ripgrep")
+	}
+	keyA := tabKey(PanelFormulae, 1, "ripgrep")
+	if c := m.tabContent[keyA]; !strings.Contains(c, "pcre2") {
+		t.Fatalf("expected ripgrep deps pcre2, got %q", c)
+	}
+
+	m = sendKey(m, "j")
+	if p.selected != 1 {
+		t.Fatalf("expected selected=1 after j, got %d", p.selected)
+	}
+	keyB := tabKey(PanelFormulae, 1, "zlib")
+	contentB, ok := m.tabContent[keyB]
+	if !ok || !strings.Contains(contentB, "none-dep-marker") {
+		t.Fatalf("expected zlib deps after j, ok=%v content=%q", ok, contentB)
+	}
+	if strings.Contains(contentB, "pcre2") {
+		t.Errorf("zlib deps content should not contain ripgrep dep pcre2, got %q", contentB)
+	}
+
+	view := m.View()
+	if !strings.Contains(view, "none-dep-marker") {
+		t.Errorf("View after j should show zlib deps, got snippet:\n%s", view[:min(len(view), 400)])
+	}
+	if strings.Contains(view, "Loading...") {
+		t.Error("View after selection change must not show Loading...")
+	}
+}
+
+func TestDepsTabViewLeavesLoadingAfterFastPath(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.activePanel = PanelFormulae
+	m.activeTab = 1
+	m.tabs = panelTabs[PanelFormulae]
+	p := m.panels[PanelFormulae]
+	p.loading = false
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{
+		{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}},
+	}
+	p.selected = 0
+
+	if cmd := m.loadTabContent(); cmd != nil {
+		t.Fatal("expected fast-path nil cmd")
+	}
+	view := m.View()
+	if !strings.Contains(view, "pcre2") {
+		t.Fatalf("View should contain deps content pcre2, got:\n%s", view[:min(len(view), 500)])
+	}
+	if strings.Contains(view, "Loading...") {
+		t.Error("View must leave Loading state after fast-path deps populate")
+	}
+}
+
+// TestDepsTabLoads is the AC-03 gui-flow regression: Formulae → Deps for a
+// fixture formula must leave Loading and show deps content (no sleep/teatest).
+func TestDepsTabLoads(t *testing.T) {
+	const ripgrepJSON = `{"formulae":[{` +
+		`"name":"ripgrep","full_name":"ripgrep","tap":"homebrew/core",` +
+		`"versions":{"stable":"14.1.1"},"desc":"","homepage":"","license":"",` +
+		`"installed":[{"version":"14.1.1","installed_on_request":true,` +
+		`"installed_as_dependency":false,"time":1700000000,` +
+		`"runtime_dependencies":["pcre2"]}],` +
+		`"dependencies":[{"name":"pcre2"}],"build_dependencies":[],` +
+		`"caveats":"","keg_only":false,` +
+		`"bottle":{"stable":{"files":{"arm64_sonoma":{"url":"x"}}}},` +
+		`"pinned":false,"binaries":["rg"]}]}`
+
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "--installed" {
+			return []byte(ripgrepJSON), nil
+		}
+		if len(args) >= 1 && args[0] == "deps" {
+			return []byte("pcre2\n"), nil
+		}
+		return []byte(`{"formulae":[],"casks":[],"taps":[],"services":[]}`), nil
+	}
+	m := New(brew.NewClient(r), config.Default())
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+
+	formulae, err := m.client.Formulae.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	items := make([]string, len(formulae))
+	for i, f := range formulae {
+		items[i] = f.Name + "  " + f.Version
+	}
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: items, Formulae: formulae})
+	m = sendKey(m, "2")
+	m = sendKey(m, "]")
+
+	if m.activePanel != PanelFormulae || m.activeTab != 1 {
+		t.Fatalf("expected Formulae/Deps, got panel=%v tab=%d", m.activePanel, m.activeTab)
+	}
+	view := m.View()
+	if !strings.Contains(view, "pcre2") {
+		t.Fatalf("Deps body missing pcre2:\n%s", view[:min(len(view), 600)])
+	}
+	if strings.Contains(view, "Loading...") {
+		t.Fatal("Deps tab stuck on Loading...")
+	}
+	if !strings.Contains(view, "Deps") {
+		t.Fatal("expected Deps tab label in view")
 	}
 }
 

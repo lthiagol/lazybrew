@@ -407,6 +407,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.toast = modal.NewToast("Data refreshed", modal.ToastSuccess)
 			}
 		}
+		if msg.PanelID == m.activePanel && needsTabFetch(m.activePanel, m.activeTab) {
+			return m, m.loadTabContent()
+		}
 		return m, nil
 
 	case RefreshMsg:
@@ -517,43 +520,54 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "tab":
 			m.nextPanel()
+			return m, nil
 		case "shift+tab":
 			m.prevPanel()
+			return m, nil
 		case "1":
 			m.switchPanel(PanelStatus)
+			return m, nil
 		case "2":
 			m.switchPanel(PanelFormulae)
+			return m, nil
 		case "3":
 			m.switchPanel(PanelCasks)
+			return m, nil
 		case "4":
 			m.switchPanel(PanelOutdated)
+			return m, nil
 		case "5":
 			m.switchPanel(PanelTaps)
+			return m, nil
 		case "6":
 			m.switchPanel(PanelServices)
+			return m, nil
 		case "7":
 			m.switchPanel(PanelSearch)
+			return m, nil
 
 		case "j", "down":
 			m.panels[m.activePanel].down()
 			if needsTabFetch(m.activePanel, m.activeTab) {
 				return m, m.loadTabContent()
 			}
+			return m, nil
 		case "k", "up":
 			m.panels[m.activePanel].up()
 			if needsTabFetch(m.activePanel, m.activeTab) {
 				return m, m.loadTabContent()
 			}
+			return m, nil
 
 		case "[":
-			cmd = m.prevTab()
+			return m, m.prevTab()
 		case "]":
-			cmd = m.nextTab()
+			return m, m.nextTab()
 
 		case "left":
-			cmd = m.prevTab()
+			return m, m.prevTab()
 		case "right":
-			cmd = m.nextTab()
+			return m, m.nextTab()
 
 		case "/":
 			m.switchPanel(PanelSearch)
