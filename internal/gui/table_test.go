@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -146,10 +147,12 @@ func TestRenderFormulaeTableFullPane(t *testing.T) {
 	if !strings.Contains(out, "hb/c") {
 		t.Fatalf("expected shortened tap hb/c:\n%s", out)
 	}
-	// Full-pane height contract
-	if lipglossHeight := len(strings.Split(strings.TrimRight(out, "\n"), "\n")); lipglossHeight < h-2 {
-		// lipgloss may collapse trailing blank lines; check Width/Height style via content
-		_ = lipglossHeight
+	// AC-10 full-pane height/width contract
+	if got := lipgloss.Height(out); got != h {
+		t.Fatalf("table height = %d, want %d (full pane)", got, h)
+	}
+	if got := lipgloss.Width(out); got != w {
+		t.Fatalf("table width = %d, want %d (full pane)", got, w)
 	}
 	// Selected row (zlib) highlighted — SelectedItem uses Accent; plain name still present
 	if !strings.Contains(out, "zlib") {
@@ -158,6 +161,44 @@ func TestRenderFormulaeTableFullPane(t *testing.T) {
 	// Not FormatFormulaInfo dump
 	if strings.Contains(out, "Name:") && strings.Contains(out, "License:") {
 		t.Fatal("List tab must not render FormatFormulaInfo")
+	}
+}
+
+func TestFormulaeTableColWidthsSum(t *testing.T) {
+	for _, total := range []int{20, 40, 60, 80, 100, 120} {
+		n, v, s, tap := formulaeTableColWidths(total)
+		sum := n + v + s + tap + 3
+		if sum != total {
+			t.Errorf("total=%d widths name=%d ver=%d status=%d tap=%d sum=%d (want %d)",
+				total, n, v, s, tap, sum, total)
+		}
+		if n < 1 || v < 1 || s < 1 || tap < 1 {
+			t.Errorf("total=%d has non-positive column width", total)
+		}
+	}
+}
+
+func TestFormulaStatusStyledUsesBadges(t *testing.T) {
+	style.ApplyTheme(style.DarkTheme())
+	// AC-11: status cells go through themed badges (not plain monochrome helpers).
+	if formulaStatusStyled(brew.Formula{Outdated: true}) != style.OutdatedBadge.Render("outdated") {
+		t.Error("outdated must use OutdatedBadge")
+	}
+	if formulaStatusStyled(brew.Formula{Pinned: true}) != style.PinnedBadge.Render("pinned") {
+		t.Error("pinned must use PinnedBadge")
+	}
+	if formulaStatusStyled(brew.Formula{}) != style.InstalledBadge.Render("installed") {
+		t.Error("installed must use InstalledBadge")
+	}
+	// Badge styles are wired to theme colors (assert style config, not ANSI — NO_COLOR).
+	if style.OutdatedBadge.GetForeground() != style.WarningColor {
+		t.Error("OutdatedBadge should use WarningColor")
+	}
+	if style.PinnedBadge.GetForeground() != style.SecondaryColor {
+		t.Error("PinnedBadge should use SecondaryColor")
+	}
+	if style.InstalledBadge.GetForeground() != style.SuccessColor {
+		t.Error("InstalledBadge should use SuccessColor")
 	}
 }
 

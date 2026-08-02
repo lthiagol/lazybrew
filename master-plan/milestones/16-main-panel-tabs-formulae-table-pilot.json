@@ -3,9 +3,9 @@
     "id": "16",
     "title": "Main panel tabs + Formulae table (pilot)",
     "slug": "main-panel-tabs-formulae-table-pilot",
-    "lifecycle": "complete",
-    "spec_status": "verified",
-    "execution_status": "done",
+    "lifecycle": "remediation",
+    "spec_status": "implemented",
+    "execution_status": "in-progress",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -17,7 +17,7 @@
     "effort": "M",
     "risk": "medium",
     "change_kind": "",
-    "priority": "medium",
+    "priority": "high",
     "created": "2026-08-01",
     "updated": "2026-08-02",
     "blocked_at": "",
@@ -25,7 +25,8 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-02T13:51:19.660113+00:00"
+    "remediation_pre_state": "complete",
+    "lifecycle_at": "2026-08-02T13:53:28.373367+00:00"
   },
   "intent": {
     "outcome": "The Formulae main pane is a modern, full-bleed data table: List (tab 0) owns the entire content region under the tab bar with a real multi-column table (aligned columns, header row, row windowing). Detail tabs (Info/Deps/…) stay available. Outdated-first ordering, underline tabs, sidebar remains the selection source of truth."
@@ -402,6 +403,61 @@
       "created": "2026-08-02",
       "resolved": "2026-08-02",
       "phase": "self"
+    },
+    {
+      "id": "F-03",
+      "severity": "medium",
+      "category": "test-gap",
+      "description": "TestRenderFormulaeTableFullPane height check assigns lipglossHeight then discards it (_ = lipglossHeight). AC-10 requires Width×Height fill. Fix: assert lipgloss.Height(out)==h (or >=h after pad) and lipgloss.Width of a body line == w; add TestFormulaeTableColWidthsSum equaling total.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/table_test.go",
+        "new_range": {
+          "start_line": 130,
+          "end_line": 130
+        },
+        "side": "new"
+      },
+      "summary": "AC-10 full-pane height assert is a no-op; column width sum untested"
+    },
+    {
+      "id": "F-04",
+      "severity": "low",
+      "category": "test-gap",
+      "description": "formulaStatusStyled uses OutdatedBadge/PinnedBadge/InstalledBadge but tests only check plain substrings outdated|pinned|installed. Assert formulaStatusStyled output differs from plain label (styled) or matches badge.Render(label).",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/table_test.go",
+        "new_range": {
+          "start_line": 55,
+          "end_line": 55
+        },
+        "side": "new"
+      },
+      "summary": "AC-11 status badge colors not asserted"
+    },
+    {
+      "id": "F-05",
+      "severity": "low",
+      "category": "process",
+      "description": "Self findings for selection styling and tab-index shift have empty fixed_in. Set fixed_in to a07d7fc (M16 feature commit).",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "summary": "Self F-01/F-02 fixed_in empty"
     }
   ]
 }
