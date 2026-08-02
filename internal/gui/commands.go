@@ -1298,9 +1298,12 @@ func fetchStatusData(client *brew.Client) tea.Cmd {
 			brewVersion, prefix,
 		)
 
-		doctorWarnings, _ := client.Diagnostics.Doctor(ctx)
+		doctorWarnings, doctorErr := client.Diagnostics.Doctor(ctx)
+		if doctorErr != nil {
+			errs = append(errs, "doctor: "+doctorErr.Error())
+		}
 		items = append(items, "")
-		items = append(items, presentation.FormatDoctorStatus(doctorWarnings))
+		items = append(items, presentation.FormatDoctorStatus(doctorWarnings, doctorErr))
 
 		for _, e := range errs {
 			items = append(items, "⚠ "+e)
