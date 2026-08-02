@@ -3,9 +3,9 @@
     "id": "11",
     "title": "M27 Taps Panel Batch Loading",
     "slug": "m27-taps-panel-batch-loading",
-    "lifecycle": "remediation",
-    "spec_status": "implemented",
-    "execution_status": "in-progress",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -23,8 +23,7 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "remediation_pre_state": "complete",
-    "lifecycle_at": "2026-08-02T12:24:13.777953+00:00"
+    "lifecycle_at": "2026-08-02T12:25:18.117734+00:00"
   },
   "intent": {
     "outcome": "Taps.List uses one brew tap-info --json with all tap names (after brew tap), not N sequential tap-info calls. Heavy name lists stay available for detail/trust without per-tap round-trips on list."
@@ -177,11 +176,11 @@
       "severity": "medium",
       "category": "correctness",
       "description": "On fetchTapInfoBatch error, List caches the incomplete name-only []Tap under KeyTapsList and returns nil error. Next List within cache TTL returns incomplete data without retrying the batch — FormulaNames/CaskNames/Trust stay empty until TTL expires or InvalidateFor. Fix: do not cache on batch failure (return name-only uncached). Add TestTapsBatchFailureDoesNotPoisonCache: fail once, succeed second List, assert FormulaNames populated and tap-info called twice.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "be275085d8f33ad22b86c6faff0fb76499e2d457",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/brew/taps.go",
@@ -198,11 +197,11 @@
       "severity": "low",
       "category": "test-gap",
       "description": "All 12 taps are named thirdparty/tap so the test does not prove every name was passed in the batch args (a 1-name batch would still return 12 list entries from brew tap output). Use unique names (thirdparty/tap-0..N) and assert len(args)==2+N with each name present.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "be275085d8f33ad22b86c6faff0fb76499e2d457",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/brew/taps_test.go",
@@ -219,11 +218,11 @@
       "severity": "low",
       "category": "process",
       "description": "fixed_in=bdf9116 is M9 review pass, not M11 code (b1f59c9). F-01 is accepted out-of-scope (no ARG_MAX chunking) — backlog it rather than marking fixed against an unrelated SHA.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "be275085d8f33ad22b86c6faff0fb76499e2d457",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "summary": "Self F-01 fixed_in is M9 docs commit; ARG_MAX chunking is residual scope"
     }
