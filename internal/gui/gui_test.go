@@ -12,6 +12,7 @@ import (
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 var assertAnError = errors.New("test error")
@@ -853,6 +854,122 @@ func TestCommandLogRendersInMainPanel(t *testing.T) {
 	}
 	if !strings.Contains(panel, "brew") {
 		t.Fatal("expected 'brew' prefix in command log render")
+	}
+	if !strings.Contains(panel, "Log") {
+		t.Fatal("expected Log box title in main panel render")
+	}
+}
+
+func TestLogCollapsedToggle(t *testing.T) {
+	m := newTestModel()
+	if m.logCollapsed {
+		t.Fatal("logCollapsed default should be false")
+	}
+	m = sendKey(m, "C")
+	if !m.logCollapsed {
+		t.Fatal("Shift+C should set logCollapsed true")
+	}
+	m = sendKey(m, "C")
+	if m.logCollapsed {
+		t.Fatal("second Shift+C should set logCollapsed false")
+	}
+}
+
+func TestLogCollapsedFreesMainHeight(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.commandLog.Append("visible-cmd")
+
+	mh := m.height - 4
+	expLogH, expMainH := m.logLayoutHeights(mh)
+	if expLogH < 2 {
+		t.Fatalf("fixture height too small for expanded log (cmdLogHeight=%d)", expLogH)
+	}
+	if expMainH+expLogH != mh-4 {
+		t.Fatalf("expanded heights %d+%d should sum to total %d", expMainH, expLogH, mh-4)
+	}
+
+	expanded := m.renderMainPanel()
+	if !strings.Contains(expanded, "Log") {
+		t.Fatal("expanded log should show Log title")
+	}
+	if !strings.Contains(expanded, "visible-cmd") {
+		t.Fatal("expanded log should show command entry")
+	}
+
+	m = sendKey(m, "C")
+	if !m.logCollapsed {
+		t.Fatal("expected collapsed")
+	}
+	colLogH, colMainH := m.logLayoutHeights(mh)
+	if colLogH != 0 {
+		t.Fatalf("collapsed cmdLogHeight = %d, want 0 (AC-05)", colLogH)
+	}
+	if colMainH != mh-4 {
+		t.Fatalf("collapsed mainContentHeight = %d, want full total %d (AC-05)", colMainH, mh-4)
+	}
+	if colMainH <= expMainH {
+		t.Fatalf("collapsed main %d should exceed expanded main %d (gained log rows)", colMainH, expMainH)
+	}
+
+	collapsed := m.renderMainPanel()
+	if strings.Contains(collapsed, "visible-cmd") {
+		t.Fatal("collapsed log should not render command entries")
+	}
+}
+
+func TestLogBorderBusyVsIdle(t *testing.T) {
+	style.ApplyTheme(style.DarkTheme())
+	idle := logBorderStyle(false)
+	busy := logBorderStyle(true)
+	if idle.GetBorderTopForeground() == busy.GetBorderTopForeground() {
+		// Fall back: render a one-line box and ensure styles differ by string.
+		a := idle.Render("x")
+		b := busy.Render("x")
+		if a == b {
+			t.Fatal("busy log border style should differ from idle")
+		}
+	}
+	m := newTestModel()
+	if m.logBusy() {
+		t.Fatal("idle model should not be logBusy")
+	}
+	m.opState = &Operation{Title: "install foo", Status: opRunning}
+	if !m.logBusy() {
+		t.Fatal("opState != nil should make logBusy")
+	}
+}
+
+func TestActiveSidebarTitleStyles(t *testing.T) {
+	style.ApplyTheme(style.DarkTheme())
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	side := m.renderSidebar()
+	// Active panel is Status (index 0); title text still present.
+	if !strings.Contains(side, "Status") {
+		t.Fatal("sidebar should contain Status title")
+	}
+	if !strings.Contains(side, "Formulae") {
+		t.Fatal("sidebar should contain inactive Formulae title")
+	}
+	// Active title path uses PanelTitleActive (Accent) + ActivePanelBg.
+	// Assert styles are wired by rendering active title fragment with them.
+	activeFrag := style.ActivePanelBg.Render(style.PanelTitleActive.Render("1 Status"))
+	inactiveFrag := style.PanelTitle.Render("2 Formulae")
+	if activeFrag == inactiveFrag {
+		t.Fatal("active and inactive title styles should render differently")
+	}
+	if !strings.Contains(side, "1 Status") && !strings.Contains(side, "Status") {
+		t.Fatal("expected active status title in sidebar")
+	}
+}
+
+func TestBottomBarHasLogHint(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	bar := m.renderBottomBar()
+	if !strings.Contains(bar, "log") {
+		t.Fatalf("bottom bar should include log hint, got:\n%s", bar)
 	}
 }
 

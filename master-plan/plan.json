@@ -608,8 +608,8 @@
     {
       "id": "14",
       "title": "Sidebar polish + log pane box + Catppuccin Mocha theme",
-      "spec_status": "ready",
-      "execution_status": "planned",
+      "spec_status": "verified",
+      "execution_status": "done",
       "blocked_by": ""
     },
     {

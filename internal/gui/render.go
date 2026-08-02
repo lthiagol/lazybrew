@@ -18,6 +18,7 @@ func (m Model) renderSidebar() string {
 
 	var boxes []string
 	for i, p := range m.panels {
+		active := i == int(m.activePanel)
 		prefix := strconv.Itoa(i+1) + " "
 		title := prefix + p.title
 		if p.loading {
@@ -25,12 +26,19 @@ func (m Model) renderSidebar() string {
 		} else if count := p.itemCount(); count > 0 {
 			title += style.SubtleText.Render("  " + strconv.Itoa(count))
 		}
-		titleLine := style.PanelTitle.Render(title)
+		var titleLine string
+		if active {
+			titleLine = style.ActivePanelBg.Width(contentWidth).Render(
+				style.PanelTitleActive.Render(title),
+			)
+		} else {
+			titleLine = style.PanelTitle.Render(title)
+		}
 		itemsMaxRows := max(0, heights[i]-1)
 		p.visibleRows = itemsMaxRows
 		itemsContent := p.renderSidebarContent(contentWidth, itemsMaxRows, m.batch.selected)
 		fullContent := lipgloss.JoinVertical(lipgloss.Top, titleLine, itemsContent)
-		box := renderBox(fullContent, contentWidth, heights[i], i == int(m.activePanel))
+		box := renderBox(fullContent, contentWidth, heights[i], active)
 		boxes = append(boxes, box)
 	}
 
@@ -54,19 +62,14 @@ func (m Model) renderMainPanel() string {
 
 	tabBar := m.renderTabBar(mw)
 
-	totalContentHeight := mh - 4
-	cmdLogHeight := totalContentHeight / 5
-	if cmdLogHeight < 2 {
-		cmdLogHeight = 0
-	}
-	mainContentHeight := totalContentHeight - cmdLogHeight
+	cmdLogHeight, mainContentHeight := m.logLayoutHeights(mh)
 
 	content := m.renderContent(mw, mainContentHeight)
 	content = lipgloss.NewStyle().Width(mw).Height(mainContentHeight).Render(content)
 
 	var cmdLog string
 	if cmdLogHeight > 0 {
-		cmdLog = style.SubtleText.Render(m.commandLog.View(mw, cmdLogHeight))
+		cmdLog = m.renderCommandLogBox(mw, cmdLogHeight)
 	}
 
 	panel := lipgloss.JoinVertical(lipgloss.Top, breadcrumb, tabBar, content, cmdLog)
@@ -75,6 +78,46 @@ func (m Model) renderMainPanel() string {
 		Width(mw + 2).
 		Height(mh).
 		Render(style.ActiveBorder.Render(panel))
+}
+
+// logLayoutHeights returns (cmdLogHeight, mainContentHeight) for the main
+// panel interior of height mh. When logCollapsed, cmdLogHeight is 0 and
+// mainContentHeight absorbs the freed rows (AC-05).
+func (m Model) logLayoutHeights(mh int) (cmdLogHeight, mainContentHeight int) {
+	total := mh - 4
+	cmdLogHeight = total / 5
+	if m.logCollapsed || cmdLogHeight < 2 {
+		cmdLogHeight = 0
+	}
+	mainContentHeight = total - cmdLogHeight
+	return cmdLogHeight, mainContentHeight
+}
+
+// logBusy reports whether the log pane should use the Accent border.
+func (m Model) logBusy() bool {
+	return m.tasks.IsRunning() || m.opState != nil
+}
+
+func logBorderStyle(busy bool) lipgloss.Style {
+	if busy {
+		return style.LogBorder.BorderForeground(style.AccentColor)
+	}
+	return style.LogBorder
+}
+
+func (m Model) renderCommandLogBox(width, height int) string {
+	// height is the full vertical budget for the log section. Lip Gloss
+	// Width/Height apply to the content box; border adds 2 rows/cols outside,
+	// so keep content within height-2 / width-2 so the main panel still fits.
+	innerH := max(1, height-2)
+	innerW := max(1, width-2)
+	bodyH := max(0, innerH-1) // one row for the "Log" title
+	body := m.commandLog.View(innerW, bodyH)
+	titled := lipgloss.JoinVertical(lipgloss.Top, style.PanelTitle.Render("Log"), body)
+	return logBorderStyle(m.logBusy()).
+		Width(innerW).
+		Height(innerH).
+		Render(titled)
 }
 
 func (m Model) renderTabBar(width int) string {
@@ -421,7 +464,7 @@ func boolStr(b bool) string {
 
 func (m Model) renderBottomBar() string {
 	panelHints := panelHints(m.activePanel)
-	globalHints := []keyHint{{"Tab", "next"}, {"S-Tab", "prev"}, {"1-7", "jump"}, {"/", "search"}, {"?", "help"}, {"R", "refresh"}, {"q", "quit"}}
+	globalHints := []keyHint{{"Tab", "next"}, {"S-Tab", "prev"}, {"1-7", "jump"}, {"/", "search"}, {"?", "help"}, {"R", "refresh"}, {"C", "log"}, {"q", "quit"}}
 
 	styleHint := func(k, d string) string {
 		return style.HintKey.Render(k) + " " + style.HintDesc.Render(d)

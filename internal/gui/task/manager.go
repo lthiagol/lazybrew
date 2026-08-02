@@ -132,8 +132,10 @@ func (m *Manager) readChunk(rt *runningTask) tea.Cmd {
 				err = <-rt.errCh
 				rt.errCh = nil
 			}
+			m.mu.Lock()
 			rt.done = true
 			rt.task.Status = statusFromErr(err)
+			m.mu.Unlock()
 			return TaskCompletedMsg{
 				ID:    rt.task.ID,
 				Title: rt.task.Title,
@@ -151,8 +153,10 @@ func (m *Manager) readChunk(rt *runningTask) tea.Cmd {
 		case err := <-rt.errCh:
 			rt.outCh = nil
 			rt.errCh = nil
+			m.mu.Lock()
 			rt.done = true
 			rt.task.Status = statusFromErr(err)
+			m.mu.Unlock()
 			return TaskCompletedMsg{
 				ID:    rt.task.ID,
 				Title: rt.task.Title,
