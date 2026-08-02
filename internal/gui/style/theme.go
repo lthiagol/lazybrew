@@ -13,22 +13,25 @@ var (
 	TextColor      lipgloss.Color
 	BgColor        lipgloss.Color
 
-	ActiveBorder   lipgloss.Style
-	InactiveBorder lipgloss.Style
-	SelectedItem   lipgloss.Style
-	NormalItem     lipgloss.Style
-	TabActive      lipgloss.Style
-	TabInactive    lipgloss.Style
-	HintKey        lipgloss.Style
-	HintDesc       lipgloss.Style
-	PanelTitle     lipgloss.Style
-	OutdatedBadge  lipgloss.Style
-	PinnedBadge    lipgloss.Style
-	InstalledBadge lipgloss.Style
-	ErrorBadge     lipgloss.Style
-	SubtleText     lipgloss.Style
-	AccentText     lipgloss.Style
-	DocStyle       lipgloss.Style
+	ActiveBorder     lipgloss.Style
+	InactiveBorder   lipgloss.Style
+	SelectedItem     lipgloss.Style
+	NormalItem       lipgloss.Style
+	TabActive        lipgloss.Style
+	TabInactive      lipgloss.Style
+	HintKey          lipgloss.Style
+	HintDesc         lipgloss.Style
+	PanelTitle       lipgloss.Style
+	PanelTitleActive lipgloss.Style
+	ActivePanelBg    lipgloss.Style
+	LogBorder        lipgloss.Style
+	OutdatedBadge    lipgloss.Style
+	PinnedBadge      lipgloss.Style
+	InstalledBadge   lipgloss.Style
+	ErrorBadge       lipgloss.Style
+	SubtleText       lipgloss.Style
+	AccentText       lipgloss.Style
+	DocStyle         lipgloss.Style
 )
 
 type Theme struct {
@@ -42,19 +45,21 @@ type Theme struct {
 	BgColor        lipgloss.Color
 }
 
+// DarkTheme is Catppuccin Mocha.
 func DarkTheme() *Theme {
 	return &Theme{
-		AccentColor:    lipgloss.Color("#7C3AED"),
-		SecondaryColor: lipgloss.Color("#06B6D4"),
-		SuccessColor:   lipgloss.Color("#10B981"),
-		WarningColor:   lipgloss.Color("#F59E0B"),
-		ErrorColor:     lipgloss.Color("#EF4444"),
-		SubtleColor:    lipgloss.Color("#6B7280"),
-		TextColor:      lipgloss.Color("#E5E7EB"),
-		BgColor:        lipgloss.Color("#1F2937"),
+		AccentColor:    lipgloss.Color("#cba6f7"),
+		SecondaryColor: lipgloss.Color("#94e2d5"),
+		SuccessColor:   lipgloss.Color("#a6e3a1"),
+		WarningColor:   lipgloss.Color("#f9e2af"),
+		ErrorColor:     lipgloss.Color("#f38ba8"),
+		SubtleColor:    lipgloss.Color("#6c7086"),
+		TextColor:      lipgloss.Color("#cdd6f4"),
+		BgColor:        lipgloss.Color("#1e1e2e"),
 	}
 }
 
+// LightTheme keeps pre-M14 hex values (not Catppuccin Latte).
 func LightTheme() *Theme {
 	return &Theme{
 		AccentColor:    lipgloss.Color("#34548a"),
@@ -79,6 +84,11 @@ func ApplyTheme(t *Theme) {
 	TextColor = t.TextColor
 	BgColor = t.BgColor
 
+	surface0 := lipgloss.Color("#313244")
+	if t.BgColor == LightTheme().BgColor {
+		surface0 = lipgloss.Color("#ccd0da")
+	}
+
 	ActiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.AccentColor)
 	InactiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.SubtleColor)
 	SelectedItem = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true)
@@ -88,6 +98,9 @@ func ApplyTheme(t *Theme) {
 	HintKey = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true).Padding(0, 1)
 	HintDesc = lipgloss.NewStyle().Foreground(t.SubtleColor)
 	PanelTitle = lipgloss.NewStyle().Foreground(t.TextColor).Bold(true)
+	PanelTitleActive = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true)
+	ActivePanelBg = lipgloss.NewStyle().Background(surface0)
+	LogBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.SubtleColor)
 	OutdatedBadge = lipgloss.NewStyle().Foreground(t.WarningColor)
 	PinnedBadge = lipgloss.NewStyle().Foreground(t.SecondaryColor)
 	InstalledBadge = lipgloss.NewStyle().Foreground(t.SuccessColor)

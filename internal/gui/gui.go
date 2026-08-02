@@ -64,6 +64,9 @@ type Model struct {
 	taskID     string
 	refreshing int
 
+	// logCollapsed hides the command log pane (Shift+C / "C"). Default false.
+	logCollapsed bool
+
 	// lastKeyAt tracks the last time the user pressed a key. The auto
 	// refresh tick consults this to pause refreshes during interaction
 	// (M12 AC-03) so typing/navigation is not janked by a full
@@ -582,6 +585,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			}
 			return m, func() tea.Msg { return RefreshMsg{} }
+
+		case "C":
+			m.logCollapsed = !m.logCollapsed
+			return m, nil
 
 		case "tab":
 			cmd := m.nextPanel()
