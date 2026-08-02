@@ -29,6 +29,16 @@
       "status": "active",
       "resolution": "",
       "resolved_at": ""
+    },
+    {
+      "id": "B-04",
+      "description": "Chunk brew tap-info --json batches when tap count risks ARG_MAX (M11 F-01 residual)",
+      "source": "M11 external review F-04",
+      "suggested_when": "",
+      "priority": "low",
+      "status": "active",
+      "resolution": "",
+      "resolved_at": ""
     }
   ]
 }
