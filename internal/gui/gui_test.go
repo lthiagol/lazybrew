@@ -1360,8 +1360,7 @@ func TestRefreshLoadsOutdatedWhenActive(t *testing.T) {
 }
 
 func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
-	// M12: with no panels loaded (unloaded), Refresh only fires Status +
-	// active = 2 producers.
+	// M12: active=Status → only fetchStatusData (no empty fetchPanelData stub).
 	m := newTestModel()
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
@@ -1370,19 +1369,122 @@ func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
 	}
 
 	m = updateModel(m, RefreshMsg{})
-	if m.refreshing != 2 {
-		t.Fatalf("refreshing = %d, want 2 (Status + active=Status)", m.refreshing)
+	if m.refreshing != 1 {
+		t.Fatalf("refreshing = %d, want 1 (Status only when active=Status)", m.refreshing)
 	}
 
-	// Simulate the two loads completing.
-	for i := 0; i < 2; i++ {
-		m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
-	}
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
 	if m.refreshing != 0 {
-		t.Errorf("after 2 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
+		t.Errorf("after 1 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
 	}
 	if m.toast == nil {
 		t.Fatal("expected 'Data refreshed' toast after last panel load")
+	}
+}
+
+func TestRefreshDoesNotEnqueueEmptyStatusStub(t *testing.T) {
+	// F-03: when active is Status, must not also enqueue fetchPanelData(Status)
+	// which returns Items:[] and can wipe the dashboard.
+	m := newTestModel()
+	m.activePanel = PanelStatus
+	m.cfg.GUI.AutoRefreshSeconds = 0
+	m = updateModel(m, RefreshMsg{})
+	if m.refreshing != 1 {
+		t.Fatalf("want 1 cmd (fetchStatusData only), got refreshing=%d", m.refreshing)
+	}
+}
+
+func TestRefreshForcesCacheBypass(t *testing.T) {
+	// AC-04: R must re-shell even when per-class TTL has not expired.
+	var formulaeCalls int32
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 2 && args[0] == "info" && args[1] == "--json=v2" {
+			atomic.AddInt32(&formulaeCalls, 1)
+			return []byte(`{"formulae":[],"casks":[]}`), nil
+		}
+		if len(args) >= 1 && args[0] == "services" {
+			return []byte(`[]`), nil
+		}
+		if len(args) >= 1 && args[0] == "tap-info" {
+			return []byte(`{"taps":[]}`), nil
+		}
+		if len(args) >= 1 && args[0] == "tap" {
+			return []byte(""), nil
+		}
+		if len(args) >= 1 && args[0] == "doctor" {
+			return []byte("Your system is ready to brew."), nil
+		}
+		if len(args) >= 1 && args[0] == "config" {
+			return []byte(""), nil
+		}
+		return []byte(`{"formulae":[],"casks":[]}`), nil
+	}
+	client := brew.NewClient(r)
+	client.SetCacheTTLs(brew.CacheTTLs{Formulae: time.Hour})
+	m := New(client, config.Default())
+	m.activePanel = PanelFormulae
+	m.panels[PanelFormulae].items = []string{"seed"}
+	m.cfg.GUI.AutoRefreshSeconds = 0
+
+	// Prime formulae cache.
+	_, _ = client.Formulae.List(context.Background())
+	if atomic.LoadInt32(&formulaeCalls) != 1 {
+		t.Fatalf("setup: want 1 formulae call, got %d", formulaeCalls)
+	}
+	atomic.StoreInt32(&formulaeCalls, 0)
+
+	// Without invalidate, List would cache-hit. Refresh must force a shell.
+	nm, cmd := m.Update(RefreshMsg{})
+	if cmd == nil {
+		t.Fatal("RefreshMsg returned nil cmd batch")
+	}
+	// Drain batch: run all DataLoaded producers.
+	// tea.Batch flattens; cmd() may return a batch msg — use a simple drain.
+	if newM, ok := nm.(Model); ok {
+		m = &newM
+	}
+	// Execute cmds by invoking fetchPanelData path via Update on messages
+	// produced when we run the batch function.
+	// Simpler: call List again after invalidate that Refresh performed.
+	// Refresh already invalidated — next List must shell.
+	_, _ = client.Formulae.List(context.Background())
+	if atomic.LoadInt32(&formulaeCalls) < 1 {
+		t.Errorf("R must invalidate formulae cache so next List shells; calls=%d", formulaeCalls)
+	}
+}
+
+func TestAutoRefreshTickUsesLiveLastKeyAt(t *testing.T) {
+	// F-02: tick msg must be evaluated in Update against current lastKeyAt.
+	m := newTestModel()
+	m.cfg.GUI.AutoRefreshSeconds = 60
+	m.cfg.GUI.AutoRefreshPause = 500 * time.Millisecond
+	m.lastKeyAt = time.Now()
+
+	// Deliver tick as if it fired while still inside the pause window.
+	nm, cmd := m.Update(autoRefreshTickMsg{at: time.Now()})
+	if cmd == nil {
+		t.Fatal("expected follow-up cmd from autoRefreshTickMsg")
+	}
+	follow := cmd()
+	if _, ok := follow.(autoRefreshPausedMsg); !ok {
+		t.Fatalf("expected autoRefreshPausedMsg when lastKeyAt is recent, got %T", follow)
+	}
+	if updated, ok := nm.(Model); ok {
+		if !updated.autoRefreshPaused {
+			t.Error("autoRefreshPaused should be true after pause decision")
+		}
+	}
+
+	// Past the pause window → RefreshMsg.
+	m2 := newTestModel()
+	m2.cfg.GUI.AutoRefreshSeconds = 60
+	m2.cfg.GUI.AutoRefreshPause = 50 * time.Millisecond
+	m2.lastKeyAt = time.Now().Add(-200 * time.Millisecond)
+	_, cmd2 := m2.Update(autoRefreshTickMsg{at: time.Now()})
+	follow2 := cmd2()
+	if _, ok := follow2.(RefreshMsg); !ok {
+		t.Fatalf("expected RefreshMsg after pause elapsed, got %T", follow2)
 	}
 }
 
