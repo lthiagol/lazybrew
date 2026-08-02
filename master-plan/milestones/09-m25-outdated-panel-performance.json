@@ -3,9 +3,9 @@
     "id": "09",
     "title": "M25 Outdated Panel Performance",
     "slug": "m25-outdated-panel-performance",
-    "lifecycle": "remediation",
-    "spec_status": "implemented",
-    "execution_status": "in-progress",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -23,8 +23,7 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "remediation_pre_state": "complete",
-    "lifecycle_at": "2026-08-02T11:57:19.973230+00:00"
+    "lifecycle_at": "2026-08-02T11:58:14.564894+00:00"
   },
   "intent": {
     "outcome": "brew outdated (formula+cask) runs lazily when Outdated is first selected (or Status needs it), coalesces concurrent callers, and respects a configurable TTL (default 30m) so navigation/refresh does not stampede Homebrew."
@@ -232,11 +231,11 @@
       "severity": "medium",
       "category": "correctness",
       "description": "RefreshMsg sets m.refreshing=6 always, but only enqueues 5 cmds when activePanel != Outdated (Formulae, Casks, Taps, Services, Status). Each DataLoadedMsg decrements refreshing; toast 'Data refreshed' fires only at 0. With 5 msgs, refreshing sticks at 1 and the success toast never appears after R (unless user is on Outdated). Fix: set refreshing = len(cmds) after building the batch (or 5 vs 6 explicitly). Add TestRefreshToastWhenOutdatedInactive.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "367bbef0d2af9718f36ebbf23a8cdf8f4fdd5672",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/gui/gui.go",
@@ -253,11 +252,11 @@
       "severity": "low",
       "category": "robustness",
       "description": "singleflight.Do runs fn() then wg.Done()+delete without defer. If fn panics, waiters block forever on wg.Wait and the key stays in inflight. Use defer for Done+delete (x/sync/singleflight pattern).",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "367bbef0d2af9718f36ebbf23a8cdf8f4fdd5672",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/brew/singleflight.go",
@@ -274,11 +273,11 @@
       "severity": "low",
       "category": "process",
       "description": "fixed_in=2174e00 is 'docs(plan): pass M10 external review'. M9 code is 5ae1373. F-02 is accepted UX residual (Status count stale until R) — backlog if still desired, do not mark scope notes fixed against unrelated SHAs.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "367bbef0d2af9718f36ebbf23a8cdf8f4fdd5672",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "summary": "Self F-01/F-02 fixed_in is M10 docs commit, not M9 code"
     }
