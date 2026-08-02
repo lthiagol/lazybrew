@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -113,7 +114,7 @@ func TestSpinnerLoadingLabelPreserved(t *testing.T) {
 		t.Fatalf("search loading should include spinner glyph, got %q", search)
 	}
 
-	// Sidebar: spinner appended after title style (not re-wrapped)
+	// Sidebar: spinner appended after title style (not re-wrapped in SubtleText)
 	m.panels[PanelStatus].loading = true
 	side := m.renderSidebar()
 	if !strings.Contains(side, "Status") {
@@ -121,6 +122,26 @@ func TestSpinnerLoadingLabelPreserved(t *testing.T) {
 	}
 	if !strings.Contains(side, spin) {
 		t.Fatalf("sidebar loading title should include spinner glyph, got snippet %q", side[:min(len(side), 200)])
+	}
+	// Active panel loading: spinner must still appear after Surface0 pad.
+	m.activePanel = PanelStatus
+	side = m.renderSidebar()
+	if !strings.Contains(side, spin) {
+		t.Fatalf("active loading sidebar must keep spinner glyph after bg pad, got %q", side[:min(len(side), 200)])
+	}
+}
+
+func TestNoSubtleTextWrapAroundSpinnerView(t *testing.T) {
+	// Static guard for AC-01: spinner.View() must not be an argument to SubtleText.Render.
+	// (Labels may still use SubtleText next to the spinner.)
+	src, err := os.ReadFile("render.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(src), "SubtleText.Render(\"  \"+m.spinner.View())") ||
+		strings.Contains(string(src), "SubtleText.Render(\"  \" + m.spinner.View())") ||
+		strings.Contains(string(src), "SubtleText.Render(m.spinner.View()") {
+		t.Fatal("render.go must not wrap spinner.View() in SubtleText.Render")
 	}
 }
 
