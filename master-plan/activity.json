@@ -486,6 +486,12 @@
       "type": "lifecycle-transition",
       "subject": "12",
       "summary": "lifecycle: complete → remediation"
+    },
+    {
+      "timestamp": "2026-08-02T13:00:45.013510+00:00",
+      "type": "lifecycle-transition",
+      "subject": "12",
+      "summary": "lifecycle: remediation → complete"
     }
   ]
 }
