@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -1279,19 +1280,228 @@ func TestRefreshSetsPanelsLoading(t *testing.T) {
 	for _, p := range m.panels {
 		p.loading = false
 	}
-
+	// Default model is on PanelStatus; Outdated is NOT active, so it
+	// must NOT enter loading state on Refresh (M9 lazy policy).
 	m = updateModel(m, RefreshMsg{})
 
 	for _, p := range m.panels {
-		if p.id == PanelSearch {
+		switch p.id {
+		case PanelSearch:
 			if p.loading {
 				t.Errorf("PanelSearch should not be loading after refresh")
 			}
+		case PanelOutdated:
+			if p.loading {
+				t.Errorf("PanelOutdated should NOT load on Refresh when not active (M9 lazy)")
+			}
+		default:
+			if !p.loading {
+				t.Errorf("panel %v should be loading after refresh", p.id)
+			}
+		}
+	}
+}
+
+func TestRefreshLoadsOutdatedWhenActive(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelOutdated
+	m.panels[PanelOutdated].loading = false
+	for _, p := range m.panels {
+		p.loading = false
+	}
+
+	m = updateModel(m, RefreshMsg{})
+
+	if !m.panels[PanelOutdated].loading {
+		t.Error("PanelOutdated should load on Refresh when active")
+	}
+}
+
+func TestInitDoesNotFetchOutdated(t *testing.T) {
+	// M9 AC-02: Init must NOT shell-call `brew outdated` (lazy policy).
+	// We assert on the Init cmd batch: no fetchPanelData(PanelOutdated)
+	// fires because Init() does not include it.
+	var calls int32
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "outdated" {
+			atomic.AddInt32(&calls, 1)
+		}
+		return []byte(`{"formulae":[],"casks":[]}`), nil
+	}
+	cfg := config.Default()
+	cfg.Brew.UpdateOnStart = false
+	m := New(brew.NewClient(r), cfg)
+
+	cmd := m.Init()
+	if cmd == nil {
+		t.Fatal("Init returned nil cmd")
+	}
+
+	// Process all messages from the Init batch.
+	pending := []tea.Cmd{cmd}
+	for len(pending) > 0 {
+		next := pending[0]
+		pending = pending[1:]
+		if next == nil {
 			continue
 		}
-		if !p.loading {
-			t.Errorf("panel %v should be loading after refresh", p.id)
+		got := next()
+		if got == nil {
+			continue
 		}
+		// Process msg and collect follow-up cmds via Update.
+		nm, followUp := m.Update(got)
+		if newM, ok := nm.(*Model); ok {
+			m = newM
+		}
+		if followUp != nil {
+			pending = append(pending, followUp)
+		}
+	}
+
+	if got := atomic.LoadInt32(&calls); got != 0 {
+		t.Errorf("Init should not invoke `brew outdated` (lazy policy), got %d shell calls", got)
+	}
+	if m.panels[PanelOutdated].loading {
+		t.Error("PanelOutdated should not enter loading state from Init (M9 lazy)")
+	}
+}
+
+func TestSwitchToOutdatedLazyFetchesOnFirstVisit(t *testing.T) {
+	// M9 AC-02: first switchPanel(Outdated) triggers the fetch.
+	m := newTestModel()
+	m.activePanel = PanelStatus
+	m.panels[PanelOutdated].items = nil
+	m.panels[PanelOutdated].loading = false
+	m.panels[PanelOutdated].err = nil
+
+	cmd := m.switchPanel(PanelOutdated)
+	if cmd == nil {
+		t.Fatal("expected switchPanel(Outdated) to return a fetch cmd on first visit")
+	}
+	if !m.panels[PanelOutdated].loading {
+		t.Error("expected PanelOutdated.loading=true after switchPanel(Outdated)")
+	}
+	if m.activePanel != PanelOutdated {
+		t.Errorf("activePanel = %d, want PanelOutdated", m.activePanel)
+	}
+
+	// Second visit (panel already has items) should NOT re-issue fetch.
+	m.panels[PanelOutdated].items = []string{"ripgrep  1.0 -> 2.0"}
+	m.panels[PanelOutdated].loading = false
+	cmd2 := m.switchPanel(PanelOutdated)
+	if cmd2 != nil {
+		t.Error("expected nil cmd on second switchPanel(Outdated) (items present)")
+	}
+}
+
+func TestSwitchToOutdatedRetriesAfterError(t *testing.T) {
+	// After a failed fetch, switching to Outdated again must retry
+	// rather than leave the user on a stale error.
+	m := newTestModel()
+	m.activePanel = PanelStatus
+	m.panels[PanelOutdated].items = nil
+	m.panels[PanelOutdated].loading = false
+	m.panels[PanelOutdated].err = assertAnError
+
+	cmd := m.switchPanel(PanelOutdated)
+	if cmd == nil {
+		t.Fatal("expected switchPanel(Outdated) to retry fetch after error")
+	}
+	if !m.panels[PanelOutdated].loading {
+		t.Error("expected PanelOutdated.loading=true after error retry")
+	}
+	if m.panels[PanelOutdated].err != nil {
+		t.Errorf("expected stale err cleared on retry, got %v", m.panels[PanelOutdated].err)
+	}
+}
+
+func TestStatusDashboardDoesNotShellCallOutdated(t *testing.T) {
+	// M9 AC-02 + design decision: fetchStatusData must not shell-call
+	// `brew outdated`. It reads from cache only and reports 0 when empty.
+	var outdatedCalls int32
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		switch {
+		case len(args) >= 1 && args[0] == "outdated":
+			atomic.AddInt32(&outdatedCalls, 1)
+			return []byte(`{"formulae":[]}`), nil
+		case len(args) >= 1 && args[0] == "services":
+			return []byte(`[]`), nil
+		case len(args) >= 2 && args[0] == "info":
+			return []byte(`{"formulae":[],"casks":[]}`), nil
+		case len(args) >= 1 && args[0] == "tap-info":
+			return []byte(`{"taps":[]}`), nil
+		case len(args) >= 1 && args[0] == "doctor":
+			return []byte(""), nil
+		case len(args) >= 1 && args[0] == "config":
+			return []byte(""), nil
+		}
+		return []byte{}, nil
+	}
+	client := brew.NewClient(r)
+
+	cmd := fetchStatusData(client)
+	msg := cmd()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if atomic.LoadInt32(&outdatedCalls) != 0 {
+		t.Errorf("fetchStatusData must not invoke `brew outdated`, got %d calls", outdatedCalls)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "0 packages") {
+		t.Errorf("empty cache should report 0 outdated, got:\n%s", joined)
+	}
+}
+
+func TestStatusDashboardReportsCachedOutdatedCount(t *testing.T) {
+	// When the cache has outdated entries (e.g. user previously visited
+	// Outdated panel), Status should reflect them without re-shelling.
+	var outdatedCalls int32
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		switch {
+		case len(args) >= 1 && args[0] == "outdated":
+			atomic.AddInt32(&outdatedCalls, 1)
+			return []byte(`{"formulae":[{"name":"ripgrep","installed_versions":["14.1.0"],"current_version":"14.1.1","pinned":false}]}`), nil
+		case len(args) >= 1 && args[0] == "services":
+			return []byte(`[]`), nil
+		case len(args) >= 2 && args[0] == "info":
+			return []byte(`{"formulae":[],"casks":[]}`), nil
+		case len(args) >= 1 && args[0] == "tap-info":
+			return []byte(`{"taps":[]}`), nil
+		case len(args) >= 1 && args[0] == "doctor":
+			return []byte(""), nil
+		case len(args) >= 1 && args[0] == "config":
+			return []byte(""), nil
+		}
+		return []byte{}, nil
+	}
+	client := brew.NewClient(r)
+
+	// First, populate the cache by calling client.Formulae.Outdated().
+	// (We use the real reader so the cache+TTL is exercised.)
+	_, _ = client.Formulae.Outdated(context.Background())
+	if atomic.LoadInt32(&outdatedCalls) != 1 {
+		t.Fatalf("setup: expected 1 outdated call after priming cache, got %d", outdatedCalls)
+	}
+	atomic.StoreInt32(&outdatedCalls, 0)
+
+	cmd := fetchStatusData(client)
+	msg := cmd()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if atomic.LoadInt32(&outdatedCalls) != 0 {
+		t.Errorf("fetchStatusData must not shell-call outdated when cache is fresh, got %d calls", outdatedCalls)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "1 packages") {
+		t.Errorf("dashboard should reflect cached outdated count (1), got:\n%s", joined)
 	}
 }
 

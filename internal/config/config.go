@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -21,10 +22,18 @@ type GUIConfig struct {
 	AutoRefreshSeconds int    `yaml:"auto_refresh_seconds"`
 }
 
+// BrewConfig mirrors the `brew:` block in lazybrew config.yml.
+//
+// OutdatedTTL bounds how long `brew outdated` results are reused before
+// the next shell invocation. M9 default is 30 minutes; set to 0 to fall
+// back to the cache default (30s).
 type BrewConfig struct {
-	Path          string `yaml:"path"`
-	UpdateOnStart bool   `yaml:"update_on_start"`
+	Path          string        `yaml:"path"`
+	UpdateOnStart bool          `yaml:"update_on_start"`
+	OutdatedTTL   time.Duration `yaml:"outdated_ttl"`
 }
+
+const DefaultOutdatedTTL = 30 * time.Minute
 
 func Default() *Config {
 	return &Config{
@@ -38,6 +47,7 @@ func Default() *Config {
 		Brew: BrewConfig{
 			Path:          "",
 			UpdateOnStart: false,
+			OutdatedTTL:   DefaultOutdatedTTL,
 		},
 	}
 }
@@ -63,6 +73,10 @@ func Load(path string) (*Config, error) {
 
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("parsing config %s: %w", path, err)
+	}
+
+	if cfg.Brew.OutdatedTTL <= 0 {
+		cfg.Brew.OutdatedTTL = DefaultOutdatedTTL
 	}
 
 	return cfg, nil

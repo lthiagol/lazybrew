@@ -3,12 +3,14 @@ package brew
 import (
 	"context"
 	"encoding/json"
+	"time"
 )
 
 type CasksReader interface {
 	List(ctx context.Context) ([]Cask, error)
 	Get(ctx context.Context, name string) (*Cask, error)
 	Outdated(ctx context.Context) ([]Cask, error)
+	SetOutdatedTTL(ttl time.Duration)
 }
 
 type CasksWriter interface {
@@ -22,8 +24,10 @@ type CasksWriter interface {
 }
 
 type casksReader struct {
-	runner Runner
-	cache  *Cache
+	runner      Runner
+	cache       *Cache
+	outdatedTTL time.Duration
+	sf          *singleflight
 }
 
 type casksWriter struct {
@@ -32,7 +36,7 @@ type casksWriter struct {
 }
 
 func NewCasksReader(runner Runner, cache *Cache) CasksReader {
-	return &casksReader{runner: runner, cache: cache}
+	return &casksReader{runner: runner, cache: cache, sf: newSingleflight()}
 }
 
 func NewCasksWriter(runner Runner, cache *Cache) CasksWriter {
@@ -154,10 +158,27 @@ func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
 		}
 	}
 
+	val, err := s.sf.Do("outdated:casks", func() (any, error) {
+		if cached, ok := s.cache.Get(KeyOutdatedCasks); ok {
+			if casks, ok := cached.([]Cask); ok {
+				return casks, nil
+			}
+		}
+		return s.fetchOutdated(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return val.([]Cask), nil
+}
+
+func (s *casksReader) fetchOutdated(ctx context.Context) (any, error) {
 	output, err := s.runner.Execute(ctx, "outdated", "--json=v2", "--cask")
 	if err != nil {
 		if IsExitCode(err, 1) {
-			return []Cask{}, nil
+			empty := []Cask{}
+			s.cache.SetWithTTL(KeyOutdatedCasks, empty, s.outdatedTTL)
+			return empty, nil
 		}
 		return nil, err
 	}
@@ -188,8 +209,16 @@ func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
 		outdated = append(outdated, cask)
 	}
 
-	s.cache.Set(KeyOutdatedCasks, outdated)
+	s.cache.SetWithTTL(KeyOutdatedCasks, outdated, s.outdatedTTL)
 	return outdated, nil
+}
+
+// SetOutdatedTTL configures how long `brew outdated --cask` results are
+// reused. Implements TTLSetter. A value <= 0 preserves the cache default.
+func (s *casksReader) SetOutdatedTTL(ttl time.Duration) {
+	if ttl > 0 {
+		s.outdatedTTL = ttl
+	}
 }
 
 func (s *casksWriter) Install(ctx context.Context, name string) (<-chan string, <-chan error) {

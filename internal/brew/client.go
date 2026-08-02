@@ -43,3 +43,20 @@ func NewClient(runner Runner) *Client {
 		Cache:            cache,
 	}
 }
+
+// SetOutdatedTTL configures the cache TTL for `brew outdated` results on
+// both formulae and casks readers. A value <= 0 keeps the cache default
+// (30s) so callers that want the previous behavior can pass 0. M9 wires
+// this from `brew.outdated_ttl` (default 30m).
+//
+// Readers that do not implement the optional TTLSetter interface (e.g. test
+// doubles) are silently skipped so production code does not need to type
+// switch.
+func (c *Client) SetOutdatedTTL(ttl time.Duration) {
+	if r, ok := c.Formulae.(TTLSetter); ok {
+		r.SetOutdatedTTL(ttl)
+	}
+	if r, ok := c.Casks.(TTLSetter); ok {
+		r.SetOutdatedTTL(ttl)
+	}
+}

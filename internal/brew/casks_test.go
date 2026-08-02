@@ -2,6 +2,8 @@ package brew
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -316,5 +318,71 @@ func TestCasksWriterUpgradeAll(t *testing.T) {
 	}
 	if err := <-errCh; err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCasksOutdatedCoalescesConcurrentCalls(t *testing.T) {
+	r := NewMockRunner()
+	var calls int32
+	gate := make(chan struct{})
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		atomic.AddInt32(&calls, 1)
+		<-gate
+		return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
+	}
+	cache := NewCache(time.Minute)
+	reader := NewCasksReader(r, cache)
+
+	const goroutines = 8
+	results := make([][]Cask, goroutines)
+	errs := make([]error, goroutines)
+	var wg sync.WaitGroup
+	for i := 0; i < goroutines; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			o, err := reader.Outdated(context.Background())
+			results[i] = o
+			errs[i] = err
+		}()
+	}
+
+	time.Sleep(20 * time.Millisecond)
+	close(gate)
+	wg.Wait()
+
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Fatalf("expected 1 brew invocation for %d concurrent callers, got %d", goroutines, got)
+	}
+	for i, r := range results {
+		if r == nil {
+			t.Errorf("result[%d] = nil", i)
+		}
+		if errs[i] != nil {
+			t.Errorf("errs[%d] = %v", i, errs[i])
+		}
+	}
+}
+
+func TestCasksOutdatedCachesWithinTTL(t *testing.T) {
+	r := NewMockRunner()
+	var calls int32
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		atomic.AddInt32(&calls, 1)
+		return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
+	}
+	cache := NewCache(time.Minute)
+	reader := NewCasksReader(r, cache)
+	reader.SetOutdatedTTL(time.Hour)
+
+	for i := 0; i < 5; i++ {
+		_, err := reader.Outdated(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Errorf("expected 1 shell invocation within TTL across 5 calls, got %d", got)
 	}
 }

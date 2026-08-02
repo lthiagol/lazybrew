@@ -294,8 +294,10 @@ func initPanels() []*panelData {
 		{PanelSearch, "Search"},
 	}
 	for i, def := range panelDefs {
+		// Outdated is lazy (M9): Init does not fetch it, so it must not
+		// enter loading state until the user actually visits the panel.
 		loading := true
-		if def.id == PanelSearch {
+		if def.id == PanelSearch || def.id == PanelOutdated {
 			loading = false
 		}
 		panels[i] = &panelData{
