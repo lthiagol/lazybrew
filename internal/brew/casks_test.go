@@ -374,7 +374,7 @@ func TestCasksOutdatedCachesWithinTTL(t *testing.T) {
 	}
 	cache := NewCache(time.Minute)
 	reader := NewCasksReader(r, cache)
-	reader.SetOutdatedTTL(time.Hour)
+	reader.SetCacheTTLs(CacheTTLs{Outdated: time.Hour})
 
 	for i := 0; i < 5; i++ {
 		_, err := reader.Outdated(context.Background())

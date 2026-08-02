@@ -1276,29 +1276,67 @@ func TestFetchDepsTabReturnsContent(t *testing.T) {
 }
 
 func TestRefreshSetsPanelsLoading(t *testing.T) {
+	// M12 tiered refresh: with all panels unloaded (newly-initialized
+	// model), Refresh only fires Status + active-panel cmds. The
+	// unloaded data panels stay at loading=false (lazy policy).
 	m := newTestModel()
 	for _, p := range m.panels {
 		p.loading = false
 	}
-	// Default model is on PanelStatus; Outdated is NOT active, so it
-	// must NOT enter loading state on Refresh (M9 lazy policy).
+	// Pre-populate Status (active) and one other panel so the test
+	// exercises the "loaded → refresh" branch.
+	m.panels[PanelFormulae].items = []string{"ripgrep  1.0"}
+	m.panels[PanelFormulae].loading = false
 	m = updateModel(m, RefreshMsg{})
 
+	if !m.panels[PanelStatus].loading {
+		t.Errorf("Status should be loading (always refreshed, M12)")
+	}
+	if !m.panels[PanelFormulae].loading {
+		t.Errorf("loaded Formulae should be loading after refresh")
+	}
 	for _, p := range m.panels {
 		switch p.id {
 		case PanelSearch:
 			if p.loading {
-				t.Errorf("PanelSearch should not be loading after refresh")
+				t.Errorf("PanelSearch should not be loading")
 			}
-		case PanelOutdated:
-			if p.loading {
-				t.Errorf("PanelOutdated should NOT load on Refresh when not active (M9 lazy)")
-			}
+		case PanelStatus, PanelFormulae:
+			// expected loading
 		default:
-			if !p.loading {
-				t.Errorf("panel %v should be loading after refresh", p.id)
+			if p.loading {
+				t.Errorf("unloaded panel %v should NOT be loading (M12 tiered refresh)", p.id)
 			}
 		}
+	}
+}
+
+// TestRefreshTieredRespectsLoadedSet locks M12 AC-04: R fires active +
+// Status, plus any panel the user has already loaded. Unloaded panels
+// stay unloaded.
+func TestRefreshTieredRespectsLoadedSet(t *testing.T) {
+	m := newTestModel()
+	// Pre-load: Formulae + Casks + Taps. Outdated, Services stay unloaded.
+	m.panels[PanelFormulae].items = []string{"f1"}
+	m.panels[PanelCasks].items = []string{"c1"}
+	m.panels[PanelTaps].items = []string{"t1"}
+	m.activePanel = PanelFormulae
+	for _, p := range m.panels {
+		p.loading = false
+	}
+
+	m = updateModel(m, RefreshMsg{})
+
+	// Status + Formulae (active) + Casks + Taps = 4. Outdated/Services unloaded.
+	wantCmds := 4
+	if m.refreshing != wantCmds {
+		t.Errorf("refreshing = %d, want %d (Status + Formulae + Casks + Taps)", m.refreshing, wantCmds)
+	}
+	if m.panels[PanelOutdated].loading {
+		t.Error("unloaded PanelOutdated should NOT enter loading on refresh")
+	}
+	if m.panels[PanelServices].loading {
+		t.Error("unloaded PanelServices should NOT enter loading on refresh")
 	}
 }
 
@@ -1313,16 +1351,17 @@ func TestRefreshLoadsOutdatedWhenActive(t *testing.T) {
 	m = updateModel(m, RefreshMsg{})
 
 	if !m.panels[PanelOutdated].loading {
-		t.Error("PanelOutdated should load on Refresh when active")
+		t.Error("PanelOutdated should load on Refresh when active (AC-04)")
 	}
-	if m.refreshing != 6 {
-		t.Errorf("refreshing = %d, want 6 when Outdated is active", m.refreshing)
+	// Status + active = 2 cmds; unloaded panels stay skipped.
+	if m.refreshing != 2 {
+		t.Errorf("refreshing = %d, want 2 (Status + active)", m.refreshing)
 	}
 }
 
 func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
-	// M9 F-03: when Outdated is not active, Refresh enqueues 5 DataLoaded
-	// producers. refreshing must equal that count so the toast fires at 0.
+	// M12: with no panels loaded (unloaded), Refresh only fires Status +
+	// active = 2 producers.
 	m := newTestModel()
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
@@ -1331,16 +1370,16 @@ func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
 	}
 
 	m = updateModel(m, RefreshMsg{})
-	if m.refreshing != 5 {
-		t.Fatalf("refreshing = %d, want 5 when Outdated inactive", m.refreshing)
+	if m.refreshing != 2 {
+		t.Fatalf("refreshing = %d, want 2 (Status + active=Status)", m.refreshing)
 	}
 
-	// Simulate the five panel loads completing.
-	for i := 0; i < 5; i++ {
-		m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae})
+	// Simulate the two loads completing.
+	for i := 0; i < 2; i++ {
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
 	}
 	if m.refreshing != 0 {
-		t.Errorf("after 5 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
+		t.Errorf("after 2 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
 	}
 	if m.toast == nil {
 		t.Fatal("expected 'Data refreshed' toast after last panel load")
@@ -1726,4 +1765,57 @@ func newStatusMockRunner(doctorFn func(ctx context.Context, args ...string) ([]b
 		return []byte{}, nil
 	}
 	return r
+}
+
+// TestPauseOnInteractionDefersRefresh locks M12 AC-03: when the user
+// pressed a key within the pause window, evaluateAutoRefresh returns
+// autoRefreshPausedMsg; once the window elapses, it returns RefreshMsg.
+// We drive evaluateAutoRefresh directly so the test is deterministic
+// (no dependence on tea.Tick's wall-clock timing).
+func TestPauseOnInteractionDefersRefresh(t *testing.T) {
+	m := newTestModel()
+	m.cfg.GUI.AutoRefreshPause = 100 * time.Millisecond
+	m.lastKeyAt = time.Now() // recent key press
+
+	// Tick fires 50ms after the key press — within the 100ms window.
+	msg := m.evaluateAutoRefresh(m.lastKeyAt.Add(50 * time.Millisecond))
+	if _, ok := msg.(autoRefreshPausedMsg); !ok {
+		t.Fatalf("expected autoRefreshPausedMsg within pause window, got %T", msg)
+	}
+
+	// Tick fires 200ms after the key press — past the 100ms window.
+	msg = m.evaluateAutoRefresh(m.lastKeyAt.Add(200 * time.Millisecond))
+	if _, ok := msg.(RefreshMsg); !ok {
+		t.Errorf("expected RefreshMsg after pause window, got %T", msg)
+	}
+}
+
+// TestPauseDisabledWhenZero ensures AutoRefreshPause=0 keeps the legacy
+// behaviour (no pause check).
+func TestPauseDisabledWhenZero(t *testing.T) {
+	m := newTestModel()
+	m.cfg.GUI.AutoRefreshPause = 0
+	m.lastKeyAt = time.Now()
+
+	msg := m.evaluateAutoRefresh(m.lastKeyAt.Add(10 * time.Millisecond))
+	if _, ok := msg.(RefreshMsg); !ok {
+		t.Errorf("expected RefreshMsg when AutoRefreshPause=0, got %T", msg)
+	}
+}
+
+// TestKeyEventResetsLastKeyAt locks AC-03: every key press refreshes
+// lastKeyAt so the pause window restarts.
+func TestKeyEventResetsLastKeyAt(t *testing.T) {
+	m := newTestModel()
+	before := time.Now().Add(-1 * time.Hour)
+	m.lastKeyAt = before
+
+	nm, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+	updated, ok := nm.(Model)
+	if !ok {
+		t.Fatalf("Update returned unexpected type %T", nm)
+	}
+	if !updated.lastKeyAt.After(before) {
+		t.Errorf("lastKeyAt should advance on key press, was %v, now %v", before, updated.lastKeyAt)
+	}
 }

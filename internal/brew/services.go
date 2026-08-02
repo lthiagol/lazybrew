@@ -3,10 +3,12 @@ package brew
 import (
 	"context"
 	"encoding/json"
+	"time"
 )
 
 type ServicesReader interface {
 	List(ctx context.Context) ([]Service, error)
+	SetCacheTTLs(ttls CacheTTLs)
 }
 
 type ServicesWriter interface {
@@ -18,8 +20,9 @@ type ServicesWriter interface {
 }
 
 type servicesReader struct {
-	runner Runner
-	cache  *Cache
+	runner      Runner
+	cache       *Cache
+	servicesTTL time.Duration
 }
 
 type servicesWriter struct {
@@ -63,8 +66,16 @@ func (s *servicesReader) List(ctx context.Context) ([]Service, error) {
 		}
 	}
 
-	s.cache.Set(KeyServicesList, services)
+	s.cache.SetWithTTL(KeyServicesList, services, s.servicesTTL)
 	return services, nil
+}
+
+// SetCacheTTLs configures the cache TTL for `brew services list` results.
+// Implements TTLSetter.
+func (s *servicesReader) SetCacheTTLs(ttls CacheTTLs) {
+	if ttls.Services > 0 {
+		s.servicesTTL = ttls.Services
+	}
 }
 
 func (s *servicesWriter) Start(ctx context.Context, name string) error {

@@ -63,6 +63,16 @@ type Model struct {
 	opDoneAt   time.Time
 	taskID     string
 	refreshing int
+
+	// lastKeyAt tracks the last time the user pressed a key. The auto
+	// refresh tick consults this to pause refreshes during interaction
+	// (M12 AC-03) so typing/navigation is not janked by a full
+	// refresh storm.
+	lastKeyAt time.Time
+	// autoRefreshPaused is set by the tick handler when lastKeyAt is
+	// within the pause window. The next tick will re-evaluate; the
+	// pending refresh is rescheduled for one AutoRefreshSeconds later.
+	autoRefreshPaused bool
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -122,13 +132,14 @@ func (m Model) Init() tea.Cmd {
 			m.updateTickerCmd(),
 		)
 	} else {
-		cmds = append(cmds,
-			fetchPanelData(m.client, PanelFormulae),
-			fetchPanelData(m.client, PanelCasks),
-			fetchPanelData(m.client, PanelTaps),
-			fetchPanelData(m.client, PanelServices),
-			fetchStatusData(m.client),
-		)
+		// M12: Init only fetches the active panel (default = Status,
+		// which doubles as the dashboard). Other panels lazy-load on
+		// first switch via lazyLoadPanel().
+		if m.activePanel == PanelStatus {
+			cmds = append(cmds, fetchStatusData(m.client))
+		} else {
+			cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
+		}
 		if tick := m.autoRefreshCmd(); tick != nil {
 			cmds = append(cmds, tick)
 		}
@@ -143,13 +154,33 @@ func (m Model) updateTickerCmd() tea.Cmd {
 	})
 }
 
+// autoRefreshCmd schedules the next auto-refresh tick. M12 AC-03: when
+// the user pressed a key within the pause window, the tick reschedules
+// itself for one AutoRefreshSeconds later (instead of issuing a
+// RefreshMsg). This keeps typing/navigation responsive.
 func (m Model) autoRefreshCmd() tea.Cmd {
 	if m.cfg.GUI.AutoRefreshSeconds <= 0 {
 		return nil
 	}
-	return tea.Tick(time.Duration(m.cfg.GUI.AutoRefreshSeconds)*time.Second, func(t time.Time) tea.Msg {
-		return RefreshMsg{}
+	d := time.Duration(m.cfg.GUI.AutoRefreshSeconds) * time.Second
+	return tea.Tick(d, func(t time.Time) tea.Msg {
+		return m.evaluateAutoRefresh(t)
 	})
+}
+
+// evaluateAutoRefresh is the pure decision function used by the tick
+// closure (and directly by tests). Returns autoRefreshPausedMsg when the
+// user pressed a key within the pause window; RefreshMsg otherwise.
+// Extracted so tests can drive it deterministically without depending
+// on tea.Tick's wall-clock timing.
+func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
+	pause := m.cfg.GUI.AutoRefreshPause
+	if pause > 0 && !m.lastKeyAt.IsZero() && now.Sub(m.lastKeyAt) < pause {
+		m.autoRefreshPaused = true
+		return autoRefreshPausedMsg{}
+	}
+	m.autoRefreshPaused = false
+	return RefreshMsg{}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -170,6 +201,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
+
+	case autoRefreshPausedMsg:
+		// The tick observed a recent key press; reschedule the next
+		// tick instead of issuing RefreshMsg so typing/navigation is
+		// not janked.
+		if m.cfg.GUI.AutoRefreshSeconds > 0 {
+			d := time.Duration(m.cfg.GUI.AutoRefreshSeconds) * time.Second
+			return m, tea.Tick(d, func(time.Time) tea.Msg { return RefreshMsg{} })
+		}
+		return m, nil
 
 	case SearchDoneMsg:
 		p := m.panels[PanelSearch]
@@ -413,25 +454,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case RefreshMsg:
 		m.clearTabContent()
+		// M12 tiered refresh:
+		//   * Status always refreshes (the dashboard is "related" to
+		//     every other class — its fetchPanelData uses cache for
+		//     formulae/casks/taps/services/outdated so most panels
+		//     become free hits).
+		//   * Active panel always refreshes (AC-04: R forces it even
+		//     if TTL not expired).
+		//   * Other loaded panels refresh via fetchPanelData — cache
+		//     hits keep them free if their per-class TTL hasn't expired.
+		//   * Unloaded (lazy) panels are skipped to honour S2.
+		m.panels[PanelStatus].loading = true
+		m.panels[m.activePanel].loading = true
+		cmds := []tea.Cmd{fetchStatusData(m.client)}
+		cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
 		for _, p := range m.panels {
-			if p.id == PanelSearch || p.id == PanelOutdated {
+			if p.id == PanelStatus || p.id == PanelSearch {
 				continue
 			}
+			if p.id == m.activePanel {
+				continue
+			}
+			if p.items == nil {
+				continue // never loaded; honour lazy policy.
+			}
 			p.loading = true
-		}
-		cmds := []tea.Cmd{
-			fetchPanelData(m.client, PanelFormulae),
-			fetchPanelData(m.client, PanelCasks),
-			fetchPanelData(m.client, PanelTaps),
-			fetchPanelData(m.client, PanelServices),
-			fetchStatusData(m.client),
-		}
-		if m.activePanel == PanelOutdated {
-			m.panels[PanelOutdated].loading = true
-			cmds = append(cmds, fetchPanelData(m.client, PanelOutdated))
+			cmds = append(cmds, fetchPanelData(m.client, p.id))
 		}
 		// Count only DataLoadedMsg producers so the "Data refreshed" toast
-		// fires when the last panel lands (M9: Outdated is optional).
+		// fires when the last panel lands.
 		m.refreshing = len(cmds)
 		if tick := m.autoRefreshCmd(); tick != nil {
 			cmds = append(cmds, tick)
@@ -439,6 +490,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	case tea.KeyMsg:
+		// M12 AC-03: every key press resets the auto-refresh pause
+		// window so the next tick defers its work.
+		m.lastKeyAt = time.Now()
+		m.autoRefreshPaused = false
 		if m.activeModal != nil {
 			updated, cmd := m.activeModal.Update(msg)
 			if modal, ok := updated.(modal.Modal); ok {
@@ -781,35 +836,35 @@ func (m Model) View() string {
 	return full
 }
 
-// lazyLoadOutdated returns fetchPanelData(PanelOutdated) iff the panel
-// is empty, not already loading. It is the single source of truth for
-// M9's lazy Outdated policy: callers that activate the Outdated panel
-// (switchPanel, nextPanel, prevPanel) delegate here. Clearing p.err on
-// retry ensures a stale error from a previous failed fetch doesn't block
-// the new attempt.
-func (m *Model) lazyLoadOutdated() tea.Cmd {
-	p := m.panels[PanelOutdated]
+// lazyLoadPanel returns fetchPanelData(id) iff the panel is empty, not
+// already loading. It is the single source of truth for M9/M12's lazy
+// policy: callers that activate any non-Status panel (switchPanel,
+// nextPanel, prevPanel) delegate here. Clearing p.err on retry ensures
+// a stale error from a previous failed fetch doesn't block the new
+// attempt.
+func (m *Model) lazyLoadPanel(id PanelID) tea.Cmd {
+	if id == PanelStatus || id == PanelSearch {
+		return nil
+	}
+	p := m.panels[id]
 	if p.items == nil && !p.loading {
 		p.loading = true
 		p.err = nil
-		return fetchPanelData(m.client, PanelOutdated)
+		return fetchPanelData(m.client, id)
 	}
 	return nil
 }
 
-// nextPanel / prevPanel cycle through panels. When cycling lands on the
-// Outdated panel for the first time, they trigger a lazy fetch — same
-// policy as switchPanel(PanelOutdated).
+// nextPanel / prevPanel cycle through panels. When cycling lands on a
+// not-yet-loaded panel, the lazy path triggers a fetch — same policy
+// as switchPanel.
 func (m *Model) nextPanel() tea.Cmd {
 	m.panels[m.activePanel].active = false
 	m.activePanel = PanelID((int(m.activePanel) + 1) % len(m.panels))
 	m.panels[m.activePanel].active = true
 	m.activeTab = 0
 	m.tabs = panelTabs[m.activePanel]
-	if m.activePanel == PanelOutdated {
-		return m.lazyLoadOutdated()
-	}
-	return nil
+	return m.lazyLoadPanel(m.activePanel)
 }
 
 func (m *Model) prevPanel() tea.Cmd {
@@ -818,15 +873,14 @@ func (m *Model) prevPanel() tea.Cmd {
 	m.panels[m.activePanel].active = true
 	m.activeTab = 0
 	m.tabs = panelTabs[m.activePanel]
-	if m.activePanel == PanelOutdated {
-		return m.lazyLoadOutdated()
-	}
-	return nil
+	return m.lazyLoadPanel(m.activePanel)
 }
 
 // switchPanel activates the panel and returns any lazy-fetch command.
-// Returns nil for panels that don't lazy-load. Outdated lazy-loads on
-// first visit so Init / Refresh don't stampede `brew outdated`.
+// Returns nil for panels that don't lazy-load (Status is preloaded on
+// Init; Search is user-input-driven). All other panels lazy-load on
+// first visit so Init doesn't stampede `brew …` and tiered refresh
+// (M12) can re-fetch them later.
 func (m *Model) switchPanel(id PanelID) tea.Cmd {
 	if int(id) >= len(m.panels) {
 		return nil
@@ -843,10 +897,7 @@ func (m *Model) switchPanel(id PanelID) tea.Cmd {
 	} else {
 		m.searchInput.Blur()
 	}
-	if id == PanelOutdated {
-		return m.lazyLoadOutdated()
-	}
-	return nil
+	return m.lazyLoadPanel(id)
 }
 
 func (m *Model) nextTab() tea.Cmd {

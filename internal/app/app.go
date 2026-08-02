@@ -62,7 +62,14 @@ func New(opts Options) (tea.Model, error) {
 
 	logRunner := brew.NewLoggingRunner(runner, nil, nil)
 	client := brew.NewClient(logRunner)
-	client.SetOutdatedTTL(cfg.Brew.OutdatedTTL)
+	client.SetCacheTTLs(brew.CacheTTLs{
+		Formulae: cfg.Brew.FormulaeTTL,
+		Casks:    cfg.Brew.CasksTTL,
+		Outdated: cfg.Brew.OutdatedTTL,
+		Taps:     cfg.Brew.TapsTTL,
+		Services: cfg.Brew.ServicesTTL,
+		Doctor:   cfg.Brew.DoctorTTL,
+	})
 	model := gui.New(client, cfg)
 	logRunner.OnStart = model.CommandLogStartCallback()
 	logRunner.OnExec = model.CommandLogCallback()

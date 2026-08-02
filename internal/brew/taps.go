@@ -3,6 +3,7 @@ package brew
 import (
 	"context"
 	"strings"
+	"time"
 )
 
 type TapsReader interface {
@@ -18,8 +19,9 @@ type TapsWriter interface {
 }
 
 type tapsReader struct {
-	runner Runner
-	cache  *Cache
+	runner  Runner
+	cache   *Cache
+	tapsTTL time.Duration
 }
 
 type tapsWriter struct {
@@ -102,7 +104,7 @@ func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
 		}
 	}
 
-	s.cache.Set(KeyTapsList, taps)
+	s.cache.SetWithTTL(KeyTapsList, taps, s.tapsTTL)
 	return taps, nil
 }
 
@@ -133,6 +135,14 @@ func infoToTap(info *tapInfoJSON) *Tap {
 		Trusted:      info.Trusted,
 		FormulaNames: info.FormulaNames,
 		CaskNames:    info.CaskNames,
+	}
+}
+
+// SetCacheTTLs configures the cache TTL for `brew tap` results.
+// Implements TTLSetter.
+func (s *tapsReader) SetCacheTTLs(ttls CacheTTLs) {
+	if ttls.Taps > 0 {
+		s.tapsTTL = ttls.Taps
 	}
 }
 

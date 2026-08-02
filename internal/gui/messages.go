@@ -65,3 +65,9 @@ type DepCheckMsg struct {
 	Label   string
 	Message string
 }
+
+// autoRefreshPausedMsg signals that the auto-refresh tick observed a
+// recent key press and rescheduled itself. The handler converts this
+// back into a follow-up autoRefreshCmd() so the next tick fires one
+// AutoRefreshSeconds later.
+type autoRefreshPausedMsg struct{}

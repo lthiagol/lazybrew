@@ -27,6 +27,22 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.Brew.OutdatedTTL != 30*time.Minute {
 		t.Errorf("DefaultOutdatedTTL should be 30m, got %s", cfg.Brew.OutdatedTTL)
 	}
+	// M12 per-class defaults.
+	if cfg.Brew.FormulaeTTL != DefaultFormulaeTTL {
+		t.Errorf("FormulaeTTL = %s, want %s", cfg.Brew.FormulaeTTL, DefaultFormulaeTTL)
+	}
+	if cfg.Brew.CasksTTL != DefaultCasksTTL {
+		t.Errorf("CasksTTL = %s, want %s", cfg.Brew.CasksTTL, DefaultCasksTTL)
+	}
+	if cfg.Brew.TapsTTL != DefaultTapsTTL {
+		t.Errorf("TapsTTL = %s, want %s", cfg.Brew.TapsTTL, DefaultTapsTTL)
+	}
+	if cfg.Brew.ServicesTTL != DefaultServicesTTL {
+		t.Errorf("ServicesTTL = %s, want %s", cfg.Brew.ServicesTTL, DefaultServicesTTL)
+	}
+	if cfg.Brew.DoctorTTL != DefaultDoctorTTL {
+		t.Errorf("DoctorTTL = %s, want %s", cfg.Brew.DoctorTTL, DefaultDoctorTTL)
+	}
 }
 
 func TestLoadMissingFile(t *testing.T) {
@@ -52,6 +68,11 @@ brew:
   path: /custom/brew
   update_on_start: true
   outdated_ttl: 5m
+  formulae_ttl: 10m
+  casks_ttl: 15m
+  taps_ttl: 2h
+  services_ttl: 45s
+  doctor_ttl: 90m
 `
 	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
 		t.Fatal(err)
@@ -76,6 +97,21 @@ brew:
 	}
 	if cfg.Brew.OutdatedTTL != 5*time.Minute {
 		t.Errorf("OutdatedTTL = %s, want 5m", cfg.Brew.OutdatedTTL)
+	}
+	if cfg.Brew.FormulaeTTL != 10*time.Minute {
+		t.Errorf("FormulaeTTL = %s, want 10m", cfg.Brew.FormulaeTTL)
+	}
+	if cfg.Brew.CasksTTL != 15*time.Minute {
+		t.Errorf("CasksTTL = %s, want 15m", cfg.Brew.CasksTTL)
+	}
+	if cfg.Brew.TapsTTL != 2*time.Hour {
+		t.Errorf("TapsTTL = %s, want 2h", cfg.Brew.TapsTTL)
+	}
+	if cfg.Brew.ServicesTTL != 45*time.Second {
+		t.Errorf("ServicesTTL = %s, want 45s", cfg.Brew.ServicesTTL)
+	}
+	if cfg.Brew.DoctorTTL != 90*time.Minute {
+		t.Errorf("DoctorTTL = %s, want 90m", cfg.Brew.DoctorTTL)
 	}
 }
 
@@ -114,6 +150,43 @@ func TestLoadZeroOutdatedTTLFallsBackToDefault(t *testing.T) {
 	}
 	if cfg.Brew.OutdatedTTL != DefaultOutdatedTTL {
 		t.Errorf("zero OutdatedTTL should fall back to default, got %s", cfg.Brew.OutdatedTTL)
+	}
+}
+
+func TestLoadZeroAllTTLsFallBackToDefaults(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	data := `brew:
+  formulae_ttl: 0s
+  casks_ttl: 0s
+  outdated_ttl: 0s
+  taps_ttl: 0s
+  services_ttl: 0s
+  doctor_ttl: 0s
+`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		got  time.Duration
+		want time.Duration
+	}{
+		{"FormulaeTTL", cfg.Brew.FormulaeTTL, DefaultFormulaeTTL},
+		{"CasksTTL", cfg.Brew.CasksTTL, DefaultCasksTTL},
+		{"OutdatedTTL", cfg.Brew.OutdatedTTL, DefaultOutdatedTTL},
+		{"TapsTTL", cfg.Brew.TapsTTL, DefaultTapsTTL},
+		{"ServicesTTL", cfg.Brew.ServicesTTL, DefaultServicesTTL},
+		{"DoctorTTL", cfg.Brew.DoctorTTL, DefaultDoctorTTL},
+	}
+	for _, tc := range tests {
+		if tc.got != tc.want {
+			t.Errorf("%s = %s, want %s (default)", tc.name, tc.got, tc.want)
+		}
 	}
 }
 
