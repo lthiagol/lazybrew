@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -104,14 +105,30 @@ func TestFormatStatusDashboard(t *testing.T) {
 }
 
 func TestFormatDoctorStatus(t *testing.T) {
-	clean := FormatDoctorStatus([]brew.DoctorWarning{})
+	clean := FormatDoctorStatus([]brew.DoctorWarning{}, nil)
 	if !strings.Contains(clean, "No issues") {
 		t.Errorf("expected No issues, got: %s", clean)
 	}
 
-	warnings := FormatDoctorStatus([]brew.DoctorWarning{{Title: "test"}})
+	warnings := FormatDoctorStatus([]brew.DoctorWarning{{Title: "test"}}, nil)
 	if !strings.Contains(warnings, "1 warning") {
 		t.Errorf("expected 1 warning, got: %s", warnings)
+	}
+
+	unavailable := FormatDoctorStatus(nil, errors.New("brew not found"))
+	if !strings.Contains(unavailable, "unavailable") {
+		t.Errorf("expected unavailable marker, got: %s", unavailable)
+	}
+	if !strings.Contains(unavailable, "brew not found") {
+		t.Errorf("expected error reason in unavailable line, got: %s", unavailable)
+	}
+
+	errBeatsWarnings := FormatDoctorStatus([]brew.DoctorWarning{{Title: "stale"}}, errors.New("exec failed"))
+	if !strings.Contains(errBeatsWarnings, "unavailable") {
+		t.Errorf("expected unavailable marker when err present, got: %s", errBeatsWarnings)
+	}
+	if strings.Contains(errBeatsWarnings, "stale") || strings.Contains(errBeatsWarnings, "warning") {
+		t.Errorf("err should win; warnings must NOT appear, got: %s", errBeatsWarnings)
 	}
 }
 

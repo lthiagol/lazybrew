@@ -3,9 +3,9 @@
     "id": "10",
     "title": "M26 Diagnostics Error Handling",
     "slug": "m26-diagnostics-error-handling",
-    "lifecycle": "approved",
-    "spec_status": "ready",
-    "execution_status": "planned",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -17,13 +17,13 @@
     "change_kind": "",
     "priority": "normal",
     "created": "2026-07-30",
-    "updated": "2026-08-01",
+    "updated": "2026-08-02",
     "blocked_at": "",
     "block_reason": "",
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-01T21:13:15.254821+00:00"
+    "lifecycle_at": "2026-08-02T11:19:25.615152+00:00"
   },
   "intent": {
     "outcome": "Doctor exit=1 is confirmed warning-path end-to-end: brew layer already parses warnings; GUI Status Doctor tab and d-key path never treat exit=1 as a hard error toast; residual swallowed errors on dashboard are fixed or explicitly accepted."
@@ -50,22 +50,22 @@
       "id": "AC-01",
       "description": "brew doctor exit=1 returns parsed warnings and nil error from DiagnosticsReader.Doctor (existing behavior locked by test).",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M10 complete. S1 (audit) + S2 (fix) done. 3/3 ACs passed. doctor.go exit=1 path locked. fetchStatusData doctorErr captured + FormatDoctorStatus(warnings, err) added. Self-finding F-01 (test coverage) addressed inline. Code review applied: introduced newStatusMockRunner helper to avoid spurious JSON-parse noise. make test / vet / lint / cover-check all green."
     },
     {
       "id": "AC-02",
       "description": "GUI Doctor tab / d-key path does not surface exit=1 as a failure toast; warnings or clean output render.",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M10 complete. S1 (audit) + S2 (fix) done. 3/3 ACs passed. doctor.go exit=1 path locked. fetchStatusData doctorErr captured + FormatDoctorStatus(warnings, err) added. Self-finding F-01 (test coverage) addressed inline. Code review applied: introduced newStatusMockRunner helper to avoid spurious JSON-parse noise. make test / vet / lint / cover-check all green."
     },
     {
       "id": "AC-03",
       "description": "Status dashboard either surfaces real doctor errors or documents intentional ignore; no panic/silent wrong state.",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M10 complete. S1 (audit) + S2 (fix) done. 3/3 ACs passed. doctor.go exit=1 path locked. fetchStatusData doctorErr captured + FormatDoctorStatus(warnings, err) added. Self-finding F-01 (test coverage) addressed inline. Code review applied: introduced newStatusMockRunner helper to avoid spurious JSON-parse noise. make test / vet / lint / cover-check all green."
     }
   ],
   "design_decisions": [
@@ -95,7 +95,7 @@
       ],
       "tests": "go test -race ./internal/brew/ -run Doctor",
       "done_when": "Audit notes which paths need change",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-01",
         "AC-02"
@@ -117,7 +117,7 @@
       ],
       "tests": "go test -race ./internal/gui/... ./internal/brew/...",
       "done_when": "AC-02 AC-03 green",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-02",
         "AC-03"
@@ -132,8 +132,22 @@
     }
   ],
   "verification": {
-    "date": "",
+    "date": "2026-08-02",
     "branch": "",
-    "evidence": ""
-  }
+    "evidence": "M10 complete. S1 (audit) + S2 (fix) done. 3/3 ACs passed. doctor.go exit=1 path locked. fetchStatusData doctorErr captured + FormatDoctorStatus(warnings, err) added. Self-finding F-01 (test coverage) addressed inline. Code review applied: introduced newStatusMockRunner helper to avoid spurious JSON-parse noise. make test / vet / lint / cover-check all green."
+  },
+  "findings": [
+    {
+      "id": "F-01",
+      "severity": "low",
+      "category": "test-coverage",
+      "description": "TestFormatDoctorStatus does not lock the 'err + warnings → err wins' behavior. If a future refactor makes FormatDoctorStatus append warnings even on err, the dashboard would show 'Doctor: unavailable (X) AND N warnings', which is misleading. Easy follow-up: extend the test with warnings={1 item}, err=non-nil → expect 'unavailable' substring and absence of 'warning' substring.",
+      "status": "fixed",
+      "author": "runner",
+      "fixed_in": "6e2f47a7da38d32d849f9f39b1c2de14ca74d925",
+      "created": "2026-08-02",
+      "resolved": "2026-08-02",
+      "phase": "self"
+    }
+  ]
 }

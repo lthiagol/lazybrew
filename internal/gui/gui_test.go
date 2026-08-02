@@ -1334,3 +1334,97 @@ func TestBatchUpgradeUpgradesAllSelected(t *testing.T) {
 		t.Fatalf("expected batch selection cleared after upgrade, got %d remaining", len(result.batch.selected))
 	}
 }
+
+func TestStatusDashboardSurfacesDoctorError(t *testing.T) {
+	// Regression for M10 AC-03: fetchStatusData previously swallowed the
+	// doctor error and showed "Doctor: No issues" on failure, which is a
+	// silent-wrong-state for the user. Now the error must surface as both
+	// a "Doctor: unavailable (...)" line and the existing ⚠ doctor: ... line.
+	r := newStatusMockRunner(func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "doctor" {
+			return nil, &brew.BrewExitError{Command: "doctor", ExitCode: 2}
+		}
+		return []byte{}, nil
+	})
+	client := brew.NewClient(r)
+
+	cmd := fetchStatusData(client)
+	if cmd == nil {
+		t.Fatal("fetchStatusData returned nil cmd")
+	}
+	msg := cmd()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "Doctor: unavailable") {
+		t.Errorf("expected 'Doctor: unavailable' in dashboard items, got:\n%s", joined)
+	}
+	if strings.Contains(joined, "Doctor: No issues") {
+		t.Errorf("did NOT expect 'Doctor: No issues' when doctor failed, got:\n%s", joined)
+	}
+	foundWarn := false
+	for _, item := range dMsg.Items {
+		if strings.Contains(item, "⚠") && strings.Contains(item, "doctor") {
+			foundWarn = true
+			break
+		}
+	}
+	if !foundWarn {
+		t.Errorf("expected '⚠ doctor: ...' warning line, got items:\n%v", dMsg.Items)
+	}
+}
+
+func TestStatusDashboardDoesNotWarnOnDoctorExitCode1(t *testing.T) {
+	// M10 AC-01 / AC-02: brew doctor exit=1 means warnings, not failure.
+	// The dashboard must show the warning count and no error indicator.
+	r := newStatusMockRunner(func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "doctor" {
+			return []byte("Warning: Your Homebrew is outdated.\n"), &brew.BrewExitError{Command: "doctor", ExitCode: 1}
+		}
+		return []byte{}, nil
+	})
+	client := brew.NewClient(r)
+
+	cmd := fetchStatusData(client)
+	msg := cmd()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "1 warning") {
+		t.Errorf("expected 'Doctor: 1 warning' in dashboard items, got:\n%s", joined)
+	}
+	for _, item := range dMsg.Items {
+		if strings.Contains(item, "⚠") && strings.Contains(item, "doctor") {
+			t.Errorf("did NOT expect '⚠ doctor: ...' on exit=1 (it's warnings), got: %s", item)
+		}
+	}
+}
+
+// newStatusMockRunner wraps a doctor-specific ExecuteFn so callers can
+// ignore the JSON shape expected by fetchStatusData for the other panels.
+// Other commands return empty JSON objects so the dashboard doesn't show
+// spurious "unexpected end of JSON input" warnings.
+func newStatusMockRunner(doctorFn func(ctx context.Context, args ...string) ([]byte, error)) *brew.MockRunner {
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "doctor" {
+			return doctorFn(ctx, args...)
+		}
+		switch {
+		case len(args) >= 1 && args[0] == "info":
+			return []byte(`{"formulae":[],"casks":[]}`), nil
+		case len(args) >= 1 && args[0] == "outdated":
+			return []byte(`{"formulae":[]}`), nil
+		case len(args) >= 1 && args[0] == "tap-info":
+			return []byte(`{"taps":[]}`), nil
+		case len(args) >= 1 && args[0] == "services":
+			return []byte(`{"services":[]}`), nil
+		}
+		return []byte{}, nil
+	}
+	return r
+}

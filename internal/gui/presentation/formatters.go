@@ -220,7 +220,10 @@ func truncate(s string, maxLen int) string {
 	return string(runes[:maxLen-1]) + "…"
 }
 
-func FormatDoctorStatus(warnings []brew.DoctorWarning) string {
+func FormatDoctorStatus(warnings []brew.DoctorWarning, err error) string {
+	if err != nil {
+		return fmt.Sprintf("Doctor: unavailable (%s)", err.Error())
+	}
 	if len(warnings) == 0 {
 		return "Doctor: No issues"
 	}
