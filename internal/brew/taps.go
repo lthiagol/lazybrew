@@ -81,11 +81,9 @@ func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
 	if len(names) > 0 {
 		infos, err := s.fetchTapInfoBatch(ctx, names)
 		if err != nil {
-			// M11 AC-01 / robustness: keep the name-only list when the
-			// batch fails (e.g. transient brew hiccup) rather than
-			// returning an empty list. The GUI still renders tap names;
-			// detail tabs may show "no data" until the next refresh.
-			s.cache.Set(KeyTapsList, taps)
+			// Keep name-only list for this call so the GUI still renders
+			// taps, but do NOT cache — a transient batch failure must not
+			// poison KeyTapsList and block retries for the whole TTL.
 			return taps, nil
 		}
 		byName := make(map[string]tapInfoJSON, len(infos))
@@ -97,14 +95,10 @@ func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
 			if !ok {
 				continue
 			}
-			taps[i].Remote = info.Remote
-			taps[i].FormulaCount = info.FormulaCount
-			taps[i].CaskCount = info.CaskCount
-			taps[i].CommandCount = info.CommandCount
-			taps[i].IsAPI = info.API
-			taps[i].Trusted = info.Trusted
-			taps[i].FormulaNames = info.FormulaNames
-			taps[i].CaskNames = info.CaskNames
+			// Reuse infoToTap so List and Get stay field-aligned.
+			enriched := infoToTap(&info)
+			enriched.IsOfficial = tap.IsOfficial
+			taps[i] = *enriched
 		}
 	}
 
