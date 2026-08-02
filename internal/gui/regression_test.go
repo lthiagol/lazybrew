@@ -8,12 +8,12 @@ import (
 )
 
 func TestTabContentChangesWithSelection_KeyDiffers(t *testing.T) {
-	k1 := tabKey(PanelFormulae, 1, "ripgrep")
-	k2 := tabKey(PanelFormulae, 1, "neovim")
+	k1 := tabKey(PanelFormulae, 2, "ripgrep")
+	k2 := tabKey(PanelFormulae, 2, "neovim")
 	if k1 == k2 {
 		t.Error("tab keys for different items must differ")
 	}
-	if tabKey(PanelFormulae, 1, "ripgrep") != k1 {
+	if tabKey(PanelFormulae, 2, "ripgrep") != k1 {
 		t.Error("tab key must be deterministic")
 	}
 }
@@ -25,7 +25,7 @@ func TestTabContentChangesWithSelection_Refetch(t *testing.T) {
 	p.items = []string{"ripgrep  14.1.1  bottled", "neovim  0.10.4  bottled"}
 	p.selected = 0
 
-	m.activeTab = 1
+	m.activeTab = 2
 
 	cmd := m.loadTabContent()
 	if cmd == nil {

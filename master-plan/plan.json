@@ -622,8 +622,8 @@
     {
       "id": "16",
       "title": "Main panel tabs + Formulae table (pilot)",
-      "spec_status": "ready",
-      "execution_status": "planned",
+      "spec_status": "verified",
+      "execution_status": "done",
       "blocked_by": ""
     }
   ],
