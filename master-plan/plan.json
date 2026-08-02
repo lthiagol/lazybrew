@@ -615,8 +615,8 @@
     {
       "id": "15",
       "title": "Loading state spinner upgrade",
-      "spec_status": "ready",
-      "execution_status": "planned",
+      "spec_status": "verified",
+      "execution_status": "done",
       "blocked_by": ""
     },
     {

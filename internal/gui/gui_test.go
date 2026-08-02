@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
@@ -58,6 +59,68 @@ func TestNewModel(t *testing.T) {
 	}
 	if !m.panels[PanelStatus].active {
 		t.Error("Status panel should be active by default")
+	}
+}
+
+func TestSpinnerDotsAndAccent(t *testing.T) {
+	m := newTestModel()
+	if len(m.spinner.Spinner.Frames) != len(spinner.Dot.Frames) {
+		t.Fatalf("spinner frames = %d, want Dot (%d)", len(m.spinner.Spinner.Frames), len(spinner.Dot.Frames))
+	}
+	for i, f := range spinner.Dot.Frames {
+		if m.spinner.Spinner.Frames[i] != f {
+			t.Fatalf("frame[%d] = %q, want Dot %q", i, m.spinner.Spinner.Frames[i], f)
+		}
+	}
+	if len(m.spinner.Spinner.Frames) != 8 {
+		t.Errorf("Dot spinner should have 8 frames, got %d", len(m.spinner.Spinner.Frames))
+	}
+	if m.spinner.Style.GetForeground() != style.AccentColor {
+		t.Errorf("spinner style fg = %v, want AccentColor %v", m.spinner.Style.GetForeground(), style.AccentColor)
+	}
+	view := m.spinner.View()
+	if view == "" {
+		t.Fatal("spinner.View() should be non-empty")
+	}
+}
+
+func TestSpinnerLoadingLabelPreserved(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.panels[m.activePanel].loading = true
+	content := m.renderContent(40, 10)
+	if !strings.Contains(content, " Loading...") {
+		t.Fatalf("expected Loading... label next to spinner, got %q", content)
+	}
+	spin := m.spinner.View()
+	if spin == "" {
+		t.Fatal("spinner glyph should be non-empty while loading")
+	}
+	if !strings.Contains(content, spin) {
+		t.Fatalf("content should include spinner glyph, got %q", content)
+	}
+
+	// Search path: empty results + loading → " Searching..."
+	m.activePanel = PanelSearch
+	m.searchResults = nil
+	m.searchInfoContent = ""
+	m.panels[PanelSearch].loading = true
+	search := m.renderContent(40, 10)
+	if !strings.Contains(search, " Searching...") {
+		t.Fatalf("expected Searching... label, got %q", search)
+	}
+	if !strings.Contains(search, spin) {
+		t.Fatalf("search loading should include spinner glyph, got %q", search)
+	}
+
+	// Sidebar: spinner appended after title style (not re-wrapped)
+	m.panels[PanelStatus].loading = true
+	side := m.renderSidebar()
+	if !strings.Contains(side, "Status") {
+		t.Fatal("sidebar should still render panel titles while loading")
+	}
+	if !strings.Contains(side, spin) {
+		t.Fatalf("sidebar loading title should include spinner glyph, got snippet %q", side[:min(len(side), 200)])
 	}
 }
 
