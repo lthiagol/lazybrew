@@ -3,9 +3,9 @@
     "id": "08",
     "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
     "slug": "m24-13-manual-smoke-checklist-sign-off-human-gate",
-    "lifecycle": "remediation",
-    "spec_status": "implemented",
-    "execution_status": "in-progress",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -25,8 +25,7 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "remediation_pre_state": "complete",
-    "lifecycle_at": "2026-08-02T13:15:47.945219+00:00"
+    "lifecycle_at": "2026-08-02T13:15:58.806274+00:00"
   },
   "intent": {
     "outcome": "master-plan/smoke-checklist.md is fully re-run and signed off by a human on real Homebrew after M13 (Deps) is fixed. Failures become follow-up milestones; pass unblocks stable release tagging work."
@@ -208,11 +207,11 @@
       "severity": "medium",
       "category": "test-gap",
       "description": "flows.TestHelpFlow uses Contains(Help)||Contains(?). Global footer always has '? help' (render.go keyHints), so the test can pass without the Help overlay. Assert a help-overlay-only string e.g. 'Press ? or Esc to close' or 'close' from renderHelp path. Prefer unit TestHelpToggle/TestHelpEscClose as primary AC evidence; harden teatest.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "01df1a09c3d4281e365c2a6b4eb2506432ff34ea",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/gui/flows/navigation_test.go",
@@ -229,11 +228,11 @@
       "severity": "low",
       "category": "process",
       "description": "M08 design_decisions say no agent smoke body; out_of_scope includes replacing smoke with automated tests. Hybrid path (F-03 operator-approved) marks all items [x] via tests/mocks without live brew writes. Acceptable for this milestone if residual risk is tracked: backlog optional full interactive human smoke before stable tag. Self F-01/F-02 fixed_in empty — set fixed_in to 6277767.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "01df1a09c3d4281e365c2a6b4eb2506432ff34ea",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "summary": "Hybrid sign-off replaces human smoke; residual full-TUI gate for release"
     }
