@@ -3,9 +3,9 @@
     "id": "15",
     "title": "Loading state spinner upgrade",
     "slug": "loading-state-spinner-upgrade",
-    "lifecycle": "complete",
-    "spec_status": "verified",
-    "execution_status": "done",
+    "lifecycle": "remediation",
+    "spec_status": "implemented",
+    "execution_status": "in-progress",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -17,7 +17,7 @@
     "effort": "S",
     "risk": "low",
     "change_kind": "",
-    "priority": "low",
+    "priority": "high",
     "created": "2026-08-01",
     "updated": "2026-08-02",
     "blocked_at": "",
@@ -25,7 +25,8 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-02T13:36:36.235126+00:00"
+    "remediation_pre_state": "complete",
+    "lifecycle_at": "2026-08-02T13:42:40.501951+00:00"
   },
   "intent": {
     "outcome": "All loading spinners use bubbles spinner.Dots (8-frame braille) styled with AccentColor (Mauve after M14), and existing Loading... / Searching... labels stay next to the spinner."
@@ -177,6 +178,40 @@
       "anchor": {
         "path": "internal/gui/gui.go"
       }
+    },
+    {
+      "id": "F-02",
+      "severity": "medium",
+      "category": "correctness",
+      "description": "Sidebar active title applies ActivePanelBg.Width(contentWidth).Render(titleLine) after appending spinner.View(). Parent lipgloss.Render can re-style nested sequences and defeat M15 intent (spinner Accent outside title styles). Fix: compose label+spinner first, then pad the row with lipgloss.Place(..., WithWhitespaceBackground(Surface0)) or equivalent so bg fills width without re-wrapping the spinner. Assert active loading sidebar still contains spinner glyph.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/render.go",
+        "new_range": {
+          "start_line": 37,
+          "end_line": 37
+        },
+        "side": "new"
+      },
+      "summary": "ActivePanelBg.Width.Render wraps spinner and can override Accent fg"
+    },
+    {
+      "id": "F-03",
+      "severity": "low",
+      "category": "process",
+      "description": "F-01 documents spinner.Dot vs milestone Dots naming; set fixed_in to a7bab22. No code rename needed if tests lock Dot frame identity.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "summary": "Self F-01 fixed_in empty; AC-02 names Dots vs bubbles Dot"
     }
   ]
 }

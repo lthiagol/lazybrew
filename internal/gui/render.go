@@ -20,7 +20,9 @@ func (m Model) renderSidebar() string {
 	for i, p := range m.panels {
 		active := i == int(m.activePanel)
 		// Style the label alone, then append spinner/count so title styles
-		// cannot override the spinner's Accent foreground (M15).
+		// cannot override the spinner's Accent foreground (M15). Active row
+		// bg is applied via Place whitespace, not Width.Render, so nested
+		// spinner ANSI is not re-styled.
 		label := strconv.Itoa(i+1) + " " + p.title
 		var titleLine string
 		if active {
@@ -34,7 +36,9 @@ func (m Model) renderSidebar() string {
 			titleLine += style.SubtleText.Render("  " + strconv.Itoa(count))
 		}
 		if active {
-			titleLine = style.ActivePanelBg.Width(contentWidth).Render(titleLine)
+			titleLine = lipgloss.Place(contentWidth, 1, lipgloss.Left, lipgloss.Top, titleLine,
+				lipgloss.WithWhitespaceBackground(style.ActivePanelBg.GetBackground()),
+			)
 		}
 		itemsMaxRows := max(0, heights[i]-1)
 		p.visibleRows = itemsMaxRows
