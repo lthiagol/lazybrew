@@ -180,3 +180,50 @@ func TestSingleflightPropagatesError(t *testing.T) {
 		}
 	}
 }
+
+
+func TestSingleflightPanicUnblocksWaiters(t *testing.T) {
+	sf := newSingleflight()
+	gate := make(chan struct{})
+	started := make(chan struct{})
+
+	leaderDone := make(chan struct{})
+	go func() {
+		defer close(leaderDone)
+		defer func() { _ = recover() }()
+		_, _ = sf.Do("k", func() (any, error) {
+			close(started)
+			<-gate
+			panic("boom")
+		})
+	}()
+
+	<-started
+
+	waiterDone := make(chan struct{})
+	go func() {
+		defer close(waiterDone)
+		// Must unblock when leader panics (defer wg.Done).
+		_, _ = sf.Do("k", func() (any, error) {
+			t.Error("waiter must not invoke fn while sharing panicked call")
+			return nil, nil
+		})
+	}()
+
+	time.Sleep(20 * time.Millisecond)
+	close(gate)
+
+	select {
+	case <-waiterDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("waiter blocked after leader panic (missing defer cleanup)")
+	}
+	<-leaderDone
+
+	val, err := sf.Do("k", func() (any, error) {
+		return "ok", nil
+	})
+	if err != nil || val != "ok" {
+		t.Errorf("post-panic Do = (%v, %v), want (ok, nil)", val, err)
+	}
+}

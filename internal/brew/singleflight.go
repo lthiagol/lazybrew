@@ -42,11 +42,14 @@ func (sf *singleflight) Do(key string, fn func() (any, error)) (any, error) {
 	sf.inflight[key] = call
 	sf.mu.Unlock()
 
-	call.val, call.err = fn()
-	call.wg.Done()
+	// Defer cleanup so a panicking fn unblocks waiters and drops the key.
+	defer func() {
+		call.wg.Done()
+		sf.mu.Lock()
+		delete(sf.inflight, key)
+		sf.mu.Unlock()
+	}()
 
-	sf.mu.Lock()
-	delete(sf.inflight, key)
-	sf.mu.Unlock()
+	call.val, call.err = fn()
 	return call.val, call.err
 }

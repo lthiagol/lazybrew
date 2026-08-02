@@ -1315,6 +1315,36 @@ func TestRefreshLoadsOutdatedWhenActive(t *testing.T) {
 	if !m.panels[PanelOutdated].loading {
 		t.Error("PanelOutdated should load on Refresh when active")
 	}
+	if m.refreshing != 6 {
+		t.Errorf("refreshing = %d, want 6 when Outdated is active", m.refreshing)
+	}
+}
+
+func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
+	// M9 F-03: when Outdated is not active, Refresh enqueues 5 DataLoaded
+	// producers. refreshing must equal that count so the toast fires at 0.
+	m := newTestModel()
+	m.activePanel = PanelStatus
+	m.cfg.GUI.AutoRefreshSeconds = 0
+	for _, p := range m.panels {
+		p.loading = false
+	}
+
+	m = updateModel(m, RefreshMsg{})
+	if m.refreshing != 5 {
+		t.Fatalf("refreshing = %d, want 5 when Outdated inactive", m.refreshing)
+	}
+
+	// Simulate the five panel loads completing.
+	for i := 0; i < 5; i++ {
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae})
+	}
+	if m.refreshing != 0 {
+		t.Errorf("after 5 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
+	}
+	if m.toast == nil {
+		t.Fatal("expected 'Data refreshed' toast after last panel load")
+	}
 }
 
 func TestInitDoesNotFetchOutdated(t *testing.T) {

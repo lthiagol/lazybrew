@@ -19,6 +19,16 @@
       "status": "active",
       "resolution": "",
       "resolved_at": ""
+    },
+    {
+      "id": "B-03",
+      "description": "Status dashboard outdated count stays 0 until R after first Outdated visit (M9 F-02 residual UX)",
+      "source": "M9 external review F-05",
+      "suggested_when": "",
+      "priority": "low",
+      "status": "active",
+      "resolution": "",
+      "resolved_at": ""
     }
   ]
 }
