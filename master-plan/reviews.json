@@ -87,6 +87,14 @@
       "reviewed_at": "2026-08-02",
       "notes": "External review + remediation clean. F-02 live tick/lastKeyAt; F-03 no Status stub wipe; F-04 R invalidates cache; F-05 process. Core M12 tiered refresh solid (3b0d134 + 53d9370).",
       "milestone_completed_at": "2026-08-02"
+    },
+    {
+      "milestone_id": "08",
+      "verdict": "ok",
+      "reviewer": "coordinator",
+      "reviewed_at": "2026-08-02",
+      "notes": "External review + remediation. F-04 Help flow hardened; F-05 hybrid residual backloged. Checklist all [x], env filled; hybrid operator path accepted with residual full-TUI smoke before stable tag. Code hardening from self-review (panel jump, batch, terminal) green.",
+      "milestone_completed_at": "2026-08-02"
     }
   ],
   "comments": [],
