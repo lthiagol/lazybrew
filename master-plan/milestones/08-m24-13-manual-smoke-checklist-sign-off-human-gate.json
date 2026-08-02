@@ -3,9 +3,9 @@
     "id": "08",
     "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
     "slug": "m24-13-manual-smoke-checklist-sign-off-human-gate",
-    "lifecycle": "complete",
-    "spec_status": "verified",
-    "execution_status": "done",
+    "lifecycle": "remediation",
+    "spec_status": "implemented",
+    "execution_status": "in-progress",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -17,7 +17,7 @@
     "effort": "S",
     "risk": "low",
     "change_kind": "",
-    "priority": "normal",
+    "priority": "high",
     "created": "2026-07-30",
     "updated": "2026-08-02",
     "blocked_at": "",
@@ -25,7 +25,8 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-02T13:09:49.150819+00:00"
+    "remediation_pre_state": "complete",
+    "lifecycle_at": "2026-08-02T13:15:47.945219+00:00"
   },
   "intent": {
     "outcome": "master-plan/smoke-checklist.md is fully re-run and signed off by a human on real Homebrew after M13 (Deps) is fixed. Failures become follow-up milestones; pass unblocks stable release tagging work."
@@ -167,7 +168,7 @@
       "description": "Fixed during self-review: TestLoadValidConfig omitted AutoRefreshSeconds assert despite fixture value 30",
       "status": "fixed",
       "author": "",
-      "fixed_in": "",
+      "fixed_in": "627776783481601dea7deb3f607805299573a999",
       "created": "2026-08-02",
       "resolved": "2026-08-02",
       "phase": "self",
@@ -182,7 +183,7 @@
       "description": "Fixed during self-review: expanded TestPanelJump to keys 1-7; Shift+Tab in TestPanelNavigation; Space batch toggle; terminal warning View assert; Help flow hard assert",
       "status": "fixed",
       "author": "",
-      "fixed_in": "",
+      "fixed_in": "627776783481601dea7deb3f607805299573a999",
       "created": "2026-08-02",
       "resolved": "2026-08-02",
       "phase": "self",
@@ -197,10 +198,44 @@
       "description": "Hybrid sign-off (operator-approved): no live brew write mutations; M12 lazy-load reinterpreted checklist item 2. Full interactive human TUI remaining optional for release tag.",
       "status": "fixed",
       "author": "",
-      "fixed_in": "",
+      "fixed_in": "627776783481601dea7deb3f607805299573a999",
       "created": "2026-08-02",
       "resolved": "2026-08-02",
       "phase": "self"
+    },
+    {
+      "id": "F-04",
+      "severity": "medium",
+      "category": "test-gap",
+      "description": "flows.TestHelpFlow uses Contains(Help)||Contains(?). Global footer always has '? help' (render.go keyHints), so the test can pass without the Help overlay. Assert a help-overlay-only string e.g. 'Press ? or Esc to close' or 'close' from renderHelp path. Prefer unit TestHelpToggle/TestHelpEscClose as primary AC evidence; harden teatest.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/flows/navigation_test.go",
+        "new_range": {
+          "start_line": 48,
+          "end_line": 48
+        },
+        "side": "new"
+      },
+      "summary": "TestHelpFlow assert matches footer '?' without Help overlay"
+    },
+    {
+      "id": "F-05",
+      "severity": "low",
+      "category": "process",
+      "description": "M08 design_decisions say no agent smoke body; out_of_scope includes replacing smoke with automated tests. Hybrid path (F-03 operator-approved) marks all items [x] via tests/mocks without live brew writes. Acceptable for this milestone if residual risk is tracked: backlog optional full interactive human smoke before stable tag. Self F-01/F-02 fixed_in empty — set fixed_in to 6277767.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "summary": "Hybrid sign-off replaces human smoke; residual full-TUI gate for release"
     }
   ]
 }

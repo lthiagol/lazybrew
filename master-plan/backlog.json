@@ -39,6 +39,16 @@
       "status": "active",
       "resolution": "",
       "resolved_at": ""
+    },
+    {
+      "id": "B-05",
+      "description": "Optional full interactive human smoke (live brew writes) before stable release tag — residual from M08 hybrid sign-off",
+      "source": "M08 external review F-05",
+      "suggested_when": "",
+      "priority": "medium",
+      "status": "active",
+      "resolution": "",
+      "resolved_at": ""
     }
   ]
 }
