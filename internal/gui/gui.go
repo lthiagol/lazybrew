@@ -154,32 +154,26 @@ func (m Model) updateTickerCmd() tea.Cmd {
 	})
 }
 
-// autoRefreshCmd schedules the next auto-refresh tick. M12 AC-03: when
-// the user pressed a key within the pause window, the tick reschedules
-// itself for one AutoRefreshSeconds later (instead of issuing a
-// RefreshMsg). This keeps typing/navigation responsive.
+// autoRefreshCmd schedules the next auto-refresh tick. The tick delivers
+// autoRefreshTickMsg so Update can evaluate pause-on-interaction against
+// the live model (M12 AC-03) — never capture Model in the Tick closure.
 func (m Model) autoRefreshCmd() tea.Cmd {
 	if m.cfg.GUI.AutoRefreshSeconds <= 0 {
 		return nil
 	}
 	d := time.Duration(m.cfg.GUI.AutoRefreshSeconds) * time.Second
 	return tea.Tick(d, func(t time.Time) tea.Msg {
-		return m.evaluateAutoRefresh(t)
+		return autoRefreshTickMsg{at: t}
 	})
 }
 
-// evaluateAutoRefresh is the pure decision function used by the tick
-// closure (and directly by tests). Returns autoRefreshPausedMsg when the
-// user pressed a key within the pause window; RefreshMsg otherwise.
-// Extracted so tests can drive it deterministically without depending
-// on tea.Tick's wall-clock timing.
+// evaluateAutoRefresh decides whether to pause or refresh. Pure w.r.t.
+// model fields; callers apply the returned msg via Update.
 func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
 	pause := m.cfg.GUI.AutoRefreshPause
 	if pause > 0 && !m.lastKeyAt.IsZero() && now.Sub(m.lastKeyAt) < pause {
-		m.autoRefreshPaused = true
 		return autoRefreshPausedMsg{}
 	}
-	m.autoRefreshPaused = false
 	return RefreshMsg{}
 }
 
@@ -202,15 +196,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
 
-	case autoRefreshPausedMsg:
-		// The tick observed a recent key press; reschedule the next
-		// tick instead of issuing RefreshMsg so typing/navigation is
-		// not janked.
-		if m.cfg.GUI.AutoRefreshSeconds > 0 {
-			d := time.Duration(m.cfg.GUI.AutoRefreshSeconds) * time.Second
-			return m, tea.Tick(d, func(time.Time) tea.Msg { return RefreshMsg{} })
+	case autoRefreshTickMsg:
+		// Evaluate pause against the *current* model (lastKeyAt may have
+		// advanced since the tick was scheduled).
+		next := m.evaluateAutoRefresh(msg.at)
+		if _, paused := next.(autoRefreshPausedMsg); paused {
+			m.autoRefreshPaused = true
+		} else {
+			m.autoRefreshPaused = false
 		}
-		return m, nil
+		return m, func() tea.Msg { return next }
+
+	case autoRefreshPausedMsg:
+		// Reschedule a full tick so pause can re-apply if the user is
+		// still typing when the next interval elapses.
+		m.autoRefreshPaused = true
+		return m, m.autoRefreshCmd()
 
 	case SearchDoneMsg:
 		p := m.panels[PanelSearch]
@@ -455,19 +456,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case RefreshMsg:
 		m.clearTabContent()
 		// M12 tiered refresh:
-		//   * Status always refreshes (the dashboard is "related" to
-		//     every other class — its fetchPanelData uses cache for
-		//     formulae/casks/taps/services/outdated so most panels
-		//     become free hits).
+		//   * Status always refreshes via fetchStatusData (never
+		//     fetchPanelData — that default-case returns an empty stub).
 		//   * Active panel always refreshes (AC-04: R forces it even
-		//     if TTL not expired).
-		//   * Other loaded panels refresh via fetchPanelData — cache
-		//     hits keep them free if their per-class TTL hasn't expired.
-		//   * Unloaded (lazy) panels are skipped to honour S2.
+		//     if TTL not expired — cache keys invalidated below).
+		//   * Other loaded panels refresh; unloaded stay lazy.
+		// Bust cache for force-refreshed classes so per-class TTLs do
+		// not short-circuit the shell (AC-04).
+		m.invalidatePanelCache(PanelStatus)
+
 		m.panels[PanelStatus].loading = true
-		m.panels[m.activePanel].loading = true
 		cmds := []tea.Cmd{fetchStatusData(m.client)}
-		cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
+		if m.activePanel != PanelStatus && m.activePanel != PanelSearch {
+			m.invalidatePanelCache(m.activePanel)
+			m.panels[m.activePanel].loading = true
+			cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
+		}
 		for _, p := range m.panels {
 			if p.id == PanelStatus || p.id == PanelSearch {
 				continue
@@ -478,6 +482,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.items == nil {
 				continue // never loaded; honour lazy policy.
 			}
+			m.invalidatePanelCache(p.id)
 			p.loading = true
 			cmds = append(cmds, fetchPanelData(m.client, p.id))
 		}
@@ -834,6 +839,35 @@ func (m Model) View() string {
 	}
 
 	return full
+}
+
+// invalidatePanelCache drops brew cache entries for a panel so the next
+// fetch re-shells even when the per-class TTL has not expired (AC-04 R).
+func (m *Model) invalidatePanelCache(id PanelID) {
+	if m.client == nil || m.client.Cache == nil {
+		return
+	}
+	c := m.client.Cache
+	switch id {
+	case PanelFormulae:
+		c.Invalidate(brew.KeyFormulaeList)
+	case PanelCasks:
+		c.Invalidate(brew.KeyCasksList)
+	case PanelOutdated:
+		c.Invalidate(brew.KeyOutdatedFormulae, brew.KeyOutdatedCasks)
+	case PanelTaps:
+		c.Invalidate(brew.KeyTapsList)
+	case PanelServices:
+		c.Invalidate(brew.KeyServicesList)
+	case PanelStatus:
+		// Status dashboard reads formulae/casks/taps/services/doctor/outdated.
+		c.Invalidate(
+			brew.KeyFormulaeList, brew.KeyCasksList,
+			brew.KeyTapsList, brew.KeyServicesList,
+			brew.KeyDoctorResult, brew.KeyConfig,
+			brew.KeyOutdatedFormulae, brew.KeyOutdatedCasks,
+		)
+	}
 }
 
 // lazyLoadPanel returns fetchPanelData(id) iff the panel is empty, not

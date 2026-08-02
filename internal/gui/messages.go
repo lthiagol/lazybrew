@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"time"
+
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
@@ -66,8 +68,14 @@ type DepCheckMsg struct {
 	Message string
 }
 
+// autoRefreshTickMsg is delivered by tea.Tick so Update can evaluate
+// pause-on-interaction against the *current* model (not a stale copy
+// captured when the tick was scheduled).
+type autoRefreshTickMsg struct {
+	at time.Time
+}
+
 // autoRefreshPausedMsg signals that the auto-refresh tick observed a
 // recent key press and rescheduled itself. The handler converts this
-// back into a follow-up autoRefreshCmd() so the next tick fires one
-// AutoRefreshSeconds later.
+// back into a follow-up autoRefreshCmd() so the next tick re-evaluates.
 type autoRefreshPausedMsg struct{}

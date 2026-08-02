@@ -3,9 +3,9 @@
     "id": "12",
     "title": "M28 Tiered Refresh and Polling Strategy",
     "slug": "m28-tiered-refresh-and-polling-strategy",
-    "lifecycle": "complete",
-    "spec_status": "verified",
-    "execution_status": "done",
+    "lifecycle": "remediation",
+    "spec_status": "implemented",
+    "execution_status": "in-progress",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -18,7 +18,7 @@
     "effort": "M",
     "risk": "low",
     "change_kind": "",
-    "priority": "normal",
+    "priority": "high",
     "created": "2026-07-30",
     "updated": "2026-08-02",
     "blocked_at": "",
@@ -26,7 +26,8 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-02T12:53:06.767096+00:00"
+    "remediation_pre_state": "complete",
+    "lifecycle_at": "2026-08-02T12:59:21.711145+00:00"
   },
   "intent": {
     "outcome": "Refresh is tiered: per-data-class TTLs in config; panels fetch on first select (lazy); auto-refresh and scheduled work pause briefly after user key activity so typing/navigation is not janked by full refresh storms."
@@ -238,6 +239,82 @@
       "created": "2026-08-02",
       "resolved": "2026-08-02",
       "phase": "self"
+    },
+    {
+      "id": "F-02",
+      "severity": "high",
+      "category": "correctness",
+      "description": "autoRefreshCmd schedules tea.Tick with closure calling m.evaluateAutoRefresh(t) where m is the Model value at schedule time. When the tick fires seconds later, lastKeyAt is the stale copy — key presses after schedule are invisible. AC-03 is green only because tests call evaluateAutoRefresh on the live model. Fix: tick returns autoRefreshTickMsg{at}; Update handles it and calls evaluateAutoRefresh on the current model. Also: autoRefreshPausedMsg currently reschedules tea.Tick→RefreshMsg and skips re-evaluation; use autoRefreshCmd() instead so pause can re-apply while typing.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/gui.go",
+        "new_range": {
+          "start_line": 166,
+          "end_line": 166
+        },
+        "side": "new"
+      },
+      "summary": "autoRefreshCmd captures stale Model; AC-03 pause never sees new keys"
+    },
+    {
+      "id": "F-03",
+      "severity": "high",
+      "category": "correctness",
+      "description": "RefreshMsg always does cmds=[fetchStatusData, fetchPanelData(active)]. When activePanel==Status, fetchPanelData hits default and returns DataLoadedMsg{Items:[]}. Race with fetchStatusData: empty msg can clear the dashboard. refreshing also double-counts. Fix: if active==Status, only fetchStatusData; else fetchStatusData + fetchPanelData(active) + loaded others.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/gui.go",
+        "new_range": {
+          "start_line": 469,
+          "end_line": 469
+        },
+        "side": "new"
+      },
+      "summary": "RefreshMsg double-fetches Status and can wipe dashboard with empty stub"
+    },
+    {
+      "id": "F-04",
+      "severity": "medium",
+      "category": "correctness",
+      "description": "AC-04 requires manual R to force-refresh active panel even if TTL not expired. RefreshMsg calls fetchPanelData→List which returns cache hits within per-class TTL, so no brew re-invocation. Fix: before enqueueing fetches, Invalidate the cache keys for panels being force-refreshed (Status-related keys + active + loaded panels). Add TestRefreshForcesCacheBypass.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "anchor": {
+        "path": "internal/gui/gui.go",
+        "new_range": {
+          "start_line": 455,
+          "end_line": 455
+        },
+        "side": "new"
+      },
+      "summary": "R does not force TTL bypass — AC-04 unmet"
+    },
+    {
+      "id": "F-05",
+      "severity": "low",
+      "category": "process",
+      "description": "Step S5 status=pending while lifecycle=complete. Self F-01 fixed_in=aae2b55 (M11 review pass) not M12 code 3b0d134. Mark S5 done and point findings at real code SHAs.",
+      "status": "open",
+      "author": "coordinator",
+      "fixed_in": "",
+      "created": "2026-08-02",
+      "resolved": "",
+      "phase": "external",
+      "summary": "S5 still pending; F-01 fixed_in is M11 docs commit"
     }
   ]
 }

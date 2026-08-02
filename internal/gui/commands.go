@@ -1230,6 +1230,10 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Services: services}
 
 		default:
+			// PanelStatus and PanelSearch are not fetched here. Init and
+			// RefreshMsg use fetchStatusData for Status; Search is
+			// user-driven. Do not route Status through this default —
+			// an empty Items payload would wipe the dashboard.
 			return DataLoadedMsg{PanelID: panel, Items: []string{}}
 		}
 	}
