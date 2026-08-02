@@ -3,9 +3,9 @@
     "id": "15",
     "title": "Loading state spinner upgrade",
     "slug": "loading-state-spinner-upgrade",
-    "lifecycle": "remediation",
-    "spec_status": "implemented",
-    "execution_status": "in-progress",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -25,8 +25,7 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "remediation_pre_state": "complete",
-    "lifecycle_at": "2026-08-02T13:42:40.501951+00:00"
+    "lifecycle_at": "2026-08-02T13:43:08.965956+00:00"
   },
   "intent": {
     "outcome": "All loading spinners use bubbles spinner.Dots (8-frame braille) styled with AccentColor (Mauve after M14), and existing Loading... / Searching... labels stay next to the spinner."
@@ -171,7 +170,7 @@
       "description": "Milestone text says spinner.Dots; bubbles v1.0.0 exports spinner.Dot (8-frame braille). Implemented Dot; AC-02 verified via frame identity.",
       "status": "fixed",
       "author": "",
-      "fixed_in": "",
+      "fixed_in": "a7bab221a6905ec4a8f3013cb258803fe9c966ca",
       "created": "2026-08-02",
       "resolved": "2026-08-02",
       "phase": "self",
@@ -184,11 +183,11 @@
       "severity": "medium",
       "category": "correctness",
       "description": "Sidebar active title applies ActivePanelBg.Width(contentWidth).Render(titleLine) after appending spinner.View(). Parent lipgloss.Render can re-style nested sequences and defeat M15 intent (spinner Accent outside title styles). Fix: compose label+spinner first, then pad the row with lipgloss.Place(..., WithWhitespaceBackground(Surface0)) or equivalent so bg fills width without re-wrapping the spinner. Assert active loading sidebar still contains spinner glyph.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "c653272378ebc0ab8e8674bb00c3202f2b11520c",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "anchor": {
         "path": "internal/gui/render.go",
@@ -205,11 +204,11 @@
       "severity": "low",
       "category": "process",
       "description": "F-01 documents spinner.Dot vs milestone Dots naming; set fixed_in to a7bab22. No code rename needed if tests lock Dot frame identity.",
-      "status": "open",
+      "status": "fixed",
       "author": "coordinator",
-      "fixed_in": "",
+      "fixed_in": "c653272378ebc0ab8e8674bb00c3202f2b11520c",
       "created": "2026-08-02",
-      "resolved": "",
+      "resolved": "2026-08-02",
       "phase": "external",
       "summary": "Self F-01 fixed_in empty; AC-02 names Dots vs bubbles Dot"
     }
