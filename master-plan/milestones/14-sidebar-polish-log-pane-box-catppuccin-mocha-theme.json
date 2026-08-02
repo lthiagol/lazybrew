@@ -26,80 +26,84 @@
     "lifecycle_at": "2026-08-01T20:31:15.400110+00:00"
   },
   "intent": {
-    "outcome": "The TUI looks unmistakably modern: the active sidebar panel pops via bg tint + accent title, the log pane has its own bordered box with collapse toggle, and the whole palette is Catppuccin Mocha dark (light unchanged)."
+    "outcome": "The TUI looks unmistakably modern: the active sidebar panel pops via accent border + Surface0 title bg + Mauve title, the log pane is a collapsible bordered box (Accent border while a command runs), and DarkTheme is Catppuccin Mocha (LightTheme hex values unchanged)."
   },
   "problem": {
-    "description": "The current sidebar uses only border color to indicate the active panel — easy to miss at a glance. The log pane renders as plain text with no visual identity, eating vertical space when empty. The default theme is generic purple-on-dark, not distinctive. Together these give the TUI an unfinished feel."
+    "description": "The sidebar marks the active panel only with Accent vs Subtle border color — easy to miss. The command log is plain SubtleText with no box, title, or collapse. DarkTheme is generic purple-on-dark (#7C3AED / #1F2937), not a distinctive palette."
   },
   "scope": {
     "in_scope": [
-      "Switch internal/gui/style/theme.go DarkTheme() to Catppuccin Mocha palette: Accent->Mauve #cba6f7, Secondary->Teal #94e2d5, Success->Green #a6e3a1, Warning->Yellow #f9e2af, Error->Red #f38ba8, Subtle->Overlay0 #6c7086, Text->Text #cdd6f4, Bg->Base #1e1e2e.",
-      "Add new style ActivePanelBg = Surface0 #313244 (one shade lighter than Base) for the active sidebar panel row.",
-      "Add new style PanelTitleActive = Mauve bold for the active panel title text.",
-      "Add new style LogBorder = SubtleColor rounded for the log pane border; AccentColor when commands actively running.",
-      "Update internal/gui/render.go renderSidebar() to apply ActivePanelBg background + PanelTitleActive text color to the active panel's title row. No arrow, no border style change.",
-      "Update internal/gui/render.go renderMainPanel() to wrap cmdLog in a bordered rounded box with 'Log' title.",
-      "Add Model.logCollapsed bool field (default false).",
-      "Update internal/gui/keybindings.go (or gui.go Update switch) to handle Shift+C: toggle m.logCollapsed.",
-      "Update internal/gui/help.go globalHints to include 'C' (collapse log) hint.",
-      "Update internal/gui/render.go renderMainPanel() to allocate cmdLogHeight = 0 when logCollapsed, giving the rows to main content.",
-      "Add tests: sidebar active styling observable, log pane border observable, Shift+C toggles state, log collapsed state changes height calc."
+      "DarkTheme() in internal/gui/style/theme.go → Catppuccin Mocha: Accent=#cba6f7 Mauve, Secondary=#94e2d5 Teal, Success=#a6e3a1 Green, Warning=#f9e2af Yellow, Error=#f38ba8 Red, Subtle=#6c7086 Overlay0, Text=#cdd6f4 Text, Bg=#1e1e2e Base.",
+      "LightTheme() hex values stay exactly as today: Accent=#34548a Secondary=#0891b2 Success=#33635c Warning=#8f5e15 Error=#8c4351 Subtle=#9699a3 Text=#343b58 Bg=#f5f5f5.",
+      "New styles in ApplyTheme: ActivePanelBg (Dark Surface0 #313244 bg; Light Surface0 #ccd0da bg), PanelTitleActive (AccentColor+Bold), LogBorder (RoundedBorder + SubtleColor fg). Active sidebar box keeps Accent BorderForeground via existing renderBox; do not switch border shape (stay rounded).",
+      "renderSidebar() in internal/gui/render.go: active panel title line uses ActivePanelBg + PanelTitleActive; inactive titles stay PanelTitle. No arrow glyph. renderBox active=true still uses Accent border color.",
+      "renderMainPanel() wraps commandLog in a Lip Gloss box titled 'Log' using LogBorder; when a task/op is running (m.tasks busy or m.opState != nil), border foreground is AccentColor instead of SubtleColor.",
+      "Model.logCollapsed bool default false. Case \"C\" (Shift+C) in internal/gui/gui.go Update key switch toggles it. When true, cmdLogHeight=0 and main content takes the freed rows.",
+      "globalHints in renderBottomBar() (internal/gui/render.go) adds {\"C\", \"log\"} or equivalent collapse-log hint. Not help.go.",
+      "Unit tests: active title styling path; log box title present; Update with tea.KeyMsg \"C\" toggles logCollapsed; collapsed height path; running vs idle log border color branch."
     ],
     "out_of_scope": [
-      "Light theme changes (Catppuccin Latte is a separate decision; for now light theme retains current colors).",
-      "M16 tab bar redesign, table layouts (separate milestone).",
-      "M15 spinner upgrade (separate milestone).",
-      "Per-panel state indicators (skipped in M15).",
-      "Snapshot test regeneration (not needed: snapshot_test.go is content-based, not golden-file)."
+      "Catppuccin Latte full light-theme redesign (LightTheme palette stays pre-M14 hex).",
+      "M15 spinner upgrade.",
+      "M16 List tab / underline tab restyle / formulae table.",
+      "Per-panel loading state indicators beyond existing spinner in title.",
+      "Golden-file snapshot regeneration (presentation snapshots are content-based)."
     ]
   },
   "acceptance_criteria": [
     {
       "id": "AC-01",
-      "description": "The active sidebar panel has a visibly different background than inactive panels.",
-      "verification": "manual: launch lazybrew, observe sidebar; active panel row has Surface0 (#313244) background tint, inactive rows have Base (#1e1e2e)",
+      "description": "Active sidebar panel title row uses ActivePanelBg (Surface0); inactive title rows do not. Active box keeps Accent rounded border via renderBox; inactive keeps Subtle border.",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-02",
-      "description": "The active sidebar panel title text uses Mauve accent color, inactive titles use Text color.",
-      "verification": "manual: launch lazybrew, observe sidebar; active title is Mauve + bold, inactive titles are Text color",
+      "description": "Active sidebar panel title text uses PanelTitleActive (Accent/Mauve + bold); inactive titles use PanelTitle (Text).",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-03",
-      "description": "The log pane renders as a bordered rounded box with the title 'Log' above its content.",
-      "verification": "manual: launch lazybrew, observe bottom of main pane; log region is wrapped in a SubtleColor rounded border with 'Log' title",
+      "description": "Command log renders inside a rounded bordered box titled \"Log\" (LogBorder / Subtle when idle).",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-04",
-      "description": "Pressing Shift+C toggles the log pane between expanded (default) and collapsed (height 0).",
-      "verification": "manual: launch lazybrew, press Shift+C, observe log pane disappears; press Shift+C again, log pane returns",
+      "description": "Pressing Shift+C (tea key \"C\") toggles Model.logCollapsed; default is false (expanded).",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-05",
-      "description": "When log is collapsed, the main content area gains the freed vertical space.",
-      "verification": "manual: launch lazybrew, observe main pane height; press Shift+C to collapse; main pane content area grows to fill",
+      "description": "When logCollapsed is true, cmdLogHeight is 0 and main content height gains the freed rows.",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-06",
-      "description": "The dark theme uses Catppuccin Mocha colors: Accent=Mauve #cba6f7, Bg=Base #1e1e2e, Text=Text #cdd6f4, Subtle=Overlay0 #6c7086, Success=Green #a6e3a1, Warning=Yellow #f9e2af, Error=Red #f38ba8.",
-      "verification": "manual: cat internal/gui/style/theme.go DarkTheme() values; confirm hex codes match Catppuccin Mocha palette per https://catppuccin.com/palette/",
+      "description": "DarkTheme() uses Catppuccin Mocha hex: Accent #cba6f7, Secondary #94e2d5, Success #a6e3a1, Warning #f9e2af, Error #f38ba8, Subtle #6c7086, Text #cdd6f4, Bg #1e1e2e.",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-07",
-      "description": "Light theme colors are unchanged (deferred to a separate decision).",
-      "verification": "manual: cat internal/gui/style/theme.go LightTheme() values; confirm they still match the original (pre-M14) hex codes",
+      "description": "LightTheme() hex values remain pre-M14: Accent #34548a, Secondary #0891b2, Success #33635c, Warning #8f5e15, Error #8c4351, Subtle #9699a3, Text #343b58, Bg #f5f5f5.",
+      "verification": "make test",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-08",
+      "description": "While a task or op is running, the Log box border foreground is AccentColor; when idle it is SubtleColor.",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     }
@@ -107,16 +111,26 @@
   "design_decisions": [
     {
       "area": "active_panel_indicator",
-      "choice": "bg tint + accent title + bold, no arrow, no border change",
-      "rationale": "Three layered color signals (bg + text color + weight) read as 'selected' without needing a glyph. Border style change (rounded->thick) would clash with inactive rounded borders; bg+text combo reads cleaner."
+      "choice": "Keep Accent rounded border + add Surface0 title bg + Mauve bold title; no arrow; no thick border",
+      "rationale": "Border color already works as a weak signal; layering bg+title color makes active unmistakable without changing border geometry (rounded stays). Thick borders would clash with inactive rounded boxes."
+    },
+    {
+      "area": "log_collapse_key",
+      "choice": "Shift+C (tea key \"C\") toggles logCollapsed; hint shown as C in bottom bar",
+      "rationale": "Lowercase c is taken by panel actions (Status/Services cleanup). Capital C is free in the global Update switch. Bottom bar lives in renderBottomBar, not help.go."
+    },
+    {
+      "area": "log_border_busy",
+      "choice": "Log box border Subtle when idle, Accent while any task/op is running",
+      "rationale": "Gives a glanceable work-in-progress cue tied to the stream the user is watching, without a second status widget."
     }
   ],
   "work_packages": [
     {
       "id": "WP1",
-      "name": "Main",
-      "goal": "",
-      "rollback": ""
+      "name": "Theme + sidebar + log",
+      "goal": "Catppuccin Mocha dark theme, active sidebar polish, collapsible bordered log with busy accent.",
+      "rollback": "Revert theme.go, render.go, gui.go, gui_test.go changes."
     }
   ],
   "steps": [
@@ -124,12 +138,13 @@
       "id": "S1",
       "work_package": "WP1",
       "order": 1,
-      "action": "Replace DarkTheme() color values in internal/gui/style/theme.go with Catppuccin Mocha palette: Accent=#cba6f7 (Mauve), Secondary=#94e2d5 (Teal), Success=#a6e3a1 (Green), Warning=#f9e2af (Yellow), Error=#f38ba8 (Red), Subtle=#6c7086 (Overlay0), Text=#cdd6f4 (Text), Bg=#1e1e2e (Base). Leave LightTheme() unchanged.",
+      "action": "Replace DarkTheme() colors in internal/gui/style/theme.go with Catppuccin Mocha (Accent=#cba6f7, Secondary=#94e2d5, Success=#a6e3a1, Warning=#f9e2af, Error=#f38ba8, Subtle=#6c7086, Text=#cdd6f4, Bg=#1e1e2e). Leave LightTheme() hex values unchanged (document baseline in test).",
       "files": [
-        "internal/gui/style/theme.go"
+        "internal/gui/style/theme.go",
+        "internal/gui/style/theme_test.go"
       ],
-      "tests": "manual: grep -E 'AccentColor.*=.*lipgloss.Color' internal/gui/style/theme.go shows the 8 Mocha hex codes; LightTheme block unchanged",
-      "done_when": "DarkTheme returns Mocha palette; LightTheme unchanged; no other modifications to theme.go in this step",
+      "tests": "go test -race ./internal/gui/style/ -run Theme",
+      "done_when": "DarkTheme returns Mocha palette; LightTheme hex unchanged; theme unit tests assert both",
       "status": "pending",
       "covers_ac": [
         "AC-06",
@@ -142,80 +157,16 @@
       "evidence": ""
     },
     {
-      "id": "S1.1",
+      "id": "S4",
       "work_package": "WP1",
       "order": 2,
-      "action": "Add three new styles in internal/gui/style/theme.go ApplyTheme: ActivePanelBg (Surface0 #313244 with background set), PanelTitleActive (Mauve + Bold), LogBorder (RoundedBorder with SubtleColor foreground). Add them to both Dark and Light themes (using Latte Surface0 #ccd0da for light if logical, else keep Dark-only).",
-      "files": [
-        "internal/gui/style/theme.go"
-      ],
-      "tests": "manual: grep ActivePanelBg internal/gui/style/theme.go returns 1+ matches; grep PanelTitleActive returns 1+; grep LogBorder returns 1+",
-      "done_when": "All three styles are defined and assigned in ApplyTheme",
-      "status": "pending",
-      "covers_ac": [
-        "AC-01",
-        "AC-02",
-        "AC-03"
-      ],
-      "depends_on_steps": [],
-      "claimed_by": "",
-      "claimed_at": "",
-      "lease_expires_at": "",
-      "evidence": ""
-    },
-    {
-      "id": "S1.1.1",
-      "work_package": "WP1",
-      "order": 3,
-      "action": "Update internal/gui/render.go renderSidebar() so the active panel title row gets ActivePanelBg background + PanelTitleActive text. Inactive panels keep default Bg and Text styles. No arrow, no border change.",
-      "files": [
-        "internal/gui/render.go"
-      ],
-      "tests": "manual: launch lazybrew, observe sidebar; active row tinted with Surface0 bg + Mauve title; inactive rows unchanged",
-      "done_when": "renderSidebar applies ActivePanelBg and PanelTitleActive to active panel title",
-      "status": "pending",
-      "covers_ac": [
-        "AC-01",
-        "AC-02"
-      ],
-      "depends_on_steps": [],
-      "claimed_by": "",
-      "claimed_at": "",
-      "lease_expires_at": "",
-      "evidence": ""
-    },
-    {
-      "id": "S1.1.1.1",
-      "work_package": "WP1",
-      "order": 4,
-      "action": "Wrap cmdLog in internal/gui/render.go renderMainPanel() with a Lip Gloss bordered rounded box. Use style.LogBorder for the border. When logCollapsed, allocate cmdLogHeight = 0 so main content fills the space.",
-      "files": [
-        "internal/gui/render.go"
-      ],
-      "tests": "manual: launch lazybrew; log region has visible rounded border; press Shift+C to collapse; log disappears and main content grows",
-      "done_when": "cmdLog renders inside a bordered rounded box; logCollapsed branch returns empty string and mainContentHeight adjusts",
-      "status": "pending",
-      "covers_ac": [
-        "AC-03",
-        "AC-05"
-      ],
-      "depends_on_steps": [],
-      "claimed_by": "",
-      "claimed_at": "",
-      "lease_expires_at": "",
-      "evidence": ""
-    },
-    {
-      "id": "S1.1.1.1.1",
-      "work_package": "WP1",
-      "order": 5,
-      "action": "Add Model.logCollapsed bool field (default false). Add 'case C' in internal/gui/gui.go Update keymap (alongside 'R') that toggles m.logCollapsed and returns. Add 'C' to globalHints in internal/gui/render.go renderBottomBar().",
+      "action": "Add Model.logCollapsed bool (default false). In gui.go Update key switch, case \"C\": toggle m.logCollapsed. Add {\"C\",\"log\"} to globalHints in renderBottomBar() (render.go). Do not edit help.go for this hint.",
       "files": [
         "internal/gui/gui.go",
         "internal/gui/render.go"
       ],
-      "tests": "manual: launch lazybrew; press Shift+C; log disappears from view; press Shift+C again; log returns",
-      "done_when": "Shift+C toggles logCollapsed; bottom help bar shows C hint",
+      "tests": "go test -race ./internal/gui/ -run LogCollapsed\\|Collapse",
+      "done_when": "Shift+C toggles logCollapsed; bottom bar shows C hint",
       "status": "pending",
       "covers_ac": [
         "AC-04"
@@ -227,46 +178,128 @@
       "evidence": ""
     },
     {
-      "id": "S1.1.1.1.1.1",
+      "id": "S2",
       "work_package": "WP1",
-      "order": 6,
-      "action": "Add tests in internal/gui/gui_test.go (or new file): (1) renderSidebar with active panel produces output containing the active title text with bg tint marker; (2) renderMainPanel with non-empty log produces bordered output; (3) Update with capital 'C' rune toggles logCollapsed. Update bottom-bar hint tests to include C.",
+      "order": 3,
+      "action": "In ApplyTheme, define ActivePanelBg (bg Surface0: dark #313244, light #ccd0da), PanelTitleActive (AccentColor+Bold), LogBorder (RoundedBorder + SubtleColor). Export as package-level styles like existing ones.",
       "files": [
-        "internal/gui/gui_test.go",
-        "internal/gui/regression_test.go"
+        "internal/gui/style/theme.go",
+        "internal/gui/style/theme_test.go"
       ],
-      "tests": "manual: go test -race ./internal/gui/... exit 0",
-      "done_when": "All new tests pass; no existing tests broken",
+      "tests": "go test -race ./internal/gui/style/ -run Theme",
+      "done_when": "Three styles exist and are set for both themes in ApplyTheme",
       "status": "pending",
       "covers_ac": [
         "AC-01",
         "AC-02",
-        "AC-03",
-        "AC-04",
-        "AC-05"
+        "AC-03"
       ],
-      "depends_on_steps": [],
+      "depends_on_steps": [
+        "S1"
+      ],
       "claimed_by": "",
       "claimed_at": "",
       "lease_expires_at": "",
       "evidence": ""
     },
     {
-      "id": "S1.1.1.1.1.1.1",
+      "id": "S3",
+      "work_package": "WP1",
+      "order": 4,
+      "action": "Update renderSidebar() so the active panel title line uses ActivePanelBg + PanelTitleActive; inactive titles use PanelTitle. Keep renderBox(..., active) Accent/Subtle border behavior unchanged (rounded). No arrow glyph.",
+      "files": [
+        "internal/gui/render.go"
+      ],
+      "tests": "go test -race ./internal/gui/ -run ActivePanel\\|Sidebar",
+      "done_when": "Active title path uses new styles; inactive unchanged; borders still via renderBox",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02"
+      ],
+      "depends_on_steps": [
+        "S2"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S5",
+      "work_package": "WP1",
+      "order": 5,
+      "action": "In renderMainPanel(), wrap commandLog in a Lip Gloss rounded box titled \"Log\". Idle border = LogBorder/SubtleColor. If a task is running or m.opState != nil, border foreground = AccentColor. When logCollapsed, cmdLogHeight=0 and mainContentHeight absorbs the rows; skip rendering the log box.",
+      "files": [
+        "internal/gui/render.go"
+      ],
+      "tests": "go test -race ./internal/gui/ -run LogPane\\|LogBox\\|LogCollapsed\\|LogBusy\\|Collapse",
+      "done_when": "Log box titled; idle/busy border; collapse frees height",
+      "status": "pending",
+      "covers_ac": [
+        "AC-03",
+        "AC-05",
+        "AC-08"
+      ],
+      "depends_on_steps": [
+        "S2",
+        "S4"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S6",
+      "work_package": "WP1",
+      "order": 6,
+      "action": "Add/extend unit tests covering: Dark/Light theme hex; ActivePanelBg/PanelTitleActive on active sidebar title path; log box title; tea.KeyMsg \"C\" toggles logCollapsed; collapsed height; busy vs idle log border. Update any bottom-bar hint assertions to expect C.",
+      "files": [
+        "internal/gui/gui_test.go",
+        "internal/gui/style/theme_test.go",
+        "internal/gui/regression_test.go"
+      ],
+      "tests": "go test -race ./internal/gui/...",
+      "done_when": "New tests green; existing gui tests green",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02",
+        "AC-03",
+        "AC-04",
+        "AC-05",
+        "AC-06",
+        "AC-07",
+        "AC-08"
+      ],
+      "depends_on_steps": [
+        "S3",
+        "S5"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S7",
       "work_package": "WP1",
       "order": 7,
-      "action": "Run full test suite, gofmt, and go vet to confirm M14 changes don't regress anything.",
+      "action": "Run full suite + fmt + vet to confirm no regression outside gui.",
       "files": [
         "internal/gui"
       ],
-      "tests": "manual: go test -race ./... exit 0; gofmt -l . empty; go vet ./... clean",
-      "done_when": "All checks green",
+      "tests": "go test -race ./...",
+      "done_when": "go test -race ./... , gofmt -l clean, go vet ./... clean",
       "status": "pending",
       "covers_ac": [
         "AC-06",
         "AC-07"
       ],
-      "depends_on_steps": [],
+      "depends_on_steps": [
+        "S6"
+      ],
       "claimed_by": "",
       "claimed_at": "",
       "lease_expires_at": "",

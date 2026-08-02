@@ -3,13 +3,17 @@
     "id": "08",
     "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
     "slug": "m24-13-manual-smoke-checklist-sign-off-human-gate",
-    "lifecycle": "draft",
+    "lifecycle": "approved",
+    "spec_status": "ready",
+    "execution_status": "planned",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
     "deferred": false,
     "deferred_reason": "",
-    "depends_on": [],
+    "depends_on": [
+      "13"
+    ],
     "effort": "S",
     "risk": "low",
     "change_kind": "",
@@ -21,43 +25,132 @@
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-07-30T21:05:10.315082+00:00"
+    "lifecycle_at": "2026-08-01T21:13:15.375532+00:00"
   },
   "intent": {
-    "outcome": "master-plan/smoke-checklist.md is signed off by a human on a real macOS machine. v1.0.0 stable tag is unblocked. Any failing smoke item is captured as a follow-up milestone so the work is tracked, not silently deferred."
+    "outcome": "master-plan/smoke-checklist.md is fully re-run and signed off by a human on real Homebrew after M13 (Deps) is fixed. Failures become follow-up milestones; pass unblocks stable release tagging work."
   },
   "problem": {
-    "description": "M24 code steps (24.1-24.12) are complete but 24.13 is a manual smoke gate that cannot be executed by an agent. Without human sign-off, v1.0.0 stable release is blocked. This milestone defines what 'signed off' means and what happens on failure."
+    "description": "Partial smoke 2026-08-01 left most items skipped and Deps failing (M13). Agents cannot complete the human gate. Checklist path is master-plan/smoke-checklist.md (not master-plan-bkp)."
   },
   "scope": {
     "in_scope": [
-      "Human runs master-plan-bkp/smoke-checklist.md end-to-end on macOS.",
-      "Human annotates each checklist item as pass/fail and commits the signed-off file.",
-      "For any failing item: open a follow-up mp milestone sized to fix that item; record each failure as a separate milestone (one failure -> one milestone).",
-      "All follow-up milestones link back to this milestone as their parent (via depends_on).",
-      "M08 verdict = pass when zero items failed. M08 verdict = blocked when at least one item failed; unblock after follow-up milestones close.",
-      "After M08 pass: cut v1.0.0 stable tag from wip HEAD and repeat the tap-bump dance (separate milestone or M06-extension)."
+      "After M13 done: human re-runs master-plan/smoke-checklist.md end-to-end on macOS/Linux with real brew.",
+      "Fill Environment table; mark each item [x] pass or [ ] fail with notes.",
+      "Commit signed checklist (or attach evidence note via mp).",
+      "Each failure → one follow-up milestone (intent/problem/AC) linked via depends_on where useful.",
+      "M08 complete only when all items pass OR every fail has a tracked follow-up and M08 is explicitly blocked with the list."
     ],
     "out_of_scope": [
-      "Implementing fixes for failing smoke items (handled by the follow-up milestones opened as part of this milestone's outcome).",
-      "Re-running automated tests (the smoke gate is in addition to, not a replacement for, go test ./...).",
-      "Cutting v1.0.0 stable tag (separate decision after M08 passes).",
-      "Migrating smoke-checklist.md out of master-plan-bkp/ (it is read-only archival context)."
+      "Implementing fixes for failures (follow-up milestones).",
+      "Replacing smoke with automated tests.",
+      "Cutting release tags (separate after pass).",
+      "M14–M16 visual polish verification beyond checklist items that already cover navigation/UI."
     ]
   },
   "acceptance_criteria": [
     {
       "id": "AC-01",
-      "description": "Every item in master-plan/smoke-checklist.md is annotated as pass (or has a follow-up milestone opened for the failure, with the milestone referencing the failing item).",
-      "verification": "manual: each [ ] in master-plan/smoke-checklist.md is either [x] (pass) or paired with a follow-up milestone id; follow-up milestones all show execution_status=done OR this milestone is in 'blocked' state with the failure list captured",
+      "description": "Every item in master-plan/smoke-checklist.md is [x] pass, or each fail is paired with a follow-up milestone id noted in the checklist.",
+      "verification": "manual: inspect master-plan/smoke-checklist.md; all boxes resolved",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-02",
-      "description": "If any smoke item failed, a follow-up milestone exists for each failure with intent/scope/AC that fix that specific item.",
-      "verification": "manual: mp list milestones --filter ... shows one follow-up per failing item; each follow-up's intent.problem references the failing smoke item",
+      "description": "If any item failed, follow-up milestone(s) exist with problem text referencing the failing checklist item.",
+      "verification": "manual: mp list milestones shows follow-ups; cross-check checklist notes",
       "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "Environment table (date, tester, versions, OS) is filled on the signed checklist.",
+      "verification": "manual: master-plan/smoke-checklist.md Environment section non-empty",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "design_decisions": [
+    {
+      "area": "human_only",
+      "choice": "No agent execution of smoke body; runner prepares build, human signs",
+      "rationale": "Requires real brew mutations and visual judgment. M13 must land first so Deps is not a known blocker."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Human smoke sign-off",
+      "goal": "Complete smoke-checklist.md after M13.",
+      "rollback": "n/a"
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Build bin/lazybrew from current wip; record version. Ensure M13 is complete first.",
+      "files": [
+        "bin/lazybrew"
+      ],
+      "tests": "manual: ./bin/lazybrew --version",
+      "done_when": "Binary runs --version",
+      "status": "pending",
+      "covers_ac": [
+        "AC-03"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S2",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "HUMAN: run master-plan/smoke-checklist.md end-to-end; fill Environment; mark each item.",
+      "files": [
+        "master-plan/smoke-checklist.md"
+      ],
+      "tests": "manual: checklist complete",
+      "done_when": "Checklist fully annotated",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-03"
+      ],
+      "depends_on_steps": [
+        "S1"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S3",
+      "work_package": "WP1",
+      "order": 3,
+      "action": "For each fail, create follow-up milestone via mp; note ids on checklist. If all pass, mark M08 complete evidence.",
+      "files": [
+        "master-plan"
+      ],
+      "tests": "manual: mp list milestones",
+      "done_when": "AC-01 AC-02 satisfied",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02"
+      ],
+      "depends_on_steps": [
+        "S2"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
       "evidence": ""
     }
   ],

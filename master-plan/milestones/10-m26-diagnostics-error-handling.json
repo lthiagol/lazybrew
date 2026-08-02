@@ -3,7 +3,9 @@
     "id": "10",
     "title": "M26 Diagnostics Error Handling",
     "slug": "m26-diagnostics-error-handling",
-    "lifecycle": "draft",
+    "lifecycle": "approved",
+    "spec_status": "ready",
+    "execution_status": "planned",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -15,44 +17,117 @@
     "change_kind": "",
     "priority": "normal",
     "created": "2026-07-30",
-    "updated": "2026-07-30",
+    "updated": "2026-08-01",
     "blocked_at": "",
     "block_reason": "",
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-07-30T21:05:19.254781+00:00"
+    "lifecycle_at": "2026-08-01T21:13:15.254821+00:00"
   },
   "intent": {
-    "outcome": "brew doctor exit code 1 is parsed as warnings (not error) in the diagnostics display; user sees the doctor output without a blocking error toast."
+    "outcome": "Doctor exit=1 is confirmed warning-path end-to-end: brew layer already parses warnings; GUI Status Doctor tab and d-key path never treat exit=1 as a hard error toast; residual swallowed errors on dashboard are fixed or explicitly accepted."
   },
   "problem": {
-    "description": "Bkp M26 marked Planned; not implemented in wip. Currently brew doctor exit=1 likely surfaces as an error rather than as informational output."
+    "description": "Original M26 goal (exit=1 as warnings) is already implemented in internal/brew/doctor.go + tests. Residual gaps: Status dashboard ignores doctor errors (doctorWarnings, _ := ...); draft ACs were stale. This milestone verifies shipped behavior and closes residual GUI gaps only."
   },
   "scope": {
     "in_scope": [
-      "Parse brew doctor exit code 1 as warnings, not errors",
-      "Surface doctor output in Diagnostics panel",
-      "Add unit test for exit code parsing"
+      "Confirm TestDiagnosticsDoctorExitCode1 (and related) still pass — no regression.",
+      "Audit GUI paths: fetchTabContent Doctor tab, runDoctor (d key), Status dashboard doctor summary — ensure exit=1 does not show error toast.",
+      "Fix or document Status dashboard swallowed doctor error (show subtle error line if real err).",
+      "If no code change needed beyond verify, record evidence and complete."
     ],
     "out_of_scope": [
-      "Changing brew invocation",
-      "UI redesign of diagnostics panel"
+      "Diagnostics panel redesign.",
+      "Changing brew doctor invocation flags.",
+      "Tiered refresh (M12).",
+      "Re-implementing exit=1 parsing (already done)."
     ]
   },
   "acceptance_criteria": [
     {
       "id": "AC-01",
-      "description": "brew doctor exit=1 returns warnings, not errors.",
-      "verification": "manual: go test -run TestDoctorExitCode ./internal/brew/...",
+      "description": "brew doctor exit=1 returns parsed warnings and nil error from DiagnosticsReader.Doctor (existing behavior locked by test).",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-02",
-      "description": "Doctor output renders in Diagnostics panel without error toast.",
-      "verification": "manual: launch lazybrew, run doctor via menu, no error toast appears",
+      "description": "GUI Doctor tab / d-key path does not surface exit=1 as a failure toast; warnings or clean output render.",
+      "verification": "make test",
       "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-03",
+      "description": "Status dashboard either surfaces real doctor errors or documents intentional ignore; no panic/silent wrong state.",
+      "verification": "make test",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "design_decisions": [
+    {
+      "area": "mostly_done",
+      "choice": "Treat core exit=1 as done; milestone is verify + residual GUI only",
+      "rationale": "doctor.go already implements AC-01. Avoid re-work; focus runner on audit and any toast/dashboard gap."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Verify + residual",
+      "goal": "Lock exit=1 behavior; fix GUI residual if any.",
+      "rollback": "n/a"
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Run doctor unit tests; confirm exit=1 path. Audit runDoctor, Doctor tab fetch, Status dashboard doctorWarnings,_ for toast/error handling.",
+      "files": [
+        "internal/brew/doctor.go",
+        "internal/gui/commands.go"
+      ],
+      "tests": "go test -race ./internal/brew/ -run Doctor",
+      "done_when": "Audit notes which paths need change",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S2",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "Fix residual: Status dashboard real doctor errors surfaced or intentional; ensure d-key/exit=1 no error toast. Add GUI test if missing.",
+      "files": [
+        "internal/gui/commands.go",
+        "internal/gui/gui_test.go"
+      ],
+      "tests": "go test -race ./internal/gui/... ./internal/brew/...",
+      "done_when": "AC-02 AC-03 green",
+      "status": "pending",
+      "covers_ac": [
+        "AC-02",
+        "AC-03"
+      ],
+      "depends_on_steps": [
+        "S1"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
       "evidence": ""
     }
   ],

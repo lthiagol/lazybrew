@@ -3,65 +3,221 @@
     "id": "12",
     "title": "M28 Tiered Refresh and Polling Strategy",
     "slug": "m28-tiered-refresh-and-polling-strategy",
-    "lifecycle": "draft",
+    "lifecycle": "approved",
+    "spec_status": "ready",
+    "execution_status": "planned",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
     "deferred": false,
     "deferred_reason": "",
-    "depends_on": [],
-    "effort": "S",
+    "depends_on": [
+      "09",
+      "11"
+    ],
+    "effort": "M",
     "risk": "low",
     "change_kind": "",
     "priority": "normal",
     "created": "2026-07-30",
-    "updated": "2026-07-30",
+    "updated": "2026-08-01",
     "blocked_at": "",
     "block_reason": "",
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-07-30T21:05:29.961765+00:00"
+    "lifecycle_at": "2026-08-01T21:13:15.350672+00:00"
   },
   "intent": {
-    "outcome": "Each data class has its own TTL; lazy loading defers fetches until panels are shown; refresh pauses on user interaction; controller split (B-01) becomes feasible."
+    "outcome": "Refresh is tiered: per-data-class TTLs in config; panels fetch on first select (lazy); auto-refresh and scheduled work pause briefly after user key activity so typing/navigation is not janked by full refresh storms."
   },
   "problem": {
-    "description": "Bkp M28 marked Planned; not implemented in wip. Currently the GUI has no tiered strategy: every refresh fetches everything. Depends on M25 (lazy outdated + TTL), M26 (doctor warnings), M27 (taps batch)."
+    "description": "RefreshMsg always reloads Status+Formulae+Casks+Outdated+Taps+Services. Single 30s cache TTL. Init eager-fetches everything. auto_refresh_seconds exists but still full RefreshMsg. No pause-on-interaction. Builds on M09 outdated TTL/lazy and M11 faster taps."
   },
   "scope": {
     "in_scope": [
-      "Per-class TTLs in config (formulae, casks, outdated, taps, services, doctor)",
-      "Lazy all panels by default",
-      "Pause-on-interaction: refresh defers if user has typed or pressed a key recently",
-      "Tests"
+      "Config: per-class TTLs (formulae, casks, outdated, taps, services, doctor) under brew or cache section; sensible defaults; validate on load.",
+      "Lazy panels: Init only loads active panel (or Status+active); other panels fetch on first switchPanel.",
+      "RefreshMsg becomes selective: refresh stale classes only, or active panel + stale dependents — document algorithm.",
+      "Pause-on-interaction: if key activity within last 500ms (configurable), defer auto_refresh tick once.",
+      "Tests for lazy init, per-class TTL plumbing, pause-on-interaction.",
+      "Effort M (not S)."
     ],
     "out_of_scope": [
-      "Controller split (B-01)",
-      "Background sync features",
-      "Changes that supersede M25/M26/M27"
+      "Controller split / architecture rewrite.",
+      "Background sync daemon.",
+      "Replacing M09/M11 implementations.",
+      "UI for editing TTLs inside the TUI."
     ]
   },
   "acceptance_criteria": [
     {
       "id": "AC-01",
-      "description": "Each data class has an independent TTL setting in config.",
-      "verification": "manual: grep -E 'ttl|TTL' internal/config/*.go shows >= 4 class-scoped settings",
+      "description": "Config exposes independent TTL fields for at least formulae, casks, outdated, taps (and services or doctor); defaults applied in Default().",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-02",
-      "description": "No panel fetches data until it is selected.",
-      "verification": "manual: go test -run TestLazyPanels ./internal/gui/... shows 0 brew calls before any panel select",
+      "description": "With default config, Init does not fetch every panel; inactive panels fetch on first select.",
+      "verification": "make test",
       "status": "pending",
       "evidence": ""
     },
     {
       "id": "AC-03",
-      "description": "User keypress within 500ms defers scheduled refresh.",
-      "verification": "manual: go test -run TestPauseOnInteraction ./internal/gui/...",
+      "description": "Auto-refresh tick defers when a key was handled within the pause window (default 500ms).",
+      "verification": "make test",
       "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-04",
+      "description": "Manual R refresh still forces refresh of the active panel (and documented related classes) even if TTL not expired.",
+      "verification": "make test",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "design_decisions": [
+    {
+      "area": "depends",
+      "choice": "depends_on M09 and M11",
+      "rationale": "Outdated lazy/TTL and taps batch are prerequisites so tiered refresh is not papering over N+1/outdated stampede."
+    },
+    {
+      "area": "refresh_semantics",
+      "choice": "R = force active (+ related); auto = stale-only; Init = active-only lazy",
+      "rationale": "Predictable user mental model; avoids surprise empty panels only until first visit."
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "Tiered refresh",
+      "goal": "Per-class TTL, lazy panels, pause-on-interaction.",
+      "rollback": "Revert config/gui refresh paths."
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "work_package": "WP1",
+      "order": 1,
+      "action": "Add per-class TTL config fields + defaults + validation.",
+      "files": [
+        "internal/config/config.go",
+        "internal/config"
+      ],
+      "tests": "go test -race ./internal/config/",
+      "done_when": "Defaults + parse tests",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01"
+      ],
+      "depends_on_steps": [],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S2",
+      "work_package": "WP1",
+      "order": 2,
+      "action": "Lazy Init: fetch only active panel (or Status+active); switchPanel fetches unloaded panels.",
+      "files": [
+        "internal/gui/gui.go",
+        "internal/gui/commands.go"
+      ],
+      "tests": "go test -race ./internal/gui/ -run Init\\|Lazy\\|Panel",
+      "done_when": "Init brew call count reduced",
+      "status": "pending",
+      "covers_ac": [
+        "AC-02"
+      ],
+      "depends_on_steps": [
+        "S1"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S3",
+      "work_package": "WP1",
+      "order": 3,
+      "action": "Selective RefreshMsg by staleness; R forces active (+related). Wire class TTLs to cache/fetch decisions.",
+      "files": [
+        "internal/gui/gui.go",
+        "internal/gui/commands.go",
+        "internal/brew"
+      ],
+      "tests": "go test -race ./internal/gui/ -run Refresh\\|TTL",
+      "done_when": "Stale-only auto path; R force",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-04"
+      ],
+      "depends_on_steps": [
+        "S1",
+        "S2"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S4",
+      "work_package": "WP1",
+      "order": 4,
+      "action": "Pause-on-interaction: track last key time; auto_refresh defers if within 500ms window.",
+      "files": [
+        "internal/gui/gui.go"
+      ],
+      "tests": "go test -race ./internal/gui/ -run Pause\\|AutoRefresh\\|Interaction",
+      "done_when": "TestPauseOnInteraction green",
+      "status": "pending",
+      "covers_ac": [
+        "AC-03"
+      ],
+      "depends_on_steps": [
+        "S3"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
+      "evidence": ""
+    },
+    {
+      "id": "S5",
+      "work_package": "WP1",
+      "order": 5,
+      "action": "Full suite green.",
+      "files": [
+        "internal/gui",
+        "internal/config",
+        "internal/brew"
+      ],
+      "tests": "make test",
+      "done_when": "make test green",
+      "status": "pending",
+      "covers_ac": [
+        "AC-01",
+        "AC-02",
+        "AC-03",
+        "AC-04"
+      ],
+      "depends_on_steps": [
+        "S4"
+      ],
+      "claimed_by": "",
+      "claimed_at": "",
+      "lease_expires_at": "",
       "evidence": ""
     }
   ],
