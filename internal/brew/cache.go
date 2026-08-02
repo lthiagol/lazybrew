@@ -39,18 +39,19 @@ var InvalidateGroups = map[string][]CacheKey{
 type cacheEntry struct {
 	data      any
 	timestamp time.Time
+	ttl       time.Duration // 0 = use cache default TTL
 }
 
 type Cache struct {
-	mu      sync.RWMutex
-	entries map[CacheKey]cacheEntry
-	ttl     time.Duration
+	mu         sync.RWMutex
+	entries    map[CacheKey]cacheEntry
+	defaultTTL time.Duration
 }
 
 func NewCache(ttl time.Duration) *Cache {
 	return &Cache{
-		entries: make(map[CacheKey]cacheEntry),
-		ttl:     ttl,
+		entries:    make(map[CacheKey]cacheEntry),
+		defaultTTL: ttl,
 	}
 }
 
@@ -61,7 +62,11 @@ func (c *Cache) Get(key CacheKey) (any, bool) {
 		c.mu.RUnlock()
 		return nil, false
 	}
-	if time.Since(entry.timestamp) > c.ttl {
+	ttl := entry.ttl
+	if ttl <= 0 {
+		ttl = c.defaultTTL
+	}
+	if time.Since(entry.timestamp) > ttl {
 		c.mu.RUnlock()
 		c.mu.Lock()
 		delete(c.entries, key)
@@ -74,11 +79,19 @@ func (c *Cache) Get(key CacheKey) (any, bool) {
 }
 
 func (c *Cache) Set(key CacheKey, data any) {
+	c.SetWithTTL(key, data, 0)
+}
+
+// SetWithTTL stores data with a per-entry TTL. Pass ttl=0 to inherit the
+// cache default. Per-entry TTL is used by M9 to keep Outdated entries
+// fresh for 30m while other entries use the cache default (30s).
+func (c *Cache) SetWithTTL(key CacheKey, data any, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.entries[key] = cacheEntry{
 		data:      data,
 		timestamp: time.Now(),
+		ttl:       ttl,
 	}
 }
 

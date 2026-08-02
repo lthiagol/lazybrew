@@ -168,3 +168,39 @@ func TestCacheSeparateOutdatedKeys(t *testing.T) {
 		t.Error("wrong casks cached")
 	}
 }
+
+func TestCacheSetWithTTLUsesPerEntryTTL(t *testing.T) {
+	c := NewCache(50 * time.Millisecond)
+	c.SetWithTTL(KeyOutdatedFormulae, "outdated", 5*time.Second)
+
+	// Per-entry TTL overrides cache default; entry should still be fresh
+	// after the cache default would have expired.
+	time.Sleep(75 * time.Millisecond)
+	v, ok := c.Get(KeyOutdatedFormulae)
+	if !ok {
+		t.Fatal("expected hit; per-entry TTL should override cache default")
+	}
+	if v.(string) != "outdated" {
+		t.Errorf("got %v, want outdated", v)
+	}
+}
+
+func TestCacheSetWithTTLZeroInheritsDefault(t *testing.T) {
+	c := NewCache(50 * time.Millisecond)
+	c.SetWithTTL(KeyOutdatedFormulae, "outdated", 0)
+
+	time.Sleep(75 * time.Millisecond)
+	if _, ok := c.Get(KeyOutdatedFormulae); ok {
+		t.Error("expected miss after cache default TTL elapsed (per-entry ttl=0 inherits)")
+	}
+}
+
+func TestCacheSetWithoutTTLStillUsesDefault(t *testing.T) {
+	c := NewCache(50 * time.Millisecond)
+	c.Set(KeyOutdatedFormulae, "outdated")
+
+	time.Sleep(75 * time.Millisecond)
+	if _, ok := c.Get(KeyOutdatedFormulae); ok {
+		t.Error("expected miss after cache default TTL elapsed (plain Set, no per-entry ttl)")
+	}
+}

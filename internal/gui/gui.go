@@ -125,7 +125,6 @@ func (m Model) Init() tea.Cmd {
 		cmds = append(cmds,
 			fetchPanelData(m.client, PanelFormulae),
 			fetchPanelData(m.client, PanelCasks),
-			fetchPanelData(m.client, PanelOutdated),
 			fetchPanelData(m.client, PanelTaps),
 			fetchPanelData(m.client, PanelServices),
 			fetchStatusData(m.client),
@@ -181,8 +180,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.items = msg.Results
 			m.searchResults = msg.Raw
 		}
-		m.switchPanel(PanelSearch)
-		return m, nil
+		cmd := m.switchPanel(PanelSearch)
+		return m, cmd
 
 	case SearchInfoLoadedMsg:
 		if msg.Err != nil {
@@ -416,17 +415,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.clearTabContent()
 		m.refreshing = 6
 		for _, p := range m.panels {
-			if p.id != PanelSearch {
-				p.loading = true
+			if p.id == PanelSearch || p.id == PanelOutdated {
+				continue
 			}
+			p.loading = true
 		}
 		cmds := []tea.Cmd{
 			fetchPanelData(m.client, PanelFormulae),
 			fetchPanelData(m.client, PanelCasks),
-			fetchPanelData(m.client, PanelOutdated),
 			fetchPanelData(m.client, PanelTaps),
 			fetchPanelData(m.client, PanelServices),
 			fetchStatusData(m.client),
+		}
+		if m.activePanel == PanelOutdated {
+			m.panels[PanelOutdated].loading = true
+			cmds = append(cmds, fetchPanelData(m.client, PanelOutdated))
 		}
 		if tick := m.autoRefreshCmd(); tick != nil {
 			cmds = append(cmds, tick)
@@ -519,32 +522,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return RefreshMsg{} }
 
 		case "tab":
-			m.nextPanel()
-			return m, nil
+			cmd := m.nextPanel()
+			return m, cmd
 		case "shift+tab":
-			m.prevPanel()
-			return m, nil
+			cmd := m.prevPanel()
+			return m, cmd
 		case "1":
-			m.switchPanel(PanelStatus)
-			return m, nil
+			cmd := m.switchPanel(PanelStatus)
+			return m, cmd
 		case "2":
-			m.switchPanel(PanelFormulae)
-			return m, nil
+			cmd := m.switchPanel(PanelFormulae)
+			return m, cmd
 		case "3":
-			m.switchPanel(PanelCasks)
-			return m, nil
+			cmd := m.switchPanel(PanelCasks)
+			return m, cmd
 		case "4":
-			m.switchPanel(PanelOutdated)
-			return m, nil
+			cmd := m.switchPanel(PanelOutdated)
+			return m, cmd
 		case "5":
-			m.switchPanel(PanelTaps)
-			return m, nil
+			cmd := m.switchPanel(PanelTaps)
+			return m, cmd
 		case "6":
-			m.switchPanel(PanelServices)
-			return m, nil
+			cmd := m.switchPanel(PanelServices)
+			return m, cmd
 		case "7":
-			m.switchPanel(PanelSearch)
-			return m, nil
+			cmd := m.switchPanel(PanelSearch)
+			return m, cmd
 
 		case "j", "down":
 			m.panels[m.activePanel].down()
@@ -776,25 +779,55 @@ func (m Model) View() string {
 	return full
 }
 
-func (m *Model) nextPanel() {
+// lazyLoadOutdated returns fetchPanelData(PanelOutdated) iff the panel
+// is empty, not already loading. It is the single source of truth for
+// M9's lazy Outdated policy: callers that activate the Outdated panel
+// (switchPanel, nextPanel, prevPanel) delegate here. Clearing p.err on
+// retry ensures a stale error from a previous failed fetch doesn't block
+// the new attempt.
+func (m *Model) lazyLoadOutdated() tea.Cmd {
+	p := m.panels[PanelOutdated]
+	if p.items == nil && !p.loading {
+		p.loading = true
+		p.err = nil
+		return fetchPanelData(m.client, PanelOutdated)
+	}
+	return nil
+}
+
+// nextPanel / prevPanel cycle through panels. When cycling lands on the
+// Outdated panel for the first time, they trigger a lazy fetch — same
+// policy as switchPanel(PanelOutdated).
+func (m *Model) nextPanel() tea.Cmd {
 	m.panels[m.activePanel].active = false
 	m.activePanel = PanelID((int(m.activePanel) + 1) % len(m.panels))
 	m.panels[m.activePanel].active = true
 	m.activeTab = 0
 	m.tabs = panelTabs[m.activePanel]
+	if m.activePanel == PanelOutdated {
+		return m.lazyLoadOutdated()
+	}
+	return nil
 }
 
-func (m *Model) prevPanel() {
+func (m *Model) prevPanel() tea.Cmd {
 	m.panels[m.activePanel].active = false
 	m.activePanel = PanelID((int(m.activePanel) - 1 + len(m.panels)) % len(m.panels))
 	m.panels[m.activePanel].active = true
 	m.activeTab = 0
 	m.tabs = panelTabs[m.activePanel]
+	if m.activePanel == PanelOutdated {
+		return m.lazyLoadOutdated()
+	}
+	return nil
 }
 
-func (m *Model) switchPanel(id PanelID) {
+// switchPanel activates the panel and returns any lazy-fetch command.
+// Returns nil for panels that don't lazy-load. Outdated lazy-loads on
+// first visit so Init / Refresh don't stampede `brew outdated`.
+func (m *Model) switchPanel(id PanelID) tea.Cmd {
 	if int(id) >= len(m.panels) {
-		return
+		return nil
 	}
 	m.panels[m.activePanel].active = false
 	m.activePanel = id
@@ -808,6 +841,10 @@ func (m *Model) switchPanel(id PanelID) {
 	} else {
 		m.searchInput.Blur()
 	}
+	if id == PanelOutdated {
+		return m.lazyLoadOutdated()
+	}
+	return nil
 }
 
 func (m *Model) nextTab() tea.Cmd {

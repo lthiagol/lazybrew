@@ -1240,11 +1240,26 @@ func fetchStatusData(client *brew.Client) tea.Cmd {
 		ctx := context.Background()
 		formulae, fErr := client.Formulae.List(ctx)
 		casks, cErr := client.Casks.List(ctx)
-		outdatedFormulae, ofErr := client.Formulae.Outdated(ctx)
-		outdatedCasks, ocErr := client.Casks.Outdated(ctx)
 		taps, tErr := client.Taps.List(ctx)
 		services, sErr := client.Services.List(ctx)
 		cfg, _ := client.Diagnostics.Config(ctx)
+
+		// Outdated is lazy (M9): read from cache only. The cache fills when
+		// the user first visits the Outdated panel; until then we report 0
+		// outdated in the dashboard and the user is not surprised by a
+		// `brew outdated` shell invocation on every Init / Refresh.
+		var outdatedFormulae []brew.Formula
+		if cached, ok := client.Cache.Get(brew.KeyOutdatedFormulae); ok {
+			if f, ok := cached.([]brew.Formula); ok {
+				outdatedFormulae = f
+			}
+		}
+		var outdatedCasks []brew.Cask
+		if cached, ok := client.Cache.Get(brew.KeyOutdatedCasks); ok {
+			if c, ok := cached.([]brew.Cask); ok {
+				outdatedCasks = c
+			}
+		}
 
 		var errs []string
 		if fErr != nil {
@@ -1252,12 +1267,6 @@ func fetchStatusData(client *brew.Client) tea.Cmd {
 		}
 		if cErr != nil {
 			errs = append(errs, "casks: "+cErr.Error())
-		}
-		if ofErr != nil {
-			errs = append(errs, "outdated formulae: "+ofErr.Error())
-		}
-		if ocErr != nil {
-			errs = append(errs, "outdated casks: "+ocErr.Error())
 		}
 		if tErr != nil {
 			errs = append(errs, "taps: "+tErr.Error())

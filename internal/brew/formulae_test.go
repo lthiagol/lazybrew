@@ -3,6 +3,8 @@ package brew
 import (
 	"context"
 	"encoding/json"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -476,5 +478,93 @@ func TestFormulaeGetReturnsNilForMissing(t *testing.T) {
 	}
 	if f != nil {
 		t.Error("expected nil for missing formula")
+	}
+}
+
+func TestFormulaeOutdatedCoalescesConcurrentCalls(t *testing.T) {
+	r := newMockFormulaeRunner()
+	var calls int32
+	gate := make(chan struct{})
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		atomic.AddInt32(&calls, 1)
+		<-gate
+		return []byte(sampleOutdatedJSON), nil
+	}
+	cache := NewCache(time.Minute)
+	reader := NewFormulaeReader(r, cache)
+
+	const goroutines = 8
+	results := make([][]Formula, goroutines)
+	errs := make([]error, goroutines)
+	var wg sync.WaitGroup
+	for i := 0; i < goroutines; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			o, err := reader.Outdated(context.Background())
+			results[i] = o
+			errs[i] = err
+		}()
+	}
+
+	// Wait for first caller to enter fn; then release.
+	time.Sleep(20 * time.Millisecond)
+	close(gate)
+	wg.Wait()
+
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Fatalf("expected 1 brew invocation for %d concurrent callers, got %d", goroutines, got)
+	}
+	for i, r := range results {
+		if r == nil {
+			t.Errorf("result[%d] = nil", i)
+		}
+		if errs[i] != nil {
+			t.Errorf("errs[%d] = %v", i, errs[i])
+		}
+	}
+}
+
+func TestFormulaeOutdatedCachesWithinTTL(t *testing.T) {
+	r := newMockFormulaeRunner()
+	var calls int32
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		atomic.AddInt32(&calls, 1)
+		return []byte(sampleOutdatedJSON), nil
+	}
+	cache := NewCache(time.Minute)
+	reader := NewFormulaeReader(r, cache)
+	reader.SetOutdatedTTL(time.Hour)
+
+	for i := 0; i < 5; i++ {
+		_, err := reader.Outdated(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Errorf("expected 1 shell invocation within TTL across 5 calls, got %d", got)
+	}
+}
+
+func TestFormulaeOutdatedRespectsOutdatedTTL(t *testing.T) {
+	r := newMockFormulaeRunner()
+	var calls int32
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		atomic.AddInt32(&calls, 1)
+		return []byte(sampleOutdatedJSON), nil
+	}
+	// Cache default is 1 minute but we want a 50ms Outdated TTL.
+	cache := NewCache(time.Minute)
+	reader := NewFormulaeReader(r, cache)
+	reader.SetOutdatedTTL(50 * time.Millisecond)
+
+	_, _ = reader.Outdated(context.Background())
+	time.Sleep(75 * time.Millisecond)
+	_, _ = reader.Outdated(context.Background())
+
+	if got := atomic.LoadInt32(&calls); got != 2 {
+		t.Errorf("expected 2 shell invocations (one after TTL expires), got %d", got)
 	}
 }

@@ -14,6 +14,7 @@ type FormulaeReader interface {
 	Leaves(ctx context.Context) ([]string, error)
 	Deps(ctx context.Context, name string) (string, error)
 	Uses(ctx context.Context, name string) ([]string, error)
+	SetOutdatedTTL(ttl time.Duration)
 }
 
 type FormulaeWriter interface {
@@ -26,8 +27,10 @@ type FormulaeWriter interface {
 }
 
 type formulaeReader struct {
-	runner Runner
-	cache  *Cache
+	runner      Runner
+	cache       *Cache
+	outdatedTTL time.Duration
+	sf          *singleflight
 }
 
 type formulaeWriter struct {
@@ -36,7 +39,7 @@ type formulaeWriter struct {
 }
 
 func NewFormulaeReader(runner Runner, cache *Cache) FormulaeReader {
-	return &formulaeReader{runner: runner, cache: cache}
+	return &formulaeReader{runner: runner, cache: cache, sf: newSingleflight()}
 }
 
 func NewFormulaeWriter(runner Runner, cache *Cache) FormulaeWriter {
@@ -154,10 +157,27 @@ func (s *formulaeReader) Outdated(ctx context.Context) ([]Formula, error) {
 		}
 	}
 
+	val, err := s.sf.Do("outdated:formulae", func() (any, error) {
+		if cached, ok := s.cache.Get(KeyOutdatedFormulae); ok {
+			if formulae, ok := cached.([]Formula); ok {
+				return formulae, nil
+			}
+		}
+		return s.fetchOutdated(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return val.([]Formula), nil
+}
+
+func (s *formulaeReader) fetchOutdated(ctx context.Context) (any, error) {
 	output, err := s.runner.Execute(ctx, "outdated", "--json=v2", "--formula")
 	if err != nil {
 		if IsExitCode(err, 1) {
-			return []Formula{}, nil
+			empty := []Formula{}
+			s.cache.SetWithTTL(KeyOutdatedFormulae, empty, s.outdatedTTL)
+			return empty, nil
 		}
 		return nil, err
 	}
@@ -182,8 +202,18 @@ func (s *formulaeReader) Outdated(ctx context.Context) ([]Formula, error) {
 		outdated = append(outdated, formula)
 	}
 
-	s.cache.Set(KeyOutdatedFormulae, outdated)
+	s.cache.SetWithTTL(KeyOutdatedFormulae, outdated, s.outdatedTTL)
 	return outdated, nil
+}
+
+// SetOutdatedTTL configures how long `brew outdated` results are reused.
+// Implements TTLSetter so *Client.SetOutdatedTTL can propagate config
+// without leaking the concrete type. A value <= 0 leaves the cache
+// default TTL (30s) in effect, preserving the pre-M9 behavior.
+func (s *formulaeReader) SetOutdatedTTL(ttl time.Duration) {
+	if ttl > 0 {
+		s.outdatedTTL = ttl
+	}
 }
 
 func (s *formulaeReader) Leaves(ctx context.Context) ([]string, error) {
