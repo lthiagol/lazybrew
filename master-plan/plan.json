@@ -587,8 +587,8 @@
     {
       "id": "11",
       "title": "M27 Taps Panel Batch Loading",
-      "spec_status": "ready",
-      "execution_status": "planned",
+      "spec_status": "verified",
+      "execution_status": "done",
       "blocked_by": ""
     },
     {

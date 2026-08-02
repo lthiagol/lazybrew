@@ -67,28 +67,45 @@ func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
 	names := strings.Fields(string(tapNamesOutput))
 	taps := make([]Tap, 0, len(names))
 
+	// M11: build the full list from names alone. We populate rich detail
+	// (formula/cask names, counts, trust) in a single batch tap-info call
+	// below instead of one shell invocation per tap.
 	for _, name := range names {
-		tap := Tap{
+		taps = append(taps, Tap{
 			Name:       name,
 			IsOfficial: strings.HasPrefix(name, "homebrew/"),
 			Installed:  true,
-		}
-		taps = append(taps, tap)
+		})
 	}
 
-	for i, tap := range taps {
-		info, err := s.fetchTapInfo(ctx, tap.Name)
+	if len(names) > 0 {
+		infos, err := s.fetchTapInfoBatch(ctx, names)
 		if err != nil {
-			continue
+			// M11 AC-01 / robustness: keep the name-only list when the
+			// batch fails (e.g. transient brew hiccup) rather than
+			// returning an empty list. The GUI still renders tap names;
+			// detail tabs may show "no data" until the next refresh.
+			s.cache.Set(KeyTapsList, taps)
+			return taps, nil
 		}
-		taps[i].Remote = info.Remote
-		taps[i].FormulaCount = info.FormulaCount
-		taps[i].CaskCount = info.CaskCount
-		taps[i].CommandCount = info.CommandCount
-		taps[i].IsAPI = info.API
-		taps[i].Trusted = info.Trusted
-		taps[i].FormulaNames = info.FormulaNames
-		taps[i].CaskNames = info.CaskNames
+		byName := make(map[string]tapInfoJSON, len(infos))
+		for _, info := range infos {
+			byName[info.Name] = info
+		}
+		for i, tap := range taps {
+			info, ok := byName[tap.Name]
+			if !ok {
+				continue
+			}
+			taps[i].Remote = info.Remote
+			taps[i].FormulaCount = info.FormulaCount
+			taps[i].CaskCount = info.CaskCount
+			taps[i].CommandCount = info.CommandCount
+			taps[i].IsAPI = info.API
+			taps[i].Trusted = info.Trusted
+			taps[i].FormulaNames = info.FormulaNames
+			taps[i].CaskNames = info.CaskNames
+		}
 	}
 
 	s.cache.Set(KeyTapsList, taps)
@@ -100,11 +117,20 @@ func (s *tapsReader) Get(ctx context.Context, name string) (*Tap, error) {
 	if err != nil {
 		return nil, err
 	}
+	if info == nil {
+		return nil, nil
+	}
 
-	tap := Tap{
-		Name:         name,
+	return infoToTap(info), nil
+}
+
+// infoToTap converts a parsed tapInfoJSON into a domain Tap. Shared by Get
+// and the batch path in List so the two stay in lockstep.
+func infoToTap(info *tapInfoJSON) *Tap {
+	return &Tap{
+		Name:         info.Name,
 		Remote:       info.Remote,
-		IsOfficial:   strings.HasPrefix(name, "homebrew/"),
+		IsOfficial:   strings.HasPrefix(info.Name, "homebrew/"),
 		FormulaCount: info.FormulaCount,
 		CaskCount:    info.CaskCount,
 		CommandCount: info.CommandCount,
@@ -114,18 +140,32 @@ func (s *tapsReader) Get(ctx context.Context, name string) (*Tap, error) {
 		FormulaNames: info.FormulaNames,
 		CaskNames:    info.CaskNames,
 	}
-	return &tap, nil
 }
 
 func (s *tapsReader) fetchTapInfo(ctx context.Context, name string) (*tapInfoJSON, error) {
-	var data []tapInfoJSON
-	if err := s.runner.ExecuteJSON(ctx, &data, "tap-info", "--json", name); err != nil {
+	infos, err := s.fetchTapInfoBatch(ctx, []string{name})
+	if err != nil {
 		return nil, err
 	}
-	if len(data) == 0 {
+	if len(infos) == 0 {
 		return nil, nil
 	}
-	return &data[0], nil
+	return &infos[0], nil
+}
+
+// fetchTapInfoBatch issues a single `brew tap-info --json name1 name2 …`
+// invocation and returns the parsed entries. M11 replaces the per-tap
+// loop with this so listing N taps is O(1) shell calls instead of N+1.
+func (s *tapsReader) fetchTapInfoBatch(ctx context.Context, names []string) ([]tapInfoJSON, error) {
+	args := make([]string, 0, 2+len(names))
+	args = append(args, "tap-info", "--json")
+	args = append(args, names...)
+
+	var data []tapInfoJSON
+	if err := s.runner.ExecuteJSON(ctx, &data, args...); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (s *tapsWriter) Tap(ctx context.Context, name string) error {

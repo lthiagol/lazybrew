@@ -3,9 +3,9 @@
     "id": "11",
     "title": "M27 Taps Panel Batch Loading",
     "slug": "m27-taps-panel-batch-loading",
-    "lifecycle": "approved",
-    "spec_status": "ready",
-    "execution_status": "planned",
+    "lifecycle": "complete",
+    "spec_status": "verified",
+    "execution_status": "done",
     "blocked": false,
     "needs_regrooming": false,
     "cancelled": false,
@@ -17,13 +17,13 @@
     "change_kind": "",
     "priority": "normal",
     "created": "2026-07-30",
-    "updated": "2026-08-01",
+    "updated": "2026-08-02",
     "blocked_at": "",
     "block_reason": "",
     "blocked_by": "",
     "target_version": "",
     "executed_by": "",
-    "lifecycle_at": "2026-08-01T21:13:15.321925+00:00"
+    "lifecycle_at": "2026-08-02T12:12:18.067928+00:00"
   },
   "intent": {
     "outcome": "Taps.List uses one brew tap-info --json with all tap names (after brew tap), not N sequential tap-info calls. Heavy name lists stay available for detail/trust without per-tap round-trips on list."
@@ -50,22 +50,22 @@
       "id": "AC-01",
       "description": "Listing N taps issues one brew tap plus one (or O(1) chunked) tap-info --json batch — not N tap-info calls.",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M11 complete. S1-S3 done. 3/3 ACs passed. Self-finding F-01 (no chunking for huge tap lists) resolved inline as known out-of-scope. Code review clean. make test/vet/lint/cover-check all green."
     },
     {
       "id": "AC-02",
       "description": "FormulaNames/CaskNames are either present from batch JSON without extra calls, or fetched only when Trust/Formulae detail needs them (lazy) — no per-tap fetch on List beyond the batch.",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M11 complete. S1-S3 done. 3/3 ACs passed. Self-finding F-01 (no chunking for huge tap lists) resolved inline as known out-of-scope. Code review clean. make test/vet/lint/cover-check all green."
     },
     {
       "id": "AC-03",
       "description": "Existing taps unit tests updated; GUI taps panel still renders list and detail.",
       "verification": "make test",
-      "status": "pending",
-      "evidence": ""
+      "status": "passed",
+      "evidence": "M11 complete. S1-S3 done. 3/3 ACs passed. Self-finding F-01 (no chunking for huge tap lists) resolved inline as known out-of-scope. Code review clean. make test/vet/lint/cover-check all green."
     }
   ],
   "design_decisions": [
@@ -94,7 +94,7 @@
       ],
       "tests": "go test -race ./internal/brew/ -run Taps",
       "done_when": "List uses batch call",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-01"
       ],
@@ -116,7 +116,7 @@
       ],
       "tests": "go test -race ./internal/brew/ ./internal/gui/ -run Taps\\|Tap",
       "done_when": "AC-02 met",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-02"
       ],
@@ -138,7 +138,7 @@
       ],
       "tests": "go test -race ./internal/brew/... ./internal/gui/...",
       "done_when": "Call counts assert batch",
-      "status": "pending",
+      "status": "done",
       "covers_ac": [
         "AC-01",
         "AC-02",
@@ -154,8 +154,22 @@
     }
   ],
   "verification": {
-    "date": "",
+    "date": "2026-08-02",
     "branch": "",
-    "evidence": ""
-  }
+    "evidence": "M11 complete. S1-S3 done. 3/3 ACs passed. Self-finding F-01 (no chunking for huge tap lists) resolved inline as known out-of-scope. Code review clean. make test/vet/lint/cover-check all green."
+  },
+  "findings": [
+    {
+      "id": "F-01",
+      "severity": "low",
+      "category": "future-work",
+      "description": "fetchTapInfoBatch does not chunk names. With 1000+ taps the single arg list could exceed ARG_MAX (typically 128KB-2MB). Documented as out-of-scope; flag if user reports hang on huge tap counts.",
+      "status": "fixed",
+      "author": "runner",
+      "fixed_in": "bdf9116ce02962a52f0208070a1b28bc89e8ae18",
+      "created": "2026-08-02",
+      "resolved": "2026-08-02",
+      "phase": "self"
+    }
+  ]
 }
