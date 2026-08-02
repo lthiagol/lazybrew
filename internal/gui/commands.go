@@ -757,7 +757,7 @@ func (m Model) runMissing() (tea.Model, tea.Cmd) {
 func (m *Model) loadTabContent() tea.Cmd {
 	needsFetch := map[PanelID]map[int]bool{
 		PanelStatus:   {1: true, 2: true},
-		PanelFormulae: {1: true, 2: true, 4: true},
+		PanelFormulae: {2: true, 3: true, 5: true},
 	}
 
 	panelID := m.activePanel
@@ -792,7 +792,7 @@ func (m *Model) loadTabContent() tea.Cmd {
 // something terminal" from "no fast path" — empty strings still count as
 // a terminal state (e.g. "No dependencies").
 func renderCachedTabContent(panelID PanelID, tabIdx int, panel *panelData) (string, bool) {
-	if panelID == PanelFormulae && tabIdx == 1 {
+	if panelID == PanelFormulae && tabIdx == 2 {
 		f := panel.selectedFormula()
 		if f == nil {
 			return "", false
@@ -859,13 +859,13 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 			}
 		case PanelFormulae:
 			switch tab {
-			case 1:
+			case 2: // Deps (List=0, Info=1)
 				deps, err := client.Formulae.Deps(ctx, name)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: deps}
-			case 2:
+			case 3: // Used By
 				uses, err := client.Formulae.Uses(ctx, name)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
@@ -878,7 +878,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 					result = "No dependents"
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: result}
-			case 4:
+			case 5: // Files
 				output, err := client.Runner.Execute(ctx, "list", name)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
@@ -1172,6 +1172,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
+			sortFormulae(formulae)
 			items := make([]string, len(formulae))
 			for i, f := range formulae {
 				items[i] = presentation.FormatFormula(f, 0)

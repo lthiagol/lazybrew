@@ -46,7 +46,7 @@ type tabInfo struct {
 
 var panelTabs = map[PanelID][]tabInfo{
 	PanelStatus:   {{"Dashboard", 0}, {"Config", 1}, {"Doctor", 2}},
-	PanelFormulae: {{"Info", 0}, {"Deps", 1}, {"Used By", 2}, {"Caveats", 3}, {"Files", 4}},
+	PanelFormulae: {{"List", 0}, {"Info", 1}, {"Deps", 2}, {"Used By", 3}, {"Caveats", 4}, {"Files", 5}},
 	PanelCasks:    {{"Info", 0}, {"Deps", 1}, {"Caveats", 2}},
 	PanelOutdated: {{"Info", 0}, {"Versions", 1}},
 	PanelTaps:     {{"Tap Info", 0}, {"Trust", 1}, {"Formulae", 2}},

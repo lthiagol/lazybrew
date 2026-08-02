@@ -93,8 +93,15 @@ func ApplyTheme(t *Theme) {
 	InactiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.SubtleColor)
 	SelectedItem = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true)
 	NormalItem = lipgloss.NewStyle().Foreground(t.TextColor)
-	TabActive = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true).Underline(true)
-	TabInactive = lipgloss.NewStyle().Foreground(t.SubtleColor)
+	TabActive = lipgloss.NewStyle().
+		Foreground(t.AccentColor).
+		Bold(true).
+		Border(lipgloss.Border{Bottom: "━"}, false, false, true, false).
+		BorderForeground(t.AccentColor).
+		Padding(0, 1)
+	TabInactive = lipgloss.NewStyle().
+		Foreground(t.SubtleColor).
+		Padding(0, 1)
 	HintKey = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true).Padding(0, 1)
 	HintDesc = lipgloss.NewStyle().Foreground(t.SubtleColor)
 	PanelTitle = lipgloss.NewStyle().Foreground(t.TextColor).Bold(true)

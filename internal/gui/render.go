@@ -215,21 +215,23 @@ func (m Model) renderContent(width, height int) string {
 	switch m.activePanel {
 	case PanelFormulae:
 		switch m.activeTab {
-		case 0:
+		case 0: // List
+			return m.renderFormulaeTable(width, height)
+		case 1: // Info
 			f := panel.selectedFormula()
 			if f == nil {
 				return emptyPanel(width, height)
 			}
 			info := presentation.FormatFormulaInfo(*f, width)
 			return style.NormalItem.Render(info)
-		case 1, 2, 4:
+		case 2, 3, 5: // Deps, Used By, Files
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				return m.renderContentInViewport(content)
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
-		case 3:
+		case 4: // Caveats
 			f := panel.selectedFormula()
 			if f == nil || f.Caveats == "" {
 				return style.SubtleText.Render("No caveats")
