@@ -55,6 +55,14 @@
       "reviewed_at": "2026-08-01",
       "notes": "M07 verified: AC-01 (.goreleaser.yml deleted, no workflow references) and AC-02 (DESIGN.md decision-log entry) both confirmed. Independent reviewer flagged 3 drift items (AGENTS.md release-readiness block, AGENTS.md checklist M22.3 row, check_dependencies.sh goreleaser probe); all 3 fixed in amended commit 3759a5e. Drift sweep post-amend returns no remaining goreleaser references in active files.",
       "milestone_completed_at": "2026-08-01"
+    },
+    {
+      "milestone_id": "10",
+      "verdict": "ok",
+      "reviewer": "coordinator",
+      "reviewed_at": "2026-08-02",
+      "notes": "External review + remediation clean. F-02 pluralization fixed; F-03 Doctor tab tests added; F-04 process note closed. Core M10 doctor exit=1 + dashboard error surface solid (e00cefa + 6c18580).",
+      "milestone_completed_at": "2026-08-02"
     }
   ],
   "comments": [],
