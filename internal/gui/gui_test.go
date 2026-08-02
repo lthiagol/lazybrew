@@ -67,19 +67,33 @@ func TestPanelNavigation(t *testing.T) {
 	if m.activePanel != PanelFormulae {
 		t.Errorf("after Tab: activePanel = %v, want PanelFormulae", m.activePanel)
 	}
+
+	m = sendSpecial(m, tea.KeyShiftTab)
+	if m.activePanel != PanelStatus {
+		t.Errorf("after Shift+Tab: activePanel = %v, want PanelStatus", m.activePanel)
+	}
 }
 
 func TestPanelJump(t *testing.T) {
 	m := newTestModel()
 
-	m = sendKey(m, "3")
-	if m.activePanel != PanelCasks {
-		t.Errorf("after 3: activePanel = %v, want PanelCasks", m.activePanel)
+	jumps := []struct {
+		key  string
+		want PanelID
+	}{
+		{"1", PanelStatus},
+		{"2", PanelFormulae},
+		{"3", PanelCasks},
+		{"4", PanelOutdated},
+		{"5", PanelTaps},
+		{"6", PanelServices},
+		{"7", PanelSearch},
 	}
-
-	m = sendKey(m, "7")
-	if m.activePanel != PanelSearch {
-		t.Errorf("after 7: activePanel = %v, want PanelSearch", m.activePanel)
+	for _, tc := range jumps {
+		m = sendKey(m, tc.key)
+		if m.activePanel != tc.want {
+			t.Errorf("after %s: activePanel = %v, want %v", tc.key, m.activePanel, tc.want)
+		}
 	}
 }
 
@@ -865,6 +879,38 @@ func TestBatchSelectionShowsIndicator(t *testing.T) {
 	sidebar = p.renderSidebarContent(20, 5, batch)
 	if !strings.Contains(sidebar, "▸●") {
 		t.Fatal("expected combined cursor+batch indicator, got:", sidebar)
+	}
+}
+
+func TestSpaceTogglesOutdatedBatchSelection(t *testing.T) {
+	m := newTestModel()
+	m = sendKey(m, "4")
+	p := m.panels[PanelOutdated]
+	p.items = []string{"foo  1.0 → 2.0", "bar  3.0 → 4.0"}
+	p.selected = 1
+	m.batch.selected = make(map[int]bool)
+
+	m = sendKey(m, " ")
+	if !m.batch.selected[1] {
+		t.Fatal("Space should select outdated item at cursor")
+	}
+	m = sendKey(m, " ")
+	if m.batch.selected[1] {
+		t.Fatal("second Space should deselect outdated item at cursor")
+	}
+}
+
+func TestSmallTerminalWarningInView(t *testing.T) {
+	m := newTestModel()
+	m = updateModel(m, tea.WindowSizeMsg{Width: 79, Height: 24})
+	view := m.View()
+	if !strings.Contains(view, "Terminal too small") {
+		t.Fatalf("79x24 View should show warning, got:\n%s", view[:min(len(view), 300)])
+	}
+	m = updateModel(m, tea.WindowSizeMsg{Width: 80, Height: 24})
+	view = m.View()
+	if strings.Contains(view, "Terminal too small") {
+		t.Fatal("80x24 View should not show terminal-too-small warning")
 	}
 }
 

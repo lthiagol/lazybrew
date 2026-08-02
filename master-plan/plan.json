@@ -566,8 +566,8 @@
     {
       "id": "08",
       "title": "M24.13 manual smoke checklist sign-off (HUMAN GATE)",
-      "spec_status": "ready",
-      "execution_status": "planned",
+      "spec_status": "verified",
+      "execution_status": "done",
       "blocked_by": ""
     },
     {

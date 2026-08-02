@@ -92,6 +92,9 @@ brew:
 	if cfg.GUI.ShowIcons {
 		t.Error("ShowIcons should be false")
 	}
+	if cfg.GUI.AutoRefreshSeconds != 30 {
+		t.Errorf("AutoRefreshSeconds = %d, want 30", cfg.GUI.AutoRefreshSeconds)
+	}
 	if cfg.Brew.Path != "/custom/brew" {
 		t.Errorf("brew path = %q", cfg.Brew.Path)
 	}
