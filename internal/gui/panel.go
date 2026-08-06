@@ -112,6 +112,33 @@ func (p *panelData) down() {
 	}
 }
 
+// selectIndex sets the cursor to i without wrap-around (used by mouse clicks).
+func (p *panelData) selectIndex(i int) {
+	if len(p.items) == 0 {
+		return
+	}
+	if i < 0 {
+		i = 0
+	}
+	if i >= len(p.items) {
+		i = len(p.items) - 1
+	}
+	p.selected = i
+	vc := p.visibleCount()
+	if vc < 1 {
+		vc = 1
+	}
+	if p.selected < p.offset {
+		p.offset = p.selected
+	}
+	if p.selected >= p.offset+vc {
+		p.offset = p.selected - vc + 1
+	}
+	if p.offset < 0 {
+		p.offset = 0
+	}
+}
+
 func (p *panelData) selectedItem() string {
 	if p.selected >= 0 && p.selected < len(p.items) {
 		return p.items[p.selected]
