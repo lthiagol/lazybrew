@@ -17,8 +17,9 @@ Thumbs.db
 dist/
 debug.log
 
-# mp CLI lock file (transient)
-.mp-project-write.lock
+# Frozen local archive — untracked by git, kept on this machine for history only.
+# Not a spec, not a plan, not an input to any decision.
+/master-plan/
 
 # Session tooling (subagents) — never commit
 .pi-subagents/
