@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,6 +21,79 @@ import (
 // cancelled and surfaced as an error in the tab body. The default is generous
 // because brew deps --tree can be slow on big trees; tests override it.
 var fetchTabContentTimeout = 15 * time.Second
+
+// brewReadTimeout bounds a single brew read in the panel and status paths.
+// A wedged `brew` invocation must never leave a panel spinning forever, so
+// every individual read gets its own deadline; tests override it.
+var brewReadTimeout = 30 * time.Second
+
+// brewStatusTotalTimeout bounds the status dashboard as a whole. The
+// dashboard aggregates several independent brew reads, so bounding each read
+// is not enough: if every source hangs, the dashboard must still resolve.
+// This budget is deliberately separate from (and larger than) the per-read
+// cap — one slow source may not eat the whole dashboard's time; tests
+// override it.
+var brewStatusTotalTimeout = 45 * time.Second
+
+// formatBudget renders a read budget at a readable granularity: whole
+// seconds for the multi-second budgets, milliseconds below that.
+func formatBudget(d time.Duration) time.Duration {
+	if d >= time.Second {
+		return d.Round(time.Second)
+	}
+	return d.Round(time.Millisecond)
+}
+
+// timeoutError converts a failed brew read into a *brew.TimeoutError when the
+// read's deadline expired.
+//
+// The deadline is detected from the context's own error, never from the type
+// of the error the brew layer returned: exec.CommandContext kills the brew
+// process when the deadline fires, so the runner reports "signal: killed"
+// (wrapped in a BrewExitError) rather than context.DeadlineExceeded. Reading
+// the error's type instead would silently never fire.
+func timeoutError(ctx context.Context, command string, budget time.Duration, err error) error {
+	if err == nil {
+		return nil
+	}
+	if ctx.Err() == context.DeadlineExceeded {
+		return &brew.TimeoutError{Command: command, Timeout: budget}
+	}
+	return err
+}
+
+// boundedRead runs one brew read under its own deadline and turns a deadline
+// overrun into a *brew.TimeoutError naming the brew command.
+func boundedRead[T any](cap time.Duration, command string, read func(context.Context) (T, error)) (T, error) {
+	return boundedReadIn(context.Background(), cap, command, read)
+}
+
+// boundedReadIn runs one brew read under its own deadline, derived from
+// parent, and turns a deadline overrun into a *brew.TimeoutError naming the
+// brew command.
+//
+// The read's own deadline is capped by cap and by whatever budget the parent
+// has left: a parent deadline trims the read, so an aggregate can bound its
+// total time without every read knowing about it.
+func boundedReadIn[T any](parent context.Context, cap time.Duration, command string, read func(context.Context) (T, error)) (T, error) {
+	ctx, cancel := context.WithTimeout(parent, cap)
+	defer cancel()
+
+	// The budget the user is told about: the read's own cap, unless the
+	// parent's deadline cuts it shorter.
+	budget := cap
+	if parentDeadline, ok := parent.Deadline(); ok {
+		if remaining := time.Until(parentDeadline); remaining < budget {
+			budget = remaining
+		}
+	}
+
+	res, err := read(ctx)
+	if err != nil {
+		err = timeoutError(ctx, command, formatBudget(budget), err)
+	}
+	return res, err
+}
 
 func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, tea.Cmd) {
 	switch r := result.(type) {
@@ -1165,10 +1239,9 @@ func formatConfig(cfg *brew.BrewConfig) string {
 
 func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 	return func() tea.Msg {
-		ctx := context.Background()
 		switch panel {
 		case PanelFormulae:
-			formulae, err := client.Formulae.List(ctx)
+			formulae, err := boundedRead(brewReadTimeout, "list", client.Formulae.List)
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
@@ -1180,7 +1253,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Formulae: formulae}
 
 		case PanelCasks:
-			casks, err := client.Casks.List(ctx)
+			casks, err := boundedRead(brewReadTimeout, "list", client.Casks.List)
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
@@ -1191,8 +1264,10 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Casks: casks}
 
 		case PanelOutdated:
-			formulae, fErr := client.Formulae.Outdated(ctx)
-			casks, cErr := client.Casks.Outdated(ctx)
+			// Each outdated read gets its own deadline: one slow source
+			// must not eat the whole budget of the other.
+			formulae, fErr := boundedRead(brewReadTimeout, "outdated", client.Formulae.Outdated)
+			casks, cErr := boundedRead(brewReadTimeout, "outdated", client.Casks.Outdated)
 			if fErr != nil {
 				return DataLoadedMsg{PanelID: panel, Err: fErr}
 			}
@@ -1209,7 +1284,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Formulae: formulae, Casks: casks}
 
 		case PanelTaps:
-			taps, err := client.Taps.List(ctx)
+			taps, err := boundedRead(brewReadTimeout, "taps", client.Taps.List)
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
@@ -1220,7 +1295,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Taps: taps}
 
 		case PanelServices:
-			services, err := client.Services.List(ctx)
+			services, err := boundedRead(brewReadTimeout, "services", client.Services.List)
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
@@ -1242,89 +1317,155 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 
 func fetchStatusData(client *brew.Client) tea.Cmd {
 	return func() tea.Msg {
-		ctx := context.Background()
-		formulae, fErr := client.Formulae.List(ctx)
-		casks, cErr := client.Casks.List(ctx)
-		taps, tErr := client.Taps.List(ctx)
-		services, sErr := client.Services.List(ctx)
-		cfg, _ := client.Diagnostics.Config(ctx)
-
-		// Outdated is lazy (M9): read from cache only. The cache fills when
-		// the user first visits the Outdated panel; until then we report 0
-		// outdated in the dashboard and the user is not surprised by a
-		// `brew outdated` shell invocation on every Init / Refresh.
-		var outdatedFormulae []brew.Formula
-		if cached, ok := client.Cache.Get(brew.KeyOutdatedFormulae); ok {
-			if f, ok := cached.([]brew.Formula); ok {
-				outdatedFormulae = f
-			}
-		}
-		var outdatedCasks []brew.Cask
-		if cached, ok := client.Cache.Get(brew.KeyOutdatedCasks); ok {
-			if c, ok := cached.([]brew.Cask); ok {
-				outdatedCasks = c
-			}
-		}
-
-		var errs []string
-		if fErr != nil {
-			errs = append(errs, "formulae: "+fErr.Error())
-		}
-		if cErr != nil {
-			errs = append(errs, "casks: "+cErr.Error())
-		}
-		if tErr != nil {
-			errs = append(errs, "taps: "+tErr.Error())
-		}
-		if sErr != nil {
-			errs = append(errs, "services: "+sErr.Error())
-		}
-
-		brewVersion := ""
-		prefix := ""
-		if cfg != nil {
-			brewVersion = cfg.HomebrewVersion
-			prefix = cfg.Prefix
-		}
-
-		officialTaps := 0
-		thirdPartyTaps := 0
-		for _, t := range taps {
-			if t.IsOfficial {
-				officialTaps++
-			} else {
-				thirdPartyTaps++
-			}
-		}
-
-		servicesStarted := 0
-		for _, s := range services {
-			if s.Status == brew.ServiceStarted {
-				servicesStarted++
-			}
-		}
-
-		outdatedCount := len(outdatedFormulae) + len(outdatedCasks)
-		items := presentation.FormatStatusDashboard(
-			len(formulae), len(casks), outdatedCount,
-			len(taps), officialTaps, thirdPartyTaps,
-			len(services), servicesStarted,
-			brewVersion, prefix,
-		)
-
-		doctorWarnings, doctorErr := client.Diagnostics.Doctor(ctx)
-		if doctorErr != nil {
-			errs = append(errs, "doctor: "+doctorErr.Error())
-		}
-		items = append(items, "")
-		items = append(items, presentation.FormatDoctorStatus(doctorWarnings, doctorErr))
-
-		for _, e := range errs {
-			items = append(items, "⚠ "+e)
-		}
-
+		items, _ := statusDashboard(client)
 		return DataLoadedMsg{PanelID: PanelStatus, Items: items, Err: nil}
 	}
+}
+
+// statusDashboard reads every source the status dashboard aggregates and
+// renders the dashboard lines.
+//
+// The dashboard aggregates five independent sources plus brew doctor. Each
+// read is capped on its own (brewReadTimeout), and the aggregation as a
+// whole is bounded by a separate total budget (brewStatusTotalTimeout):
+// bounding the reads alone would still let five slow sources add up to
+// minutes. One slow source can therefore consume at most its own cap of the
+// budget, while the other sources keep theirs.
+//
+// The reads are independent, so they run concurrently. The goroutines only
+// fill in local results and are joined before this function returns; no
+// Bubble Tea state is touched from them.
+//
+// The returned errors are the aggregated per-source failures — the carrier
+// through which a timed-out read reaches the user as a ⚠ dashboard line.
+func statusDashboard(client *brew.Client) ([]string, []error) {
+	totalCtx, cancelTotal := context.WithTimeout(context.Background(), brewStatusTotalTimeout)
+	defer cancelTotal()
+
+	var (
+		formulae []brew.Formula
+		casks    []brew.Cask
+		taps     []brew.Tap
+		services []brew.Service
+		cfg      *brew.BrewConfig
+		warnings []brew.DoctorWarning
+
+		fErr, cErr, tErr, sErr, docErr error
+	)
+
+	var wg sync.WaitGroup
+	read := func(fn func()) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn()
+		}()
+	}
+
+	read(func() {
+		formulae, fErr = boundedReadIn(totalCtx, brewReadTimeout, "list", client.Formulae.List)
+	})
+	read(func() {
+		casks, cErr = boundedReadIn(totalCtx, brewReadTimeout, "list", client.Casks.List)
+	})
+	read(func() {
+		taps, tErr = boundedReadIn(totalCtx, brewReadTimeout, "taps", client.Taps.List)
+	})
+	read(func() {
+		services, sErr = boundedReadIn(totalCtx, brewReadTimeout, "services", client.Services.List)
+	})
+	read(func() {
+		// Config errors stay ignored: the dashboard has always tolerated a
+		// missing config. The deadline still applies so it cannot hang.
+		cfg, _ = boundedReadIn(totalCtx, brewReadTimeout, "config", client.Diagnostics.Config)
+	})
+	read(func() {
+		warnings, docErr = boundedReadIn(totalCtx, brewReadTimeout, "doctor", client.Diagnostics.Doctor)
+	})
+	wg.Wait()
+
+	// Outdated is lazy (M9): read from cache only. The cache fills when
+	// the user first visits the Outdated panel; until then we report 0
+	// outdated in the dashboard and the user is not surprised by a
+	// `brew outdated` shell invocation on every Init / Refresh.
+	var outdatedFormulae []brew.Formula
+	if cached, ok := client.Cache.Get(brew.KeyOutdatedFormulae); ok {
+		if f, ok := cached.([]brew.Formula); ok {
+			outdatedFormulae = f
+		}
+	}
+	var outdatedCasks []brew.Cask
+	if cached, ok := client.Cache.Get(brew.KeyOutdatedCasks); ok {
+		if c, ok := cached.([]brew.Cask); ok {
+			outdatedCasks = c
+		}
+	}
+
+	// The aggregated errors carry the per-source failures. Each entry keeps
+	// the source label the dashboard shows next to the message.
+	type sourceErr struct {
+		label string
+		err   error
+	}
+	var sources []sourceErr
+	if fErr != nil {
+		sources = append(sources, sourceErr{"formulae", fErr})
+	}
+	if cErr != nil {
+		sources = append(sources, sourceErr{"casks", cErr})
+	}
+	if tErr != nil {
+		sources = append(sources, sourceErr{"taps", tErr})
+	}
+	if sErr != nil {
+		sources = append(sources, sourceErr{"services", sErr})
+	}
+	if docErr != nil {
+		sources = append(sources, sourceErr{"doctor", docErr})
+	}
+
+	brewVersion := ""
+	prefix := ""
+	if cfg != nil {
+		brewVersion = cfg.HomebrewVersion
+		prefix = cfg.Prefix
+	}
+
+	officialTaps := 0
+	thirdPartyTaps := 0
+	for _, t := range taps {
+		if t.IsOfficial {
+			officialTaps++
+		} else {
+			thirdPartyTaps++
+		}
+	}
+
+	servicesStarted := 0
+	for _, s := range services {
+		if s.Status == brew.ServiceStarted {
+			servicesStarted++
+		}
+	}
+
+	outdatedCount := len(outdatedFormulae) + len(outdatedCasks)
+	items := presentation.FormatStatusDashboard(
+		len(formulae), len(casks), outdatedCount,
+		len(taps), officialTaps, thirdPartyTaps,
+		len(services), servicesStarted,
+		brewVersion, prefix,
+	)
+
+	items = append(items, "")
+	items = append(items, presentation.FormatDoctorStatus(warnings, docErr))
+
+	errs := make([]error, 0, len(sources))
+	for _, s := range sources {
+		items = append(items, "⚠ "+s.label+": "+s.err.Error())
+		errs = append(errs, s.err)
+	}
+
+	return items, errs
 }
 
 func parseUpdateSummary(lines []string) string {
