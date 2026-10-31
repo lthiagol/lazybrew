@@ -2,7 +2,7 @@
 
 > **Purpose:** Operational conventions for humans and coding agents working on lazybrew.  
 > **Audience:** Anyone opening a PR, running an agent session, or doing a code review.  
-> **Architectural context:** See [DESIGN.md](DESIGN.md).
+> **Architectural context:** See [DESIGN.md](DESIGN.md).  
 
 ---
 
