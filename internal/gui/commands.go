@@ -27,6 +27,11 @@ var fetchTabContentTimeout = 15 * time.Second
 // every individual read gets its own deadline; tests override it.
 var brewReadTimeout = 30 * time.Second
 
+// brewSearchTimeout bounds a single brew read in the search paths. Search is
+// user-driven and interactive, so it gets a tighter cap than the passive
+// panel and dashboard reads; tests override it.
+var brewSearchTimeout = 15 * time.Second
+
 // brewStatusTotalTimeout bounds the status dashboard as a whole. The
 // dashboard aggregates several independent brew reads, so bounding each read
 // is not enough: if every source hangs, the dashboard must still resolve.
@@ -370,7 +375,9 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 	m.panels[PanelSearch].err = nil
 
 	return func() tea.Msg {
-		results, err := m.client.Search.Search(context.Background(), query)
+		results, err := boundedRead(brewSearchTimeout, "search", func(ctx context.Context) ([]brew.SearchResult, error) {
+			return m.client.Search.Search(ctx, query)
+		})
 		if err != nil {
 			return SearchDoneMsg{Err: err}
 		}
@@ -399,8 +406,9 @@ func (m Model) fetchSelectedSearchInfo() tea.Cmd {
 	}
 	r := m.searchResults[m.panels[PanelSearch].selected]
 	return func() tea.Msg {
-		ctx := context.Background()
-		output, err := m.client.Runner.Execute(ctx, "info", "--json=v2", r.Name)
+		output, err := boundedRead(brewSearchTimeout, "info", func(ctx context.Context) ([]byte, error) {
+			return m.client.Runner.Execute(ctx, "info", "--json=v2", r.Name)
+		})
 		if err != nil {
 			return SearchInfoLoadedMsg{Err: err}
 		}
