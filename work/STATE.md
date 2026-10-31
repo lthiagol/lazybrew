@@ -5,7 +5,7 @@ learn what is done, what is in flight, and where to pick up.
 
 | slice | commits | state | verdict |
 |---|---|---|---|
-| detach-master-plan | — | implementing | — |
+| detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398 | implemented | awaiting reviewer |
 
 **How a cold session resumes work.** Read `work/briefs/<slice>.md` for the
 contract of the slice in the row above, then read the receipts in `work/inbox/`
