@@ -64,10 +64,12 @@ diff <(git show 74554ad:AGENTS.md | sed -n '5p') <(git show HEAD:AGENTS.md | sed
 # must print nothing
 ```
 
-Note: the fix receipt explains that the command written in the fix brief
-(`grep -c '^[+-].*Architectural context'`) prints `1` because the line appears
-as a diff *context* line, not as a change. Judge F-04 on byte-identity, as
-above.
+Note: the fix receipt's own explanation of this check was wrong — it said the
+fix brief's literal command prints `1`. It prints `0`: the pattern `^[+-]`
+cannot match a diff *context* line, which begins with a space. The receipt's
+recorded output (`0`) was right; its explanation was not. Judge F-04 on
+byte-identity, as above. (Corrected after the re-review; the brief's
+requirements were unchanged.)
 
 ### R5 — the fix touched nothing else
 
