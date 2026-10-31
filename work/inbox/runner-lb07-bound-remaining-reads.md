@@ -8,7 +8,7 @@ AC-04 `7b21fc0`.
 changed, detection rule untouched. The error is no longer discarded. On a
 `*brew.TimeoutError` the confirm message gains, inside the closure after the
 read: *"Dependency check timed out after 30s — the list of packages that depend
-on ripgrep may be incomplete."* (the duration is `timeoutErr.Timeout`; at the
+on ripgrep may be incomplete."* (duration = `timeoutErr.Timeout`; at the
 production 30s cap it renders "30s"). The dialog still opens in every case; any
 other error keeps today's behaviour exactly — no dependents, no complaint.
 **AC-02.** `toggleLeaves` uses `boundedRead(brewReadTimeout, "leaves", …)`. The
@@ -23,7 +23,7 @@ making the notice fire on *any* error fails the non-timeout test.
 changed. `work/STATE.md`: row
 `| lb07-bound-remaining-reads | — | implemented | awaiting reviewer |`.
 
-**Gate — all four pass.** `make build` → exit 0. `make lint` → exit 0.
+**Gate — all four pass.** `make build` → 0. `make lint` → 0.
 `go test ./... -race -count=1` → all packages ok (gui 2.121s). `make cover-check`
 → "All coverage floors met" (brew 64.3%≥62%, presentation 95.4%≥91%, gui
 58.0%≥36%, modal 41.4%≥41%).
@@ -34,8 +34,7 @@ untouched), :1055 and :1160 (both inside `boundedRead`). The only
 cancel), :936 (tab-content timeout), :1383 (status total budget) — exactly the
 four the brief allows.
 
-**For the next session.** `boundedRead`, `boundedReadIn`, `timeoutError` and all
-three timeout values are unchanged; `internal/brew`, `internal/gui/gui.go`, the
+**Next session.** `boundedRead`, `boundedReadIn`, `timeoutError` and all three
+timeout values are unchanged; `internal/brew`, `internal/gui/gui.go`, the
 tab-content path, the dashboard fan-out and `master-plan/` were not touched.
-Changed files: `internal/gui/commands.go`, the new test file, the two `work/`
-files. `LB-04` is next in `work/backlog.md`.
+`LB-04` is next in `work/backlog.md`.
