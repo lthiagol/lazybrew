@@ -2,8 +2,7 @@
 
 > **Purpose:** Operational conventions for humans and coding agents working on lazybrew.  
 > **Audience:** Anyone opening a PR, running an agent session, or doing a code review.  
-> **Architectural context:** See [DESIGN.md](DESIGN.md).  
-> **Planning context:** Use `raul status` (humans) or `mp status` (agents). Planning is driven by the `mp` CLI; see `master-plan/AGENTS.md` for the workflow.
+> **Architectural context:** See [DESIGN.md](DESIGN.md).
 
 ---
 
@@ -40,7 +39,6 @@ make test-integration
 | `internal/gui/task/` | TaskManager for serializing write operations | `go test ./internal/gui/task/...` |
 | `internal/gui/flows/` | `teatest` E2E flows | `go test ./internal/gui/flows/...` |
 | `internal/gui/testutil/` | Test helper for E2E flows | — |
-| `master-plan/` | mp-managed plan (milestones, ideas, backlog, decisions, briefs) | `raul status` / `mp status` |
 | `scripts/` | Build/test helpers (e.g. coverage floor check) | — |
 
 ---
@@ -86,14 +84,35 @@ Rules:
 
 ---
 
-## Planning Rules
+## Planning
 
-1. **Source of truth:** `mp status` (or `raul status` for humans). The `master-plan/` directory is managed by `mp`; do not hand-edit its JSON.
-2. **New milestone:** `mp milestone create --json @-` (use `--help` for fields). Run `mp interview checklist --type milestone` first.
-3. **Step size:** Every step must have size, dependencies, acceptance criteria, and tests.
-4. **Out of scope:** If a finding is not in the current milestone, `mp backlog add --desc "..." --priority <p>`. Use `mp idea create` for "park this for later".
-5. **Status updates:** Drive transitions through `mp` (`mp milestone step done`, `mp milestone set-status`, etc.). Never edit `master-plan/*.json` directly.
-6. **Decision log:** Non-obvious architectural choices go in `DESIGN.md` decision log. The milestone's ADR table is recorded via `mp decisions add` (or whatever the version supports).
+**This project does not use the `mp` CLI, and it does not use `master-plan/`.**
+
+`master-plan/` is a **frozen local archive**. It is untracked by git, kept on this
+machine for history only, and it is **not** a spec, **not** a plan, and **not** an
+input to any decision. Do not read it, do not update it, do not run `mp` here.
+
+Planning runs through the herdr lane flow under `work/`:
+
+| File | Role |
+|---|---|
+| `work/briefs/<slice>.md` | The contract for a slice. It wins over any other plan or convention. |
+| `work/STATE.md` | The resume record — what was done, where it stopped. |
+| `work/backlog.md` | The parked-work list. |
+| `work/questions.md` | Open questions. |
+
+### Lane Protocol
+
+1. **One commit per acceptance criterion**, in AC order, staged by name — never
+   `git add -A`, never `git add .`.
+2. **The gate must pass before a lane reports**: `make build`, `make lint`,
+   `go test ./... -race -count=1`, `make cover-check`.
+3. **A lane reports by writing `work/inbox/<lane>-<slice>.md`, committing it,
+   then nudging the orchestrator.** The file is the record; the nudge is the bell.
+4. **The slice's row in `work/STATE.md` is the resume record** and is updated in
+   the same session as the slice.
+5. **A question that is not written in `work/questions.md` is a lost question.**
+   Append it there and keep going on the unaffected criteria.
 
 ---
 
@@ -139,6 +158,9 @@ Before v0.2.0 tag:
 - [x] M22.2 integration workflow file exists
 - [ ] M22.4 release checklist signed off
 
+The manual smoke gate is tracked at [`SMOKE-CHECKLIST.md`](SMOKE-CHECKLIST.md) — it is
+a release gate artifact and must pass before the stable tag.
+
 ---
 
 ## Release Procedure (tag → tap)
@@ -169,4 +191,5 @@ The tap also ships `lazybrew-dev`, tracking `wip` directly. It is **manually bum
 ## References
 
 - [DESIGN.md](DESIGN.md) — architecture and concurrency ADR
-- `master-plan/AGENTS.md` — mp-driven planning workflow (read once at session start)
+- [SMOKE-CHECKLIST.md](SMOKE-CHECKLIST.md) — manual smoke gate (release artifact)
+- [work/README.md](work/README.md) — the lane protocol: brief, receipt, gate, state row
