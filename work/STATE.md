@@ -8,7 +8,7 @@ learn what is done, what is in flight, and where to pick up.
 | detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398, 17b1b8d, dce1468, 26f44cf, 88dbed9 | closed | ok |
 | lb01-m13-deps-verify | 789d506, a7d5498, 196575b, b7dec88, 544e0ed | closed | ok |
 | lb02-fetch-timeouts | 0027596, f7bc287, 00f73f2, 16c24f4, 8647165, 0cfb213 | closed | ok |
-| lb07-bound-remaining-reads | — | implemented | awaiting reviewer |
+| lb07-bound-remaining-reads | bd6dfd7, b5c1cc5, ea71699, 7b21fc0 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -72,14 +72,33 @@ judged it acceptable (Init and manual `R` only; auto-refresh is off by
 default) and it is a shape note, not a defect. Reconsider only if the dashboard
 feels slow on a cold cache.
 
+**lb07-bound-remaining-reads, closed.** `LB-07` is closed: **no brew read in
+the GUI is left unbounded.** The last two — the uninstall dependency check
+(`Formulae.Uses`) and `toggleLeaves` (`Formulae.Leaves`) — now go through the
+same `boundedRead` helper with the existing 30s `brewReadTimeout`; no new
+timeout var was added and no timeout value changed. The important part was
+G-2: the uninstall check used to **discard its error**, so a hung `brew uses`
+produced a confirmation dialog indistinguishable from "nothing depends on this
+package" — the user then confirmed an uninstall that might break other
+packages, never told the check had not run. It now opens the dialog as before
+but says *"Dependency check timed out after 30s — the list of packages that
+depend on X may be incomplete."* Any other error keeps the old behaviour
+exactly. `toggleLeaves` surfaces its timeout through the existing error toast:
+`leaves: brew leaves timed out after 30s`. Review verdict `ok`, no findings;
+four mutations (remove the notice, uncap either read, make the notice fire on
+any error) each broke the named test. Receipts:
+`work/inbox/runner-lb07-bound-remaining-reads.md`,
+`work/inbox/reviewer-lb07-bound-remaining-reads.md`.
+
 **Next slice:** `LB-04` in `work/backlog.md` — chunk `brew tap-info --json`
 batches when the tap count risks ARG_MAX (`internal/brew/taps.go`). `LB-03`
-(status dashboard outdated count) is **blocked on a product decision**: the
-dashboard reports 0 outdated until the user first visits the Outdated panel,
-because M9 made that fetch lazy — either label it, or pay a `brew outdated`
-call at startup. `LB-07` (the two brew reads still left unbounded: the
-uninstall dependency pre-check and `toggleLeaves`) was found by this slice and
-is parked. `LB-05` is a human gate for the stable tag.
+(status dashboard outdated count) is still **blocked on a product decision**:
+the dashboard reports 0 outdated until the user first visits the Outdated
+panel, because M9 made that fetch lazy — either label it as not-loaded, or pay
+a `brew outdated` call at startup. `LB-05` is a human gate for the stable tag.
+The release itself is deferred by the maintainer: `wip` is 76+ commits ahead
+of `stable`, `v1.0.0-rc1` is still the only tag, and `M22.1b` / `M22.4` in
+`AGENTS.md` remain open.
 
 **How a cold session resumes work.** Read `work/briefs/<slice>.md` for the
 contract of the slice in the row above, then read the receipts in `work/inbox/`
