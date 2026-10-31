@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -1050,13 +1051,24 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 	}
 
 	return m, func() tea.Msg {
-		ctx := context.Background()
-		uses, _ := m.client.Formulae.Uses(ctx, name)
+		uses, err := boundedRead(brewReadTimeout, "uses", func(ctx context.Context) ([]string, error) {
+			return m.client.Formulae.Uses(ctx, name)
+		})
 		if len(uses) > 0 {
 			message += "\n\nThe following depend on " + name + ":"
 			for _, u := range uses {
 				message += "\n  " + u
 			}
+		}
+		// A timed-out dependency check must not look like "nothing depends
+		// on this package": the user still gets the confirm dialog, but it
+		// says the check did not complete and the list may be incomplete.
+		// Any other error keeps today's behaviour — no dependents, no
+		// complaint.
+		var timeoutErr *brew.TimeoutError
+		if errors.As(err, &timeoutErr) {
+			message += "\n\nDependency check timed out after " + timeoutErr.Timeout.String() +
+				" — the list of packages that depend on " + name + " may be incomplete."
 		}
 		return DepCheckMsg{MutType: mutType, Name: name, Label: label, Message: message}
 	}
