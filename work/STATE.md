@@ -5,7 +5,28 @@ learn what is done, what is in flight, and where to pick up.
 
 | slice | commits | state | verdict |
 |---|---|---|---|
-| detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398 | implemented | awaiting reviewer |
+| detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398, 17b1b8d, dce1468, 26f44cf, 88dbed9 | closed | ok |
+
+**detach-master-plan, closed.** The five slice commits implement the detach
+(`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
+`SMOKE-CHECKLIST.md`, and the untracking of `master-plan/`). The four fix
+commits answer the first review's findings F-01..F-04. The re-review returned
+`ok`: the gate passes (`make build`, `make lint`, `go test ./... -race
+-count=1`, `make cover-check`), the archive is byte-identical on disk, and no
+live `mp` instruction survives. Receipts: `work/inbox/runner-detach-master-plan.md`,
+`work/inbox/reviewer-detach-master-plan.md`,
+`work/inbox/runner-fix-detach-master-plan.md`,
+`work/inbox/reviewer-fix-detach-master-plan.md`.
+
+**Accepted, not fixed:** reviewer finding F-05 (minor) — the fix receipt
+explained a command's output wrongly; its recorded output was right and its
+explanation was not. No acceptance criterion was affected, so the receipt was
+left as the historical record and the wrong sentence was corrected only in
+`work/briefs/review-fix-detach-master-plan.md`.
+
+**Next slice:** `LB-01` in `work/backlog.md` — verify the M13 Deps-tab fix by
+running the Deps test suite. It is the first adoptable item from the old plan.
+`LB-02` (context timeouts on the four brew fetch paths) follows it.
 
 **How a cold session resumes work.** Read `work/briefs/<slice>.md` for the
 contract of the slice in the row above, then read the receipts in `work/inbox/`
