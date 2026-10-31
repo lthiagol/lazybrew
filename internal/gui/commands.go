@@ -1156,8 +1156,9 @@ func (m Model) runDoctor() (tea.Model, tea.Cmd) {
 
 func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
 	return m, func() tea.Msg {
-		ctx := context.Background()
-		leaves, err := m.client.Formulae.Leaves(ctx)
+		leaves, err := boundedRead(brewReadTimeout, "leaves", func(ctx context.Context) ([]string, error) {
+			return m.client.Formulae.Leaves(ctx)
+		})
 		if err != nil {
 			return MutationResultMsg{Name: "leaves", Type: mutInstall, Err: err}
 		}
