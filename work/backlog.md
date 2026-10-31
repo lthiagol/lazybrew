@@ -9,7 +9,7 @@ decision). The source is provenance, not a spec.
 
 | id | work | source | priority | status |
 |---|---|---|---|---|
-| LB-01 | Verify the M13 Deps-tab fix by running the Deps test suite (`TestDepsTabLoads`, `TestDepsSelectionChangeUpdatesContent`) | M13 (execution done, independent review never passed) | medium | active |
+| LB-01 | Verify the M13 Deps-tab fix by running the Deps test suite (`TestDepsTabLoads`, `TestDepsSelectionChangeUpdatesContent`) | M13 (execution done, independent review never passed) | medium | closed |
 | LB-02 | Apply context timeouts to the four brew fetch paths: `fetchPanelData`, `fetchStatusData`, `fetchSelectedSearchInfo`, `executeSearch` | B-02 (residual from M13 F-02/F-07) | medium | active |
 | LB-03 | Status dashboard outdated count stays 0 until the first refresh | B-03 (M09 F-02 residual) | low | active |
 | LB-04 | Chunk `brew tap-info --json` batches when the tap count risks ARG_MAX | B-04 (M11 F-01 residual) | low | active |
@@ -19,3 +19,6 @@ decision). The source is provenance, not a spec.
 
 **LB-DROP-01 reason:** the target directory does not exist on this machine —
 so the fix cannot be applied and there is nothing to preserve.
+
+**LB-01 closed** — the M13 review is closed by this verification; the evidence
+is in `work/verification/lb01-m13-deps.md`, carried by commit `789d506`.
