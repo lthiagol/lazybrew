@@ -79,7 +79,7 @@ Count them: the mapping is I-1 → `TestFetchTabContentCmdTimesOut`; I-2 →
 I-3 → `TestDepsFastPathRendersCachedDependencies` +
 `TestDepsTabViewLeavesLoadingAfterFastPath` + `TestDepsTabLoads`; I-4 →
 `TestParseFormulaBuildDepsFromBuildDependencies` + `TestFormulaeReaderList`;
-I-5 → `TestDepsSelectionChangeUpdatesContent`. That is **eight** test names
+I-5 → `TestDepsSelectionChangeUpdatesContent`. That is **nine** test names
 across five invariants — not four.
 
 ### S3 — F-05: the question is recorded, and the brief is corrected

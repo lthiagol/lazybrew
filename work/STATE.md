@@ -6,7 +6,7 @@ learn what is done, what is in flight, and where to pick up.
 | slice | commits | state | verdict |
 |---|---|---|---|
 | detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398, 17b1b8d, dce1468, 26f44cf, 88dbed9 | closed | ok |
-| lb01-m13-deps-verify | — | implemented | awaiting reviewer |
+| lb01-m13-deps-verify | 789d506, a7d5498, 196575b, b7dec88, 544e0ed | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -24,6 +24,23 @@ explained a command's output wrongly; its recorded output was right and its
 explanation was not. No acceptance criterion was affected, so the receipt was
 left as the historical record and the wrong sentence was corrected only in
 `work/briefs/review-fix-detach-master-plan.md`.
+
+**lb01-m13-deps-verify, closed.** `LB-01` is closed and `LB-06` with it: the
+M13 Deps-tab fix (`ac5bac6`) is verified in all five of its parts, and
+`work/verification/lb01-m13-deps.md` carries the mutation evidence — for each
+of the five invariants, the exact mutation, the command, and the verbatim
+failing output — proving that **nine** tests across the five invariants fail
+when the invariant they cover is broken. The first review found no blocker;
+its two remaining findings (F-01, F-05) were fixed by `b7dec88` and
+`544e0ed`, and the re-review returned `ok` after reproducing every mutation
+byte-for-byte. Receipts: `work/inbox/runner-lb01-m13-deps-verify.md`,
+`work/inbox/reviewer-lb01-m13-deps-verify.md`,
+`work/inbox/runner-lb01-m13-deps-fix.md`,
+`work/inbox/reviewer-lb01-m13-deps-fix.md`.
+
+**Accepted, not fixed:** F-03 (minor) — the runner receipt was committed twice
+(`5841cc9`, then `7cc8084` tightening it to the brief's line limit). The
+second commit was content-harmless and history is not rewritten.
 
 **Next slice:** `LB-02` in `work/backlog.md` — apply context timeouts to the
 remaining brew fetch paths (`fetchPanelData`, `fetchStatusData`,

@@ -83,3 +83,11 @@ resolved.
   `work/verification/lb01-m13-deps.md`. The stale rows in
   `work/briefs/review-lb01-m13-deps-verify.md` are the orchestrator's file and
   were left untouched by the fix lane.
+- **Update (appended, after the fix cycle):** the last sentence above was
+  written when the fix lane reported and was already out of date by the time
+  it was read. The orchestrator corrected the stale rows in
+  `work/briefs/review-lb01-m13-deps-verify.md` in commit `fa32989`
+  ("docs(brief): correct the invariant-test mapping flagged by the reviewer"),
+  and the re-review confirmed the correction (see
+  `work/inbox/reviewer-lb01-m13-deps-fix.md`, check S3). Q-03 is closed; this
+  line records that the correction happened, not that it is pending.

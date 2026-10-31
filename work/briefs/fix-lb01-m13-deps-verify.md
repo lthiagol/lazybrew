@@ -49,7 +49,7 @@ One commit per finding, in order, staged by name — never `git add -A`, never
 
 > "the four regression tests that cover it pass"
 
-That is wrong twice over: there are **six** tests that cover the five
+That is wrong twice over: there are **nine** tests that cover the five
 invariants, and the four contract-named tests cover only I-3, I-4 and I-5 —
 they stay green when I-1 or I-2 is broken.
 
