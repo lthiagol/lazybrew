@@ -25,9 +25,12 @@ explanation was not. No acceptance criterion was affected, so the receipt was
 left as the historical record and the wrong sentence was corrected only in
 `work/briefs/review-fix-detach-master-plan.md`.
 
-**Next slice:** `LB-01` in `work/backlog.md` — verify the M13 Deps-tab fix by
-running the Deps test suite. It is the first adoptable item from the old plan.
-`LB-02` (context timeouts on the four brew fetch paths) follows it.
+**Next slice:** `LB-02` in `work/backlog.md` — apply context timeouts to the
+remaining brew fetch paths (`fetchPanelData`, `fetchStatusData`,
+`fetchSelectedSearchInfo`, `executeSearch`). `LB-01` is closed, with its
+evidence in `work/verification/lb01-m13-deps.md`. `LB-03` (status dashboard
+outdated count) and `LB-04` (chunk `brew tap-info --json` batches) follow it;
+`LB-05` is a human gate for the stable tag.
 
 **How a cold session resumes work.** Read `work/briefs/<slice>.md` for the
 contract of the slice in the row above, then read the receipts in `work/inbox/`

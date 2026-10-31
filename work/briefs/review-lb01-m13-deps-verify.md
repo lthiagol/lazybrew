@@ -38,10 +38,18 @@ and that is a finding — a major one.
 | id | invariant | anchor | test that must fail when broken |
 |---|---|---|---|
 | I-1 | tab-content fetch is bounded by a context timeout | `internal/gui/commands.go:22`, `:833` | `TestFetchTabContentCmdTimesOut` (`internal/gui/gui_test.go:1276`) |
-| I-2 | after `DataLoadedMsg` the tab content load is re-kicked | `internal/gui/gui.go:455-456` | `TestDepsSelectionChangeUpdatesContent` (`internal/gui/gui_test.go:1370`) |
+| I-2 | after `DataLoadedMsg` the tab content load is re-kicked | `internal/gui/gui.go:455-456` | `TestDepsTabPopulatedAfterDataLoaded` (`:1166`), `TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply` (`:1202`) |
 | I-3 | the Deps tab fast-paths from the cached formula's deps | `internal/gui/commands.go:779`, `:794`, `:810` | `TestDepsFastPathRendersCachedDependencies` (`:1314`), `TestDepsTabViewLeavesLoadingAfterFastPath` (`:1418`), `TestDepsTabLoads` (`:1446`) |
 | I-4 | `parseFormula` maps build deps from `build_dependencies` | `internal/brew/formulae.go:318` (field `:64`) | `TestParseFormulaBuildDepsFromBuildDependencies`, `TestFormulaeReaderList` (`internal/brew/formulae_test.go`) |
-| I-5 | tab/panel key handlers return early so the fetch cmd is not dropped | `internal/gui/gui.go:627-634` | `TestTabKey` (`:454`), `TestTabSwitching` (`:185`), `TestDataLoadedOnNonFetchTabDoesNotReissueFetch` (`:1254`) |
+| I-5 | tab/panel key handlers return early so the fetch cmd is not dropped | `internal/gui/gui.go:627-634` | `TestDepsSelectionChangeUpdatesContent` (`:1370`) |
+
+> **Correction (after the review).** This table was wrong for I-2 and I-5: the
+> reviewer found that `TestDepsSelectionChangeUpdatesContent` never sends
+> `DataLoadedMsg`, and that `TestTabKey`, `TestTabSwitching` and
+> `TestDataLoadedOnNonFetchTabDoesNotReissueFetch` never reach
+> `internal/gui/gui.go:627-634` — all still passed under M2 and M5. The rows
+> above are the corrected mapping, confirmed by the reviewer's own mutation
+> runs. The observation is recorded as Q-03 in `work/questions.md`.
 
 ## Verify by command
 
@@ -122,7 +130,7 @@ worktree must be clean when you report.
   It must **fail** (the test waits for the deadline). Revert.
 - **M2 (I-2)** — in `internal/gui/gui.go`, delete the re-kick at `:455-456`
   (`return m, m.loadTabContent()`). Run
-  `go test ./internal/gui/ -run TestDepsSelectionChangeUpdatesContent -count=1`.
+  `go test ./internal/gui/ -run 'TestDepsTabPopulatedAfterDataLoaded|TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply' -count=1`.
   It must **fail**. Revert.
 - **M3 (I-3)** — in `internal/gui/commands.go`, make the fast path never apply
   (e.g. change the `panelID == PanelFormulae && tabIdx == 2` condition at
@@ -136,8 +144,8 @@ worktree must be clean when you report.
   It must **fail**. Revert.
 - **M5 (I-5)** — in `internal/gui/gui.go`, remove one of the early returns in
   `:627-634` so the fetch command is dropped. Run
-  `go test ./internal/gui/ -run 'TestTabKey|TestTabSwitching|TestDataLoadedOnNonFetchTabDoesNotReissueFetch' -count=1`.
-  At least one must **fail**. Revert.
+  `go test ./internal/gui/ -run TestDepsSelectionChangeUpdatesContent -count=1`.
+  It must **fail**. Revert.
 
 **If a mutation does not make its test fail, that is a blocker finding.** It
 means the M13 fix is not actually covered, and `LB-01` cannot be closed on
