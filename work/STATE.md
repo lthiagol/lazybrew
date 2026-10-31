@@ -7,7 +7,7 @@ learn what is done, what is in flight, and where to pick up.
 |---|---|---|---|
 | detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398, 17b1b8d, dce1468, 26f44cf, 88dbed9 | closed | ok |
 | lb01-m13-deps-verify | 789d506, a7d5498, 196575b, b7dec88, 544e0ed | closed | ok |
-| lb02-fetch-timeouts | — | implemented | awaiting reviewer |
+| lb02-fetch-timeouts | 0027596, f7bc287, 00f73f2, 16c24f4, 8647165, 0cfb213 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -43,12 +43,42 @@ byte-for-byte. Receipts: `work/inbox/runner-lb01-m13-deps-verify.md`,
 (`5841cc9`, then `7cc8084` tightening it to the brief's line limit). The
 second commit was content-harmless and history is not rewritten.
 
-**Next slice:** `LB-02` in `work/backlog.md` — apply context timeouts to the
-remaining brew fetch paths (`fetchPanelData`, `fetchStatusData`,
-`fetchSelectedSearchInfo`, `executeSearch`). `LB-01` is closed, with its
-evidence in `work/verification/lb01-m13-deps.md`. `LB-03` (status dashboard
-outdated count) and `LB-04` (chunk `brew tap-info --json` batches) follow it;
-`LB-05` is a human gate for the stable tag.
+**lb02-fetch-timeouts, closed.** `LB-02` is closed. The four brew read paths
+that used `context.Background()` — `fetchPanelData`, `fetchStatusData`,
+`fetchSelectedSearchInfo`, `executeSearch` — are now bounded: 30s per
+panel/status read, 15s per search read, and a separate 45s **total** budget for
+the status dashboard so it resolves even when every source hangs. A timeout
+surfaces as `*brew.TimeoutError` — the error type that already existed at
+`internal/brew/errors.go:42` and had no user until now — detected from the
+context's own error, because `exec.CommandContext` kills the brew process and
+returns `"signal: killed"` rather than `context.DeadlineExceeded`. The
+dashboard's six reads now run concurrently under the total budget; the reviewer
+judged that sound (race-clean over five runs, deterministic ⚠ order, the shared
+brew cache is mutex-guarded) and **required** by the total-budget guarantee.
+The tab-content path was not touched. Review verdict `ok` after five mutations
+proved the new tests bite, then one fix cycle for a negative duration the
+reviewer found in the clamp (`brew list timed out after -1s` → now `0s`, and a
+spent parent no longer starts the read). Receipts:
+`work/inbox/runner-lb02-fetch-timeouts.md`,
+`work/inbox/reviewer-lb02-fetch-timeouts.md`,
+`work/inbox/runner-lb02-timeout-budget-fix.md`,
+`work/inbox/reviewer-lb02-timeout-budget-fix.md`.
+
+**Accepted, not changed:** reviewer finding F-02 (minor) — the dashboard's
+fan-out puts both heavy `brew info --json=v2` loads and `brew doctor` in the
+same instant, a higher peak than the sequential shape would have. The reviewer
+judged it acceptable (Init and manual `R` only; auto-refresh is off by
+default) and it is a shape note, not a defect. Reconsider only if the dashboard
+feels slow on a cold cache.
+
+**Next slice:** `LB-04` in `work/backlog.md` — chunk `brew tap-info --json`
+batches when the tap count risks ARG_MAX (`internal/brew/taps.go`). `LB-03`
+(status dashboard outdated count) is **blocked on a product decision**: the
+dashboard reports 0 outdated until the user first visits the Outdated panel,
+because M9 made that fetch lazy — either label it, or pay a `brew outdated`
+call at startup. `LB-07` (the two brew reads still left unbounded: the
+uninstall dependency pre-check and `toggleLeaves`) was found by this slice and
+is parked. `LB-05` is a human gate for the stable tag.
 
 **How a cold session resumes work.** Read `work/briefs/<slice>.md` for the
 contract of the slice in the row above, then read the receipts in `work/inbox/`
