@@ -83,7 +83,7 @@ cmd/lazybrew/main.go
 
 ## Configuration Schema
 
-See [config ADR in M18.9](master-plan/milestones/18-documentation-and-project-hygiene.md).
+See the config ADR topic (configuration schema decisions).
 
 | Field | Status | Notes |
 |---|---|---|
@@ -117,3 +117,4 @@ See [config ADR in M18.9](master-plan/milestones/18-documentation-and-project-hy
 | 2026-06-13 | TypedCache safe get before concurrency | Moved from M21 to M19.0 |
 | 2026-06-13 | M17 deferred until M19–M22 done | Visual polish after correctness |
 | 2026-08-01 | Manual `stable-ci.yml` tap-update path is canonical; `.goreleaser.yml` removed | M07. Goreleaser was considered but rejected: the manual path (sed + tap PR) was just used successfully for v1.0.0-rc1, release cadence is low (rc1 then occasional bugfixes), and goreleaser-brews would have replaced the working flow with a more complex secret+formula integration. If release cadence grows, revisit. |
+| 2026-10-31 | Detached the mp/master-plan planning workflow; planning now runs through the herdr lane flow in work/ (briefs, inbox, state row). master-plan/ is kept locally as a frozen archive and is no longer tracked by git. | Slice detach-master-plan |
