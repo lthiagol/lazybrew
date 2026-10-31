@@ -14,6 +14,7 @@ input to any decision. Do not read it, do not update it, do not run `mp` here.
 |---|---|---|
 | **Brief** | `work/briefs/<slice>.md` | The contract for a slice. Acceptance criteria, scope, invariants, and the report protocol. It wins over any other plan, note, or prior convention. |
 | **Receipt** | `work/inbox/<lane>-<slice>.md` | What a lane did, with the evidence. Written, committed, then reported. |
+| **Verification** | `work/verification/<slice>.md` | The evidence record of a verification slice: the invariants checked, the commands run, and their real output. |
 | **Gate** | `make build`, `make lint`, `go test ./... -race -count=1`, `make cover-check` | The commands that must pass before a lane reports. |
 | **State row** | `work/STATE.md` | One row per slice: the commits, the state, the verdict. The resume record. |
 | **Backlog** | `work/backlog.md` | Parked work that is not in any active slice. |
