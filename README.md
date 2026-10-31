@@ -129,7 +129,7 @@ internal/
     modal/               Modal widgets (confirm, input, menu, progress, toast)
     presentation/        Formatting helpers for display strings
     style/               Lip Gloss styles and themes
-master-plan/             Planning documents and milestones
+work/                    Lane flow: briefs, receipts (inbox/), state, backlog, questions
 testdata/                Test fixtures
 ```
 
