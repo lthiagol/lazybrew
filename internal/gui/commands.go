@@ -81,17 +81,37 @@ func boundedRead[T any](cap time.Duration, command string, read func(context.Con
 // has left: a parent deadline trims the read, so an aggregate can bound its
 // total time without every read knowing about it.
 func boundedReadIn[T any](parent context.Context, cap time.Duration, command string, read func(context.Context) (T, error)) (T, error) {
-	ctx, cancel := context.WithTimeout(parent, cap)
-	defer cancel()
+	var zero T
 
 	// The budget the user is told about: the read's own cap, unless the
 	// parent's deadline cuts it shorter.
 	budget := cap
+	var remaining time.Duration
+	hasDeadline := false
 	if parentDeadline, ok := parent.Deadline(); ok {
-		if remaining := time.Until(parentDeadline); remaining < budget {
+		remaining = time.Until(parentDeadline)
+		hasDeadline = true
+		if remaining < budget {
 			budget = remaining
 		}
 	}
+
+	// The parent's deadline has already passed: it has no budget left and
+	// the remaining time is negative. The read has no chance, so it is not
+	// started at all — the brew client is not invoked with a dead context —
+	// and the timeout is reported right away. The reported budget is
+	// clamped to zero, so the message never reads "timed out after -1s".
+	if hasDeadline && remaining <= 0 {
+		return zero, &brew.TimeoutError{Command: command, Timeout: formatBudget(0)}
+	}
+
+	// The clamp: the budget handed to the user is never negative.
+	if budget < 0 {
+		budget = 0
+	}
+
+	ctx, cancel := context.WithTimeout(parent, cap)
+	defer cancel()
 
 	res, err := read(ctx)
 	if err != nil {
