@@ -15,8 +15,7 @@ decision). The source is provenance, not a spec.
 | LB-04 | Chunk `brew tap-info --json` batches when the tap count risks ARG_MAX | B-04 (M11 F-01 residual) | low | active |
 | LB-05 | Full interactive human smoke before the stable tag — **human gate**, not an agent task | B-05 | medium | active |
 | LB-06 | The M13 independent review itself — closed by verification together with LB-01; all 7 findings were already fixed, so the review is not left silently dropped | M13 | medium | closed-by-LB-01 |
-| LB-DROP-01 | Dead header fix in the `master-plan-bkp` directory (frozen, untracked, local-only archive) | B-01 | n/a | dropped |
+| LB-DROP-01 | Dead header fix in the `master-plan-bkp` directory | B-01 | n/a | dropped |
 
-**LB-DROP-01 reason:** the target directory does not exist on this machine — the
-`master-plan-bkp` directory is part of the frozen, untracked, local-only archive —
+**LB-DROP-01 reason:** the target directory does not exist on this machine —
 so the fix cannot be applied and there is nothing to preserve.
