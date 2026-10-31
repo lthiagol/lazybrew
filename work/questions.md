@@ -46,3 +46,40 @@ resolved.
 - **Owner:** the orchestrator.
 - **Resolution:** resolved — the more specific clause wins: LB-06's status is
   `closed-by-LB-01`.
+
+## Questions raised late — slice `lb01-m13-deps-verify` (reviewer lane)
+
+The item below was found by the reviewer lane while reviewing
+`lb01-m13-deps-verify` and recorded only in its receipt. It is appended here
+for the record. The "no questions are open" line above stays true: it is
+resolved.
+
+### Q-03 — the review brief's invariant→test mapping was wrong for I-2 and I-5 (raised late)
+
+- **Observation:** the invariant→test table in
+  `work/briefs/review-lb01-m13-deps-verify.md` mis-mapped two of the five
+  invariants. For I-2 it named `TestDepsSelectionChangeUpdatesContent`, which
+  never sends a `DataLoadedMsg`; for I-5 it named `TestTabKey`,
+  `TestTabSwitching` and `TestDataLoadedOnNonFetchTabDoesNotReissueFetch`, none
+  of which reach `internal/gui/gui.go:627-634`. The reviewer's own mutations
+  confirmed it: under M2 and M5 those named tests still passed — they did not
+  bite. The slice itself was not at fault.
+- **Correct mapping:** the authoritative table is the one in
+  `work/briefs/fix-lb01-m13-deps-verify.md`:
+
+  | id | test that fails when the invariant is broken |
+  |---|---|
+  | I-1 | `TestFetchTabContentCmdTimesOut` |
+  | I-2 | `TestDepsTabPopulatedAfterDataLoaded`, `TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply` |
+  | I-3 | `TestDepsFastPathRendersCachedDependencies`, `TestDepsTabViewLeavesLoadingAfterFastPath`, `TestDepsTabLoads` |
+  | I-4 | `TestParseFormulaBuildDepsFromBuildDependencies`, `TestFormulaeReaderList` |
+  | I-5 | `TestDepsSelectionChangeUpdatesContent` |
+
+- **Raised by:** reviewer lane (slice `lb01-m13-deps-verify`).
+- **Owner:** the orchestrator.
+- **Resolution:** resolved — the mapping is corrected in
+  `work/briefs/fix-lb01-m13-deps-verify.md` and recorded, with the mutation
+  evidence that proves each of the five tests bites, in
+  `work/verification/lb01-m13-deps.md`. The stale rows in
+  `work/briefs/review-lb01-m13-deps-verify.md` are the orchestrator's file and
+  were left untouched by the fix lane.
