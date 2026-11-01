@@ -91,7 +91,7 @@ func TestFormatService(t *testing.T) {
 }
 
 func TestFormatStatusDashboard(t *testing.T) {
-	items := FormatStatusDashboard(124, 31, 7, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
+	items := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 7, Known: true}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
 	if len(items) == 0 {
 		t.Fatal("expected non-empty dashboard")
 	}
@@ -101,6 +101,35 @@ func TestFormatStatusDashboard(t *testing.T) {
 	}
 	if !strings.Contains(full, "124") {
 		t.Errorf("expected count, got: %s", full)
+	}
+	if !strings.Contains(full, "Outdated:  7 packages") {
+		t.Errorf("expected known outdated count, got: %s", full)
+	}
+}
+
+func TestFormatStatusDashboardOutdatedNotLoaded(t *testing.T) {
+	// A count that was never loaded must not be rendered as a number —
+	// "0 packages" would claim the user has nothing outdated.
+	items := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 0, Known: false}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
+	full := strings.Join(items, "\n")
+	if !strings.Contains(full, "Outdated:  — not loaded (press R to load)") {
+		t.Errorf("expected not-loaded rendering, got: %s", full)
+	}
+	if strings.Contains(full, "0 packages") {
+		t.Errorf("not-loaded dashboard must not claim a package count, got: %s", full)
+	}
+}
+
+func TestFormatStatusDashboardOutdatedKnownZero(t *testing.T) {
+	// A known zero is a real answer (brew outdated was checked and found
+	// nothing) and must still render as a number.
+	items := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 0, Known: true}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
+	full := strings.Join(items, "\n")
+	if !strings.Contains(full, "Outdated:  0 packages") {
+		t.Errorf("expected known-zero rendering, got: %s", full)
+	}
+	if strings.Contains(full, "not loaded") {
+		t.Errorf("known zero must not render as not loaded, got: %s", full)
 	}
 }
 

@@ -87,10 +87,18 @@ func FormatOutdatedCask(c brew.Cask) string {
 	return fmt.Sprintf("%s  %s -> %s  cask", padRight(c.Name, 22), padRight(c.Version, 12), c.NewVersion)
 }
 
+// OutdatedInfo carries the outdated-package count and whether the count is
+// known yet. Known=false means the count has never been loaded — it must not
+// be rendered as a number.
+type OutdatedInfo struct {
+	Count int
+	Known bool
+}
+
 func FormatStatusDashboard(
 	formulaeCount int,
 	casksCount int,
-	outdatedCount int,
+	outdated OutdatedInfo,
 	tapsCount int,
 	officialTaps int,
 	thirdPartyTaps int,
@@ -109,10 +117,10 @@ func FormatStatusDashboard(
 	lines = append(lines, "")
 	lines = append(lines, fmt.Sprintf("Formulae:  %d installed", formulaeCount))
 	lines = append(lines, fmt.Sprintf("Casks:     %d installed", casksCount))
-	if outdatedCount > 0 {
-		lines = append(lines, fmt.Sprintf("Outdated:  %d packages", outdatedCount))
+	if outdated.Known {
+		lines = append(lines, fmt.Sprintf("Outdated:  %d packages", outdated.Count))
 	} else {
-		lines = append(lines, "Outdated:  0 packages")
+		lines = append(lines, "Outdated:  — not loaded (press R to load)")
 	}
 	lines = append(lines, "")
 	lines = append(lines, fmt.Sprintf("Taps:      %d total", tapsCount))
