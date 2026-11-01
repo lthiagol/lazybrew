@@ -8,7 +8,7 @@ learn what is done, what is in flight, and where to pick up.
 | detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398, 17b1b8d, dce1468, 26f44cf, 88dbed9 | closed | ok |
 | lb01-m13-deps-verify | 789d506, a7d5498, 196575b, b7dec88, 544e0ed | closed | ok |
 | lb02-fetch-timeouts | 0027596, f7bc287, 00f73f2, 16c24f4, 8647165, 0cfb213 | closed | ok |
-| lb03-dashboard-outdated-count | — | implemented | awaiting reviewer |
+| lb03-dashboard-outdated-count | 8a7b191, 4ae32bd, 99e54b7, 45fc3f8, 9fd23dd, adb8418, 80065c4, b92ff9d, 93a036b | closed | ok |
 | lb07-bound-remaining-reads | bd6dfd7, b5c1cc5, ea71699, 7b21fc0 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
@@ -91,17 +91,37 @@ any error) each broke the named test. Receipts:
 `work/inbox/runner-lb07-bound-remaining-reads.md`,
 `work/inbox/reviewer-lb07-bound-remaining-reads.md`.
 
-**Next slice:** `LB-04` in `work/backlog.md` — chunk `brew tap-info --json`
-batches when the tap count risks ARG_MAX (`internal/brew/taps.go`). `LB-03`
-(status dashboard outdated count) is **implemented**: the dashboard labels the
-count as not loaded until the user presses `R`, and `R` is the only path that
-loads it — the product decision that was blocking it is settled (contract:
-`work/briefs/lb03-dashboard-outdated-count.md`, receipt:
-`work/inbox/runner-lb03-dashboard-outdated-count.md`). `LB-05` is a human gate
-for the stable tag.
-The release itself is deferred by the maintainer: `wip` is 76+ commits ahead
-of `stable`, `v1.0.0-rc1` is still the only tag, and `M22.1b` / `M22.4` in
-`AGENTS.md` remain open.
+**lb03-dashboard-outdated-count, closed.** `LB-03` is closed. The status
+dashboard no longer reports `Outdated:  0 packages` when it means *not
+loaded*: it renders `Outdated:  — not loaded (press R to load)` until the
+count is known, and a genuine zero still renders `Outdated:  0 packages` —
+the formatter gained an explicit `presentation.OutdatedInfo{Count, Known}`,
+because a plain `int` cannot tell "zero" from "unknown". **Only the `R` key
+loads the count** (`RefreshMsg.LoadOutdated`); Init, the auto-refresh tick,
+the install and uninstall paths and the task-completion path all stay
+cache-only, so M9's rule — the dashboard never shells out to `brew outdated`
+on its own — survives, now pinned by a test on every emitter. A status
+refresh also stopped discarding the outdated cache, so a valid 30-minute
+result is no longer thrown away. The first review found no defect in the
+implementation but two unprotected behaviours and one edge case (with
+`brew.update_on_start: true` the first `R` emitted no refresh at all); the
+fix cycle answered all three, and the re-review returned `ok` with no
+findings — four mutations, each breaking the named test. Q-04 (a cold load
+costs one `brew outdated` call **per outdated class**, two in total, because
+brew has separate formulae and casks readers) was raised by the runner, ruled
+on by the orchestrator, and recorded in `work/questions.md`. Receipts:
+`work/inbox/runner-lb03-dashboard-outdated-count.md`,
+`work/inbox/reviewer-lb03-dashboard-outdated-count.md`,
+`work/inbox/runner-lb03-fix.md`, `work/inbox/reviewer-lb03-fix.md`.
+
+**Next slice: none open.** `LB-04` (chunk `brew tap-info --json` batches for
+ARG_MAX) is **parked by the maintainer** — ARG_MAX needs thousands of
+arguments and typical installs have far fewer taps; revisit only if it is hit
+in the wild. `LB-05` is a human gate for the stable tag. The release itself
+is deferred: `wip` is 80+ commits ahead of `stable`, `v1.0.0-rc1` is still the
+only tag, `M22.1b` / `M22.4` in `AGENTS.md` remain open, the signed-off smoke
+checklist does not cover the mouse-support commit, and the work is unpushed
+so CI has not yet seen it.
 
 **How a cold session resumes work.** Read `work/briefs/<slice>.md` for the
 contract of the slice in the row above, then read the receipts in `work/inbox/`
