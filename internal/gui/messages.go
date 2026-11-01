@@ -42,7 +42,16 @@ type SearchInfoLoadedMsg struct {
 	Err     error
 }
 
-type RefreshMsg struct{}
+// RefreshMsg asks the app to refresh its panels.
+//
+// LoadOutdated marks the one path allowed to shell out to `brew outdated`:
+// the user pressing R. Every other emitter (the auto-refresh tick, the
+// install/uninstall paths, task completion) leaves it false, so those
+// refreshes read the outdated entries from the cache only and the dashboard
+// never triggers a `brew outdated` call on its own.
+type RefreshMsg struct {
+	LoadOutdated bool
+}
 
 type CleanupPreviewMsg struct {
 	Lines []string

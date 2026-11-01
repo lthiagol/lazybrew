@@ -465,12 +465,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		//   * Active panel always refreshes (AC-04: R forces it even
 		//     if TTL not expired — cache keys invalidated below).
 		//   * Other loaded panels refresh; unloaded stay lazy.
+		// LoadOutdated is set only by the R key: the status refresh below
+		// loads the outdated count only when the user asked for it.
 		// Bust cache for force-refreshed classes so per-class TTLs do
 		// not short-circuit the shell (AC-04).
 		m.invalidatePanelCache(PanelStatus)
 
 		m.panels[PanelStatus].loading = true
-		cmds := []tea.Cmd{fetchStatusData(m.client, false)}
+		cmds := []tea.Cmd{fetchStatusData(m.client, msg.LoadOutdated)}
 		if m.activePanel != PanelStatus && m.activePanel != PanelSearch {
 			m.invalidatePanelCache(m.activePanel)
 			m.panels[m.activePanel].loading = true
@@ -585,10 +587,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cfg.Brew.UpdateOnStart {
 				return m, tea.Batch(
 					m.updateTickerCmd(),
-					func() tea.Msg { return RefreshMsg{} },
+					func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
 				)
 			}
-			return m, func() tea.Msg { return RefreshMsg{} }
+			// R is the only path allowed to shell out to `brew outdated`:
+			// the dashboard's outdated count is loaded on demand.
+			return m, func() tea.Msg { return RefreshMsg{LoadOutdated: true} }
 
 		case "C":
 			m.logCollapsed = !m.logCollapsed
