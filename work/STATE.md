@@ -8,6 +8,7 @@ learn what is done, what is in flight, and where to pick up.
 | detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398, 17b1b8d, dce1468, 26f44cf, 88dbed9 | closed | ok |
 | lb01-m13-deps-verify | 789d506, a7d5498, 196575b, b7dec88, 544e0ed | closed | ok |
 | lb02-fetch-timeouts | 0027596, f7bc287, 00f73f2, 16c24f4, 8647165, 0cfb213 | closed | ok |
+| lb03-dashboard-outdated-count | — | implemented | awaiting reviewer |
 | lb07-bound-remaining-reads | bd6dfd7, b5c1cc5, ea71699, 7b21fc0 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
@@ -92,10 +93,12 @@ any error) each broke the named test. Receipts:
 
 **Next slice:** `LB-04` in `work/backlog.md` — chunk `brew tap-info --json`
 batches when the tap count risks ARG_MAX (`internal/brew/taps.go`). `LB-03`
-(status dashboard outdated count) is still **blocked on a product decision**:
-the dashboard reports 0 outdated until the user first visits the Outdated
-panel, because M9 made that fetch lazy — either label it as not-loaded, or pay
-a `brew outdated` call at startup. `LB-05` is a human gate for the stable tag.
+(status dashboard outdated count) is **implemented**: the dashboard labels the
+count as not loaded until the user presses `R`, and `R` is the only path that
+loads it — the product decision that was blocking it is settled (contract:
+`work/briefs/lb03-dashboard-outdated-count.md`, receipt:
+`work/inbox/runner-lb03-dashboard-outdated-count.md`). `LB-05` is a human gate
+for the stable tag.
 The release itself is deferred by the maintainer: `wip` is 76+ commits ahead
 of `stable`, `v1.0.0-rc1` is still the only tag, and `M22.1b` / `M22.4` in
 `AGENTS.md` remain open.

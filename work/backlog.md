@@ -11,7 +11,7 @@ decision). The source is provenance, not a spec.
 |---|---|---|---|---|
 | LB-01 | Verify the M13 Deps-tab fix by running the Deps test suite (`TestDepsTabLoads`, `TestDepsSelectionChangeUpdatesContent`) | M13 (execution done, independent review never passed) | medium | closed |
 | LB-02 | Apply context timeouts to the four brew fetch paths: `fetchPanelData`, `fetchStatusData`, `fetchSelectedSearchInfo`, `executeSearch` | B-02 (residual from M13 F-02/F-07) | medium | closed |
-| LB-03 | Status dashboard outdated count stays 0 until the first refresh | B-03 (M09 F-02 residual) | low | active |
+| LB-03 | Status dashboard outdated count stays 0 until the first refresh | B-03 (M09 F-02 residual) | low | closed |
 | LB-04 | Chunk `brew tap-info --json` batches when the tap count risks ARG_MAX | B-04 (M11 F-01 residual) | low | active |
 | LB-05 | Full interactive human smoke before the stable tag — **human gate**, not an agent task | B-05 | medium | active |
 | LB-06 | The M13 independent review itself — closed by verification together with LB-01; all 7 findings were already fixed, so the review is not left silently dropped | M13 | medium | closed-by-LB-01 |
@@ -30,3 +30,5 @@ tests in `internal/gui/fetch_timeouts_test.go` (commit `00f73f2`); the
 receipt is `work/inbox/runner-lb02-fetch-timeouts.md`.
 
 **LB-07 closed** — the last two unbounded brew reads (the uninstall dependency pre-check and `toggleLeaves`) are bounded by `brewReadTimeout`, and a timed-out dependency check now says so in the uninstall confirm dialog instead of looking like "nothing depends on this package"; receipt `work/inbox/runner-lb07-bound-remaining-reads.md`.
+
+**LB-03 closed** — the status dashboard now says the outdated count is not loaded until the user presses R, which is the only path that loads it; receipt `work/inbox/runner-lb03-dashboard-outdated-count.md`.
