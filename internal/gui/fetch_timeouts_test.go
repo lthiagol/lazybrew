@@ -100,7 +100,7 @@ func TestFetchStatusDataTimesOut(t *testing.T) {
 	client := brew.NewClient(blockingRunner())
 
 	// The user-visible path: the dashboard carries the timeout as a ⚠ line.
-	msg := awaitMsg(t, fetchStatusData(client), 2*time.Second)
+	msg := awaitMsg(t, fetchStatusData(client, false), 2*time.Second)
 	dMsg, ok := msg.(DataLoadedMsg)
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
@@ -111,7 +111,7 @@ func TestFetchStatusDataTimesOut(t *testing.T) {
 	}
 
 	// The typed error behind that line.
-	items, errs := statusDashboard(client)
+	items, errs := statusDashboard(client, false)
 	if len(errs) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}
@@ -137,7 +137,7 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 	client := brew.NewClient(blockingRunner())
 
 	start := time.Now()
-	msg := awaitMsg(t, fetchStatusData(client), 5*time.Second)
+	msg := awaitMsg(t, fetchStatusData(client, false), 5*time.Second)
 	elapsed := time.Since(start)
 
 	dMsg, ok := msg.(DataLoadedMsg)
@@ -155,7 +155,7 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 		t.Errorf("fetchStatusData took %s — the sum of the per-read caps, not the total budget", elapsed)
 	}
 
-	_, errs := statusDashboard(client)
+	_, errs := statusDashboard(client, false)
 	if len(errs) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}
@@ -182,7 +182,7 @@ func TestFetchStatusDataTotalBudgetBoundsTheAggregate(t *testing.T) {
 	client := brew.NewClient(blockingRunner())
 
 	start := time.Now()
-	msg := awaitMsg(t, fetchStatusData(client), 5*time.Second)
+	msg := awaitMsg(t, fetchStatusData(client, false), 5*time.Second)
 	elapsed := time.Since(start)
 
 	if _, ok := msg.(DataLoadedMsg); !ok {

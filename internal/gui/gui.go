@@ -140,7 +140,7 @@ func (m Model) Init() tea.Cmd {
 		// which doubles as the dashboard). Other panels lazy-load on
 		// first switch via lazyLoadPanel().
 		if m.activePanel == PanelStatus {
-			cmds = append(cmds, fetchStatusData(m.client))
+			cmds = append(cmds, fetchStatusData(m.client, false))
 		} else {
 			cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
 		}
@@ -470,7 +470,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.invalidatePanelCache(PanelStatus)
 
 		m.panels[PanelStatus].loading = true
-		cmds := []tea.Cmd{fetchStatusData(m.client)}
+		cmds := []tea.Cmd{fetchStatusData(m.client, false)}
 		if m.activePanel != PanelStatus && m.activePanel != PanelSearch {
 			m.invalidatePanelCache(m.activePanel)
 			m.panels[m.activePanel].loading = true

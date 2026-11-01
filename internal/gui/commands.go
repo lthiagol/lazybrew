@@ -1356,9 +1356,14 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 	}
 }
 
-func fetchStatusData(client *brew.Client) tea.Cmd {
+// fetchStatusData renders the status dashboard. loadOutdated is false for
+// every automatic refresh (Init, the auto-refresh tick, install/uninstall,
+// task completion): those read the outdated entries from the cache only and
+// never shell out to `brew outdated`. Only an explicit user request (the R
+// key) passes true.
+func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 	return func() tea.Msg {
-		items, _ := statusDashboard(client)
+		items, _ := statusDashboard(client, loadOutdated)
 		return DataLoadedMsg{PanelID: PanelStatus, Items: items, Err: nil}
 	}
 }
@@ -1379,7 +1384,18 @@ func fetchStatusData(client *brew.Client) tea.Cmd {
 //
 // The returned errors are the aggregated per-source failures — the carrier
 // through which a timed-out read reaches the user as a ⚠ dashboard line.
-func statusDashboard(client *brew.Client) ([]string, []error) {
+//
+// The outdated count has two modes. The default (loadOutdated=false) reads
+// the outdated entries from the client cache only, so the dashboard never
+// shells out to `brew outdated` on its own; the count is known only when
+// both outdated cache entries are hits, because a partial hit would be an
+// incomplete count. loadOutdated=true is the explicit user request (the R
+// key): the outdated entries are then read through the brew reader — bounded
+// like every other read and part of the same concurrent fan-out — and the
+// count becomes known. A failed or timed-out outdated read joins the ⚠
+// lines like any other source and the count falls back to "not known", never
+// to a misleading 0.
+func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, []error) {
 	totalCtx, cancelTotal := context.WithTimeout(context.Background(), brewStatusTotalTimeout)
 	defer cancelTotal()
 
@@ -1392,6 +1408,11 @@ func statusDashboard(client *brew.Client) ([]string, []error) {
 		warnings []brew.DoctorWarning
 
 		fErr, cErr, tErr, sErr, docErr error
+
+		outdatedFormulae []brew.Formula
+		outdatedCasks    []brew.Cask
+		outdatedFErr     error
+		outdatedCErr     error
 	)
 
 	var wg sync.WaitGroup
@@ -1423,23 +1444,43 @@ func statusDashboard(client *brew.Client) ([]string, []error) {
 	read(func() {
 		warnings, docErr = boundedReadIn(totalCtx, brewReadTimeout, "doctor", client.Diagnostics.Doctor)
 	})
+	if loadOutdated {
+		// Explicit request (R): the outdated entries are read through the
+		// brew reader, which serves a still-fresh cached result and only
+		// shells out when the data is stale.
+		read(func() {
+			outdatedFormulae, outdatedFErr = boundedReadIn(totalCtx, brewReadTimeout, "outdated", client.Formulae.Outdated)
+		})
+		read(func() {
+			outdatedCasks, outdatedCErr = boundedReadIn(totalCtx, brewReadTimeout, "outdated", client.Casks.Outdated)
+		})
+	}
 	wg.Wait()
 
-	// Outdated is lazy (M9): read from cache only. The cache fills when
-	// the user first visits the Outdated panel; until then we report 0
-	// outdated in the dashboard and the user is not surprised by a
-	// `brew outdated` shell invocation on every Init / Refresh.
-	var outdatedFormulae []brew.Formula
-	if cached, ok := client.Cache.Get(brew.KeyOutdatedFormulae); ok {
-		if f, ok := cached.([]brew.Formula); ok {
-			outdatedFormulae = f
+	// Cache-only mode (the default): the outdated entries come from the
+	// client cache, which the Outdated panel fills. The count is known only
+	// when both entries are hits — a partial hit would be an incomplete
+	// count. A cache hit holding an empty slice is a known zero: the reader
+	// caches an empty result when `brew outdated` exits 1.
+	outdatedKnown := false
+	if loadOutdated {
+		outdatedKnown = outdatedFErr == nil && outdatedCErr == nil
+	} else {
+		formulaeHit := false
+		if cached, ok := client.Cache.Get(brew.KeyOutdatedFormulae); ok {
+			if f, ok := cached.([]brew.Formula); ok {
+				outdatedFormulae = f
+				formulaeHit = true
+			}
 		}
-	}
-	var outdatedCasks []brew.Cask
-	if cached, ok := client.Cache.Get(brew.KeyOutdatedCasks); ok {
-		if c, ok := cached.([]brew.Cask); ok {
-			outdatedCasks = c
+		casksHit := false
+		if cached, ok := client.Cache.Get(brew.KeyOutdatedCasks); ok {
+			if c, ok := cached.([]brew.Cask); ok {
+				outdatedCasks = c
+				casksHit = true
+			}
 		}
+		outdatedKnown = formulaeHit && casksHit
 	}
 
 	// The aggregated errors carry the per-source failures. Each entry keeps
@@ -1463,6 +1504,12 @@ func statusDashboard(client *brew.Client) ([]string, []error) {
 	}
 	if docErr != nil {
 		sources = append(sources, sourceErr{"doctor", docErr})
+	}
+	if outdatedFErr != nil {
+		sources = append(sources, sourceErr{"outdated", outdatedFErr})
+	}
+	if outdatedCErr != nil {
+		sources = append(sources, sourceErr{"outdated", outdatedCErr})
 	}
 
 	brewVersion := ""
@@ -1492,7 +1539,7 @@ func statusDashboard(client *brew.Client) ([]string, []error) {
 	outdatedCount := len(outdatedFormulae) + len(outdatedCasks)
 	items := presentation.FormatStatusDashboard(
 		len(formulae), len(casks),
-		presentation.OutdatedInfo{Count: outdatedCount, Known: true},
+		presentation.OutdatedInfo{Count: outdatedCount, Known: outdatedKnown},
 		len(taps), officialTaps, thirdPartyTaps,
 		len(services), servicesStarted,
 		brewVersion, prefix,
