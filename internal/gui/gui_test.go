@@ -1861,7 +1861,7 @@ func TestStatusDashboardDoesNotShellCallOutdated(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchStatusData(client)
+	cmd := fetchStatusData(client, false)
 	msg := cmd()
 	dMsg, ok := msg.(DataLoadedMsg)
 	if !ok {
@@ -1901,15 +1901,18 @@ func TestStatusDashboardReportsCachedOutdatedCount(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	// First, populate the cache by calling client.Formulae.Outdated().
-	// (We use the real reader so the cache+TTL is exercised.)
+	// First, populate the cache by calling client.Formulae.Outdated() and
+	// client.Casks.Outdated(). (We use the real readers so the cache+TTL is
+	// exercised.) Both entries must be cached for the count to be known —
+	// a partial cache would be an incomplete count.
 	_, _ = client.Formulae.Outdated(context.Background())
-	if atomic.LoadInt32(&outdatedCalls) != 1 {
-		t.Fatalf("setup: expected 1 outdated call after priming cache, got %d", outdatedCalls)
+	_, _ = client.Casks.Outdated(context.Background())
+	if atomic.LoadInt32(&outdatedCalls) != 2 {
+		t.Fatalf("setup: expected 2 outdated calls after priming cache, got %d", outdatedCalls)
 	}
 	atomic.StoreInt32(&outdatedCalls, 0)
 
-	cmd := fetchStatusData(client)
+	cmd := fetchStatusData(client, false)
 	msg := cmd()
 	dMsg, ok := msg.(DataLoadedMsg)
 	if !ok {
@@ -1977,7 +1980,7 @@ func TestStatusDashboardSurfacesDoctorError(t *testing.T) {
 	})
 	client := brew.NewClient(r)
 
-	cmd := fetchStatusData(client)
+	cmd := fetchStatusData(client, false)
 	if cmd == nil {
 		t.Fatal("fetchStatusData returned nil cmd")
 	}
@@ -2016,7 +2019,7 @@ func TestStatusDashboardDoesNotWarnOnDoctorExitCode1(t *testing.T) {
 	})
 	client := brew.NewClient(r)
 
-	cmd := fetchStatusData(client)
+	cmd := fetchStatusData(client, false)
 	msg := cmd()
 	dMsg, ok := msg.(DataLoadedMsg)
 	if !ok {
