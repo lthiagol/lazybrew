@@ -91,3 +91,25 @@ resolved.
   and the re-review confirmed the correction (see
   `work/inbox/reviewer-lb01-m13-deps-fix.md`, check S3). Q-03 is closed; this
   line records that the correction happened, not that it is pending.
+
+## Questions raised late — slice `lb03-dashboard-outdated-count` (runner lane)
+
+### Q-04 — AC-05.5's "exactly one `brew outdated` call" is unreachable on a cold cache
+
+- **Question:** AC-05.5 asks that an explicit load produce "exactly one
+  `brew outdated` call". Brew has two outdated readers with one cache key
+  each (`KeyOutdatedFormulae`, `KeyOutdatedCasks`), each of which shells
+  `brew outdated` with its own `--formula` / `--cask` filter, so a complete
+  count on a cold cache costs two calls. One combined call would mean
+  changing `internal/brew/**`, which the brief forbids. Which reading is
+  the contract: one call per outdated class, or one call in total?
+- **Raised by:** runner lane (slice `lb03-dashboard-outdated-count`).
+- **Owner:** the orchestrator.
+- **Resolution:** the runner implemented the per-class reading and covered
+  both in `internal/gui/gui_test.go`:
+  `TestStatusDashboardExplicitLoadShellsOutdatedOnce` (the casks class is
+  already cached → the load makes exactly one `brew outdated` call and shows
+  the real count) and
+  `TestStatusDashboardExplicitLoadShellsOneCallPerOutdatedClass` (cold cache →
+  exactly two calls, one per class). The brief's wording is met literally in
+  the first case; the second documents the two-reader reality.
