@@ -875,12 +875,15 @@ func (m *Model) invalidatePanelCache(id PanelID) {
 	case PanelServices:
 		c.Invalidate(brew.KeyServicesList)
 	case PanelStatus:
-		// Status dashboard reads formulae/casks/taps/services/doctor/outdated.
+		// Status dashboard reads formulae/casks/taps/services/doctor from
+		// the cache. It does not own the outdated class: the dashboard
+		// reads the outdated entries from the cache, so invalidating them
+		// here would throw away a valid 30-minute result. The Outdated
+		// panel and the mutation-level invalidations still own them.
 		c.Invalidate(
 			brew.KeyFormulaeList, brew.KeyCasksList,
 			brew.KeyTapsList, brew.KeyServicesList,
 			brew.KeyDoctorResult, brew.KeyConfig,
-			brew.KeyOutdatedFormulae, brew.KeyOutdatedCasks,
 		)
 	}
 }
