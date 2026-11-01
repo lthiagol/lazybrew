@@ -1838,7 +1838,8 @@ func TestSwitchToOutdatedRetriesAfterError(t *testing.T) {
 
 func TestStatusDashboardDoesNotShellCallOutdated(t *testing.T) {
 	// M9 AC-02 + design decision: fetchStatusData must not shell-call
-	// `brew outdated`. It reads from cache only and reports 0 when empty.
+	// `brew outdated`. It reads from cache only and reports the count as
+	// not loaded when the cache has no outdated entries.
 	var outdatedCalls int32
 	r := brew.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
@@ -1870,9 +1871,15 @@ func TestStatusDashboardDoesNotShellCallOutdated(t *testing.T) {
 	if atomic.LoadInt32(&outdatedCalls) != 0 {
 		t.Errorf("fetchStatusData must not invoke `brew outdated`, got %d calls", outdatedCalls)
 	}
+	// The count was never loaded, so the dashboard must say so instead of
+	// claiming "0 packages" — that number would mean "nothing outdated"
+	// only if brew outdated had actually been checked.
 	joined := strings.Join(dMsg.Items, "\n")
-	if !strings.Contains(joined, "0 packages") {
-		t.Errorf("empty cache should report 0 outdated, got:\n%s", joined)
+	if !strings.Contains(joined, "Outdated:  — not loaded (press R to load)") {
+		t.Errorf("empty cache should report the count as not loaded, got:\n%s", joined)
+	}
+	if strings.Contains(joined, "0 packages") {
+		t.Errorf("empty cache must not claim a package count, got:\n%s", joined)
 	}
 }
 
@@ -1924,6 +1931,278 @@ func TestStatusDashboardReportsCachedOutdatedCount(t *testing.T) {
 	joined := strings.Join(dMsg.Items, "\n")
 	if !strings.Contains(joined, "1 packages") {
 		t.Errorf("dashboard should reflect cached outdated count (1), got:\n%s", joined)
+	}
+}
+
+// outdatedCountingRunner returns a mock runner that counts every
+// `brew outdated` invocation and answers the other status sources with
+// empty results.
+func outdatedCountingRunner(calls *int32) *brew.MockRunner {
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		switch {
+		case len(args) >= 1 && args[0] == "outdated":
+			atomic.AddInt32(calls, 1)
+			return []byte(`{"formulae":[{"name":"ripgrep","installed_versions":["14.1.0"],"current_version":"14.1.1","pinned":false}]}`), nil
+		case len(args) >= 1 && args[0] == "services":
+			return []byte(`[]`), nil
+		case len(args) >= 2 && args[0] == "info":
+			return []byte(`{"formulae":[],"casks":[]}`), nil
+		case len(args) >= 1 && args[0] == "tap-info":
+			return []byte(`{"taps":[]}`), nil
+		case len(args) >= 1 && args[0] == "doctor":
+			return []byte(""), nil
+		case len(args) >= 1 && args[0] == "config":
+			return []byte(""), nil
+		}
+		return []byte{}, nil
+	}
+	return r
+}
+
+func TestStatusDashboardEmptyOutdatedCacheIsKnownZero(t *testing.T) {
+	// The reader caches an empty slice when `brew outdated` exits 1:
+	// "checked, nothing outdated" is a known zero, not an unknown count.
+	var outdatedCalls int32
+	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
+	client.Cache.SetWithTTL(brew.KeyOutdatedFormulae, []brew.Formula{}, time.Minute)
+	client.Cache.SetWithTTL(brew.KeyOutdatedCasks, []brew.Cask{}, time.Minute)
+
+	msg := fetchStatusData(client, false)()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if atomic.LoadInt32(&outdatedCalls) != 0 {
+		t.Errorf("cache-only status fetch must not shell `brew outdated`, got %d calls", outdatedCalls)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "Outdated:  0 packages") {
+		t.Errorf("a checked-and-empty cache is a known zero, got:\n%s", joined)
+	}
+	if strings.Contains(joined, "not loaded") {
+		t.Errorf("a known zero must not render as not loaded, got:\n%s", joined)
+	}
+}
+
+func TestStatusDashboardPartialOutdatedCacheIsNotKnown(t *testing.T) {
+	// Only one of the two outdated cache entries is present: the count
+	// would be incomplete, so it must not be rendered as a number.
+	var outdatedCalls int32
+	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
+	client.Cache.SetWithTTL(brew.KeyOutdatedFormulae, []brew.Formula{{Name: "ripgrep"}}, time.Minute)
+
+	msg := fetchStatusData(client, false)()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if atomic.LoadInt32(&outdatedCalls) != 0 {
+		t.Errorf("cache-only status fetch must not shell `brew outdated`, got %d calls", outdatedCalls)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "not loaded") {
+		t.Errorf("a partial cache must render as not loaded, got:\n%s", joined)
+	}
+	if strings.Contains(joined, "1 packages") {
+		t.Errorf("a partial cache must not claim a package count, got:\n%s", joined)
+	}
+}
+
+func TestStatusDashboardExplicitLoadShellsOutdatedOnce(t *testing.T) {
+	// An explicit load (the R key) is the only path allowed to shell out
+	// to `brew outdated`. The casks class is already cached, so only the
+	// formulae class is fetched: exactly one `brew outdated` call.
+	var outdatedCalls int32
+	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
+	client.Cache.SetWithTTL(brew.KeyOutdatedCasks, []brew.Cask{}, time.Minute)
+
+	msg := fetchStatusData(client, true)()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if got := atomic.LoadInt32(&outdatedCalls); got != 1 {
+		t.Errorf("explicit load must shell `brew outdated` exactly once, got %d calls", got)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "Outdated:  1 packages") {
+		t.Errorf("explicit load must show the real count, got:\n%s", joined)
+	}
+}
+
+func TestStatusDashboardExplicitLoadShellsOneCallPerOutdatedClass(t *testing.T) {
+	// On a cold cache the load needs one `brew outdated` call per class:
+	// brew has two outdated readers (formulae and casks) with one cache
+	// key each, so a complete count costs two calls. A single combined
+	// call would require changing internal/brew, which this slice does
+	// not touch.
+	var outdatedCalls int32
+	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
+
+	msg := fetchStatusData(client, true)()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if got := atomic.LoadInt32(&outdatedCalls); got != 2 {
+		t.Errorf("explicit load must shell `brew outdated` once per class, got %d calls", got)
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "Outdated:  1 packages") {
+		t.Errorf("explicit load must show the real count, got:\n%s", joined)
+	}
+}
+
+func TestStatusDashboardExplicitLoadFailureFallsBackToNotLoaded(t *testing.T) {
+	// A failing outdated read must not become a misleading 0: the count
+	// falls back to "not loaded" and the error joins the ⚠ lines.
+	var outdatedCalls int32
+	r := brew.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "outdated" {
+			atomic.AddInt32(&outdatedCalls, 1)
+			return nil, &brew.BrewExitError{Command: "outdated", ExitCode: 2}
+		}
+		return []byte{}, nil
+	}
+	client := brew.NewClient(r)
+
+	msg := fetchStatusData(client, true)()
+	dMsg, ok := msg.(DataLoadedMsg)
+	if !ok {
+		t.Fatalf("expected DataLoadedMsg, got %T", msg)
+	}
+	if atomic.LoadInt32(&outdatedCalls) == 0 {
+		t.Error("explicit load must attempt the outdated read")
+	}
+	joined := strings.Join(dMsg.Items, "\n")
+	if !strings.Contains(joined, "not loaded") {
+		t.Errorf("a failed outdated read must fall back to not loaded, got:\n%s", joined)
+	}
+	if strings.Contains(joined, "0 packages") {
+		t.Errorf("a failed outdated read must not claim a package count, got:\n%s", joined)
+	}
+	if !strings.Contains(joined, "⚠ outdated:") {
+		t.Errorf("a failed outdated read must surface a ⚠ line, got:\n%s", joined)
+	}
+}
+
+// drainCmds runs a command (and every command in a batch it produces) and
+// returns the messages. Every wait is bounded: the commands under test are
+// plain reads, not ticks.
+func drainCmds(cmd tea.Cmd) []tea.Msg {
+	if cmd == nil {
+		return nil
+	}
+	msg := cmd()
+	if batch, ok := msg.(tea.BatchMsg); ok {
+		var msgs []tea.Msg
+		for _, c := range batch {
+			if c == nil {
+				continue
+			}
+			msgs = append(msgs, drainCmds(c)...)
+		}
+		return msgs
+	}
+	if msg == nil {
+		return nil
+	}
+	return []tea.Msg{msg}
+}
+
+func TestRefreshMsgPlainDoesNotShellOutdated(t *testing.T) {
+	// The path used after an install (and after the auto-refresh tick): a
+	// plain RefreshMsg must never shell out to `brew outdated`. This is
+	// M9's invariant.
+	var outdatedCalls int32
+	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
+	m := New(client, config.Default())
+	m.activePanel = PanelStatus
+	m.cfg.GUI.AutoRefreshSeconds = 0
+
+	nm, cmd := m.Update(RefreshMsg{})
+	if cmd == nil {
+		t.Fatal("RefreshMsg returned nil cmd")
+	}
+	if updated, ok := nm.(Model); ok {
+		m = &updated
+	}
+	drainCmds(cmd)
+	if got := atomic.LoadInt32(&outdatedCalls); got != 0 {
+		t.Errorf("a plain RefreshMsg must not shell `brew outdated`, got %d calls", got)
+	}
+}
+
+func TestRefreshMsgWithLoadOutdatedShellsOutdated(t *testing.T) {
+	// R is the only path that loads the count: the flag travels from the
+	// key to the status fetch.
+	var outdatedCalls int32
+	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
+	client.Cache.SetWithTTL(brew.KeyOutdatedCasks, []brew.Cask{}, time.Minute)
+	m := New(client, config.Default())
+	m.activePanel = PanelStatus
+	m.cfg.GUI.AutoRefreshSeconds = 0
+
+	nm, cmd := m.Update(RefreshMsg{LoadOutdated: true})
+	if cmd == nil {
+		t.Fatal("RefreshMsg returned nil cmd")
+	}
+	if updated, ok := nm.(Model); ok {
+		m = &updated
+	}
+	msgs := drainCmds(cmd)
+	if got := atomic.LoadInt32(&outdatedCalls); got != 1 {
+		t.Errorf("RefreshMsg{LoadOutdated: true} must shell `brew outdated` exactly once, got %d calls", got)
+	}
+	var found bool
+	for _, msg := range msgs {
+		dMsg, ok := msg.(DataLoadedMsg)
+		if !ok || dMsg.PanelID != PanelStatus {
+			continue
+		}
+		found = true
+		joined := strings.Join(dMsg.Items, "\n")
+		if !strings.Contains(joined, "Outdated:  1 packages") {
+			t.Errorf("loaded dashboard must show the real count, got:\n%s", joined)
+		}
+	}
+	if !found {
+		t.Error("expected a DataLoadedMsg for the status panel")
+	}
+}
+
+func TestRKeyRequestsOutdatedLoad(t *testing.T) {
+	// The R key is the user-facing "load the count" action.
+	m := newTestModel()
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'R'}})
+	if cmd == nil {
+		t.Fatal("R should return a refresh command")
+	}
+	msg := cmd()
+	refresh, ok := msg.(RefreshMsg)
+	if !ok {
+		t.Fatalf("R should return RefreshMsg, got %T", msg)
+	}
+	if !refresh.LoadOutdated {
+		t.Error("R must request the outdated load")
+	}
+}
+
+func TestAutoRefreshTickStaysCacheOnly(t *testing.T) {
+	// The auto-refresh tick is not a user request: it must not load the
+	// outdated count.
+	m := newTestModel()
+	m.cfg.GUI.AutoRefreshSeconds = 60
+	m.cfg.GUI.AutoRefreshPause = 0
+	msg := m.evaluateAutoRefresh(time.Now())
+	refresh, ok := msg.(RefreshMsg)
+	if !ok {
+		t.Fatalf("expected RefreshMsg from the auto-refresh tick, got %T", msg)
+	}
+	if refresh.LoadOutdated {
+		t.Error("the auto-refresh tick must not request the outdated load")
 	}
 }
 
