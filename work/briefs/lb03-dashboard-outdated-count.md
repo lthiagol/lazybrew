@@ -199,8 +199,13 @@ function.
 3. **A cache holding an empty outdated slice** (the "checked, nothing
    outdated" case) renders `Outdated:  0 packages` — known zero, not unknown.
 4. **A populated cache** renders the real count.
-5. **An explicit load** (`RefreshMsg{LoadOutdated: true}`) results in exactly
-   one `brew outdated` call and a dashboard showing the real count.
+5. **An explicit load** (`RefreshMsg{LoadOutdated: true}`) results in one
+   `brew outdated` call **per outdated class** — two on a cold cache, because
+   brew has two outdated readers (formulae and casks), each with its own cache
+   key and its own `--formula` / `--cask` filter — and one if the other class
+   is already cached. Combining the two classes into a single call would mean
+   changing `internal/brew/**`, which this brief forbids. The dashboard shows
+   the real count.
 6. **A plain `RefreshMsg{}`** — the path used after an install — results in
    **zero** `brew outdated` calls. This is the assertion that protects M9.
 7. The snapshot test covers the not-loaded rendering.

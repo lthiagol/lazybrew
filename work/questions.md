@@ -113,3 +113,15 @@ resolved.
   `TestStatusDashboardExplicitLoadShellsOneCallPerOutdatedClass` (cold cache →
   exactly two calls, one per class). The brief's wording is met literally in
   the first case; the second documents the two-reader reality.
+- **Orchestrator ruling (appended):** the **per-class** reading is the contract.
+  AC-05.5's "exactly one `brew outdated` call" was imprecise wording on my
+  part; the requirement it meant was that *only an explicit `R` may cause a
+  `brew outdated` call at all*, and that the resulting count must be
+  complete. One call per outdated class satisfies both: two calls on a cold
+  cache (formulae and casks are separate readers with separate cache keys and
+  separate `--formula` / `--cask` filters), one when the other class is
+  already cached. Combining them into a single call would mean changing
+  `internal/brew/**`, which the slice deliberately does not touch — and it
+  would diverge from the Outdated panel's own path, which already makes two
+  calls. The brief's AC-05.5 has been corrected to state the per-class
+  wording; the contract is unchanged in every other respect. Q-04 is closed.
