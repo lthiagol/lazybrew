@@ -110,3 +110,66 @@ func TestStatusRefreshKeepsOutdatedCache(t *testing.T) {
 		t.Error("expected a DataLoadedMsg for the status panel")
 	}
 }
+
+// TestRKeyLoadsOutdatedWhenUpdateOnStart covers the edge case where
+// brew.update_on_start is true: the first R both runs `brew update` and
+// must still load the outdated count, so the dashboard is not stuck at
+// "not loaded" until R is pressed again.
+//
+// The load flag belongs to the R path only: the brew-update completion
+// handler also serves the Init path and must stay plain.
+func TestRKeyLoadsOutdatedWhenUpdateOnStart(t *testing.T) {
+	m := newTestModel()
+	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.GUI.AutoRefreshSeconds = 0
+
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'R'}})
+	if cmd == nil {
+		t.Fatal("R returned nil cmd")
+	}
+	msgs := drainCmds(cmd)
+
+	var foundRefresh, foundTask bool
+	for _, msg := range msgs {
+		switch v := msg.(type) {
+		case RefreshMsg:
+			foundRefresh = true
+			if !v.LoadOutdated {
+				t.Error("R must request the outdated load even when it also runs brew update")
+			}
+		case TaskStartedMsg:
+			if v.ID == "brew-update" {
+				foundTask = true
+			}
+		}
+	}
+	if !foundRefresh {
+		t.Error("expected a RefreshMsg from the R key")
+	}
+	if !foundTask {
+		t.Error("expected the brew-update task to start")
+	}
+}
+
+// TestBrewUpdateCompletionStaysPlain guards the constraint that keeps the
+// load flag on the R path: the brew-update completion handler serves both
+// the R key and the Init path, so it must emit a plain refresh — otherwise
+// the count would be loaded at startup, which M9 forbids.
+func TestBrewUpdateCompletionStaysPlain(t *testing.T) {
+	m := newTestModel()
+	m.cfg.Brew.UpdateOnStart = true
+
+	_, cmd := m.Update(TaskCompletedMsg{ID: "brew-update", Title: "brew update"})
+	if cmd == nil {
+		t.Fatal("brew-update completion returned nil cmd")
+	}
+	refreshes := collectRefreshMsgs(cmd)
+	if len(refreshes) == 0 {
+		t.Fatal("expected a RefreshMsg, got none")
+	}
+	for _, refresh := range refreshes {
+		if refresh.LoadOutdated {
+			t.Error("the brew-update completion must stay plain, got RefreshMsg{LoadOutdated: true}")
+		}
+	}
+}
