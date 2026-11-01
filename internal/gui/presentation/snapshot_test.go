@@ -95,8 +95,20 @@ func TestSnapshotServiceFormats(t *testing.T) {
 }
 
 func TestSnapshotDashboard(t *testing.T) {
-	got := FormatStatusDashboard(124, 31, 7, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
+	got := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 7, Known: true}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
 	if len(got) < 5 {
 		t.Errorf("expected at least 5 dashboard lines, got %d", len(got))
+	}
+}
+
+func TestSnapshotDashboardOutdatedNotLoaded(t *testing.T) {
+	// The not-loaded rendering is part of the dashboard's stable output.
+	got := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 0, Known: false}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
+	joined := strings.Join(got, "\n")
+	if !strings.Contains(joined, "Outdated:  — not loaded (press R to load)") {
+		t.Errorf("expected not-loaded rendering, got: %s", joined)
+	}
+	if strings.Contains(joined, "0 packages") {
+		t.Errorf("not-loaded dashboard must not claim a package count, got: %s", joined)
 	}
 }

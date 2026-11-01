@@ -1491,7 +1491,8 @@ func statusDashboard(client *brew.Client) ([]string, []error) {
 
 	outdatedCount := len(outdatedFormulae) + len(outdatedCasks)
 	items := presentation.FormatStatusDashboard(
-		len(formulae), len(casks), outdatedCount,
+		len(formulae), len(casks),
+		presentation.OutdatedInfo{Count: outdatedCount, Known: true},
 		len(taps), officialTaps, thirdPartyTaps,
 		len(services), servicesStarted,
 		brewVersion, prefix,
