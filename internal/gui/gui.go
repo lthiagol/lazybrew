@@ -582,7 +582,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					},
 				}
 				m.tasks.Enqueue(t)
-				return m, m.tasks.RunNext()
+				// The update task and the load-flagged refresh travel
+				// together: R is an explicit user request, so the
+				// outdated count must be loaded even when R also runs
+				// `brew update`. The flag stays on the R path only —
+				// setting it in the brew-update completion handler
+				// would also load the count at startup (M9).
+				return m, tea.Batch(
+					m.tasks.RunNext(),
+					func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
+				)
 			}
 			if m.cfg.Brew.UpdateOnStart {
 				return m, tea.Batch(
