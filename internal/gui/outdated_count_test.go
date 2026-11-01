@@ -1,9 +1,14 @@
 package gui
 
 import (
+	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 // collectRefreshMsgs drains a command (and every command in a batch it
@@ -53,5 +58,55 @@ func TestNonRRefreshEmittersStayCacheOnly(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestStatusRefreshKeepsOutdatedCache covers the cache-survival behaviour:
+// a status refresh (the path used after an install and on the auto-refresh
+// tick) must not throw away the outdated cache entries, so the dashboard
+// keeps rendering the real count instead of "not loaded".
+//
+// The test fails if the two outdated cache keys are put back into
+// invalidatePanelCache's PanelStatus case.
+func TestStatusRefreshKeepsOutdatedCache(t *testing.T) {
+	var outdatedCalls int32
+	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
+	client.Cache.SetWithTTL(brew.KeyOutdatedFormulae, []brew.Formula{{Name: "ripgrep"}}, time.Minute)
+	client.Cache.SetWithTTL(brew.KeyOutdatedCasks, []brew.Cask{}, time.Minute)
+
+	m := New(client, config.Default())
+	m.activePanel = PanelStatus
+	m.cfg.GUI.AutoRefreshSeconds = 0
+
+	_, cmd := m.Update(RefreshMsg{})
+	if cmd == nil {
+		t.Fatal("RefreshMsg returned nil cmd")
+	}
+	msgs := drainCmds(cmd)
+
+	if _, ok := client.Cache.Get(brew.KeyOutdatedFormulae); !ok {
+		t.Error("a status refresh must not invalidate the outdated formulae cache entry")
+	}
+	if _, ok := client.Cache.Get(brew.KeyOutdatedCasks); !ok {
+		t.Error("a status refresh must not invalidate the outdated casks cache entry")
+	}
+	if got := atomic.LoadInt32(&outdatedCalls); got != 0 {
+		t.Errorf("a plain RefreshMsg must not shell `brew outdated`, got %d calls", got)
+	}
+
+	var found bool
+	for _, msg := range msgs {
+		dMsg, ok := msg.(DataLoadedMsg)
+		if !ok || dMsg.PanelID != PanelStatus {
+			continue
+		}
+		found = true
+		joined := strings.Join(dMsg.Items, "\n")
+		if !strings.Contains(joined, "Outdated:  1 packages") {
+			t.Errorf("the dashboard must still render the cached count, got:\n%s", joined)
+		}
+	}
+	if !found {
+		t.Error("expected a DataLoadedMsg for the status panel")
 	}
 }
