@@ -10,6 +10,18 @@ import (
 
 var ErrQueueFull = errors.New("task queue is full")
 
+// EnqueueResult reports what happened to a task handed to Enqueue.
+type EnqueueResult int
+
+const (
+	// EnqueueStarted means the queue was empty and no task is running:
+	// the caller must invoke RunNext to actually start the task.
+	EnqueueStarted EnqueueResult = iota
+	// EnqueueQueued means another task is already running: the task was
+	// parked in the queue and will start when the running one completes.
+	EnqueueQueued
+)
+
 const DefaultMaxQueue = 10
 
 type runningTask struct {
@@ -42,24 +54,31 @@ func (m *Manager) IsRunning() bool {
 	return m.current != nil && !m.current.done
 }
 
-func (m *Manager) Enqueue(t *Task) (started bool, err error) {
+// Enqueue parks the task in the queue. It reports EnqueueStarted when the
+// queue is empty and nothing is running (the caller must then invoke
+// RunNext to start the task), and EnqueueQueued when another task is
+// already running — the task is parked and will run when the current one
+// completes, so callers can tell the user "queued" instead of claiming
+// the operation was refused (r1 finding 6).
+func (m *Manager) Enqueue(t *Task) (EnqueueResult, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	total := len(m.queue)
 	canStart := m.current == nil || m.current.done
-	if canStart {
-		started = true
-	} else {
+	if !canStart {
 		total++
 	}
 	if total >= m.max {
-		return false, ErrQueueFull
+		return EnqueueQueued, ErrQueueFull
 	}
 
 	t.Status = StatusPending
 	m.queue = append(m.queue, t)
-	return started, nil
+	if canStart {
+		return EnqueueStarted, nil
+	}
+	return EnqueueQueued, nil
 }
 
 func (m *Manager) CancelCurrent() {
@@ -143,6 +162,20 @@ func (m *Manager) readChunk(rt *runningTask) tea.Cmd {
 			}
 		}
 
+		// Prefer draining buffered output lines before handling the
+		// error channel: the error may already be buffered while up to a
+		// full channel of output lines is still pending, and taking the
+		// error first would drop them (r1 finding 15).
+		select {
+		case line, ok := <-rt.outCh:
+			if ok {
+				return TaskOutputMsg{ID: rt.task.ID, Line: line}
+			}
+			rt.outCh = nil
+			return m.readChunk(rt)()
+		default:
+		}
+
 		select {
 		case line, ok := <-rt.outCh:
 			if ok {
@@ -169,6 +202,9 @@ func (m *Manager) readChunk(rt *runningTask) tea.Cmd {
 func statusFromErr(err error) Status {
 	if err == nil {
 		return StatusSuccess
+	}
+	if errors.Is(err, context.Canceled) {
+		return StatusCancelled
 	}
 	return StatusFailed
 }

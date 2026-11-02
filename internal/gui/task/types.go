@@ -57,8 +57,3 @@ type TaskCompletedMsg struct {
 	Title string
 	Err   error
 }
-
-// TaskRejectedMsg is sent when Enqueue fails (e.g. queue full).
-type TaskRejectedMsg struct {
-	Reason string
-}
