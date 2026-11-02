@@ -41,9 +41,14 @@ func TestManager_Sequential(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = m.Enqueue(t2)
+	// Nothing is running yet (RunNext hasn't been called), so the second
+	// enqueue also reports EnqueueStarted — both callers must RunNext.
+	res, err := m.Enqueue(t2)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if res != EnqueueStarted {
+		t.Fatalf("expected EnqueueStarted while idle, got %v", res)
 	}
 
 	if m.IsRunning() {
@@ -277,12 +282,12 @@ func TestManager_EnqueueStartsWhenIdle(t *testing.T) {
 		},
 	}
 
-	started, err := m.Enqueue(task)
+	res, err := m.Enqueue(task)
 	if err != nil {
 		t.Fatalf("Enqueue: %v", err)
 	}
-	if !started {
-		t.Fatal("expected started=true when manager is idle")
+	if res != EnqueueStarted {
+		t.Fatalf("expected EnqueueStarted when manager is idle, got %v", res)
 	}
 }
 
@@ -306,12 +311,12 @@ func TestManager_EnqueuePendingWhenRunning(t *testing.T) {
 		},
 	}
 
-	started, err := m.Enqueue(t2)
+	res, err := m.Enqueue(t2)
 	if err != nil {
 		t.Fatalf("Enqueue: %v", err)
 	}
-	if started {
-		t.Fatal("expected started=false when a task is already running")
+	if res != EnqueueQueued {
+		t.Fatalf("expected EnqueueQueued when a task is already running, got %v", res)
 	}
 }
 
@@ -350,5 +355,88 @@ func TestManager_CancelCurrent(t *testing.T) {
 	}
 	if comp.Err == nil {
 		t.Fatal("expected non-nil error after cancel")
+	}
+}
+
+// TestManager_DrainsOutputBeforeError locks r1 finding 15: when the error
+// is already buffered while output lines are still pending, the lines must
+// be delivered before the completion — not dropped.
+func TestManager_DrainsOutputBeforeError(t *testing.T) {
+	m := NewManager(10)
+	lines := []string{"l1", "l2", "l3"}
+
+	task := &Task{
+		ID: "drain",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			// Everything is buffered up front, so both channels are
+			// readable at once — the exact race the finding describes.
+			out := make(chan string, len(lines))
+			for _, l := range lines {
+				out <- l
+			}
+			close(out)
+			errCh := make(chan error, 1)
+			errCh <- nil
+			return out, errCh, nil
+		},
+	}
+
+	m.Enqueue(task)
+	msg := m.RunNext()()
+	if _, ok := msg.(TaskStartedMsg); !ok {
+		t.Fatalf("expected TaskStartedMsg, got %T", msg)
+	}
+
+	var got []string
+	for {
+		msg := m.RunNext()()
+		switch v := msg.(type) {
+		case TaskOutputMsg:
+			got = append(got, v.Line)
+			continue
+		case TaskCompletedMsg:
+			if len(got) != len(lines) {
+				t.Fatalf("expected all %d lines before completion, got %d: %v", len(lines), len(got), got)
+			}
+			return
+		default:
+			t.Fatalf("unexpected msg %T", msg)
+		}
+	}
+}
+
+// TestManager_CancelledStatus locks the StatusCancelled wiring: a task
+// whose error is context.Canceled must be recorded as cancelled, not
+// failed (r1 finding 23 wires the previously unused status).
+func TestManager_CancelledStatus(t *testing.T) {
+	m := NewManager(10)
+
+	task := &Task{
+		ID: "cancelstatus",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			out := make(chan string)
+			errCh := make(chan error, 1)
+			go func() {
+				<-ctx.Done()
+				errCh <- ctx.Err()
+			}()
+			return out, errCh, nil
+		},
+	}
+
+	m.Enqueue(task)
+	m.RunNext()()
+	m.CancelCurrent()
+
+	msg := m.RunNext()()
+	comp, ok := msg.(TaskCompletedMsg)
+	if !ok {
+		t.Fatalf("expected TaskCompletedMsg, got %T", msg)
+	}
+	if !errors.Is(comp.Err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", comp.Err)
+	}
+	if task.Status != StatusCancelled {
+		t.Fatalf("expected StatusCancelled, got %v", task.Status)
 	}
 }
