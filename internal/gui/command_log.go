@@ -2,6 +2,7 @@ package gui
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
@@ -20,13 +21,24 @@ type LogEntry struct {
 	Command   string
 	Status    CommandStatus
 	Timestamp time.Time
+
+	// id is the append-order sequence number. Status updates are keyed by
+	// it, never by the command text: two concurrent identical commands
+	// (e.g. two "list" reads) would otherwise mark each other's entry
+	// (r1 finding 26).
+	id int
 }
 
+// CommandLog is written from brew runner goroutines (LoggingRunner
+// OnStart/OnExec callbacks) and read from the render thread, so every
+// accessor takes the mutex (r1 finding 3).
 type CommandLog struct {
+	mu      sync.Mutex
 	entries []LogEntry
 	max     int
 	next    int
 	count   int
+	seq     int
 }
 
 func NewCommandLog(max int) *CommandLog {
@@ -36,22 +48,33 @@ func NewCommandLog(max int) *CommandLog {
 	}
 }
 
-func (cl *CommandLog) Append(cmd string) {
+// Append records a new running entry and returns its unique id. Callers
+// pass that id to SetStatus so the right entry is updated even when
+// identical commands run concurrently.
+func (cl *CommandLog) Append(cmd string) int {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
+	id := cl.seq
+	cl.seq++
 	cl.entries[cl.next] = LogEntry{
 		Command:   cmd,
 		Status:    CommandRunning,
 		Timestamp: time.Now(),
+		id:        id,
 	}
 	cl.next = (cl.next + 1) % cl.max
 	if cl.count < cl.max {
 		cl.count++
 	}
+	return id
 }
 
-func (cl *CommandLog) SetStatus(cmd string, status CommandStatus) {
+func (cl *CommandLog) SetStatus(id int, status CommandStatus) {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
 	for i := 0; i < cl.count; i++ {
 		idx := (cl.next - 1 - i + cl.max) % cl.max
-		if cl.entries[idx].Command == cmd && cl.entries[idx].Status == CommandRunning {
+		if cl.entries[idx].id == id && cl.entries[idx].Status == CommandRunning {
 			cl.entries[idx].Status = status
 			return
 		}
@@ -59,6 +82,8 @@ func (cl *CommandLog) SetStatus(cmd string, status CommandStatus) {
 }
 
 func (cl *CommandLog) Entries() []LogEntry {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
 	n := cl.count
 	if n == 0 {
 		return nil

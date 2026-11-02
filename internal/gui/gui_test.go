@@ -436,9 +436,16 @@ func TestDoMutationRejectedWhenRunning(t *testing.T) {
 	}
 	_ = cmd()
 
-	_, cmd2 := m.doMutation(mutInstall, "Install")
-	if cmd2 != nil {
-		t.Error("doMutation should return nil when already running")
+	// A second enqueue while a task runs is QUEUED, not refused: the
+	// caller gets an honest toast and the op still runs later (r1
+	// finding 6).
+	nm, cmd2 := m.doMutation(mutInstall, "Install")
+	if cmd2 == nil {
+		t.Fatal("expected queued toast cmd from second doMutation")
+	}
+	updated := nm.(Model)
+	if updated.toast == nil {
+		t.Fatal("expected 'queued' toast when a task is already running")
 	}
 }
 
@@ -621,13 +628,9 @@ func TestPendingActionClear(t *testing.T) {
 	m := newTestModel()
 	result := &modal.ConfirmResult{Confirmed: false}
 	m.pendingAction = "any"
-	m.confirmCallback = func() tea.Msg { return nil }
 	m.handleModalResult(result, nil)
 	if m.pendingAction != "" {
 		t.Error("pendingAction should be cleared on cancel")
-	}
-	if m.confirmCallback != nil {
-		t.Error("confirmCallback should be cleared on cancel")
 	}
 }
 
@@ -651,8 +654,35 @@ func TestServiceCleanupFlow(t *testing.T) {
 	m := newTestModel()
 	tm, _ := m.serviceCleanup()
 	mm := tm.(Model)
-	if mm.confirmCallback == nil {
-		t.Error("confirmCallback should be set")
+	if mm.activeModal == nil {
+		t.Fatal("confirm modal should be set")
+	}
+	if mm.pendingAction != "services-cleanup" {
+		t.Fatalf("expected pendingAction 'services-cleanup', got %q", mm.pendingAction)
+	}
+	// Confirming routes through the task manager (r1 finding 5): the
+	// enqueued task must start via RunNext, not run inline in the
+	// confirm callback. (Update clears the modal before dispatching the
+	// result; mirror that here.)
+	mm.activeModal = nil
+	res, cmd := mm.handleModalResult(&modal.ConfirmResult{Confirmed: true}, nil)
+	nm := res.(Model)
+	if nm.activeModal != nil {
+		t.Error("confirm modal should be cleared after confirmation")
+	}
+	if cmd == nil {
+		t.Fatal("expected a RunNext cmd after confirmation")
+	}
+	if _, ok := cmd().(TaskStartedMsg); !ok {
+		t.Fatal("expected TaskStartedMsg from the enqueued services cleanup task")
+	}
+	msg := nm.tasks.RunNext()()
+	comp, ok := msg.(TaskCompletedMsg)
+	if !ok {
+		t.Fatalf("expected TaskCompletedMsg, got %T", msg)
+	}
+	if comp.ID != "services-cleanup" {
+		t.Fatalf("expected task ID 'services-cleanup', got %q", comp.ID)
 	}
 }
 
@@ -707,11 +737,6 @@ func TestProgressMessageTypes(t *testing.T) {
 	msg := ProgressLineMsg{Line: "test line"}
 	if msg.Line != "test line" {
 		t.Error("ProgressLineMsg mismatch")
-	}
-
-	complete := ProgressCompleteMsg{Name: "test", Err: nil}
-	if complete.Name != "test" {
-		t.Error("ProgressCompleteMsg mismatch")
 	}
 }
 
@@ -771,15 +796,6 @@ func TestModelTaskCompletedErrorToast(t *testing.T) {
 	m = updateModel(m, msg)
 	if m.toast == nil {
 		t.Fatal("expected toast for error completion")
-	}
-}
-
-func TestModelTaskRejectedToast(t *testing.T) {
-	m := newTestModel()
-	msg := TaskRejectedMsg{Reason: "queue is full"}
-	m = updateModel(m, msg)
-	if m.toast == nil {
-		t.Fatal("expected toast for rejected task")
 	}
 }
 
@@ -920,10 +936,36 @@ func TestCommandLogShowsExecutedCommands(t *testing.T) {
 		t.Fatal("expected running indicator in command log view")
 	}
 
-	cl.SetStatus("install lolcat", CommandSuccess)
+	// Status updates are keyed by the id returned from Append (r1
+	// finding 26), so the FIRST entry is updated even though the newest
+	// entry has the same "running" state.
+	cl.SetStatus(0, CommandSuccess)
 	view = cl.View(40, 10)
 	if !strings.Contains(view, "✓") {
 		t.Fatal("expected success indicator in command log view")
+	}
+}
+
+// TestCommandLogConcurrentSameCommand locks r1 finding 26: two identical
+// commands must not cross-link their status updates.
+func TestCommandLogConcurrentSameCommand(t *testing.T) {
+	cl := NewCommandLog(20)
+	id1 := cl.Append("list")
+	id2 := cl.Append("list")
+
+	cl.SetStatus(id1, CommandError)
+	entries := cl.Entries()
+	if entries[0].Status != CommandError {
+		t.Fatalf("expected first entry errored, got %v", entries[0].Status)
+	}
+	if entries[1].Status != CommandRunning {
+		t.Fatalf("expected second entry still running, got %v", entries[1].Status)
+	}
+
+	cl.SetStatus(id2, CommandSuccess)
+	entries = cl.Entries()
+	if entries[1].Status != CommandSuccess {
+		t.Fatalf("expected second entry success, got %v", entries[1].Status)
 	}
 }
 
@@ -1303,8 +1345,15 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 		if tMsg.Err == nil {
 			t.Fatal("expected timeout error from fetchTabContentCmd")
 		}
-		if !errors.Is(tMsg.Err, context.DeadlineExceeded) {
-			t.Errorf("expected context.DeadlineExceeded, got %v", tMsg.Err)
+		// Deadline overruns surface as *brew.TimeoutError like every
+		// other bounded read (r1 finding 17), not as a raw
+		// context.DeadlineExceeded / "signal: killed".
+		var timeoutErr *brew.TimeoutError
+		if !errors.As(tMsg.Err, &timeoutErr) {
+			t.Fatalf("expected *brew.TimeoutError, got %v", tMsg.Err)
+		}
+		if timeoutErr.Command != "deps" {
+			t.Errorf("expected command 'deps' in timeout error, got %q", timeoutErr.Command)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("fetchTabContentCmd hung past fetchTabContentTimeout (infinite-Loading reproducer)")

@@ -46,10 +46,6 @@ func main() {
 
 	p := tea.NewProgram(m, opts...)
 
-	if gm, ok := m.(*gui.Model); ok {
-		gm.SetProgram(p)
-	}
-
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

@@ -120,40 +120,6 @@ func TestMenuModalEsc(t *testing.T) {
 	}
 }
 
-func TestProgressModalAppendLine(t *testing.T) {
-	m := NewProgressModal("Working", nil)
-
-	defer func() {
-		if r := recover(); r != nil {
-			t.Fatal("AppendLine panicked:", r)
-		}
-	}()
-
-	m.AppendLine("line 1")
-	m.AppendLine("line 2")
-}
-
-func TestProgressModalSetDone(t *testing.T) {
-	m := NewProgressModal("Working", nil)
-	m.SetDone(nil)
-
-	if !m.Done() && !m.Cancelled() {
-		t.Error("expected Done or Cancelled after SetDone(nil)")
-	}
-}
-
-func TestProgressModalCancel(t *testing.T) {
-	cancelled := false
-	cancel := func() { cancelled = true }
-	m := NewProgressModal("Working", cancel)
-
-	m.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-	if !cancelled {
-		t.Error("expected cancel func to be called on Esc")
-	}
-}
-
 func TestToastDismiss(t *testing.T) {
 	toast := NewToast("Test message", ToastSuccess)
 	if toast.Dismissed() {
@@ -163,5 +129,19 @@ func TestToastDismiss(t *testing.T) {
 	toast.Update(ToastTickMsg{})
 	if !toast.Dismissed() {
 		t.Error("toast should be dismissed after 3 seconds")
+	}
+}
+
+// TestToastRearmsTick locks the auto-dismiss chain (r1 finding 4): a toast
+// that is not yet expired must return another tick cmd so the chain never
+// stops after the first tick.
+func TestToastRearmsTick(t *testing.T) {
+	toast := NewToast("Test message", ToastInfo)
+	_, cmd := toast.Update(ToastTickMsg{})
+	if cmd == nil {
+		t.Fatal("expected a re-armed tick cmd from an unexpired toast")
+	}
+	if toast.Dismissed() {
+		t.Fatal("unexpired toast must not be dismissed")
 	}
 }

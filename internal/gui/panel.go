@@ -139,6 +139,47 @@ func (p *panelData) selectIndex(i int) {
 	}
 }
 
+// normalize clamps selected and offset to the current items and viewport
+// size. It is called from the Update loop (WindowSizeMsg, DataLoadedMsg,
+// SearchDoneMsg) so rendering never mutates model state (r1 finding 29).
+func (p *panelData) normalize() {
+	p.normalizeToHeight(p.visibleCount())
+}
+
+// normalizeToHeight clamps selected and offset like normalize, but
+// against an explicit viewport row count. The C (command-log) toggle
+// changes the main list height without a WindowSizeMsg, so callers pass
+// the effective render height (r3 finding R3-4).
+func (p *panelData) normalizeToHeight(vc int) {
+	count := len(p.items)
+	if count == 0 {
+		p.selected = 0
+		p.offset = 0
+		return
+	}
+	if p.selected >= count {
+		p.selected = count - 1
+	}
+	if p.selected < 0 {
+		p.selected = 0
+	}
+	if vc < 1 {
+		vc = 1
+	}
+	if p.selected < p.offset {
+		p.offset = p.selected
+	}
+	if p.selected >= p.offset+vc {
+		p.offset = p.selected - vc + 1
+	}
+	if p.offset >= count {
+		p.offset = max(0, count-vc)
+	}
+	if p.offset < 0 {
+		p.offset = 0
+	}
+}
+
 func (p *panelData) selectedItem() string {
 	if p.selected >= 0 && p.selected < len(p.items) {
 		return p.items[p.selected]
@@ -167,6 +208,27 @@ func (p *panelData) selectedTap() *brew.Tap {
 	return nil
 }
 
+// selectedOutdatedFormula returns the formula for the cursor when the
+// panel mixes formulae and casks (the Outdated panel): the raw item index
+// is valid for formulae as long as it lands inside the formulae slice.
+func (p *panelData) selectedOutdatedFormula() *brew.Formula {
+	if p.selected >= 0 && p.selected < len(p.formulae) {
+		return &p.formulae[p.selected]
+	}
+	return nil
+}
+
+// selectedOutdatedCask returns the cask for the cursor when the panel
+// mixes formulae and casks (the Outdated panel): cask rows live past the
+// formulae, so the cask index is selected - len(formulae).
+func (p *panelData) selectedOutdatedCask() *brew.Cask {
+	idx := p.selected - len(p.formulae)
+	if idx >= 0 && idx < len(p.casks) {
+		return &p.casks[idx]
+	}
+	return nil
+}
+
 func (p *panelData) selectedService() *brew.Service {
 	if p.selected >= 0 && p.selected < len(p.services) {
 		return &p.services[p.selected]
@@ -188,10 +250,6 @@ func (p *panelData) renderList(width, height int, batch map[int]bool) string {
 		visible = 1
 	}
 	end := min(p.offset+visible, len(p.items))
-	if p.offset >= end && p.offset > 0 {
-		p.offset = max(0, end-visible)
-		end = min(p.offset+visible, len(p.items))
-	}
 	items := p.items[p.offset:end]
 
 	lines := make([]string, 0, len(items))
@@ -242,12 +300,8 @@ func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool)
 	if count == 0 {
 		return style.SubtleText.Render("(empty)")
 	}
-	if p.selected >= count {
-		p.selected = max(0, count-1)
-	}
-	if p.offset >= count {
-		p.offset = max(0, count-maxRows)
-	}
+	// Cursor/offset clamping happens in normalize() from the Update loop;
+	// rendering must not mutate model state (r1 finding 29).
 	visible := min(maxRows, count-p.offset)
 	if visible <= 0 {
 		return ""

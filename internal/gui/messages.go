@@ -11,7 +11,6 @@ import (
 type TaskStartedMsg = task.TaskStartedMsg
 type TaskOutputMsg = task.TaskOutputMsg
 type TaskCompletedMsg = task.TaskCompletedMsg
-type TaskRejectedMsg = task.TaskRejectedMsg
 
 type DataLoadedMsg struct {
 	PanelID  PanelID
@@ -53,22 +52,9 @@ type RefreshMsg struct {
 	LoadOutdated bool
 }
 
-type CleanupPreviewMsg struct {
-	Lines []string
-}
-
-type AutoremovePreviewMsg struct {
-	Lines []string
-}
-
 type UpdateTickMsg struct{}
 
 type StartUpdateMsg struct{}
-
-type UpdateCompleteMsg struct {
-	Output []string
-	Err    error
-}
 
 type DepCheckMsg struct {
 	MutType mutationType

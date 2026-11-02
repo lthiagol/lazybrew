@@ -41,8 +41,15 @@ func (m Model) renderSidebar() string {
 			)
 		}
 		itemsMaxRows := max(0, heights[i]-1)
-		p.visibleRows = itemsMaxRows
-		itemsContent := p.renderSidebarContent(contentWidth, itemsMaxRows, m.batch.selected)
+		// visibleRows is derived in the Update loop (syncVisibleRows);
+		// rendering must not write model state (r1 finding 29, r2
+		// finding NEW-8). Fall back to the layout computation for models
+		// that have not seen a WindowSizeMsg yet, without assigning back.
+		rows := p.visibleRows
+		if rows <= 0 {
+			rows = itemsMaxRows
+		}
+		itemsContent := p.renderSidebarContent(contentWidth, rows, m.batch.selected)
 		fullContent := lipgloss.JoinVertical(lipgloss.Top, titleLine, itemsContent)
 		box := renderBox(fullContent, contentWidth, heights[i], active)
 		boxes = append(boxes, box)
@@ -226,6 +233,12 @@ func (m Model) renderContent(width, height int) string {
 			return style.NormalItem.Render(info)
 		case 2, 3, 5: // Deps, Used By, Files
 			itemName := selectedItemName(panel)
+			if itemName == "" {
+				// No item to fetch for: without this explicit state the
+				// tab showed a spinner forever because no fetch could be
+				// scheduled (r1 finding 28).
+				return style.SubtleText.Render("No package selected")
+			}
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				return m.renderContentInViewport(content)
@@ -277,14 +290,13 @@ func (m Model) renderContent(width, height int) string {
 		switch m.activeTab {
 		case 0:
 			return panel.renderList(width, height, nil)
-		case 1:
-			itemName := selectedItemName(panel)
-			key := tabKey(m.activePanel, m.activeTab, itemName)
-			if content, ok := m.tabContent[key]; ok {
-				return m.renderContentInViewport(content)
+		case 1, 2:
+			// Config/Doctor fetch from the loaded dashboard; before the
+			// dashboard has loaded there is nothing to fetch, and the old
+			// code left a permanent spinner (r1 finding 28).
+			if selectedItemName(panel) == "" {
+				return style.SubtleText.Render("Status dashboard not loaded yet — press R to refresh")
 			}
-			return m.spinner.View() + style.SubtleText.Render(" Loading...")
-		case 2:
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
@@ -345,13 +357,16 @@ func (m Model) renderContent(width, height int) string {
 	case PanelOutdated:
 		switch m.activeTab {
 		case 0:
-			f := panel.selectedFormula()
-			if f != nil {
+			// The outdated panel mixes formulae and casks in one item
+			// list; cask rows are indexed past the formulae, so the cask
+			// lookup must subtract len(formulae) — indexing selectedCask()
+			// with the raw combined index showed the WRONG cask (r1
+			// finding 11).
+			if f := panel.selectedOutdatedFormula(); f != nil {
 				info := presentation.FormatFormulaInfo(*f, width)
 				return style.NormalItem.Render(info)
 			}
-			c := panel.selectedCask()
-			if c != nil {
+			if c := panel.selectedOutdatedCask(); c != nil {
 				info := presentation.FormatCaskInfo(*c, width)
 				return style.NormalItem.Render(info)
 			}

@@ -125,8 +125,17 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 	switch r := result.(type) {
 	case *modal.InputResult:
 		if !r.Cancelled && r.Value != "" {
+			// The Taps panel opens the same input modal to add a tap; a
+			// bare search has no pendingAction. Routing every InputResult
+			// to executeSearch used to make `a` on Taps run a search
+			// instead of `brew tap` (r1 finding 2).
+			if m.pendingAction == "tap-add" {
+				m.pendingAction = ""
+				return m.executeTapAdd(r.Value)
+			}
 			return m, m.executeSearch(r.Value)
 		}
+		m.pendingAction = ""
 	case *modal.ConfirmResult:
 		if r.Confirmed {
 			switch m.pendingAction {
@@ -160,26 +169,26 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 			case "autoremove":
 				m.pendingAction = ""
 				return m.executeAutoremove()
-			}
-			if m.confirmCallback != nil {
-				cb := m.confirmCallback
-				m.confirmCallback = nil
-				return m, cb
+			case "services-cleanup":
+				m.pendingAction = ""
+				return m.executeServicesCleanup()
 			}
 		}
-		m.confirmCallback = nil
 		m.pendingAction = ""
 	case *modal.MenuResult:
+		// pendingAction is consumed here whichever way the menu closes:
+		// a CANCELLED menu used to leave it set, so the next unrelated
+		// menu (Brewfile, which sets no pendingAction) could route its
+		// pick into a trust action (r4 finding R4-1).
+		pending := m.pendingAction
+		m.pendingAction = ""
 		if !r.Cancelled {
-			switch m.pendingAction {
+			switch pending {
 			case "trust-menu":
-				m.pendingAction = ""
 				return m, m.executeTrustMenuAction(r.SelectedIndex)
 			case "trust-formula":
-				m.pendingAction = ""
 				return m, m.executeTrustFormulaAction(r.SelectedIndex)
 			case "trust-cask":
-				m.pendingAction = ""
 				return m, m.executeTrustCaskAction(r.SelectedIndex)
 			}
 			return m, m.executeMenuAction(r.SelectedIndex)
@@ -202,19 +211,28 @@ func (m *Model) executeTrustMenuAction(index int) tea.Cmd {
 	tapName := extractPackageName(panel.selectedItem())
 	tap := panel.selectedTap()
 
-	switch index {
-	case 0:
+	// Dispatch on the indices recorded when the menu was built, not on
+	// hardcoded positions: the submenu entries only exist when the tap
+	// has formulae/casks, so their positions vary (r4 finding R4-3).
+	formulaIdx := m.pendingTrustFormulaIdx
+	caskIdx := m.pendingTrustCaskIdx
+	// The tracked indices belong to this dispatch only.
+	m.pendingTrustFormulaIdx = -1
+	m.pendingTrustCaskIdx = -1
+
+	switch {
+	case index == 0:
 		return m.executeTrustAction(0)
-	case 1:
+	case index == 1:
 		return m.executeTrustAction(1)
-	case 2:
+	case index == formulaIdx && formulaIdx >= 0:
 		if tap != nil && len(tap.FormulaNames) > 0 {
 			menuModal := modal.NewMenuModal("Trust formula in "+tapName, tap.FormulaNames)
 			m.activeModal = menuModal
 			m.pendingAction = "trust-formula"
 			return menuModal.Init()
 		}
-	case 3:
+	case index == caskIdx && caskIdx >= 0:
 		if tap != nil && len(tap.CaskNames) > 0 {
 			menuModal := modal.NewMenuModal("Trust cask in "+tapName, tap.CaskNames)
 			m.activeModal = menuModal
@@ -232,9 +250,18 @@ func (m *Model) executeTrustAction(index int) tea.Cmd {
 		return nil
 	}
 
+	verb := "Trust"
+	trustID := "trust:" + name
+	if index != 0 {
+		// The overlay title and completion toast must name the action
+		// actually taken (r3 finding R3-8): index != 0 is the untrust
+		// arm, not a second trust path.
+		verb = "Untrust"
+		trustID = "untrust:" + name
+	}
 	t := &task.Task{
-		ID:    name,
-		Title: "Trust: " + name,
+		ID:    trustID,
+		Title: verb + ": " + name,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			var err error
 			if index == 0 {
@@ -248,14 +275,12 @@ func (m *Model) executeTrustAction(index int) tea.Cmd {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return nil
+		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return nil
+	if res == task.EnqueueQueued {
+		return m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m.tasks.RunNext()
 }
@@ -280,7 +305,7 @@ func (m *Model) executeTrustCaskAction(index int) tea.Cmd {
 
 func (m *Model) trustItemCmd(fullName, itemType string) tea.Cmd {
 	t := &task.Task{
-		ID:    fullName,
+		ID:    "trust:" + fullName,
 		Title: "Trust: " + fullName,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			var err error
@@ -295,14 +320,12 @@ func (m *Model) trustItemCmd(fullName, itemType string) tea.Cmd {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return nil
+		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return nil
+	if res == task.EnqueueQueued {
+		return m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m.tasks.RunNext()
 }
@@ -312,7 +335,7 @@ func (m Model) executeUntap() (tea.Model, tea.Cmd) {
 	name := extractPackageName(panel.selectedItem())
 
 	t := &task.Task{
-		ID:    name,
+		ID:    "untap:" + name,
 		Title: "Untap " + name,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			errCh := make(chan error, 1)
@@ -321,14 +344,12 @@ func (m Model) executeUntap() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -338,7 +359,7 @@ func (m Model) executeRepair() (tea.Model, tea.Cmd) {
 	name := extractPackageName(panel.selectedItem())
 
 	t := &task.Task{
-		ID:    name,
+		ID:    "repair:" + name,
 		Title: "Repair " + name,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			errCh := make(chan error, 1)
@@ -347,14 +368,12 @@ func (m Model) executeRepair() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -379,14 +398,12 @@ func (m *Model) executeBrewfileAction(index int) tea.Cmd {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return nil
+		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return nil
+	if res == task.EnqueueQueued {
+		return m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m.tasks.RunNext()
 }
@@ -394,6 +411,9 @@ func (m *Model) executeBrewfileAction(index int) tea.Cmd {
 func (m *Model) executeSearch(query string) tea.Cmd {
 	m.panels[PanelSearch].loading = true
 	m.panels[PanelSearch].err = nil
+	// Reset the cursor: a new search with fewer results used to leave a
+	// stale out-of-range selection behind (r1 finding 30).
+	m.panels[PanelSearch].selected = 0
 
 	return func() tea.Msg {
 		results, err := boundedRead(brewSearchTimeout, "search", func(ctx context.Context) ([]brew.SearchResult, error) {
@@ -406,10 +426,14 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 		items := make([]string, len(results))
 		for i, r := range results {
 			typ := ""
-			if r.IsFormula {
+			switch {
+			case r.IsFormula:
 				typ = "formula"
-			} else {
+			case r.IsCask:
 				typ = "cask"
+			default:
+				// Headerless/odd search output: type unknown (r1 finding 21).
+				typ = "unknown"
 			}
 			installed := ""
 			if r.Installed {
@@ -448,6 +472,14 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 		return m, nil
 	}
 
+	// Search results can be casks: installing from Search used to route
+	// every result through FormulaeWrite.Install, ignoring the result's
+	// type flag (r1 finding 12).
+	searchIsCask := false
+	if m.activePanel == PanelSearch && panel.selected < len(m.searchResults) {
+		searchIsCask = m.searchResults[panel.selected].IsCask
+	}
+
 	title := label + " " + name
 	pkgName := name
 	if mutType == mutUpgradeAll {
@@ -455,8 +487,13 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 		pkgName = ""
 	}
 
+	// Task IDs must be unique: the batch counter keys on them, and two
+	// concurrent tasks sharing a bare package name would cross-talk
+	// (r2 finding NEW-3). Prefix every mutation with its op type.
+	taskID := mutationID(mutType, name)
+
 	t := &task.Task{
-		ID:    name,
+		ID:    taskID,
 		Title: title,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			var ch <-chan string
@@ -464,7 +501,16 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 
 			switch mutType {
 			case mutInstall:
-				ch, errCh = m.client.FormulaeWrite.Install(ctx, pkgName)
+				// Casks must route to the cask writer whether the install
+				// starts from Search or from the Casks panel itself (r2
+				// finding NEW-4: the "i install" hint on Casks had no
+				// handler, and the handler must not fall back to brew's
+				// formula writer).
+				if searchIsCask || m.activePanel == PanelCasks {
+					ch, errCh = m.client.CasksWrite.Install(ctx, pkgName)
+				} else {
+					ch, errCh = m.client.FormulaeWrite.Install(ctx, pkgName)
+				}
 			case mutUninstall:
 				if m.activePanel == PanelCasks {
 					ch, errCh = m.client.CasksWrite.Uninstall(ctx, pkgName)
@@ -498,14 +544,12 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 
 	return m, m.tasks.RunNext()
@@ -514,7 +558,11 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelOutdated]
 	if len(m.batch.selected) == 0 {
-		return m, nil
+		// The selection can drain while the confirm modal is open: a
+		// refresh delivered in between clears it (r4 finding R4-2), and
+		// confirming then used to end in a silent dead-end after the
+		// modal promised N upgrades (r5 finding R5-1).
+		return m, m.setToast("No selected packages are still in the Outdated list", modal.ToastWarning)
 	}
 
 	names := make([]struct {
@@ -522,7 +570,13 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 		isCask bool
 	}, 0, len(m.batch.selected))
 
+	// The map only ever holds true entries (toggle deletes on deselect),
+	// but check the value anyway so a stale false entry can never sneak a
+	// package into the batch (r1 finding 1).
 	for idx := range m.batch.selected {
+		if !m.batch.selected[idx] {
+			continue
+		}
 		if idx >= len(panel.items) {
 			continue
 		}
@@ -540,15 +594,26 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 		}{itemName, isCask})
 	}
 
-	m.batchCount = len(names)
 	m.batch.selected = make(map[int]bool)
+	m.batchIDs = make(map[string]int, len(names))
 
+	// Batch task IDs carry a per-batch sequence number: a task queued
+	// from a superseded batch used to share "batch-upgrade:<name>" with
+	// the new batch and decrement its counter early (r4 finding R4-4).
+	m.batchSeq++
+	batchPrefix := fmt.Sprintf("batch-upgrade:%d:", m.batchSeq)
+
+	// Enqueue errors must surface: silently dropping tasks while still
+	// counting them made the progress counter lie about the batch
+	// (r1 finding 14).
+	enqueued := 0
+	queueFull := false
 	for _, n := range names {
 		name := n.name
 		isCask := n.isCask
 
 		t := &task.Task{
-			ID:    name,
+			ID:    batchPrefix + name,
 			Title: "Upgrade " + name,
 			Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 				var ch <-chan string
@@ -565,7 +630,44 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 			},
 		}
 
-		m.tasks.Enqueue(t)
+		if _, err := m.tasks.Enqueue(t); err != nil {
+			queueFull = true
+			break
+		}
+		enqueued++
+		// Track the batch by the task's (prefixed) ID, counting
+		// occurrences: a formula and a cask can share a name, and a bool
+		// set collapsed them into one entry, stranding the counter above
+		// zero when the second duplicate completed (r3 finding R3-2).
+		m.batchIDs[batchPrefix+name]++
+	}
+	m.batchCount = enqueued
+	m.batchTotal = enqueued
+
+	if enqueued == 0 {
+		if queueFull {
+			// The very first enqueue hit a full queue: without a toast
+			// the batch silently did nothing — no feedback, no RunNext
+			// (r3 finding R3-1).
+			return m, m.setToast("Queue full: no batch tasks could be enqueued", modal.ToastWarning)
+		}
+		// Every selected index fell out of range (a refresh rewrote the
+		// Outdated list between selection and confirm): the modal
+		// promised N upgrades, so silence would be a dead-end
+		// (r4 finding R4-2).
+		return m, m.setToast("No selected packages are still in the Outdated list", modal.ToastWarning)
+	}
+	if queueFull {
+		// The queued batch tasks are parked waiting for a RunNext: without
+		// it the whole batch silently stalls until the user triggers some
+		// other mutation (r2 finding NEW-1).
+		return m, tea.Batch(
+			m.setToast(
+				fmt.Sprintf("Queue full: batch limited to %d of %d packages", enqueued, len(names)),
+				modal.ToastWarning,
+			),
+			m.tasks.RunNext(),
+		)
 	}
 
 	return m, m.tasks.RunNext()
@@ -600,7 +702,7 @@ func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
 			Version:      f.Version,
 			Type:         "formula",
 			Bottled:      f.Bottled,
-			Installed:    f.InstalledOnReq || f.InstalledAsDep,
+			Installed:    len(f.Installed) > 0 || f.InstalledOnReq || f.InstalledAsDep,
 			InstallPath:  f.InstallPath,
 			License:      f.License,
 			Description:  f.Description,
@@ -615,7 +717,7 @@ func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
 			Name:         c.Name,
 			Version:      c.Version,
 			Type:         "cask",
-			Installed:    false,
+			Installed:    len(c.Installed) > 0,
 			Description:  c.Description,
 			Homepage:     c.Homepage,
 			Dependencies: c.DependsOn,
@@ -631,9 +733,34 @@ func closedCh() <-chan string {
 }
 
 func (m *Model) startTapAdd() (tea.Model, tea.Cmd) {
+	m.pendingAction = "tap-add"
 	inputModal := modal.NewInputModal("Tap repository (user/repo):")
 	m.activeModal = inputModal
 	return m, inputModal.Init()
+}
+
+// executeTapAdd runs `brew tap <name>` through the task manager. It used
+// to be unreachable: the tap-add input result was routed to the search
+// flow instead (r1 finding 2).
+func (m Model) executeTapAdd(name string) (tea.Model, tea.Cmd) {
+	t := &task.Task{
+		ID:    "tap-" + name,
+		Title: "Tap " + name,
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			errCh := make(chan error, 1)
+			errCh <- m.client.TapsWrite.Tap(ctx, name)
+			return closedCh(), errCh, nil
+		},
+	}
+
+	res, err := m.tasks.Enqueue(t)
+	if err != nil {
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
+	}
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m *Model) startTrustMenu() (tea.Model, tea.Cmd) {
@@ -654,10 +781,18 @@ func (m *Model) startTrustMenu() (tea.Model, tea.Cmd) {
 		"Trust entire tap: " + tapName,
 		"Untrust tap: " + tapName,
 	}
+	// Track where the submenu entries actually landed: on a tap with
+	// only one of the two kinds the hardcoded positions 2/3 pointed at
+	// the wrong (or a missing) entry, making "Trust specific cask..."
+	// dead on cask-only taps (r4 finding R4-3).
+	m.pendingTrustFormulaIdx = -1
+	m.pendingTrustCaskIdx = -1
 	if formulaCount > 0 {
+		m.pendingTrustFormulaIdx = len(menuItems)
 		menuItems = append(menuItems, "Trust specific formula...")
 	}
 	if caskCount > 0 {
+		m.pendingTrustCaskIdx = len(menuItems)
 		menuItems = append(menuItems, "Trust specific cask...")
 	}
 
@@ -678,7 +813,7 @@ func (m Model) serviceAction(action string) (tea.Model, tea.Cmd) {
 	}
 
 	t := &task.Task{
-		ID:    name,
+		ID:    "service-" + action + ":" + name,
 		Title: action + " " + name,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			errCh := make(chan error, 1)
@@ -691,25 +826,32 @@ func (m Model) serviceAction(action string) (tea.Model, tea.Cmd) {
 				errCh <- m.client.ServicesWrite.Restart(ctx, name)
 			case "run":
 				errCh <- m.client.ServicesWrite.Run(ctx, name)
+			default:
+				// An unrecognized action must still resolve the task: an
+				// empty errCh left the task "running" forever (r1 finding 16).
+				errCh <- fmt.Errorf("unknown service action: %s", action)
 			}
 			return closedCh(), errCh, nil
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
 
-func (m Model) togglePin(mutType mutationType) (tea.Model, tea.Cmd) {
-	panel := m.panels[m.activePanel]
+// togglePin pins/unpins the selected formula. The pinned state is looked
+// up by NAME, not by index: the leaves filter changes panel.items without
+// touching panel.formulae, so raw indices desync and the decision could
+// target the wrong package (r1 finding 13). Casks are not offered pinning
+// — `brew pin` is formula-only.
+func (m Model) togglePin() (tea.Model, tea.Cmd) {
+	panel := m.panels[PanelFormulae]
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
@@ -718,25 +860,23 @@ func (m Model) togglePin(mutType mutationType) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	pinned := false
+	for _, f := range panel.formulae {
+		if f.Name == name {
+			pinned = f.Pinned
+			break
+		}
+	}
+
 	t := &task.Task{
-		ID:    name,
+		ID:    "pin:" + name,
 		Title: "Toggle pin " + name,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
 			var err error
-			if m.activePanel == PanelCasks {
-				c := panel.selectedCask()
-				if c != nil && c.Pinned {
-					err = m.client.CasksWrite.Unpin(ctx, name)
-				} else {
-					err = m.client.CasksWrite.Pin(ctx, name)
-				}
+			if pinned {
+				err = m.client.FormulaeWrite.Unpin(ctx, name)
 			} else {
-				f := panel.selectedFormula()
-				if f != nil && f.Pinned {
-					err = m.client.FormulaeWrite.Unpin(ctx, name)
-				} else {
-					err = m.client.FormulaeWrite.Pin(ctx, name)
-				}
+				err = m.client.FormulaeWrite.Pin(ctx, name)
 			}
 			errCh := make(chan error, 1)
 			errCh <- err
@@ -744,27 +884,45 @@ func (m Model) togglePin(mutType mutationType) (tea.Model, tea.Cmd) {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
 
+// serviceCleanup opens the confirm dialog; the actual cleanup runs through
+// the task manager (executeServicesCleanup) so it is serialized with every
+// other write op — running it directly inside the confirm callback used to
+// bypass task.Manager (r1 finding 5).
 func (m Model) serviceCleanup() (tea.Model, tea.Cmd) {
+	m.pendingAction = "services-cleanup"
 	m.activeModal = modal.NewConfirmModal("Cleanup Services", "Remove stale service files?")
-	m.confirmCallback = func() tea.Msg {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		err := m.client.ServicesWrite.Cleanup(ctx)
-		return MutationResultMsg{Name: "services cleanup", Type: mutInstall, Err: err}
-	}
 	return m, m.activeModal.Init()
+}
+
+func (m Model) executeServicesCleanup() (tea.Model, tea.Cmd) {
+	t := &task.Task{
+		ID:    "services-cleanup",
+		Title: "Services cleanup",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			errCh := make(chan error, 1)
+			errCh <- m.client.ServicesWrite.Cleanup(ctx)
+			return closedCh(), errCh, nil
+		},
+	}
+
+	res, err := m.tasks.Enqueue(t)
+	if err != nil {
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
+	}
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
+	}
+	return m, m.tasks.RunNext()
 }
 
 func (m Model) brewfileMenu() (tea.Model, tea.Cmd) {
@@ -785,34 +943,34 @@ func (m Model) runVulns() (tea.Model, tea.Cmd) {
 		ID:    "vulns",
 		Title: "Vulnerability Check",
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			out := make(chan string)
+			out := make(chan string, 1)
 			errCh := make(chan error, 1)
 			go func() {
+				defer close(out)
 				output, err := m.client.Diagnostics.Vulns(ctx)
 				if err != nil {
 					errCh <- err
-					close(out)
 					return
 				}
 				if output == "" {
 					output = "No vulnerabilities found"
 				}
+				// Buffered send: the manager may stop consuming (task
+				// error/cancel path) and an unbuffered send would leak
+				// the goroutine (r1 finding 9).
 				out <- output
 				errCh <- nil
-				close(out)
 			}()
 			return out, errCh, nil
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -825,34 +983,44 @@ func (m Model) runMissing() (tea.Model, tea.Cmd) {
 			out := make(chan string)
 			errCh := make(chan error, 1)
 			go func() {
+				defer close(out)
 				missing, err := m.client.Diagnostics.Missing(ctx)
 				if err != nil {
 					errCh <- err
-					close(out)
 					return
 				}
+				// Sends are guarded by ctx.Done(): if the manager stops
+				// consuming (task error/cancel path) the goroutine exits
+				// instead of blocking forever on an unbuffered channel
+				// (r1 finding 9).
 				if len(missing) == 0 {
-					out <- "All dependencies satisfied"
-				} else {
-					for _, d := range missing {
-						out <- d.Formula + ": missing " + d.Missing
+					select {
+					case out <- "All dependencies satisfied":
+					case <-ctx.Done():
+						return
+					}
+					errCh <- nil
+					return
+				}
+				for _, d := range missing {
+					select {
+					case out <- d.Formula + ": missing " + d.Missing:
+					case <-ctx.Done():
+						return
 					}
 				}
 				errCh <- nil
-				close(out)
 			}()
 			return out, errCh, nil
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -935,12 +1103,18 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), fetchTabContentTimeout)
 		defer cancel()
+		// wrapErr maps a deadline overrun to *brew.TimeoutError like every
+		// other bounded read, so the tab body shows the timeout design's
+		// error instead of a raw "signal: killed" (r1 finding 17).
+		wrapErr := func(command string, err error) error {
+			return timeoutError(ctx, command, fetchTabContentTimeout, err)
+		}
 		switch panel {
 		case PanelStatus:
 			if tab == 1 {
 				cfg, err := client.Diagnostics.Config(ctx)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("config", err)}
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
 					Content: formatConfig(cfg)}
@@ -948,7 +1122,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 			if tab == 2 {
 				warnings, err := client.Diagnostics.Doctor(ctx)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("doctor", err)}
 				}
 				if len(warnings) == 0 {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
@@ -965,13 +1139,13 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 			case 2: // Deps (List=0, Info=1)
 				deps, err := client.Formulae.Deps(ctx, name)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("deps", err)}
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: deps}
 			case 3: // Used By
 				uses, err := client.Formulae.Uses(ctx, name)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("uses", err)}
 				}
 				result := ""
 				for _, u := range uses {
@@ -984,7 +1158,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 			case 5: // Files
 				output, err := client.Runner.Execute(ctx, "list", name)
 				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: err}
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("list", err)}
 				}
 				content := string(output)
 				if content == "" {
@@ -1007,8 +1181,7 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if isOfficialTap(name) {
-		m.toast = modal.NewToast("Cannot untap official taps", modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Cannot untap official taps", modal.ToastWarning)
 	}
 	m.pendingAction = "untap"
 	m.activeModal = modal.NewConfirmModal("Untap "+name, "Remove tap "+name+"? Installed formulae from this tap will become unavailable for updates.")
@@ -1102,7 +1275,14 @@ func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, t
 }
 
 func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
-	n := len(m.batch.selected)
+	// Count only actually-selected entries: deselection removes the key,
+	// but stay defensive against stale false entries (r1 finding 1).
+	n := 0
+	for _, sel := range m.batch.selected {
+		if sel {
+			n++
+		}
+	}
 	message := "Upgrade " + strconv.Itoa(n) + " selected packages?"
 
 	m.pendingAction = "batch-upgrade"
@@ -1119,37 +1299,49 @@ func (m Model) runDoctor() (tea.Model, tea.Cmd) {
 			out := make(chan string)
 			errCh := make(chan error, 1)
 			go func() {
+				defer close(out)
 				warnings, err := m.client.Diagnostics.Doctor(ctx)
 				if err != nil {
 					errCh <- err
-					close(out)
 					return
 				}
+				// Sends are guarded by ctx.Done() so a manager that stops
+				// consuming cannot leak this goroutine (r1 finding 9).
 				if len(warnings) == 0 {
-					out <- "Your system is ready to brew."
-				} else {
-					for _, w := range warnings {
-						out <- w.Title
-						if w.Details != "" {
-							out <- "  " + w.Details
+					select {
+					case out <- "Your system is ready to brew.":
+					case <-ctx.Done():
+						return
+					}
+					errCh <- nil
+					return
+				}
+				for _, w := range warnings {
+					select {
+					case out <- w.Title:
+					case <-ctx.Done():
+						return
+					}
+					if w.Details != "" {
+						select {
+						case out <- "  " + w.Details:
+						case <-ctx.Done():
+							return
 						}
 					}
 				}
 				errCh <- nil
-				close(out)
 			}()
 			return out, errCh, nil
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -1179,14 +1371,12 @@ func (m Model) brewCleanup() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -1204,14 +1394,12 @@ func (m Model) runAutoremove() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -1229,14 +1417,12 @@ func (m Model) executeCleanup() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
@@ -1254,14 +1440,12 @@ func (m Model) executeAutoremove() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	started, err := m.tasks.Enqueue(t)
+	res, err := m.tasks.Enqueue(t)
 	if err != nil {
-		m.toast = modal.NewToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, nil
+		return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	if !started {
-		m.toast = modal.NewToast("A brew operation is already running", modal.ToastWarning)
-		return m, nil
+	if res == task.EnqueueQueued {
+		return m, m.setToast("Queued behind running task", modal.ToastInfo)
 	}
 	return m, m.tasks.RunNext()
 }
