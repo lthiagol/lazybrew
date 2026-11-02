@@ -33,7 +33,7 @@ make test-integration
 | `internal/brew/` | Domain models, `Runner`, services, cache, parsers | `go test ./internal/brew/...` |
 | `internal/config/` | YAML config loading/validation | `go test ./internal/config/...` |
 | `internal/gui/` | Bubble Tea model, panels, rendering, keybindings | `go test ./internal/gui/...` |
-| `internal/gui/modal/` | Reusable modals (confirm, input, progress, toast, menu) | `go test ./internal/gui/modal/...` |
+| `internal/gui/modal/` | Reusable modals (confirm, input, toast, menu) | `go test ./internal/gui/modal/...` |
 | `internal/gui/presentation/` | Formatters and snapshot tests | `go test ./internal/gui/presentation/...` |
 | `internal/gui/style/` | Lip Gloss styles and themes | `go test ./internal/gui/style/...` |
 | `internal/gui/task/` | TaskManager for serializing write operations | `go test ./internal/gui/task/...` |
@@ -61,7 +61,7 @@ All GUI state mutation must go through the Bubble Tea `Update(msg tea.Msg)` loop
 1. **Zero `program.Send` in production code.** If you find `program.Send`, replace it with a `tea.Cmd` that returns a message.
 2. **All write operations through `task.Manager`.** Install, uninstall, reinstall, upgrade, pin, tap, untap, trust, service start/stop, repair, cleanup, autoremove, and `brew update` must be enqueued via `m.tasks.Enqueue`.
 3. **No raw goroutines in handlers.** Use `tea.Cmd` closures or the TaskManager streaming pattern.
-4. **Progress modal owns streaming output.** `TaskOutputMsg` is appended to the active `ProgressModal`; `TaskCompletedMsg` closes it and shows a toast.
+4. **The Operation overlay owns streaming output.** `TaskOutputMsg` lines are appended to the active `Operation` (`m.opState`); `TaskCompletedMsg` marks it done (`opSuccess`/`opError`/`opCancelled`) and shows a toast. (The old `ProgressModal` was removed; there is no progress modal anymore.)
 5. **Model fields are the source of truth.** Do not read from `m.program` to infer state.
 
 ---
