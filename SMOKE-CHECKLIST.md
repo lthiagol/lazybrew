@@ -45,7 +45,7 @@
 > Hybrid: no live brew install/uninstall on dev machine. Covered by teatest + unit TaskManager tests.
 
 - [x] Search `/` → install a small package (`i`) — progress modal streams output — `flows.TestInstallFlow`, progress modal unit tests
-- [x] Cancel long operation (Esc in progress modal) — UI recovers, not stuck — `TestProgressModalCancel`, `TestOperationCancelShowsCancelled`, `task.TestManager_CancelCurrent`
+- [x] Cancel long operation (Esc in operation overlay) — UI recovers, not stuck — `TestOperationCancelShowsCancelled`, `task.TestManager_CancelCurrent`
 - [x] Second operation while first runs — queued or rejected with toast — `TestDoMutationRejectedWhenRunning`, `TestModelTaskRejectedToast`, TaskManager queue tests
 - [x] Uninstall with confirmation (`x`) — dependency warning if applicable — `flows.TestUninstallFlow`, `TestConfirmUninstall`
 - [x] Pin/unpin (`p`) — correct behavior for pinned vs unpinned — `TestPinRespectsPinnedFlag`, brew pin/unpin writer tests
