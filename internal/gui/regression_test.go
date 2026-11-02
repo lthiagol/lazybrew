@@ -84,7 +84,7 @@ func TestPinRespectsPinnedFlag(t *testing.T) {
 	}
 	p.selected = 0
 
-	_, cmd := m.togglePin(mutInstall)
+	_, cmd := m.togglePin()
 	if cmd == nil {
 		t.Fatal("expected cmd from togglePin")
 	}

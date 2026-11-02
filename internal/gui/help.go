@@ -20,6 +20,8 @@ type helpItem struct {
 	desc string
 }
 
+// buildHelp documents the LIVE keys — every entry must have a handler in
+// gui.go's Update, and every handled key should appear here (r1 finding 24).
 func buildHelp() []helpPage {
 	return []helpPage{
 		{
@@ -40,6 +42,7 @@ func buildHelp() []helpPage {
 					items: []helpItem{
 						{"R", "Refresh all data"},
 						{"/", "Search packages"},
+						{"C", "Toggle command log"},
 						{"q", "Quit lazybrew"},
 						{"?", "This help"},
 					},
@@ -55,7 +58,10 @@ func buildHelp() []helpPage {
 						{"x", "Uninstall selected"},
 						{"r", "Reinstall selected"},
 						{"u", "Upgrade selected"},
+						{"U", "Upgrade all"},
 						{"p", "Pin/Unpin selected"},
+						{"L", "Toggle leaves filter"},
+						{"F", "Fetch selected"},
 					},
 				},
 			},
@@ -70,7 +76,8 @@ func buildHelp() []helpPage {
 						{"X", "Zap uninstall"},
 						{"r", "Reinstall"},
 						{"u", "Upgrade"},
-						{"p", "Pin/Unpin"},
+						{"U", "Upgrade all"},
+						{"F", "Fetch"},
 					},
 				},
 			},
@@ -83,6 +90,7 @@ func buildHelp() []helpPage {
 						{"a", "Add tap"},
 						{"x", "Remove tap"},
 						{"t", "Trust config"},
+						{"r", "Repair tap"},
 					},
 				},
 			},
@@ -95,6 +103,8 @@ func buildHelp() []helpPage {
 						{"s", "Start"},
 						{"S", "Stop"},
 						{"r", "Restart"},
+						{"f", "Run (foreground)"},
+						{"c", "Cleanup stale services"},
 					},
 				},
 			},
@@ -107,6 +117,7 @@ func buildHelp() []helpPage {
 						{"u", "Upgrade selected"},
 						{"U", "Upgrade all"},
 						{"Space", "Toggle selection"},
+						{"a", "Select/deselect all"},
 					},
 				},
 			},
@@ -117,6 +128,12 @@ func buildHelp() []helpPage {
 				{
 					items: []helpItem{
 						{"R", "Refresh all data"},
+						{"c", "Run brew cleanup"},
+						{"d", "Run brew doctor"},
+						{"A", "Run brew autoremove"},
+						{"B", "Brewfile actions"},
+						{"v", "Vulnerability check"},
+						{"m", "Missing dependencies"},
 						{"[ ]", "Switch tabs"},
 					},
 				},
@@ -131,6 +148,7 @@ func buildHelp() []helpPage {
 						{"/", "Type search query"},
 						{"Enter", "Execute search"},
 						{"i", "Install selected result"},
+						{"F", "Fetch selected result"},
 					},
 				},
 			},

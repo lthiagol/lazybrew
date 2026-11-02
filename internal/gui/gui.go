@@ -38,19 +38,38 @@ type Model struct {
 	viewport         viewport.Model
 	ready            bool
 
-	activeModal     modal.Modal
-	toast           *modal.Toast
-	batch           *batchState
-	showHelp        bool
-	tabContent      map[string]string
-	program         *tea.Program
-	confirmCallback func() tea.Msg
-	pendingAction   string
-	pendingMutType  mutationType
-	batchCount      int
-	lastUpdate      time.Time
-	isUpdating      bool
-	updateOutput    []string
+	activeModal    modal.Modal
+	toast          *modal.Toast
+	batch          *batchState
+	showHelp       bool
+	tabContent     map[string]string
+	pendingAction  string
+	pendingMutType mutationType
+	batchCount     int
+	// batchIDs counts the occurrences of each task ID enqueued by the
+	// current batch upgrade, so batchCount is only decremented by batch
+	// completions, never by unrelated ones (r1 finding 27). A formula and
+	// a cask can share a name in one batch, yielding two tasks with the
+	// same ID: counting occurrences (instead of a bool set) keeps the
+	// counter honest until the last duplicate completes (r3 finding R3-2).
+	batchIDs map[string]int
+	// batchTotal is the enqueued size of the current batch; together with
+	// batchCount it surfaces "n/total done" in the Operation overlay so
+	// the counter machinery has a user-visible effect (r3 finding R3-5).
+	batchTotal int
+	// batchSeq numbers each batch so its task IDs
+	// ("batch-upgrade:<seq>:<name>") cannot collide with a task still
+	// queued from a superseded batch (r4 finding R4-4).
+	batchSeq int
+	// pendingTrustFormulaIdx / pendingTrustCaskIdx record the positions
+	// of the submenu entries in the trust menu built by startTrustMenu;
+	// they exist only when the tap has formulae/casks, so their
+	// positions vary and must not be hardcoded (r4 finding R4-3).
+	pendingTrustFormulaIdx int
+	pendingTrustCaskIdx    int
+	lastUpdate             time.Time
+	isUpdating             bool
+	updateOutput           []string
 
 	searchResults     []brew.SearchResult
 	searchInfoContent string
@@ -61,7 +80,8 @@ type Model struct {
 	spinner    spinner.Model
 	opState    *Operation
 	opDoneAt   time.Time
-	taskID     string
+	// taskID was removed (r3 finding R3-6): nothing read it, and stale
+	// output filtering belongs to the TaskManager, not the model.
 	refreshing int
 
 	// logCollapsed hides the command log pane (Shift+C / "C"). Default false.
@@ -80,8 +100,15 @@ type Model struct {
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
 
-func (m *Model) SetProgram(p *tea.Program) {
-	m.program = p
+// setToast shows a toast and arms its auto-dismiss tick. Every toast
+// producer must go through this: the only producer of ToastTickMsg is
+// Toast.Update itself, so without an armed first tick a toast would stay
+// on screen forever (r1 finding 4).
+func (m *Model) setToast(message string, t modal.ToastType) tea.Cmd {
+	m.toast = modal.NewToast(message, t)
+	return tea.Tick(500*time.Millisecond, func(time.Time) tea.Msg {
+		return modal.ToastTickMsg{}
+	})
 }
 
 func New(client *brew.Client, cfg *config.Config) *Model {
@@ -92,7 +119,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	ti := textinput.New()
 	ti.Placeholder = "Search packages..."
 	ti.Width = 40
-	return &Model{
+	m := &Model{
 		client:      client,
 		cfg:         cfg,
 		activePanel: PanelStatus,
@@ -106,17 +133,21 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		spinner:     s,
 		searchInput: ti,
 	}
+	// -1 marks "no such menu entry" until startTrustMenu records the
+	// real positions (r4 finding R4-3).
+	m.pendingTrustFormulaIdx = -1
+	m.pendingTrustCaskIdx = -1
+	return m
 }
 
 func (m *Model) CommandLogCallback() brew.CommandCallback {
 	cl := m.commandLog
 	return func(args []string, err error) {
-		cmd := brewCommandString(args)
-		cl.Append(cmd)
+		id := cl.Append(brewCommandString(args))
 		if err != nil {
-			cl.SetStatus(cmd, CommandError)
+			cl.SetStatus(id, CommandError)
 		} else {
-			cl.SetStatus(cmd, CommandSuccess)
+			cl.SetStatus(id, CommandSuccess)
 		}
 	}
 }
@@ -187,10 +218,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case modal.ToastTickMsg:
 		if m.toast != nil {
-			updated, _ := m.toast.Update(msg)
+			updated, tickCmd := m.toast.Update(msg)
 			m.toast = updated
 			if m.toast.Dismissed() {
 				m.toast = nil
+			} else if tickCmd != nil {
+				// Re-arm the dismissal chain — without this the first
+				// tick would be the last and the toast would stick.
+				return m, tickCmd
 			}
 		}
 		return m, nil
@@ -226,6 +261,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.items = msg.Results
 			m.searchResults = msg.Raw
 		}
+		p.normalize()
 		cmd := m.switchPanel(PanelSearch)
 		return m, cmd
 
@@ -244,12 +280,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case TaskStartedMsg:
+		title := msg.Title
+		// Surface the batch counter in the Operation overlay: batchCount
+		// used to be write-only state with no user-visible effect (r3
+		// finding R3-5).
+		if _, ok := m.batchIDs[msg.ID]; ok && m.batchTotal > 0 {
+			title = fmt.Sprintf("%s (%d/%d done)", msg.Title, m.batchTotal-m.batchCount, m.batchTotal)
+		}
 		m.opState = &Operation{
-			Title:  msg.Title,
+			Title:  title,
 			Status: opRunning,
 		}
 		m.opDoneAt = time.Time{}
-		m.taskID = msg.ID
 		return m, m.tasks.RunNext()
 
 	case UpdateTickMsg:
@@ -272,7 +314,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return ch, errCh, nil
 			},
 		}
-		m.tasks.Enqueue(t)
+		// A dropped enqueue would leave isUpdating stuck true and block
+		// every later R update, so surface the failure and reset the flag
+		// (r1 finding 7).
+		if _, err := m.tasks.Enqueue(t); err != nil {
+			m.isUpdating = false
+			return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
+		}
 		return m, m.tasks.RunNext()
 
 	case TaskOutputMsg:
@@ -289,18 +337,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.isUpdating = false
 			m.lastUpdate = time.Now()
 			m.opState = nil
+			var toastTick tea.Cmd
 			if msg.Err != nil {
-				m.toast = modal.NewToast("Update: "+msg.Err.Error(), modal.ToastError)
+				toastTick = m.setToast("Update: "+msg.Err.Error(), modal.ToastError)
 			} else {
 				summary := parseUpdateSummary(m.updateOutput)
 				if summary != "" {
-					m.toast = modal.NewToast(summary, modal.ToastSuccess)
+					toastTick = m.setToast(summary, modal.ToastSuccess)
 				}
 			}
-			return m, tea.Batch(
+			cmds := []tea.Cmd{
 				m.tasks.RunNext(),
 				func() tea.Msg { return RefreshMsg{} },
-			)
+			}
+			if toastTick != nil {
+				cmds = append(cmds, toastTick)
+			}
+			return m, tea.Batch(cmds...)
 		}
 		if m.opState != nil {
 			if msg.Err != nil {
@@ -315,9 +368,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.opDoneAt = time.Now()
 		}
+		// Batch bookkeeping applies to success, failure and cancel alike:
+		// decrementing only on the success path left failed batch tasks
+		// stuck in batchIDs with a permanently inflated batchCount, and a
+		// later unrelated completion of the same ID could corrupt a future
+		// batch's counter (r2 finding NEW-2).
+		if n := m.batchIDs[msg.ID]; n > 0 {
+			n--
+			if n == 0 {
+				delete(m.batchIDs, msg.ID)
+			} else {
+				m.batchIDs[msg.ID] = n
+			}
+			if m.batchCount > 0 {
+				m.batchCount--
+			}
+			if m.batchCount == 0 {
+				m.batchTotal = 0
+			}
+		}
 		if msg.Err != nil && !errors.Is(msg.Err, context.Canceled) {
-			m.toast = modal.NewToast(msg.Title+": "+msg.Err.Error(), modal.ToastError)
-			return m, m.tasks.RunNext()
+			return m, tea.Batch(
+				m.setToast(msg.Title+": "+msg.Err.Error(), modal.ToastError),
+				m.tasks.RunNext(),
+			)
 		}
 		if errors.Is(msg.Err, context.Canceled) {
 			return m, m.tasks.RunNext()
@@ -334,20 +408,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				"Remove orphaned dependencies?")
 			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
 		}
+		var toastTick tea.Cmd
 		if msg.Title != "" {
-			m.toast = modal.NewToast(msg.Title+" completed", modal.ToastSuccess)
+			toastTick = m.setToast(msg.Title+" completed", modal.ToastSuccess)
 		}
-		if m.batchCount > 0 {
-			m.batchCount--
-		}
-		return m, tea.Batch(
+		cmds := []tea.Cmd{
 			m.tasks.RunNext(),
 			func() tea.Msg { return RefreshMsg{} },
-		)
-
-	case TaskRejectedMsg:
-		m.toast = modal.NewToast(msg.Reason, modal.ToastWarning)
-		return m, nil
+		}
+		if toastTick != nil {
+			cmds = append(cmds, toastTick)
+		}
+		return m, tea.Batch(cmds...)
 
 	case MutationResultMsg:
 		if msg.Leaves != nil && m.activePanel == PanelFormulae {
@@ -372,31 +444,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.unfilteredItems = nil
 				p.leavesActive = false
 			}
-			if p.selected >= len(p.items) {
-				p.selected = max(0, len(p.items)-1)
-			}
+			p.normalize()
 		}
 		m.activeModal = nil
 		if msg.Err == nil && msg.Leaves == nil {
-			m.toast = modal.NewToast(msg.Name+" completed", modal.ToastSuccess)
+			return m, tea.Batch(
+				m.setToast(msg.Name+" completed", modal.ToastSuccess),
+				func() tea.Msg { return RefreshMsg{} },
+			)
 		} else if msg.Err != nil {
-			m.toast = modal.NewToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
+			return m, tea.Batch(
+				m.setToast(msg.Name+": "+msg.Err.Error(), modal.ToastError),
+				func() tea.Msg { return RefreshMsg{} },
+			)
 		}
 		return m, func() tea.Msg { return RefreshMsg{} }
-
-	case CleanupPreviewMsg:
-		m.activeModal = nil
-		m.pendingAction = "cleanup"
-		m.activeModal = modal.NewConfirmModal("Confirm Cleanup",
-			"Run brew cleanup? This will remove old versions.")
-		return m, m.activeModal.Init()
-
-	case AutoremovePreviewMsg:
-		m.activeModal = nil
-		m.pendingAction = "autoremove"
-		m.activeModal = modal.NewConfirmModal("Confirm Autoremove",
-			"Remove orphaned dependencies?")
-		return m, m.activeModal.Init()
 
 	case DepCheckMsg:
 		m.pendingAction = "uninstall"
@@ -426,9 +488,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport.Width = max(10, msg.Width-4)
 			m.viewport.Height = max(10, msg.Height-6)
 		}
+		// Re-derive the per-panel viewport heights once per resize, then
+		// clamp cursor/offset per panel here in the Update loop instead
+		// of during render (r1 finding 29, r3 finding R3-7).
+		m.syncVisibleRows()
 		for i := range m.panels {
 			m.panels[i].width = sidebarWidth(m.cfg, m.width)
 			m.panels[i].height = m.height - 4
+			m.panels[i].normalize()
 		}
 		return m, nil
 
@@ -444,12 +511,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.taps = msg.Taps
 				p.services = msg.Services
 			}
+			p.normalize()
+		}
+		// The Outdated panel was just rewritten: an index-based batch
+		// selection would silently remap onto different rows and make a
+		// later batch upgrade target the wrong packages (r4 finding
+		// R4-2). A failed fetch keeps the old items, so the selection is
+		// only dropped when the list actually changed.
+		if msg.PanelID == PanelOutdated && msg.Err == nil {
+			m.batch.selected = make(map[int]bool)
 		}
 		m.clearPanelTabContent(msg.PanelID)
 		if m.refreshing > 0 {
 			m.refreshing--
 			if m.refreshing == 0 {
-				m.toast = modal.NewToast("Data refreshed", modal.ToastSuccess)
+				return m, tea.Batch(
+					m.setToast("Data refreshed", modal.ToastSuccess),
+					m.loadTabContent(),
+				)
 			}
 		}
 		if msg.PanelID == m.activePanel && needsTabFetch(m.activePanel, m.activeTab) {
@@ -581,7 +660,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return ch, errCh, nil
 					},
 				}
-				m.tasks.Enqueue(t)
+				// A dropped enqueue would leave isUpdating stuck true and
+				// permanently block the R update path (r1 finding 7).
+				if _, err := m.tasks.Enqueue(t); err != nil {
+					m.isUpdating = false
+					return m, tea.Batch(
+						m.setToast("Queue full: "+err.Error(), modal.ToastWarning),
+						func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
+					)
+				}
 				// The update task and the load-flagged refresh travel
 				// together: R is an explicit user request, so the
 				// outdated count must be loaded even when R also runs
@@ -605,6 +692,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "C":
 			m.logCollapsed = !m.logCollapsed
+			// The toggle changes the main list height (logLayoutHeights)
+			// without a resize, so re-clamp the active panel's
+			// cursor/offset against the new effective viewport — the
+			// smaller of the sidebar and main-list windows, which the
+			// shared offset must satisfy (r3 finding R3-4).
+			vc := m.panels[m.activePanel].visibleCount()
+			_, mainH := m.logLayoutHeights(m.height - 4)
+			m.panels[m.activePanel].normalizeToHeight(min(vc, mainH))
 			return m, nil
 
 		case "tab":
@@ -677,6 +772,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "i":
+			if m.activePanel == PanelSearch || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
+				return m.confirmMutation(mutInstall, "Install")
+			}
+		case "I":
 			if m.activePanel == PanelSearch {
 				return m.confirmMutation(mutInstall, "Install")
 			}
@@ -698,6 +797,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.activePanel == PanelTaps {
 				return m.confirmRepair()
 			}
+			if m.activePanel == PanelServices {
+				return m.serviceAction("restart")
+			}
 		case "F":
 			if m.activePanel == PanelSearch || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
 				return m.doMutation(mutFetch, "Fetch")
@@ -713,7 +815,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.confirmMutation(mutUpgrade, "Upgrade")
 			}
 		case "U":
-			return m.confirmMutation(mutUpgradeAll, "Upgrade All")
+			// Upgrade-all only from package panels: pressing U on
+			// Services/Taps/Search silently queued a global formula
+			// upgrade from an unrelated panel (r1 finding 25).
+			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks || m.activePanel == PanelOutdated {
+				return m.confirmMutation(mutUpgradeAll, "Upgrade All")
+			}
 		case " ":
 			if m.activePanel == PanelOutdated {
 				p := m.panels[PanelOutdated]
@@ -784,8 +891,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.runMissing()
 			}
 		case "p":
-			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
-				return m.togglePin(mutInstall)
+			// Pin is formula-only: `brew pin` has no cask counterpart, and
+			// the old cask path read the pinned flag from a misindexed
+			// cask (r1 finding 13).
+			if m.activePanel == PanelFormulae {
+				return m.togglePin()
 			}
 		}
 	}
@@ -918,23 +1028,28 @@ func (m *Model) lazyLoadPanel(id PanelID) tea.Cmd {
 
 // nextPanel / prevPanel cycle through panels. When cycling lands on a
 // not-yet-loaded panel, the lazy path triggers a fetch — same policy
-// as switchPanel.
+// as switchPanel. They delegate to switchPanel so every panel switch
+// re-derives visibleRows: the sidebar layout depends on the active
+// panel, and a stale viewport paginated the wrong rows in cramped
+// terminals (r3 finding R3-3).
 func (m *Model) nextPanel() tea.Cmd {
-	m.panels[m.activePanel].active = false
-	m.activePanel = PanelID((int(m.activePanel) + 1) % len(m.panels))
-	m.panels[m.activePanel].active = true
-	m.activeTab = 0
-	m.tabs = panelTabs[m.activePanel]
-	return m.lazyLoadPanel(m.activePanel)
+	return m.switchPanel(PanelID((int(m.activePanel) + 1) % len(m.panels)))
 }
 
 func (m *Model) prevPanel() tea.Cmd {
-	m.panels[m.activePanel].active = false
-	m.activePanel = PanelID((int(m.activePanel) - 1 + len(m.panels)) % len(m.panels))
-	m.panels[m.activePanel].active = true
-	m.activeTab = 0
-	m.tabs = panelTabs[m.activePanel]
-	return m.lazyLoadPanel(m.activePanel)
+	return m.switchPanel(PanelID((int(m.activePanel) - 1 + len(m.panels)) % len(m.panels)))
+}
+
+// syncVisibleRows derives each panel's sidebar viewport height from the
+// current window geometry. It runs in the Update loop — on WindowSizeMsg
+// and on every panel switch, since the sidebar layout depends on which
+// panel is active — so rendering never mutates model state (r1 finding
+// 29, r2 finding NEW-8).
+func (m *Model) syncVisibleRows() {
+	heights := m.computeContentHeights()
+	for i := range m.panels {
+		m.panels[i].visibleRows = max(0, heights[i]-1)
+	}
 }
 
 // switchPanel activates the panel and returns any lazy-fetch command.
@@ -949,6 +1064,9 @@ func (m *Model) switchPanel(id PanelID) tea.Cmd {
 	m.panels[m.activePanel].active = false
 	m.activePanel = id
 	m.panels[m.activePanel].active = true
+	// The sidebar layout depends on the active panel: re-derive the
+	// per-panel viewport heights (r2 finding NEW-8).
+	m.syncVisibleRows()
 	m.activeTab = 0
 	m.tabs = panelTabs[m.activePanel]
 	if id == PanelSearch {

@@ -5,12 +5,15 @@ type keyHint struct {
 	desc string
 }
 
+// panelHints lists the LIVE keys per panel — every entry here must have a
+// handler in gui.go's Update, and every handled key should appear here
+// (r1 finding 24).
 func panelHints(id PanelID) []keyHint {
 	switch id {
 	case PanelFormulae:
-		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"x", "remove"}, {"r", "reinstall"}, {"u", "upgrade"}, {"p", "pin"}, {"L", "leaves"}}
+		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"i", "install"}, {"x", "remove"}, {"r", "reinstall"}, {"u", "upgrade"}, {"U", "upgrade all"}, {"p", "pin"}, {"L", "leaves"}, {"F", "fetch"}}
 	case PanelCasks:
-		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"x", "remove"}, {"X", "zap"}, {"p", "pin"}}
+		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"i", "install"}, {"x", "remove"}, {"X", "zap"}, {"r", "reinstall"}, {"u", "upgrade"}, {"U", "upgrade all"}, {"F", "fetch"}}
 	case PanelServices:
 		return []keyHint{{"j/k", "navigate"}, {"s", "start"}, {"S", "stop"}, {"r", "restart"}, {"f", "run"}, {"c", "cleanup"}}
 	case PanelTaps:
@@ -18,9 +21,9 @@ func panelHints(id PanelID) []keyHint {
 	case PanelStatus:
 		return []keyHint{{"R", "refresh"}, {"c", "cleanup"}, {"d", "doctor"}, {"A", "autoremove"}, {"B", "brewfile"}, {"v", "vulns"}, {"m", "missing"}}
 	case PanelOutdated:
-		return []keyHint{{"j/k", "navigate"}, {"u", "upgrade"}, {"Space", "select"}}
+		return []keyHint{{"j/k", "navigate"}, {"u", "upgrade"}, {"U", "upgrade all"}, {"Space", "select"}, {"a", "select all"}}
 	case PanelSearch:
-		return []keyHint{{"j/k", "navigate"}, {"Enter", "search"}, {"i", "info"}, {"I", "install"}}
+		return []keyHint{{"j/k", "navigate"}, {"Enter", "search"}, {"i", "install"}, {"I", "install"}, {"F", "fetch"}}
 	default:
 		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}}
 	}
