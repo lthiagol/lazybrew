@@ -191,6 +191,9 @@ func (s *tapsWriter) Untap(ctx context.Context, name string) error {
 }
 
 func (s *tapsWriter) Repair(ctx context.Context, name string) error {
+	// Invalidate like every other taps write: a repaired tap can change
+	// its remote/manifest state (r1 finding 20).
+	s.cache.InvalidateFor("tap")
 	_, err := s.runner.Execute(ctx, "tap", "--repair", name)
 	return err
 }

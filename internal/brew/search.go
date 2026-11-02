@@ -47,7 +47,7 @@ func (s *searchService) search(ctx context.Context, query string, desc bool) ([]
 func parseSearchOutput(raw string) []SearchResult {
 	var results []SearchResult
 	var isFormula bool
-	seenFormulae := false
+	seenSection := false
 
 	lines := strings.Split(raw, "\n")
 	for _, line := range lines {
@@ -57,17 +57,21 @@ func parseSearchOutput(raw string) []SearchResult {
 		}
 		if strings.HasPrefix(line, "==> Formulae") {
 			isFormula = true
-			seenFormulae = true
+			seenSection = true
 			continue
 		}
 		if strings.HasPrefix(line, "==> Casks") {
 			isFormula = false
+			seenSection = true
 			continue
 		}
+		// Track the last seen section header; lines before any header are
+		// UNKNOWN, not formulae — defaulting to formula miscategorized
+		// entries in headerless/odd outputs (r1 finding 21).
 		results = append(results, SearchResult{
 			Name:      line,
-			IsFormula: isFormula || !seenFormulae,
-			IsCask:    !isFormula && seenFormulae,
+			IsFormula: isFormula && seenSection,
+			IsCask:    !isFormula && seenSection,
 		})
 	}
 	return results

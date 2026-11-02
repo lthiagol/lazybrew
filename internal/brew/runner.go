@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -125,28 +127,59 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 		defer close(stdoutChan)
 		defer close(errChan)
 
+		// sendErr delivers at most one error for the whole stream: the
+		// manager reads errChan exactly once, so a second send would
+		// deadlock the goroutine and leak the process handle (r1
+		// finding 8).
+		var once sync.Once
+		sendErr := func(err error) {
+			if err == nil {
+				return
+			}
+			once.Do(func() {
+				// A cancel outranks any local error regardless of which
+				// one arrives first: the GUI maps context.Canceled to
+				// "Cancelled", and a stdout read error that lost the race
+				// against the cancel must not mask it (r2 finding NEW-7).
+				if errors.Is(ctx.Err(), context.Canceled) {
+					err = context.Canceled
+				}
+				// errChan is buffered(1) and the once guarantees this is
+				// the only send ever attempted, so the buffered send
+				// always succeeds — no guarded fallback needed
+				// (r2 finding NEW-6).
+				select {
+				case errChan <- err:
+				default:
+				}
+			})
+		}
+
 		cmd := exec.CommandContext(ctx, r.brewPath, args...)
 		cmd.Env = append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1")
 		cmd.Stdin = bytes.NewReader(nil)
 
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			errChan <- fmt.Errorf("stdout pipe: %w", err)
+			sendErr(fmt.Errorf("stdout pipe: %w", err))
 			return
 		}
 
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
-			errChan <- fmt.Errorf("stderr pipe: %w", err)
+			sendErr(fmt.Errorf("stderr pipe: %w", err))
 			return
 		}
 
 		if err := cmd.Start(); err != nil {
-			errChan <- fmt.Errorf("start: %w", err)
+			sendErr(fmt.Errorf("start: %w", err))
 			return
 		}
 
+		var readerDone sync.WaitGroup
+		readerDone.Add(1)
 		go func() {
+			defer readerDone.Done()
 			buf := make([]byte, 4096)
 			var partial string
 			for {
@@ -173,7 +206,7 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 					break
 				}
 				if err != nil {
-					errChan <- fmt.Errorf("stdout read: %w", err)
+					sendErr(fmt.Errorf("stdout read: %w", err))
 					break
 				}
 			}
@@ -182,12 +215,21 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 		stderrData, _ := io.ReadAll(stderr)
 		stderrStr := strings.TrimSpace(string(stderrData))
 
+		// Synchronize with the stdout reader before Wait: Wait closes the
+		// pipe, and a still-reading goroutine would get a spurious
+		// "stdout read: file already closed" error (r1 finding 8).
+		readerDone.Wait()
+
 		if err := cmd.Wait(); err != nil {
+			// A cancelled context killed the process: sendErr already
+			// prefers context.Canceled over the local error, so the GUI
+			// maps the completion to "Cancelled" instead of a misleading
+			// "signal: killed" (r1 finding 10, r2 finding NEW-7).
 			errMsg := stderrStr
 			if errMsg == "" {
 				errMsg = err.Error()
 			}
-			errChan <- fmt.Errorf("brew %s: %s", strings.Join(args, " "), errMsg)
+			sendErr(fmt.Errorf("brew %s: %s", strings.Join(args, " "), errMsg))
 		}
 	}()
 
