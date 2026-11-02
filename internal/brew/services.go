@@ -97,6 +97,9 @@ func (s *servicesWriter) Restart(ctx context.Context, name string) error {
 }
 
 func (s *servicesWriter) Run(ctx context.Context, name string) error {
+	// Invalidate like every other services write: `services run` changes
+	// service state just as start/stop do (r1 finding 19).
+	s.cache.Invalidate(KeyServicesList)
 	_, err := s.runner.Execute(ctx, "services", "run", name)
 	return err
 }

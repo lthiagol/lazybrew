@@ -15,8 +15,6 @@ type TrustWriter interface {
 	TrustFormula(ctx context.Context, fullName string) error
 	TrustCask(ctx context.Context, fullName string) error
 	UntrustTap(ctx context.Context, tapName string) error
-	UntrustFormula(ctx context.Context, fullName string) error
-	UntrustCask(ctx context.Context, fullName string) error
 }
 
 type trustReader struct {
@@ -112,17 +110,5 @@ func (s *trustWriter) TrustCask(ctx context.Context, fullName string) error {
 func (s *trustWriter) UntrustTap(ctx context.Context, tapName string) error {
 	s.cache.InvalidateFor("untrust")
 	_, err := s.runner.Execute(ctx, "untrust", tapName)
-	return err
-}
-
-func (s *trustWriter) UntrustFormula(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("untrust")
-	_, err := s.runner.Execute(ctx, "untrust", "--formula", fullName)
-	return err
-}
-
-func (s *trustWriter) UntrustCask(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("untrust")
-	_, err := s.runner.Execute(ctx, "untrust", "--cask", fullName)
 	return err
 }

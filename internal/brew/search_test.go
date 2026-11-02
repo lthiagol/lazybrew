@@ -94,7 +94,27 @@ func TestParseSearchOutputFormulaeOnly(t *testing.T) {
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
-	if !results[0].IsFormula {
-		t.Error("should default to formula when no section headers")
+	// Headerless output is UNKNOWN, not formula: defaulting to formula
+	// miscategorized entries in odd outputs (r1 finding 21).
+	if results[0].IsFormula || results[0].IsCask {
+		t.Errorf("headerless entries should be unknown, got IsFormula=%v IsCask=%v",
+			results[0].IsFormula, results[0].IsCask)
+	}
+}
+
+func TestParseSearchOutputCasksOnlyHeader(t *testing.T) {
+	// Regression for r1 finding 21: with ONLY a "==> Casks" header (no
+	// formulae section), entries used to be labeled formula because
+	// seenFormulae stayed false.
+	raw := "==> Casks\nfirefox"
+	results := parseSearchOutput(raw)
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if !results[0].IsCask {
+		t.Errorf("expected cask entry, got IsFormula=%v IsCask=%v", results[0].IsFormula, results[0].IsCask)
+	}
+	if results[0].IsFormula {
+		t.Error("cask-section entry must not be labeled formula")
 	}
 }

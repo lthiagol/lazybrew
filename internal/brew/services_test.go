@@ -88,9 +88,33 @@ func TestServicesServiceRun(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
+	cache.Set(KeyServicesList, []Service{{Name: "redis"}})
 	svc := NewServicesWriter(r, cache)
 
 	if err := svc.Run(context.Background(), "redis"); err != nil {
 		t.Fatal(err)
+	}
+
+	// `services run` changes state like start/stop, so it must invalidate
+	// the services cache like every other write (r1 finding 19).
+	if _, ok := cache.Get(KeyServicesList); ok {
+		t.Error("expected KeyServicesList to be invalidated by Run")
+	}
+}
+
+func TestServicesServiceCleanupInvalidatesCache(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte(""), nil
+	}
+	cache := NewCache(time.Minute)
+	cache.Set(KeyServicesList, []Service{{Name: "redis"}})
+	svc := NewServicesWriter(r, cache)
+
+	if err := svc.Cleanup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cache.Get(KeyServicesList); ok {
+		t.Error("expected KeyServicesList to be invalidated by Cleanup")
 	}
 }

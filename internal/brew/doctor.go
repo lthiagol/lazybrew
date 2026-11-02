@@ -113,7 +113,12 @@ func parseDoctorWarnings(text string) []DoctorWarning {
 func (s *diagnosticsReader) Missing(ctx context.Context) ([]MissingDep, error) {
 	output, err := s.runner.Execute(ctx, "missing")
 	if err != nil {
-		if strings.Contains(err.Error(), "missing") || strings.Contains(err.Error(), "exited with code 1") {
+		// `brew missing` exits 1 when dependencies are missing — still
+		// parse output. Classify strictly by exit code: the old substring
+		// match on the error text treated ANY failure of the missing
+		// command (the command name contains "missing") as success
+		// (r1 finding 18).
+		if IsExitCode(err, 1) {
 			return s.parseMissingOutput(string(output)), nil
 		}
 		return nil, err

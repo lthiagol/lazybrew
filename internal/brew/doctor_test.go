@@ -135,6 +135,45 @@ func TestDiagnosticsMissing(t *testing.T) {
 	}
 }
 
+func TestDiagnosticsMissingExitCode1ParsesOutput(t *testing.T) {
+	// `brew missing` exits 1 when dependencies are missing: the output
+	// must still be parsed (r1 finding 18).
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte("node: missing icu4c\n"),
+			&BrewExitError{Command: "missing", ExitCode: 1}
+	}
+	diag := NewDiagnosticsReader(r, NewCache(time.Minute))
+
+	missing, err := diag.Missing(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(missing) != 1 || missing[0].Formula != "node" {
+		t.Fatalf("expected parsed missing deps on exit 1, got %+v (err=%v)", missing, err)
+	}
+}
+
+func TestDiagnosticsMissingExitCode2IsError(t *testing.T) {
+	// Regression for r1 finding 18: the old substring match on the error
+	// text treated ANY failure of `brew missing` (the command name
+	// contains "missing") as success. A non-1 exit code must surface as
+	// an error.
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return nil, &BrewExitError{Command: "missing", ExitCode: 2, Stderr: "boom"}
+	}
+	diag := NewDiagnosticsReader(r, NewCache(time.Minute))
+
+	missing, err := diag.Missing(context.Background())
+	if err == nil {
+		t.Fatalf("expected error on exit 2, got %+v", missing)
+	}
+	if !IsExitCode(err, 2) {
+		t.Errorf("expected exit code 2 error, got %v", err)
+	}
+}
+
 func TestParseDoctorWarnings(t *testing.T) {
 	tests := []struct {
 		input string

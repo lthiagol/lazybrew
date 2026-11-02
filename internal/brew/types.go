@@ -33,6 +33,18 @@ type Formula struct {
 	ListVersions        []string `json:"list_versions,omitempty"`        // all installed version history
 	Revision            int      `json:"revision,omitempty"`             // formula revision
 	Shadowed            bool     `json:"shadowed,omitempty"`             // PATH shadowing warning
+
+	// Installed holds the "installed" entries of a `brew info --json=v2`
+	// payload. A non-empty slice is the authoritative installed signal:
+	// InstalledOnReq/InstalledAsDep can both be false for an installed
+	// formula (r1 finding 22).
+	Installed []InstalledVersion `json:"installed,omitempty"`
+}
+
+// InstalledVersion is one entry of the "installed" array in
+// `brew info --json=v2` payloads.
+type InstalledVersion struct {
+	Version string `json:"version"`
 }
 
 // Cask represents an installed Homebrew cask
@@ -48,11 +60,16 @@ type Cask struct {
 	Artifacts   []string `json:"artifacts"` // app names
 	AutoUpdates bool     `json:"auto_updates"`
 	// 6.0.0 additions
-	Pinned        bool     `json:"pinned,omitempty"`         // cask pinning
-	Sha256        string   `json:"sha256,omitempty"`         // checksum
-	URL           string   `json:"url,omitempty"`            // download URL
-	DependsOn     []string `json:"depends_on,omitempty"`     // cask dependencies
-	ConflictsWith []string `json:"conflicts_with,omitempty"` // conflicting casks
+	Pinned        bool     `json:"pinned,omitempty"` // cask pinning
+	Sha256        string   `json:"sha256,omitempty"` // checksum
+	URL           string   `json:"url,omitempty"`    // download URL
+	DependsOn     []string `json:"depends_on,omitempty"`
+	ConflictsWith []string `json:"conflicts_with,omitempty"`
+
+	// Installed holds the "installed" entries of a `brew info --json=v2`
+	// payload; a non-empty slice means the cask is installed (r1
+	// finding 22 — search info used to hardcode casks as not installed).
+	Installed []InstalledVersion `json:"installed,omitempty"`
 }
 
 // Tap represents a Homebrew tap repository

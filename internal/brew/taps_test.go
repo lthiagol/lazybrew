@@ -270,10 +270,17 @@ func TestTapsServiceRepair(t *testing.T) {
 		return []byte(""), nil
 	}
 	cache := NewCache(time.Minute)
+	cache.Set(KeyTapsList, []Tap{{Name: "nicknisi/tap"}})
 	taps := NewTapsWriter(r, cache)
 
 	if err := taps.Repair(context.Background(), "nicknisi/tap"); err != nil {
 		t.Fatal(err)
+	}
+
+	// Repair must invalidate the taps cache like every other taps write
+	// (r1 finding 20).
+	if _, ok := cache.Get(KeyTapsList); ok {
+		t.Error("expected KeyTapsList to be invalidated by Repair")
 	}
 }
 
