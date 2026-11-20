@@ -2,6 +2,7 @@ package gui
 
 import (
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -354,8 +355,9 @@ func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool,
 	}
 	if p.err != nil {
 		msg := p.err.Error()
-		if len(msg) > width-2 && width > 10 {
-			msg = msg[:width-5] + "..."
+		if width > 10 {
+			// Cut by display cells: a byte cut can split a multibyte rune.
+			msg = ansi.Truncate(msg, width-2, "...")
 		}
 		return lipgloss.NewStyle().Width(width).Render(style.ErrorBadge.Render(msg))
 	}
