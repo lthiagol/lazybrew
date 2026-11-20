@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 )
@@ -336,6 +337,131 @@ func TestPreloadLandingDoesNotCountAsRefresh(t *testing.T) {
 	m, _ = preloadStep(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{}})
 	if m.refreshing != 0 {
 		t.Errorf("refreshing = %d after the refresh's own landing, want 0", m.refreshing)
+	}
+}
+
+// preloadScreen is a model at 140x40 that has its Status dashboard landed and
+// the preload running, with the first two reads started and not yet landed.
+func preloadScreen(t *testing.T, cfg *config.Config, calls *[]string, failArg string) (*Model, []tea.Msg) {
+	t.Helper()
+	m := preloadModel(t, cfg, calls, failArg)
+	m, _ = preloadStep(m, tea.WindowSizeMsg{Width: 140, Height: 40})
+	m, cmd := preloadStep(m, statusLoaded())
+	return m, drainCmds(cmd)
+}
+
+// TestPreloadKeysWorkMidPreload covers AC-02.1: keys work while panels preload.
+// Casks is queued and loading; a key moves to it at once, and the rest of the
+// keys still do what they do.
+func TestPreloadKeysWorkMidPreload(t *testing.T) {
+	var calls []string
+	m, pending := preloadScreen(t, preloadConfig(), &calls, "")
+
+	m, _ = preloadStep(m, tea.KeyPressMsg{Code: '3', Text: "3"})
+	if m.activePanel != PanelCasks {
+		t.Fatalf("key 3 left the panel at %v, want Casks", m.activePanel)
+	}
+	if view := ansi.Strip(m.View().Content); !strings.Contains(view, "Loading...") {
+		t.Errorf("Casks is loading, but its main area does not say so:\n%s", view)
+	}
+
+	m, _ = preloadStep(m, tea.KeyPressMsg{Code: '?', Text: "?"})
+	if !m.showHelp {
+		t.Fatal("? did not open help while the preload was running")
+	}
+	m, _ = preloadStep(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+	if m.showHelp {
+		t.Fatal("Esc did not close help while the preload was running")
+	}
+
+	m, _ = landPreloadFrom(t, m, pending)
+	if view := ansi.Strip(m.View().Content); strings.Contains(view, "Loading...") {
+		t.Errorf("Casks has landed but its main area still says Loading...:\n%s", view)
+	}
+}
+
+// TestPreloadMouseWorksMidPreload covers AC-02.1 for the mouse: a click on the
+// Services box while the preload runs switches to Services at once.
+func TestPreloadMouseWorksMidPreload(t *testing.T) {
+	var calls []string
+	cfg := preloadConfig()
+	m, pending := preloadScreen(t, cfg, &calls, "")
+	m.cfg.GUI.Mouse = true
+
+	heights := m.computeContentHeights()
+	y := 1
+	for i := 0; i < int(PanelServices); i++ {
+		y += heights[i] + 2
+	}
+	m, _ = preloadStep(m, tea.MouseClickMsg{X: 2, Y: y, Button: tea.MouseLeft})
+	if m.activePanel != PanelServices {
+		t.Fatalf("click at row %d left the panel at %v, want Services (heights=%v)", y, m.activePanel, heights)
+	}
+	m, _ = landPreloadFrom(t, m, pending)
+	if !m.panels[PanelServices].loaded {
+		t.Error("Services did not load after the click")
+	}
+}
+
+// TestPreloadFailedReadShowsItsErrorOnItsPanelOnly covers AC-02.2: a failed
+// read shows its error on its own panel, and the other panels still load.
+func TestPreloadFailedReadShowsItsErrorOnItsPanelOnly(t *testing.T) {
+	var calls []string
+	m, pending := preloadScreen(t, preloadConfig(), &calls, "outdated")
+	m, _ = landPreloadFrom(t, m, pending)
+
+	if dash := ansi.Strip(m.renderDashboard(140)); strings.Contains(dash, "boom") {
+		t.Errorf("the failed Outdated read leaked onto the dashboard:\n%s", dash)
+	}
+	// Switching to the failed panel retries its read, as it always has; the
+	// retry's failure is what the panel then shows.
+	m, cmd := preloadStep(m, tea.KeyPressMsg{Code: '4', Text: "4"})
+	for _, msg := range drainCmds(cmd) {
+		m, _ = preloadStep(m, msg)
+	}
+	if view := ansi.Strip(m.View().Content); !strings.Contains(view, "boom") {
+		t.Errorf("the Outdated panel does not show its error:\n%s", view)
+	}
+	if !m.panels[PanelTaps].loaded || m.panels[PanelTaps].err != nil {
+		t.Error("Taps did not load after the Outdated read failed")
+	}
+}
+
+// TestPreloadFillsTheDashboardCounts covers AC-02.3: the Outdated count is not
+// "not loaded — press R" while preloaded; it reads loading, then the count.
+func TestPreloadFillsTheDashboardCounts(t *testing.T) {
+	var calls []string
+	m, pending := preloadScreen(t, preloadConfig(), &calls, "")
+
+	dash := ansi.Strip(m.renderDashboard(140))
+	if !strings.Contains(dash, "loading…") || strings.Contains(dash, "press R") {
+		t.Errorf("while Outdated is queued the dashboard should say loading…, got:\n%s", dash)
+	}
+
+	m, _ = landPreloadFrom(t, m, pending)
+	dash = ansi.Strip(m.renderDashboard(140))
+	if strings.Contains(dash, "not loaded") || strings.Contains(dash, "loading…") {
+		t.Errorf("after the preload the dashboard should show every count, got:\n%s", dash)
+	}
+	if !strings.Contains(dash, "0 packages") {
+		t.Errorf("the Outdated count did not fill in, got:\n%s", dash)
+	}
+	if !m.status.Outdated.Known {
+		t.Error("the status summary's Outdated count is still unknown after its read landed")
+	}
+}
+
+// TestPreloadOffDashboardSaysPressR covers AC-02.3 with the preload off: the
+// Outdated count is not loaded, and R is still how to load it.
+func TestPreloadOffDashboardSaysPressR(t *testing.T) {
+	var calls []string
+	cfg := preloadConfig()
+	cfg.GUI.Preload = false
+	m := preloadModel(t, cfg, &calls, "")
+	m, _ = preloadStep(m, statusLoaded())
+	dash := ansi.Strip(m.renderDashboard(140))
+	if !strings.Contains(dash, "not loaded — press R") {
+		t.Errorf("with the preload off the Outdated count should say press R, got:\n%s", dash)
 	}
 }
 

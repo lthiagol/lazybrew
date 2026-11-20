@@ -608,6 +608,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case preloadedMsg:
 		m.preload.inFlight--
 		cmd := m.landData(DataLoadedMsg(msg), true)
+		m.absorbPreload(DataLoadedMsg(msg))
 		return m, tea.Batch(cmd, tea.Batch(m.nextPreloadReads()...))
 
 	case servicesReloadMsg:
