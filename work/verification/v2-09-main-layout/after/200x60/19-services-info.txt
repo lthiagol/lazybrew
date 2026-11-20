@@ -2,15 +2,15 @@
 ╭─ 1 ◉ Status ─────────────────────────────────────────────╮╭─ Services › Info ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                            ││   Info                                                                                                                                   │
 │  Prefix    /home/linuxbrew/.linuxbrew                    ││ ━━━━━━━━                                                                                                                                 │
-│  Formulae  125                                           ││ Name:        moshi-hook                                                     Command:      /home/linuxbrew/.linuxbrew/opt/moshi-          │
-│  Casks     2                                             ││ Status:      ▶ running                                                                    hook/bin/moshi-hook serve                      │
-│  Outdated  1                                             ││ PID:         1332457                                                        Working dir:  /home/linuxbrew/.linuxbrew/var                 │
-╰──────────────────────────────────────────────────────────╯│ User:        agent                                                          Log:          /home/linuxbrew/.linuxbrew/var/log/moshi-      │
-╭─ 2 ∘ Formulae ───────────────────────────────────── 125 ─╮│ Loaded:      yes                                                                          hook.log                                       │
+│  Formulae  125                                           ││ Name:        moshi-hook                                   Unit file:    /home/agent/.config/systemd/user/sh.brew.moshi-hook.service      │
+│  Casks     2                                             ││ Status:      ▶ running                                    Command:      /home/linuxbrew/.linuxbrew/opt/moshi-hook/bin/moshi-hook serve   │
+│  Outdated  1                                             ││ PID:         1332457                                      Working dir:  /home/linuxbrew/.linuxbrew/var                                   │
+╰──────────────────────────────────────────────────────────╯│ User:        agent                                        Log:          /home/linuxbrew/.linuxbrew/var/log/moshi-hook.log                │
+╭─ 2 ∘ Formulae ───────────────────────────────────── 125 ─╮│ Loaded:      yes                                                                                                                         │
 │  ✓ alsa-lib                                    1.2.16.1_1││ Registered:  yes                                                                                                                         │
-│▸ ✓ bash                                            5.3.20││ Unit file:   /home/agent/.config/systemd/user/sh.brew.moshi-hook.service                                                                 │
-│  ✓ bat                                             0.26.1││                                                                                                                                          │
-│  ✓ brotli                                           1.2.1││  S stop  r restart  c cleanup                                                                                                            │
+│▸ ✓ bash                                            5.3.20││                                                                                                                                          │
+│  ✓ bat                                             0.26.1││  S stop  r restart  c cleanup                                                                                                            │
+│  ✓ brotli                                           1.2.1││                                                                                                                                          │
 │  ✓ btop                                             1.4.8││                                                                                                                                          │
 ╰──────────────────────────────────────────────────────────╯│                                                                                                                                          │
 ╭─ 3 ▣ Casks ────────────────────────────────────────── 2 ─╮│                                                                                                                                          │

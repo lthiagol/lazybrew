@@ -4,10 +4,10 @@
 │  Prefix    /home/linuxbrew/.linuxbrew                    ││ ━━━━━━━━━━━━                                                                                                                             │
 │  Formulae  125                                           ││ 3 taps · 0 official · 2 trusted · 1 untrusted                                                                                            │
 │  Casks     2                                             ││                                                                                                                                          │
-│  Outdated  1                                             ││ Tap:       danielfoehrkn/switch                                Formulae:  0                                                              │
-╰──────────────────────────────────────────────────────────╯│ Trusted:   untrusted                                           Casks:     0                                                              │
-╭─ 2 ∘ Formulae ───────────────────────────────────── 125 ─╮│ Official:  no                                                                                                                            │
-│  ✓ alsa-lib                                    1.2.16.1_1││ Remote:    https://github.com/danielfoehrkn/homebrew-switch                                                                              │
+│  Outdated  1                                             ││ Tap:       danielfoehrkn/switch                           Remote:    https://github.com/danielfoehrkn/homebrew-switch                    │
+╰──────────────────────────────────────────────────────────╯│ Trusted:   untrusted                                      Formulae:  0                                                                   │
+╭─ 2 ∘ Formulae ───────────────────────────────────── 125 ─╮│ Official:  no                                             Casks:     0                                                                   │
+│  ✓ alsa-lib                                    1.2.16.1_1││                                                                                                                                          │
 │▸ ✓ bash                                            5.3.20││                                                                                                                                          │
 │  ✓ bat                                             0.26.1││                                                                                                                                          │
 │  ✓ brotli                                           1.2.1││                                                                                                                                          │
