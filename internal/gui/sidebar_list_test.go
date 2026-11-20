@@ -167,7 +167,7 @@ func TestTapTrustTabShowsTheTrustStory(t *testing.T) {
 		}})
 	m = sendKey(m, "]")
 	out := sgr.ReplaceAllString(m.renderContent(70, 20), "")
-	for _, want := range []string{"Trust:", "untrusted", "may not load", "Its 2 formulae and 1 casks", "Press t"} {
+	for _, want := range []string{"Trust:", "untrusted", "may not load", "Its 2 formulae and 1 cask", "Press t"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("the untrusted Trust tab should say %q, got:\n%s", want, out)
 		}
@@ -184,5 +184,22 @@ func TestTapTrustTabShowsTheTrustStory(t *testing.T) {
 	m = sendKey(m, "[")
 	if out := sgr.ReplaceAllString(m.renderContent(70, 20), ""); !strings.Contains(out, "Remote:") {
 		t.Fatalf("Tap Info keeps the details, got:\n%s", out)
+	}
+}
+
+// TestTrustStoryPluralises (F-r2-02): a count of one takes the singular noun.
+func TestTrustStoryPluralises(t *testing.T) {
+	cases := []struct {
+		tap  brew.Tap
+		want string
+	}{
+		{brew.Tap{Name: "a/one", FormulaCount: 1, CaskCount: 0}, "Its 1 formula and 0 casks follow"},
+		{brew.Tap{Name: "a/two", FormulaCount: 2, CaskCount: 1}, "Its 2 formulae and 1 cask follow"},
+		{brew.Tap{Name: "a/none", FormulaCount: 0, CaskCount: 0}, "Its 0 formulae and 0 casks follow"},
+	}
+	for _, c := range cases {
+		if got := tapTrustStory(&c.tap); !strings.Contains(got, c.want) {
+			t.Errorf("%s: want %q in:\n%s", c.tap.Name, c.want, got)
+		}
 	}
 }

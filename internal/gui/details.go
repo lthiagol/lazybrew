@@ -79,6 +79,14 @@ func tapDetails(t *brew.Tap) string {
 	}, "\n") + "\n"
 }
 
+// plural is the singular noun for one, else the plural.
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
 // tapTrustStory is the Trust tab: what the selected tap's trust state means for
 // its formulae and casks, and the key that changes it. Homebrew loads the
 // formulae and casks of a non-official tap only once the tap is trusted.
@@ -100,7 +108,9 @@ func tapTrustStory(t *brew.Tap) string {
 		detailLine("Trust", state),
 		"",
 		meaning,
-		fmt.Sprintf("Its %d formulae and %d casks follow that state.", t.FormulaCount, t.CaskCount),
+		fmt.Sprintf("Its %d %s and %d %s follow that state.",
+			t.FormulaCount, plural(t.FormulaCount, "formula", "formulae"),
+			t.CaskCount, plural(t.CaskCount, "cask", "casks")),
 		"",
 		"Press t to trust or untrust the tap, or one of its formulae or casks.",
 	}, "\n") + "\n"
