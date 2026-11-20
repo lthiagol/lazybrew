@@ -103,7 +103,8 @@ func (m Model) handleMouseWheel(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	if next := p.selected + delta; next >= 0 && next < len(p.items) {
 		p.selectIndex(next)
 	}
-	return m, tea.Batch(cmd, m.loadTabContent())
+	c := tea.Batch(cmd, m.loadTabContent())
+	return m, c
 }
 
 // sidebarBoxAt returns the sidebar box under body row y, and the row within its
@@ -159,7 +160,8 @@ func (m Model) handleSidebarClick(y int) (tea.Model, tea.Cmd) {
 	idx := p.offset + innerY
 	if idx >= 0 && idx < len(p.items) {
 		p.selectIndex(idx)
-		return m, tea.Batch(cmd, m.loadTabContent())
+		c := tea.Batch(cmd, m.loadTabContent())
+		return m, c
 	}
 	return m, cmd
 }
@@ -211,7 +213,8 @@ func (m Model) handleTabBarClick(ix int) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			m.activeTab = i
-			return m, m.loadTabContent()
+			c := m.loadTabContent()
+			return m, c
 		}
 		x += w
 	}
