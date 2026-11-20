@@ -51,10 +51,13 @@ func TestModalFloatsOverFrame(t *testing.T) {
 				after := plainRows(withModal.View().Content)
 				assertFrameSize(t, withModal.View().Content, sz[0], sz[1])
 
+				// The footer's row is the modal's own keys while it is open
+				// (AC-05.2), so it is the one row allowed to change outside the box.
+				footer := sz[1] - 1
 				for r := range before {
 					for c := range before[r] {
 						inBox := r >= y && r < y+oh && c >= x && c < x+ow
-						if !inBox && before[r][c] != after[r][c] {
+						if !inBox && r != footer && before[r][c] != after[r][c] {
 							t.Fatalf("cell (%d,%d) outside the modal changed: %q -> %q", c, r, before[r][c], after[r][c])
 						}
 					}

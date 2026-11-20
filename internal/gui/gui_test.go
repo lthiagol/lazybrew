@@ -1111,12 +1111,19 @@ func TestActiveSidebarTitleStyles(t *testing.T) {
 	}
 }
 
+// TestBottomBarHasLogHint: the footer lists the panel's keys before the
+// globals, so the log hint shows once the row is wide enough for it. At 120
+// columns the row is cut and ends with "? more", which is always shown.
 func TestBottomBarHasLogHint(t *testing.T) {
 	m := newTestModel()
-	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updateModel(m, tea.WindowSizeMsg{Width: 200, Height: 40})
 	bar := m.renderBottomBar()
 	if !strings.Contains(bar, "log") {
-		t.Fatalf("bottom bar should include log hint, got:\n%s", bar)
+		t.Fatalf("bottom bar should include log hint at 200 columns, got:\n%s", bar)
+	}
+	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	if bar := m.renderBottomBar(); !strings.HasSuffix(strings.TrimRight(plainLine(bar), " "), "? more") {
+		t.Fatalf("a cut footer at 120 columns should end with ? more, got %q", plainLine(bar))
 	}
 }
 

@@ -80,7 +80,7 @@ func (m Model) renderMainPanel() string {
 }
 
 // bottomBarRows is the height of the key-hint bar pinned under the body.
-const bottomBarRows = 2
+const bottomBarRows = 1
 
 // screenLayout is the one geometry every frame is drawn to. Render, the
 // C toggle and mouse hit-testing all read it, so a click lands on the row
@@ -540,35 +540,4 @@ func boolStr(b bool) string {
 		return "yes"
 	}
 	return "no"
-}
-
-func (m Model) renderBottomBar() string {
-	panelHints := panelHints(m.activePanel)
-	globalHints := []keyHint{{"Tab", "next"}, {"S-Tab", "prev"}, {"1-7", "jump"}, {"/", "search"}, {"?", "help"}, {"R", "refresh"}, {"C", "log"}, {"q", "quit"}}
-
-	styleHint := func(k, d string) string {
-		return style.HintKey.Render(k) + " " + style.HintDesc.Render(d)
-	}
-
-	var globalParts []string
-	for _, h := range globalHints {
-		globalParts = append(globalParts, styleHint(h.key, h.desc))
-	}
-	line1 := lipgloss.JoinHorizontal(lipgloss.Top, globalParts...)
-
-	line2 := ""
-	if len(panelHints) > 0 {
-		var panelParts []string
-		for _, h := range panelHints {
-			panelParts = append(panelParts, styleHint(h.key, h.desc))
-		}
-		line2 = lipgloss.JoinHorizontal(lipgloss.Top, panelParts...)
-	}
-
-	barWidth := m.width - 2
-	combined := lipgloss.JoinVertical(lipgloss.Top,
-		lipgloss.NewStyle().Width(barWidth).Padding(0, 1).Render(line1),
-		lipgloss.NewStyle().Width(barWidth).Padding(0, 1).Render(line2),
-	)
-	return fitBox(combined, m.width, bottomBarRows)
 }
