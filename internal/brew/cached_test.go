@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -162,6 +163,112 @@ func TestCachedCallAfterWriteDoesNotJoinOldFetch(t *testing.T) {
 	}
 	if formulae := val.([]Formula); formulae[0].Name != "after-write" {
 		t.Fatalf("cache holds %q, want after-write", formulae[0].Name)
+	}
+}
+
+// blockedFetch starts cached(key) in the background. Its fetch counts itself in
+// runs and blocks until release is closed. It returns once the fetch has
+// started, and a channel that closes when the read returns.
+func blockedFetch(c *Cache, key CacheKey, runs *atomic.Int32, release <-chan struct{}) <-chan struct{} {
+	started := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = cached(c, key, 0, func() ([]Formula, bool, error) {
+			runs.Add(1)
+			close(started)
+			<-release
+			return []Formula{{Name: "fetched"}}, true, nil
+		})
+	}()
+	<-started
+	return done
+}
+
+// TestCachedUnrelatedInvalidationKeepsFetch: a write to another group while a
+// fetch runs neither drops its result nor makes a later caller run the command
+// again.
+func TestCachedUnrelatedInvalidationKeepsFetch(t *testing.T) {
+	c := NewCache(time.Minute)
+	var runs atomic.Int32
+	release := make(chan struct{})
+	first := blockedFetch(c, KeyOutdatedFormulae, &runs, release)
+
+	c.InvalidateFor("taps")
+	second := make(chan struct{})
+	go func() {
+		defer close(second)
+		_, _ = cached(c, KeyOutdatedFormulae, 0, func() ([]Formula, bool, error) {
+			runs.Add(1)
+			return []Formula{{Name: "again"}}, true, nil
+		})
+	}()
+	time.Sleep(20 * time.Millisecond)
+	close(release)
+	<-first
+	<-second
+
+	if got := runs.Load(); got != 1 {
+		t.Fatalf("outdated ran %d times, want 1: the unrelated write made a second caller fetch", got)
+	}
+	if _, ok := c.Get(KeyOutdatedFormulae); !ok {
+		t.Fatal("the fetch's result was dropped by an invalidation of another group")
+	}
+}
+
+// TestCachedGroupInvalidationDropsItsFetch: a write to the group that holds the
+// fetched key drops the result of a fetch that is still running, and a caller
+// after the write starts a new fetch rather than joining the old one.
+func TestCachedGroupInvalidationDropsItsFetch(t *testing.T) {
+	c := NewCache(time.Minute)
+	var runs atomic.Int32
+	release := make(chan struct{})
+	first := blockedFetch(c, KeyOutdatedFormulae, &runs, release)
+
+	c.InvalidateFor("outdated")
+	second := make(chan struct{})
+	go func() {
+		defer close(second)
+		_, _ = cached(c, KeyOutdatedFormulae, 0, func() ([]Formula, bool, error) {
+			runs.Add(1)
+			return []Formula{{Name: "after-write"}}, true, nil
+		})
+	}()
+	time.Sleep(20 * time.Millisecond)
+	close(release)
+	<-first
+	<-second
+
+	if got := runs.Load(); got != 2 {
+		t.Fatalf("outdated ran %d times, want 2: a caller after the write must not join the old fetch", got)
+	}
+	val, ok := c.Get(KeyOutdatedFormulae)
+	if !ok {
+		t.Fatal("expected the post-write result to be cached")
+	}
+	if formulae := val.([]Formula); formulae[0].Name != "after-write" {
+		t.Fatalf("cache holds %q, want after-write: the pre-write fetch was stored", formulae[0].Name)
+	}
+}
+
+// TestCachedInvalidateAllDropsEveryFetch: InvalidateAll drops the result of
+// every fetch that is still running, whatever its key.
+func TestCachedInvalidateAllDropsEveryFetch(t *testing.T) {
+	c := NewCache(time.Minute)
+	var runs atomic.Int32
+	release := make(chan struct{})
+	formulae := blockedFetch(c, KeyFormulaeList, &runs, release)
+	outdated := blockedFetch(c, KeyOutdatedFormulae, &runs, release)
+
+	c.InvalidateAll()
+	close(release)
+	<-formulae
+	<-outdated
+
+	for _, key := range []CacheKey{KeyFormulaeList, KeyOutdatedFormulae} {
+		if _, ok := c.Get(key); ok {
+			t.Errorf("%s was stored by a fetch that started before InvalidateAll", key)
+		}
 	}
 }
 
