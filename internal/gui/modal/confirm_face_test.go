@@ -215,3 +215,79 @@ func TestLongMenuItemAndChipAreCut(t *testing.T) {
 		}
 	}
 }
+
+// contentRows is the text inside a dialog's box, one string per content row:
+// the rows between the top and bottom padding, without the border and the
+// three cells of padding on each side.
+func contentRows(view string, width int) []string {
+	lines := plainLines(view)
+	var out []string
+	for _, line := range lines[2 : len(lines)-2] {
+		runes := []rune(line)
+		out = append(out, string(runes[4:len(runes)-4]))
+	}
+	return out
+}
+
+// fieldCells is the input field's width: its prompt, 30 cells of text, cursor.
+const fieldCells = 33
+
+// TestDialogsFitAndCentreTheirRows locks F-r2-01 for all three dialogs: every
+// content row is at most the inner width, and each non-empty row is centred
+// (its left and right gaps differ by at most one cell).
+func TestDialogsFitAndCentreTheirRows(t *testing.T) {
+	long := strings.Repeat("a long input prompt that goes on ", 3)
+	cases := []struct {
+		name  string
+		m     Modal
+		width int
+	}{
+		{"confirm", NewConfirmModal(ActionDanger, "Uninstall", "Uninstall bash?").WithDetail("removes bash; 2 packages depend on it"), confirmWidth},
+		{"confirm long", NewConfirmModal(ActionUpgrade, "Upgrade", strings.Repeat("word ", 40)).WithDetail(strings.Repeat("detail ", 30)), confirmWidth},
+		{"input", NewInputModal("Add tap", "Tap repository (user/repo):"), formWidth},
+		{"input long", NewInputModal("Add tap", long), formWidth},
+		{"menu", NewMenuModal("Trust: homebrew/foo", []string{"Trust tap", "Cancel"}), formWidth},
+		{"menu long", NewMenuModal("Brewfile", []string{strings.Repeat("an item ", 20), "Cancel"}), formWidth},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			view := tc.m.View().Content
+			inner := innerWidth(tc.width)
+			for i, row := range contentRows(view, tc.width) {
+				if w := lipgloss.Width(row); w > inner {
+					t.Fatalf("content row %d is %d cells, more than the inner width %d: %q", i, w, inner, row)
+				}
+			}
+			// The block is centred: its least gap on the left and on the right
+			// differ by at most one cell. A left-aligned list block that is
+			// centred passes; a row centred on its own passes too.
+			left, right := inner, inner
+			for _, row := range contentRows(view, tc.width) {
+				if strings.Trim(row, " ") == "" {
+					continue
+				}
+				// The input field is a fixed 33 cells (prompt, 30 of text, cursor)
+				// whose unused text is blank, so its trailing gap is the field's
+				// padding, not the row's. It is checked on its own below.
+				if strings.Contains(row, "> ") {
+					if want := (inner - fieldCells) / 2; strings.Index(row, "> ") != want {
+						t.Fatalf("the input field starts at column %d, want %d: %q", strings.Index(row, "> "), want, row)
+					}
+					continue
+				}
+				left = min(left, len(row)-len(strings.TrimLeft(row, " ")))
+				right = min(right, len(row)-len(strings.TrimRight(row, " ")))
+			}
+			if d := left - right; d < -1 || d > 1 {
+				t.Fatalf("the block is off-centre: least gap %d cells left, %d right", left, right)
+			}
+			// The chip is the first content row; it is centred on its own.
+			chip := contentRows(view, tc.width)[0]
+			chipLeft := len(chip) - len(strings.TrimLeft(chip, " "))
+			chipRight := len(chip) - len(strings.TrimRight(chip, " "))
+			if d := chipLeft - chipRight; d < -1 || d > 1 {
+				t.Fatalf("the chip is off-centre: %d cells left, %d right: %q", chipLeft, chipRight, chip)
+			}
+		})
+	}
+}

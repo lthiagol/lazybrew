@@ -32,6 +32,17 @@ func wrapProse(s string, width int) string {
 	return lipgloss.Wrap(s, innerWidth(width), "")
 }
 
+// proseLines wraps prose and styles each line on its own. Styling the whole
+// paragraph would pad every line to the longest, leaving the short ones
+// stranded at the left; a line styled alone keeps its own width to centre by.
+func proseLines(s string, st lipgloss.Style, width int) []string {
+	var out []string
+	for _, line := range strings.Split(wrapProse(s, width), "\n") {
+		out = append(out, st.Render(line))
+	}
+	return out
+}
+
 // fitLine cuts a single-line part (a chip, a key line, a menu item) to the text
 // width of a box, ending it with an ellipsis when it does not fit.
 func fitLine(s string, width int) string {
@@ -58,8 +69,15 @@ func dialog(accent color.Color, label string, width int, body []string, keys str
 		lines[maxBody-1] = "…"
 	}
 
+	// Each row is centred on its own, so a wrapped line and a short one both
+	// sit in the middle of the box.
+	inner := innerWidth(width)
 	parts := append([]string{chip, ""}, lines...)
-	content := lipgloss.JoinVertical(lipgloss.Center, append(parts, "", keys)...)
+	rows := make([]string, 0, len(parts)+2)
+	for _, row := range append(parts, "", keys) {
+		rows = append(rows, lipgloss.PlaceHorizontal(inner, lipgloss.Center, row))
+	}
+	content := strings.Join(rows, "\n")
 	return lipgloss.NewStyle().
 		Width(width).
 		Align(lipgloss.Center).

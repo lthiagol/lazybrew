@@ -20,7 +20,9 @@ func NewInputModal(action, prompt string) *InputModal {
 	ti := textinput.New()
 	ti.Placeholder = "type here..."
 	ti.Focus()
-	ti.SetWidth(40)
+	// The field is a fixed 30 cells of text; with its prompt ("> ") and cursor it
+	// draws 33, narrower than the dialog's 42, so the dialog centres it.
+	ti.SetWidth(30)
 
 	return &InputModal{
 		action: action,
@@ -57,8 +59,8 @@ func (m *InputModal) View() tea.View {
 		keyHint(style.AccentColor, "enter", "submit"),
 		keyHint(style.AccentColor, "esc", "cancel"),
 	), formWidth)
-	prompt := style.NormalItem.Render(wrapProse(m.prompt, formWidth))
-	return tea.NewView(dialog(style.AccentColor, m.action, formWidth, []string{prompt, "", m.input.View()}, keys))
+	prompt := proseLines(m.prompt, style.NormalItem, formWidth)
+	return tea.NewView(dialog(style.AccentColor, m.action, formWidth, append(prompt, "", m.input.View()), keys))
 }
 
 func (m *InputModal) Done() bool      { return m.done }
