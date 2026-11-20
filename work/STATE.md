@@ -17,7 +17,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-04-overlays-styled | f8a8b10, 54fe613, aa432d6, b8c110d, 6b01ecb, 215aadd, 23dbb79, 40588cf, f6807c4, f4b4127, 64bc9d8 | closed | ok |
 | v2-05-content-polish | 1192a40, ca14a11, c1b4b07, dfb79fb, 158e76e, f818b81, 0a03277, 7f8d584, 730c6ce, 0831cd8, da7d80e | closed | ok |
 | v2-05s-services | e8add34, a4bc483, 421c0ba, 7d8b51c, befbf7e, a97a13a | closed | ok |
-| v2-06-animations | — | implemented | awaiting reviewer |
+| v2-06-animations | 46736ea, 4f54fc0, 7c79a51, 0ebc253, d5fb165, 16358cf, ee7d782, 789caf6, 7a66ae2, 2a135d8 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -258,3 +258,24 @@ Review: r1 `error`/`scheduled` services could no longer be stopped/restarted
 was never touched — MainPID 800, NRestarts 0, active since 2026-11-18 before
 and after the slice. Not verified live: a real needs-sudo refusal (no system
 service here). Logs tab stays parked (LB-09).
+
+**v2-06-animations, closed.** Spring motion with harmonica (critically damped):
+the tab underline slides, sidebar boxes grow/shrink with focus (heights always
+sum to the sidebar), modals drop in, toasts slide in from the right and
+re-stack, the batch progress bar springs. One 60 fps tick only while something
+moves; no goroutines. `gui.animations` (default on) and `LAZYBREW_ANIMATIONS`
+switch it; test helpers and the harness build still models. Resting frames
+are byte-identical to `v2-05s-services/after/`; mid-motion frames in
+`work/verification/v2-06-animations/motion/`. Review: r1 test helpers relied on
+the caller's env and app tests read the real config (major), motion work ran
+on every message even with animations off (187 allocs → fixed to 2), a
+backdrop flash, and a red intermediate commit (recorded); r2 the fade still
+brightened Mocha's dark borders — the fade was dropped (no monotone fade can
+reach the muted resting backdrop), the backdrop now dims at once while the
+modal still slides; r3 `ok`.
+
+**LB-08 (visual overhaul) — all slices closed:** v2-01 … v2-06 plus v2-05s.
+Next: the user checkpoint, then LB-05 (human smoke gate) and the `wip` →
+`stable` PR. Not verified anywhere in the overhaul: real-terminal feel (mouse,
+keys, paste, motion), a live brew write (install/upgrade/services), a real
+needs-sudo refusal.
