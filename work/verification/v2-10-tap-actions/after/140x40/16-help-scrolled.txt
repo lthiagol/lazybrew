@@ -1,0 +1,40 @@
+╭─ Help ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 5–41 of 41 ─╮
+│  Shift+Tab  Previous panel                                            t  Trust or untrust tap                                            │
+│  1-7        Jump to panel                                             T  Trust a formula or cask                                         │
+│  j/k        Scroll list                                               r  Repair tap                                                      │
+│  PgUp/PgDn  Scroll content by a page                                                                                                     │
+│  Home/End   Top/bottom (g/G outside Search)                           Services                                                           │
+│  [/]        Switch tabs                                                                                                                  │
+│                                                                       s  Start                                                           │
+│  Actions                                                              S  Stop                                                            │
+│  R  Refresh all data                                                  r  Restart                                                         │
+│  /  Search packages                                                   f  Run (foreground)                                                │
+│  C  Toggle command log                                                c  Cleanup stale services                                          │
+│  q  Quit lazybrew                                                                                                                        │
+│  ?  This help                                                         Outdated                                                           │
+│                                                                                                                                          │
+│  Formulae                                                             u      Upgrade selected                                            │
+│                                                                       U      Upgrade all                                                 │
+│  i  Install selected                                                  Space  Toggle selection                                            │
+│  x  Uninstall selected                                                a      Select/deselect all                                         │
+│  r  Reinstall selected                                                                                                                   │
+│  u  Upgrade selected                                                  Status                                                             │
+│  U  Upgrade all                                                                                                                          │
+│  p  Pin/Unpin selected                                                R    Refresh all data                                              │
+│  L  Toggle leaves filter                                              c    Run brew cleanup                                              │
+│  F  Fetch selected                                                    d    Run brew doctor                                               │
+│                                                                       A    Run brew autoremove                                           │
+│  Casks                                                                B    Brewfile actions                                              │
+│                                                                       v    Vulnerability check                                           │
+│  i  Install                                                           m    Missing dependencies                                          │
+│  x  Uninstall                                                         [ ]  Switch tabs                                                   │
+│  X  Zap uninstall                                                                                                                        │
+│  r  Reinstall                                                         Search                                                             │
+│  u  Upgrade                                                                                                                              │
+│  U  Upgrade all                                                       Actions                                                            │
+│  F  Fetch                                                             /      Type search query                                           │
+│                                                                       Enter  Execute search                                              │
+│                                                                       i      Install selected result                                     │
+│                                                                       F      Fetch selected result                                       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ ?/esc close                                                                                                                                

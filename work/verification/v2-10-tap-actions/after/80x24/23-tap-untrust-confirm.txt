@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Taps › Tap Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││   Tap Info    Trust    Formulae                  │
+╰──────────────────────────╯│ ━━━━━━━━━━━━                                     │
+╭─ 2 ∘ Formulae ───── 125 ─╮│ 3 taps · 0 official · 2 trusted · 1 untrusted    │
+│▸ ✓ bash            5.3.20││                                                  │
+╰───┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   │
+╭─ 3┃                                                                      ┃   │
+│▸ ✓┃                               UNTRUST                                ┃   │
+╰───┃                                                                      ┃w… │
+╭─ 4┃                        Untrust lthiagol/tap?                         ┃   │
+│▸ ↑┃    Homebrew will refuse to load its formulae and casks until you     ┃   │
+╰───┃                           trust it again.                            ┃   │
+╭─ 5┃                                                                      ┃   │
+│  ⚠┃                      [y]es   [n]o   esc cancel                       ┃   │
+│▸ ✓┃                                                                      ┃   │
+╰───┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛   │
+╭─ 6 ◎ Services ─────── 3 ─╮│                                                  │
+│  dbus                none││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
+│                          ││ No commands executed yet                         │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ y yes  n no  esc cancel                                                        

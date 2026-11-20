@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Taps › Tap Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││   Tap Info    Trust    Formulae                  │
+╰──────────────────────────╯│ ━━━━━━━━━━━━                                     │
+╭─ 2 ∘ Formulae ───── 125 ─╮│ 3 taps · 0 official · 2 trusted · 1 untrusted    │
+│▸ ✓┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   │
+╰───┃                                                                      ┃   │
+╭─ 3┃                                UNTAP                                 ┃   │
+│▸ ✓┃                                                                      ┃   │
+╰───┃                         Untap lthiagol/tap?                          ┃w… │
+╭─ 4┃        The tap's formulae and casks are no longer available.         ┃   │
+│▸ ↑┃                                                                      ┃   │
+╰───┃    Installed from this tap; brew will refuse to untap while they     ┃   │
+╭─ 5┃    are installed:                                                    ┃   │
+│  ⚠┃      frond                                                           ┃   │
+│▸ ✓┃                                                                      ┃   │
+╰───┃                      [y]es   [n]o   esc cancel                       ┃   │
+╭─ 6┃                                                                      ┃   │
+│  d┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛   │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
+│                          ││ No commands executed yet                         │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ y yes  n no  esc cancel                                                        

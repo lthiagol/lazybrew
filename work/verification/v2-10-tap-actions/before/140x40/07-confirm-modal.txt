@@ -1,0 +1,40 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                    125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Formulae › Info ───────────────────────────────────────────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││   Info    Deps    Used By    Caveats    Files                                           │
+│  Prefix    /home/linuxbrew/.linuxbrew         ││ ━━━━━━━━                                                                                │
+│  Formulae  125                                ││ Name:      bash                                  Description:  Bourne-Again SHell, a    │
+╰───────────────────────────────────────────────╯│ Version:   5.3.20                                              UNIX command interpreter │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:       homebrew/core                                                                │
+│  ✓ alsa-lib                         1.2.16.1_1││ Status:    ✓ installed                                                                  │
+│▸ ✓ bash                                 5.3.20││ License:   GPL-3.0-or-later                                                             │
+│  ✓ bat                                  0.26.1││ Homepage:  https://www.gnu.org/software/bash/                                           │
+│  ✓ brotli                                1.2.1││ Bottled:   yes                                                                          │
+│  ✓ btop                                  1.4.8││                                                                                         │
+│  ✓ bzip2                                 1.0.8││                                                                                         │
+│  ✓ ca-certificates              ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                 │
+│  ✓ curl                         ┃                                                                      ┃                                 │
+│  ✓ cyrus-sasl                   ┃                              UNINSTALL                               ┃                                 │
+│  ✓ dav1d                        ┃                                                                      ┃                                 │
+╰─────────────────────────────────┃                Uninstall bash? This cannot be undone.                ┃                                 │
+╭─ 3 ▣ Casks ─────────────────────┃                removes bash; 1 package depends on it                 ┃                                 │
+│▸ ✓ Claude Code                  ┃                                                                      ┃                                 │
+│  ✓ Google Cloud CLI             ┃                                                                      ┃                                 │
+│                                 ┃                    The following depend on bash:                     ┃                                 │
+╰─────────────────────────────────┃                      direnv                                          ┃                                 │
+╭─ 4 ↑ Outdated ──────────────────┃                                                                      ┃                                 │
+│▸ ↑ git-delta                   0┃                      [y]es   [n]o   esc cancel                       ┃                                 │
+│                                 ┃                                                                      ┃                                 │
+╰─────────────────────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                 │
+╭─ 5 ⊕ Taps ──────────────────────────────── 3 ─╮│                                                                                         │
+│▸ ⚠ danielfoehrkn/switch              untrusted││                                                                                         │
+│  ✓ lthiagol/tap                        trusted││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 6 ◎ Services ──────────────────────────── 3 ─╮│                                                                                         │
+│▸ dbus                                     none││                                                                                         │
+│  ▶ moshi-hook                          started││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮╰─────────────────────────────────────────────────────────────────────────────────────────╯
+│                                               │╭─ Log ───────────────────────────────────────────────────────────────────────────────────╮
+│                                               ││ No commands executed yet                                                                │
+╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
+ y yes  n no  esc cancel                                                                                                                    
