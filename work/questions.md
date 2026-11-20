@@ -591,3 +591,21 @@ Per-commit runs drop `-race`: each commit builds and passes plain
 
 The runner was right: the brief's report and fix-round paths named v2-10 by an
 orchestrator copy error. Fixed in the brief; the v2-11 paths are the record.
+
+## Questions raised — slice `v2-11-cancel-and-test-speed` (reviewer lane, r1)
+
+### Q-v2-11-b — brew in its own process group cannot read the terminal (sudo)
+
+- **Question:** AC-01 puts brew in its own process group (`Setpgid`), as the
+  brief requires. A process outside the terminal's foreground group that reads
+  `/dev/tty` is stopped by SIGTTIN. Shown under a pty: `sh -c 'read x </dev/tty'`
+  sits in state `S` in lazybrew's group and in state `T` (stopped) with
+  `setpgid`. So a brew step that asks for a password on the tty (Homebrew's
+  `sudo` for cask `.pkg` installers, with no `SUDO_ASKPASS`) now stops silently,
+  and the Operation shows `Running` until Esc. Esc still kills the group. Before,
+  the prompt went to the tty over the TUI and competed with Bubble Tea for keys.
+  Accept it, or plan a follow-up (for example set `SUDO_ASKPASS`, or detect the
+  stop and say so)?
+- **Raised by:** reviewer lane (r1). Not a finding: the brief mandates `Setpgid`.
+- **Owner:** the orchestrator. Untested with real brew: that needs a live write,
+  which the human owns.
