@@ -19,7 +19,10 @@ type DataLoadedMsg struct {
 	Formulae []brew.Formula
 	Casks    []brew.Cask
 	Taps     []brew.Tap
-	Services []brew.Service
+	// TrustUnknown is set when the Taps read got no tap-info: Taps holds names
+	// only, so their trust state is not known (v2-10 AC-00).
+	TrustUnknown bool
+	Services     []brew.Service
 	// ServiceInfo is the Services Info view's data: `brew services info`. It is
 	// empty when that read failed, and the Info view then shows the list's fields.
 	ServiceInfo []brew.ServiceInfo

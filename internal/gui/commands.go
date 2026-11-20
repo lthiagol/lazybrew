@@ -778,8 +778,17 @@ func (m Model) executeTapAdd(name string) (tea.Model, tea.Cmd) {
 	return m, m.tasks.RunNext()
 }
 
+// trustStateMissingToast is what t and T say while the taps were read without
+// their trust state: nothing is enqueued, since the state they would act on is
+// not known (v2-10 AC-00.2).
+const trustStateMissingToast = "trust state not loaded — press R"
+
 func (m *Model) startTrustMenu() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
+	if panel.trustUnknown {
+		toast := m.setToast(trustStateMissingToast, modal.ToastInfo)
+		return m, toast
+	}
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
@@ -1618,15 +1627,15 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Formulae: formulae, Casks: casks}
 
 		case PanelTaps:
-			taps, err := boundedRead(brewReadTimeout, "taps", client.Taps.List)
+			list, err := boundedRead(brewReadTimeout, "taps", client.Taps.List)
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
-			items := make([]string, len(taps))
-			for i, t := range taps {
+			items := make([]string, len(list.Taps))
+			for i, t := range list.Taps {
 				items[i] = presentation.FormatTap(t, 0)
 			}
-			return DataLoadedMsg{PanelID: panel, Items: items, Taps: taps}
+			return DataLoadedMsg{PanelID: panel, Items: items, Taps: list.Taps, TrustUnknown: list.TrustUnknown}
 
 		case PanelServices:
 			services, err := boundedRead(brewReadTimeout, "services", client.Services.List)
@@ -1698,7 +1707,7 @@ func statusDashboard(client *brew.Client, loadOutdated bool) (statusSummary, []e
 	var (
 		formulae []brew.Formula
 		casks    []brew.Cask
-		taps     []brew.Tap
+		taps     brew.TapList
 		services []brew.Service
 		cfg      *brew.BrewConfig
 		warnings []brew.DoctorWarning
@@ -1812,7 +1821,7 @@ func statusDashboard(client *brew.Client, loadOutdated bool) (statusSummary, []e
 		Doctor:   knownCount{N: len(warnings), Known: docErr == nil},
 		Formulae: knownCount{N: len(formulae), Known: fErr == nil},
 		Casks:    knownCount{N: len(casks), Known: cErr == nil},
-		Taps:     knownCount{N: len(taps), Known: tErr == nil},
+		Taps:     knownCount{N: len(taps.Taps), Known: tErr == nil},
 		Services: knownCount{N: len(services), Known: sErr == nil},
 		Outdated: knownCount{N: len(outdatedFormulae) + len(outdatedCasks), Known: outdatedKnown},
 	}
@@ -1823,7 +1832,7 @@ func statusDashboard(client *brew.Client, loadOutdated bool) (statusSummary, []e
 
 	officialTaps := 0
 	thirdPartyTaps := 0
-	for _, t := range taps {
+	for _, t := range taps.Taps {
 		if t.IsOfficial {
 			officialTaps++
 		} else {

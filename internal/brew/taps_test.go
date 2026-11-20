@@ -43,10 +43,11 @@ func TestTapsServiceList(t *testing.T) {
 	cache := NewCache(time.Minute)
 	taps := NewTapsReader(r, cache)
 
-	list, err := taps.List(context.Background())
+	tapList, err := taps.List(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
+	list := tapList.Taps
 
 	if len(list) != 3 {
 		t.Fatalf("expected 3 taps, got %d", len(list))
@@ -121,10 +122,11 @@ func TestTapsBatchLoadIsSingleInvocation(t *testing.T) {
 	}
 	cache := NewCache(time.Minute)
 
-	list, err := NewTapsReader(r, cache).List(context.Background())
+	tapList, err := NewTapsReader(r, cache).List(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
+	list := tapList.Taps
 	if len(list) != n {
 		t.Fatalf("expected %d taps, got %d", n, len(list))
 	}
@@ -172,10 +174,11 @@ func TestTapsBatchLoadFallsBackToNameOnlyOnError(t *testing.T) {
 	}
 	cache := NewCache(time.Minute)
 
-	list, err := NewTapsReader(r, cache).List(context.Background())
+	tapList, err := NewTapsReader(r, cache).List(context.Background())
 	if err != nil {
 		t.Fatalf("List should swallow batch error and return names; got %v", err)
 	}
+	list := tapList.Taps
 	if len(list) != 2 {
 		t.Fatalf("expected 2 tap names even on batch failure, got %d", len(list))
 	}
@@ -205,23 +208,89 @@ func TestTapsBatchFailureDoesNotPoisonCache(t *testing.T) {
 	cache := NewCache(time.Minute)
 	reader := NewTapsReader(r, cache)
 
-	first, err := reader.List(context.Background())
+	firstList, err := reader.List(context.Background())
 	if err != nil {
 		t.Fatal(err)
+	}
+	first := firstList.Taps
+	if !firstList.TrustUnknown {
+		t.Error("a list read after a failed tap-info must say its trust state is unknown")
 	}
 	if len(first) != 1 || len(first[0].FormulaNames) != 0 {
 		t.Fatalf("first List should be name-only after batch fail, got %+v", first)
 	}
 
-	second, err := reader.List(context.Background())
+	secondList, err := reader.List(context.Background())
 	if err != nil {
 		t.Fatal(err)
+	}
+	second := secondList.Taps
+	if secondList.TrustUnknown {
+		t.Error("a list read after tap-info recovers must not say its trust state is unknown")
 	}
 	if tapInfoCalls != 2 {
 		t.Errorf("expected second List to retry batch (tap-info calls=2), got %d", tapInfoCalls)
 	}
 	if len(second) != 1 || len(second[0].FormulaNames) != 1 || second[0].FormulaNames[0] != "wget" {
 		t.Fatalf("second List should be enriched after retry, got %+v", second)
+	}
+}
+
+// TestTapsTrustUnknownOnTapInfoTimeout is the AC-00 case of a slow tap-info:
+// the timed-out read comes back as an error from the runner, and the list is
+// flagged TrustUnknown with the names it has, not read as untrusted.
+func TestTapsTrustUnknownOnTapInfoTimeout(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) == 1 && args[0] == "tap" {
+			return []byte("homebrew/core\nuser/tap\n"), nil
+		}
+		if args[0] == "tap-info" {
+			return nil, context.DeadlineExceeded
+		}
+		return nil, nil
+	}
+	cache := NewCache(time.Minute)
+
+	got, err := NewTapsReader(r, cache).List(context.Background())
+	if err != nil {
+		t.Fatalf("a timed-out tap-info must not fail the list; got %v", err)
+	}
+	if !got.TrustUnknown {
+		t.Fatal("a timed-out tap-info must flag the list TrustUnknown")
+	}
+	if len(got.Taps) != 2 || got.Taps[1].Name != "user/tap" {
+		t.Fatalf("the name-only list must keep every tap, got %+v", got.Taps)
+	}
+	for _, tap := range got.Taps {
+		if tap.Trusted || len(tap.FormulaNames) != 0 {
+			t.Errorf("tap %s was not read, so it carries no trust or formula data: %+v", tap.Name, tap)
+		}
+	}
+}
+
+// TestTapsTrustKnownWhenTapInfoReads checks the flag is clear on a full read,
+// so the GUI only refuses trust actions when the state really is missing.
+func TestTapsTrustKnownWhenTapInfoReads(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) == 1 && args[0] == "tap" {
+			return []byte("user/tap\n"), nil
+		}
+		if args[0] == "tap-info" {
+			return []byte(`[{"name":"user/tap","trusted":false}]`), nil
+		}
+		return nil, nil
+	}
+	got, err := NewTapsReader(r, NewCache(time.Minute)).List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.TrustUnknown {
+		t.Fatal("a full tap-info read must not flag TrustUnknown")
+	}
+	if len(got.Taps) != 1 || got.Taps[0].Trusted {
+		t.Fatalf("the untrusted tap must read as untrusted, got %+v", got.Taps)
 	}
 }
 

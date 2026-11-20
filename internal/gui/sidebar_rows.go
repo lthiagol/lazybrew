@@ -131,7 +131,7 @@ func (p *panelData) typedRow(idx int, ic style.Icons) (sidebarCells, bool) {
 		}
 	case PanelTaps:
 		if idx < len(p.taps) {
-			return tapCells(p.taps[idx], ic), true
+			return tapCells(p.taps[idx], !p.trustUnknown, ic), true
 		}
 	case PanelServices:
 		if idx < len(p.services) {
@@ -181,11 +181,15 @@ func outdatedCells(name, version, newVersion string, ic style.Icons) sidebarCell
 	return c
 }
 
-func tapCells(t brew.Tap, ic style.Icons) sidebarCells {
+// tapCells is a row on the Taps list. When the trust state was not read
+// (trustKnown false) it shows no trusted or untrusted word, only the name.
+func tapCells(t brew.Tap, trustKnown bool, ic style.Icons) sidebarCells {
 	c := sidebarCells{name: t.Name, icon: ic.OK, iconRole: style.InstalledBadge, right: "trusted", rightRole: style.SubtleText}
 	switch {
 	case t.IsOfficial:
 		c.right = "official"
+	case !trustKnown:
+		c.iconRole, c.right = style.SubtleText, ""
 	case !t.Trusted:
 		c.icon, c.iconRole, c.right = ic.Warn, style.OutdatedBadge, "untrusted"
 	}
