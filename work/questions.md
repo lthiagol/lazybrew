@@ -134,3 +134,14 @@ resolved.
   `go-version-file: go.mod`, so the next toolchain bump cannot drift again. It
   lands **inside `v2-01-charm-v2`**, as a fix-round commit: a slice whose CI
   cannot build it is not done. Closed.
+
+## Q-v2-sidebar — what does the sidebar show in the overhaul?
+
+- **Question:** the sidebar and the main area show the same thing today (the
+  Status dashboard twice; the Formulae list in both). Option A: a compact nav
+  list of panels with counts, content in the main area. Option B:
+  lazygit-style — the sidebar keeps the stacked panel lists, the main area
+  shows only the selected item's details/tabs, never the list again.
+- **Raised by:** orchestrator, 2026-11-19.
+- **Owner's ruling (the user, 2026-11-19):** **Option B, lazygit-style.**
+  Applies from slice `v2-03`; `v2-02` does not restructure the sidebar. Closed.
