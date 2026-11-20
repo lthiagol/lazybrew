@@ -37,7 +37,7 @@ func (m Model) renderSidebar() string {
 }
 
 // sidebarLabel is the right-hand label of a sidebar box: the state while a
-// fetch is pending or has failed, otherwise the item count. The Status box
+// fetch is pending or has failed, otherwise the item count (0 when empty). The Status box
 // shows no count: its items are dashboard lines, not things that can be
 // counted.
 func (m Model) sidebarLabel(p *panelData) borderLabel {
@@ -55,7 +55,7 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 	case p.id == PanelStatus:
 		return borderLabel{}
 	case p.itemCount() == 0:
-		return borderLabel{full: style.SubtleText.Render("(empty)")}
+		return borderLabel{full: style.SubtleText.Render("0")}
 	default:
 		return borderLabel{full: style.SubtleText.Render(strconv.Itoa(p.itemCount()))}
 	}

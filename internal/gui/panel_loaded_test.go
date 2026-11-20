@@ -9,7 +9,7 @@ import (
 
 // TestNeverLoadedPanelSaysNotLoaded locks AC-05: a panel that has never been
 // fetched says "not loaded" in the sidebar, while a fetched panel with no
-// items keeps "(empty)" and a fetched panel with items lists them.
+// items shows 0 and a fetched panel with items lists them.
 func TestNeverLoadedPanelSaysNotLoaded(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	casks := m.panels[PanelCasks]
@@ -24,8 +24,8 @@ func TestNeverLoadedPanelSaysNotLoaded(t *testing.T) {
 
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{}})
 	got := m.sidebarLabel(m.panels[PanelCasks]).full
-	if !strings.Contains(got, "(empty)") {
-		t.Fatalf("fetched Casks panel with no items should say (empty), got %q", got)
+	if plainLine(got) != "0" {
+		t.Fatalf("fetched Casks panel with no items should show 0, got %q", got)
 	}
 	if strings.Contains(got, "not loaded") {
 		t.Fatalf("fetched Casks panel must not say not loaded, got %q", got)
