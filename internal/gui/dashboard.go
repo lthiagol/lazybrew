@@ -107,10 +107,10 @@ func (m Model) healthBody() string {
 	case !s.Doctor.Known:
 		rows = append(rows, style.SubtleText.Render("press d to run doctor"))
 	case s.Doctor.N == 0:
-		rows = append(rows, lipgloss.NewStyle().Foreground(style.SuccessColor).
+		rows = append(rows, style.SuccessText.
 			Render(withIcon(m.icons.OK, "ready to brew")))
 	default:
-		rows = append(rows, lipgloss.NewStyle().Foreground(style.WarningColor).
+		rows = append(rows, style.WarningText.
 			Render(withIcon(m.icons.Warn, fmt.Sprintf("%d %s", s.Doctor.N, plural(s.Doctor.N, "warning", "warnings")))))
 	}
 	for _, p := range s.Problems {
@@ -122,7 +122,7 @@ func (m Model) healthBody() string {
 // warningLines is text in the Warning role, wrapped to the card's inner width
 // and one row per wrapped line.
 func warningLines(text string) []string {
-	warning := lipgloss.NewStyle().Foreground(style.WarningColor)
+	warning := style.WarningText
 	var out []string
 	for _, line := range strings.Split(ansi.Wrap(text, dashboardCardWidth-2, ""), "\n") {
 		out = append(out, warning.Render(line))
@@ -170,14 +170,14 @@ func outdatedField(c knownCount, pending bool) presentation.Field {
 // run is in the Warning role.
 func outdatedGauge(outdated, installed, width int) string {
 	if outdated == 0 {
-		return lipgloss.NewStyle().Foreground(style.SuccessColor).Render(strings.Repeat("━", width))
+		return style.SuccessText.Render(strings.Repeat("━", width))
 	}
 	current := 0
 	if installed > 0 {
 		current = min(width, max(0, width*(installed-outdated)/installed))
 	}
-	solid := lipgloss.NewStyle().Foreground(style.WarningColor).Render(strings.Repeat("━", current))
-	dashed := lipgloss.NewStyle().Foreground(style.MutedColor).Render(strings.Repeat("╌", width-current))
+	solid := style.WarningText.Render(strings.Repeat("━", current))
+	dashed := style.MutedText.Render(strings.Repeat("╌", width-current))
 	return solid + dashed
 }
 
@@ -194,12 +194,12 @@ func valueOr(s, fallback string) string {
 // line. A clean run reads as ready to brew.
 func doctorView(warnings []brew.DoctorWarning, icons style.Icons) string {
 	if len(warnings) == 0 {
-		return lipgloss.NewStyle().Foreground(style.SuccessColor).
+		return style.SuccessText.
 			Render(withIcon(icons.OK, "Your system is ready to brew."))
 	}
 	blocks := make([]string, 0, len(warnings))
 	for _, w := range warnings {
-		heading := lipgloss.NewStyle().Foreground(style.WarningColor).Render(withIcon(icons.Warn, w.Title))
+		heading := style.WarningText.Render(withIcon(icons.Warn, w.Title))
 		blocks = append(blocks, heading+"\n"+style.NormalItem.Render(strings.TrimRight(w.Details, "\n")))
 	}
 	return strings.Join(blocks, "\n\n")

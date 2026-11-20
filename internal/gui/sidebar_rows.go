@@ -63,12 +63,16 @@ type sidebarRowRoles struct {
 // name is cut with an ellipsis; a right-hand text gives way before the name
 // does. When hl is set every part is drawn on the selected background.
 func layoutSidebarRow(c sidebarCells, r sidebarRowRoles, w int, hl bool) string {
+	// The highlight background is read once for the row, and the plain
+	// separator cell is drawn once for every gap between parts (cr3 AC-06).
+	surface := style.SurfaceColor
 	cell := func(s string, st lipgloss.Style) string {
 		if hl {
-			st = st.Background(style.SurfaceColor)
+			st = st.Background(surface)
 		}
 		return st.Render(s)
 	}
+	sep := cell(" ", lipgloss.NewStyle())
 
 	lead := ""
 	if c.icon != "" {
@@ -95,14 +99,14 @@ func layoutSidebarRow(c sidebarCells, r sidebarRowRoles, w int, hl bool) string 
 
 	line := cell(r.marker, r.markerRole)
 	if lead != "" {
-		line += cell(c.icon, c.iconRole) + cell(" ", lipgloss.NewStyle())
+		line += cell(c.icon, c.iconRole) + sep
 	}
 	line += cell(name, r.nameRole)
 	if right != "" {
-		line += cell(" ", lipgloss.NewStyle()) + cell(c.right, c.rightRole)
+		line += sep + cell(c.right, c.rightRole)
 	}
 	if tail != "" {
-		line += cell(" ", lipgloss.NewStyle()) + cell(c.tail, c.tailRole)
+		line += sep + cell(c.tail, c.tailRole)
 	}
 	return fitLine(line, w)
 }

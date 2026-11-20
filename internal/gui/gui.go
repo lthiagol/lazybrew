@@ -1475,13 +1475,13 @@ func sidebarWidth(cfg *config.Config, totalWidth int) int {
 // own canvas leaves unreadable on a light theme.
 func searchStyles() textinput.Styles {
 	focused := textinput.StyleState{
-		Text:        lipgloss.NewStyle().Foreground(style.TextColor),
-		Placeholder: lipgloss.NewStyle().Foreground(style.MutedColor),
-		Suggestion:  lipgloss.NewStyle().Foreground(style.MutedColor),
+		Text:        style.TextStyle,
+		Placeholder: style.MutedText,
+		Suggestion:  style.MutedText,
 		Prompt:      lipgloss.NewStyle().Foreground(style.AccentColor),
 	}
 	blurred := focused
-	blurred.Text = lipgloss.NewStyle().Foreground(style.SubtleColor)
+	blurred.Text = style.SubtleText
 	return textinput.Styles{
 		Focused: focused,
 		Blurred: blurred,

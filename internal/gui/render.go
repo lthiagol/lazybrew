@@ -60,7 +60,7 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 	case !p.loaded:
 		return borderLabel{
 			full:  style.SubtleText.Render("not loaded"),
-			short: lipgloss.NewStyle().Foreground(style.MutedColor).Render("–"),
+			short: style.MutedText.Render("–"),
 		}
 	case p.id == PanelStatus:
 		return borderLabel{}
@@ -242,7 +242,7 @@ func compose(base string, w, h int, overlays ...*lipgloss.Layer) string {
 // (the inactive borders are darker than the muted role) before they settle.
 func dimBackdrop(base string) string {
 	rows := strings.Split(base, "\n")
-	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
+	muted := style.MutedText
 	for i := 0; i < len(rows)-1; i++ {
 		rows[i] = muted.Render(ansi.Strip(rows[i]))
 	}

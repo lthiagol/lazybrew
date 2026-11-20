@@ -50,6 +50,8 @@ func panel(title borderTitle, label borderLabel, body string, w, h int, focused 
 
 	inner := w - 2
 	lines := strings.Split(body, "\n")
+	// The side edge is the same glyph on every row: it is drawn once (cr3 AC-06).
+	side := edge.Render("│")
 	rows := make([]string, 0, h)
 	rows = append(rows, fitLine(top, w))
 	for i := 0; i < h-2; i++ {
@@ -57,7 +59,7 @@ func panel(title borderTitle, label borderLabel, body string, w, h int, focused 
 		if i < len(lines) {
 			line = lines[i]
 		}
-		rows = append(rows, edge.Render("│")+fitLine(line, inner)+edge.Render("│"))
+		rows = append(rows, side+fitLine(line, inner)+side)
 	}
 	rows = append(rows, edge.Render("╰"+strings.Repeat("─", inner)+"╯"))
 	return strings.Join(rows, "\n")

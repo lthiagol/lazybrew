@@ -27,10 +27,17 @@ var (
 	// SecondaryColor is the Pinned role (teal), kept under its old name.
 	SecondaryColor color.Color
 
-	ActiveBorder     lipgloss.Style
-	InactiveBorder   lipgloss.Style
-	SelectedItem     lipgloss.Style
-	NormalItem       lipgloss.Style
+	ActiveBorder   lipgloss.Style
+	InactiveBorder lipgloss.Style
+	SelectedItem   lipgloss.Style
+	NormalItem     lipgloss.Style
+	// The foreground styles of the text roles, built once per theme: a render
+	// reuses them rather than building one per row (cr3 AC-06).
+	TextStyle        lipgloss.Style
+	MutedText        lipgloss.Style
+	SuccessText      lipgloss.Style
+	WarningText      lipgloss.Style
+	ErrorText        lipgloss.Style
 	TabActive        lipgloss.Style
 	TabInactive      lipgloss.Style
 	HintKey          lipgloss.Style
@@ -110,7 +117,12 @@ func ApplyTheme(t *Theme) {
 	ActiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Focus)
 	InactiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Border)
 	SelectedItem = lipgloss.NewStyle().Foreground(t.Accent).Bold(true)
-	NormalItem = lipgloss.NewStyle().Foreground(t.Text)
+	TextStyle = lipgloss.NewStyle().Foreground(t.Text)
+	MutedText = lipgloss.NewStyle().Foreground(t.Muted)
+	SuccessText = lipgloss.NewStyle().Foreground(t.Success)
+	WarningText = lipgloss.NewStyle().Foreground(t.Warning)
+	ErrorText = lipgloss.NewStyle().Foreground(t.Error)
+	NormalItem = TextStyle
 	TabActive = lipgloss.NewStyle().
 		Foreground(t.Accent).
 		Bold(true).
@@ -126,10 +138,10 @@ func ApplyTheme(t *Theme) {
 	PanelTitleActive = lipgloss.NewStyle().Foreground(t.Focus).Bold(true)
 	ActivePanelBg = lipgloss.NewStyle().Background(t.Surface)
 	LogBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Border)
-	OutdatedBadge = lipgloss.NewStyle().Foreground(t.Warning)
+	OutdatedBadge = WarningText
 	PinnedBadge = lipgloss.NewStyle().Foreground(t.Pinned)
-	InstalledBadge = lipgloss.NewStyle().Foreground(t.Success)
-	ErrorBadge = lipgloss.NewStyle().Foreground(t.Error)
+	InstalledBadge = SuccessText
+	ErrorBadge = ErrorText
 	SubtleText = lipgloss.NewStyle().Foreground(t.Subtle)
 	AccentText = lipgloss.NewStyle().Foreground(t.Accent).Bold(true)
 	DocStyle = lipgloss.NewStyle().Padding(1, 2)

@@ -147,7 +147,7 @@ func (m Model) pkgRow(name string, list map[string]installedPkg) tableRow {
 			if installed {
 				word = "installed"
 			}
-			name += " " + lipgloss.NewStyle().Foreground(style.MutedColor).Render("("+word+")")
+			name += " " + style.MutedText.Render("("+word+")")
 		}
 		cells = []string{name}
 	} else {
@@ -195,8 +195,8 @@ func renderFiles(content string, width int) string {
 	if content == noFilesInstalled || len(paths) == 0 {
 		return style.SubtleText.Render(noFilesInstalled)
 	}
-	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
-	text := lipgloss.NewStyle().Foreground(style.TextColor)
+	muted := style.MutedText
+	text := style.TextStyle
 	rows := make([]tableRow, 0, len(paths))
 	for _, p := range paths {
 		dir, file := path.Split(p)

@@ -41,7 +41,7 @@ const tableMinUseful = 12
 // kept column takes the slack. Cells are cut with … and rows never wrap.
 func renderTable(cols []tableCol, rows []tableRow, w int) string {
 	widths := tableWidths(cols, rows, w)
-	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
+	muted := style.MutedText
 
 	heads := make([]string, len(cols))
 	for i, c := range cols {
