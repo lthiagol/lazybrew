@@ -120,25 +120,28 @@ func Load(path string) (*Config, error) {
 		}
 		cfg.GUI.Icons = v
 	}
-	switch v := os.Getenv(AnimationsEnv); v {
-	case "":
-	case "0":
-		cfg.GUI.Animations = false
-	case "1":
-		cfg.GUI.Animations = true
-	default:
-		return nil, fmt.Errorf("%s: unknown value %q (want 0 or 1)", AnimationsEnv, v)
+	if err := boolEnv(AnimationsEnv, &cfg.GUI.Animations); err != nil {
+		return nil, err
 	}
-	switch v := os.Getenv(PreloadEnv); v {
-	case "":
-	case "0":
-		cfg.GUI.Preload = false
-	case "1":
-		cfg.GUI.Preload = true
-	default:
-		return nil, fmt.Errorf("%s: unknown value %q (want 0 or 1)", PreloadEnv, v)
+	if err := boolEnv(PreloadEnv, &cfg.GUI.Preload); err != nil {
+		return nil, err
 	}
 	return cfg, nil
+}
+
+// boolEnv sets dst from a 0/1 environment switch. An unset variable leaves dst
+// as it is; any other value is an error.
+func boolEnv(name string, dst *bool) error {
+	switch v := os.Getenv(name); v {
+	case "":
+	case "0":
+		*dst = false
+	case "1":
+		*dst = true
+	default:
+		return fmt.Errorf("%s: unknown value %q (want 0 or 1)", name, v)
+	}
+	return nil
 }
 
 func validIcons(name string) bool {
@@ -168,23 +171,22 @@ func loadFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("parsing config %s: %w", path, err)
 	}
 
-	if cfg.Brew.OutdatedTTL <= 0 {
-		cfg.Brew.OutdatedTTL = DefaultOutdatedTTL
-	}
-	if cfg.Brew.FormulaeTTL <= 0 {
-		cfg.Brew.FormulaeTTL = DefaultFormulaeTTL
-	}
-	if cfg.Brew.CasksTTL <= 0 {
-		cfg.Brew.CasksTTL = DefaultCasksTTL
-	}
-	if cfg.Brew.TapsTTL <= 0 {
-		cfg.Brew.TapsTTL = DefaultTapsTTL
-	}
-	if cfg.Brew.ServicesTTL <= 0 {
-		cfg.Brew.ServicesTTL = DefaultServicesTTL
-	}
-	if cfg.Brew.DoctorTTL <= 0 {
-		cfg.Brew.DoctorTTL = DefaultDoctorTTL
+	// A TTL of 0 or less keeps the class's default. This is the one place the
+	// check is made; the brew readers take the TTLs as they are given.
+	for _, ttl := range []struct {
+		value *time.Duration
+		def   time.Duration
+	}{
+		{&cfg.Brew.OutdatedTTL, DefaultOutdatedTTL},
+		{&cfg.Brew.FormulaeTTL, DefaultFormulaeTTL},
+		{&cfg.Brew.CasksTTL, DefaultCasksTTL},
+		{&cfg.Brew.TapsTTL, DefaultTapsTTL},
+		{&cfg.Brew.ServicesTTL, DefaultServicesTTL},
+		{&cfg.Brew.DoctorTTL, DefaultDoctorTTL},
+	} {
+		if *ttl.value <= 0 {
+			*ttl.value = ttl.def
+		}
 	}
 	if cfg.GUI.AutoRefreshPause < 0 {
 		cfg.GUI.AutoRefreshPause = DefaultAutoRefreshPause

@@ -63,12 +63,10 @@ func (s *diagnosticsReader) Doctor(ctx context.Context) ([]DoctorWarning, error)
 	})
 }
 
-// SetCacheTTLs configures the cache TTL for `brew doctor` results.
-// Implements TTLSetter.
+// SetCacheTTLs configures the cache TTL for `brew doctor` results. A zero TTL
+// is the cache default.
 func (s *diagnosticsReader) SetCacheTTLs(ttls CacheTTLs) {
-	if ttls.Doctor > 0 {
-		s.doctorTTL = ttls.Doctor
-	}
+	s.doctorTTL = ttls.Doctor
 }
 
 func parseDoctorWarnings(text string) []DoctorWarning {
@@ -121,13 +119,7 @@ func (s *diagnosticsReader) Missing(ctx context.Context) ([]MissingDep, error) {
 
 func (s *diagnosticsReader) parseMissingOutput(text string) []MissingDep {
 	var missing []MissingDep
-	lines := strings.Split(strings.TrimSpace(text), "\n")
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
+	for _, line := range nonEmptyLines([]byte(text)) {
 		parts := strings.SplitN(line, ": ", 2)
 		if len(parts) == 2 {
 			missing = append(missing, MissingDep{

@@ -2,7 +2,6 @@ package brew
 
 import (
 	"context"
-	"errors"
 	"strings"
 )
 
@@ -45,25 +44,8 @@ func (r sudoRunner) ExecuteStream(ctx context.Context, args ...string) (<-chan s
 // sudoError is err as NeedsSudoError when brew's words say sudo needed a
 // terminal, and err unchanged otherwise.
 func sudoError(args []string, err error) error {
-	if err == nil || !needsTerminal(err) {
+	if err == nil || !errorMentions(err, terminalMarkers) {
 		return err
 	}
 	return &NeedsSudoError{Command: strings.Join(args, " "), Err: err}
-}
-
-// needsTerminal reads brew's words for a terminal refusal: the error text and
-// the stderr brew prints sudo's refusal to.
-func needsTerminal(err error) bool {
-	text := err.Error()
-	var exit *BrewExitError
-	if errors.As(err, &exit) {
-		text += "\n" + exit.Stderr
-	}
-	text = strings.ToLower(text)
-	for _, marker := range terminalMarkers {
-		if strings.Contains(text, marker) {
-			return true
-		}
-	}
-	return false
 }

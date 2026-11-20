@@ -3,8 +3,6 @@ package brew
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"strings"
 	"time"
 )
 
@@ -47,23 +45,8 @@ func (s *servicesReader) List(ctx context.Context) ([]Service, error) {
 		if err != nil {
 			return nil, false, err
 		}
-
-		var rawJSON []json.RawMessage
-		if err := json.Unmarshal(output, &rawJSON); err != nil {
-			return nil, false, err
-		}
-
-		services := make([]Service, 0, len(rawJSON))
-		for _, raw := range rawJSON {
-			var srv Service
-			if err := json.Unmarshal(raw, &srv); err != nil {
-				continue
-			}
-			if srv.Name != "" {
-				services = append(services, srv)
-			}
-		}
-		return services, true, nil
+		services, err := decodeEach(output, func(srv Service) bool { return srv.Name != "" })
+		return services, err == nil, err
 	})
 }
 
@@ -75,32 +58,36 @@ func (s *servicesReader) Info(ctx context.Context) ([]ServiceInfo, error) {
 		if err != nil {
 			return nil, false, err
 		}
-
-		var rawJSON []json.RawMessage
-		if err := json.Unmarshal(output, &rawJSON); err != nil {
-			return nil, false, err
-		}
-
-		info := make([]ServiceInfo, 0, len(rawJSON))
-		for _, raw := range rawJSON {
-			var entry ServiceInfo
-			if err := json.Unmarshal(raw, &entry); err != nil {
-				continue
-			}
-			if entry.Name != "" {
-				info = append(info, entry)
-			}
-		}
-		return info, true, nil
+		info, err := decodeEach(output, func(entry ServiceInfo) bool { return entry.Name != "" })
+		return info, err == nil, err
 	})
 }
 
-// SetCacheTTLs configures the cache TTL for `brew services list` results.
-// Implements TTLSetter.
-func (s *servicesReader) SetCacheTTLs(ttls CacheTTLs) {
-	if ttls.Services > 0 {
-		s.servicesTTL = ttls.Services
+// decodeEach decodes each entry of a JSON array as a T and keeps the ones ok
+// accepts. An entry that does not decode is skipped; output that is not an
+// array is an error.
+func decodeEach[T any](data []byte, ok func(T) bool) ([]T, error) {
+	var rawJSON []json.RawMessage
+	if err := json.Unmarshal(data, &rawJSON); err != nil {
+		return nil, err
 	}
+	out := make([]T, 0, len(rawJSON))
+	for _, raw := range rawJSON {
+		var v T
+		if err := json.Unmarshal(raw, &v); err != nil {
+			continue
+		}
+		if ok(v) {
+			out = append(out, v)
+		}
+	}
+	return out, nil
+}
+
+// SetCacheTTLs configures the cache TTL for `brew services` results. A zero TTL
+// is the cache default.
+func (s *servicesReader) SetCacheTTLs(ttls CacheTTLs) {
+	s.servicesTTL = ttls.Services
 }
 
 func (s *servicesWriter) Start(ctx context.Context, name string) error {
@@ -143,25 +130,8 @@ var rootMarkers = []string{"sudo", "requires root", "permission denied"}
 // needs sudo, naming the command to run (AC-04.1). Any other error passes
 // through unchanged.
 func serviceWriteError(action, name string, err error) error {
-	if err == nil || !refusedForRoot(err) {
+	if err == nil || !errorMentions(err, rootMarkers) {
 		return err
 	}
 	return &ServiceNeedsRootError{Action: action, Name: name}
-}
-
-// refusedForRoot reads brew's words for a root refusal: the error text and the
-// stderr brew prints its hint to.
-func refusedForRoot(err error) bool {
-	text := err.Error()
-	var exit *BrewExitError
-	if errors.As(err, &exit) {
-		text += "\n" + exit.Stderr
-	}
-	text = strings.ToLower(text)
-	for _, marker := range rootMarkers {
-		if strings.Contains(text, marker) {
-			return true
-		}
-	}
-	return false
 }
