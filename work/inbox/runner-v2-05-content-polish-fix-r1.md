@@ -13,19 +13,12 @@ and frames.
 - **F-r1-02** removed `DataLoadedMsg.Dashboard`, the statusDashboard text items,
   FormatStatusDashboard, FormatDoctorStatus, OutdatedInfo, truncate and their
   tests. New `statusSummary.DoctorErr`, helpers `dashboardCards`, `healthWords`.
-  Moved checks (old test:line → new):
-  - fetch_timeouts_test.go:108,114 → healthWords, Summary.Problems
-  - fetch_timeouts_test.go:147 → healthWords non-empty
-  - outdated_count_test.go:104 → cards "Outdated:  1 package"
-  - gui_test.go:1948 → "Outdated:  not loaded — press R"
-  - gui_test.go:2002 → cards "1 package" (was "1 packages")
-  - gui_test.go:2050 → cards "Outdated:  0 packages"
-  - gui_test.go:2074 → cards "1 package" absent
-  - gui_test.go:2099,2122,2237 → cards "Outdated:  1 package"
-  - gui_test.go:2150 → healthWords "⚠ outdated:"
-  - gui_test.go:2342,2350 → healthWords "⚠ doctor unavailable: brew doctor exited with code 2"
-  - gui_test.go:2378,2385 → healthWords "⚠ 1 warning", no doctor failure
-  - status_test.go:91 → Dashboard literal removed; card asserts stand
+  Moved (old test:line → new): fetch_timeouts_test.go:108,114,147 → healthWords /
+  Summary.Problems; outdated_count_test.go:104 → cards "Outdated:  1 package";
+  gui_test.go:1948 "not loaded — press R"; :2002 "1 package" (was "1 packages");
+  :2050 cards "0 packages"; :2074 "1 package" absent; :2099,2122,2237 cards "1 package";
+  :2150 healthWords "⚠ outdated:"; :2342,2350 healthWords "⚠ doctor unavailable: …";
+  :2378,2385 healthWords "⚠ 1 warning"; status_test.go:91 Dashboard literal removed.
 - **F-r1-03** `TestHelpEscClosesHelpBeforeCancellingATask`: first esc closes
   help, task context not cancelled; second esc cancels.
 - **F-r1-04** cards: Homebrew, Health, Packages, Taps, Services; Health lines
@@ -36,5 +29,5 @@ Gate after 730c6ce: build, lint, `CGO_ENABLED=1 go test ./... -race -count=1`
 all ok; cover-check: brew 76.1 ≥ 62, presentation 98.2 ≥ 91, gui 81.9 ≥ 36,
 modal 88.3 ≥ 41.
 
-Notes: "1 package" is a wording change. At 80×24 Packages, Taps and Services
+Notes: "1 package" is a wording change; at 80×24 Packages, Taps and Services
 sit below the fold.
