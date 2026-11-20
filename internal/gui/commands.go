@@ -1190,7 +1190,7 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 		return m, m.setToast("Cannot untap official taps", modal.ToastWarning)
 	}
 	m.pendingAction = "untap"
-	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Untap "+name, "Remove tap "+name+"?").
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Untap", "Remove tap "+name+"?").
 		WithDetail("Installed formulae from this tap will become unavailable for updates.")
 	return m, m.activeModal.Init()
 }
@@ -1209,7 +1209,7 @@ func (m Model) confirmRepair() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.pendingAction = "repair"
-	m.activeModal = modal.NewConfirmModal(modal.ActionInstall, "Repair "+name, "Repair tap "+name+"?").
+	m.activeModal = modal.NewConfirmModal(modal.ActionInstall, "Repair", "Repair tap "+name+"?").
 		WithDetail("Runs brew tap --repair, which migrates the tap to the current layout.")
 	return m, m.activeModal.Init()
 }
@@ -1320,7 +1320,7 @@ func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, t
 
 	m.pendingAction = "mutation"
 	m.pendingMutType = mutType
-	modal := modal.NewConfirmModal(mutationKind(mutType), "Confirm "+actionLabel, message).
+	modal := modal.NewConfirmModal(mutationKind(mutType), actionLabel, message).
 		WithDetail(mutationDetail(mutType, name))
 	m.activeModal = modal
 	return m, m.activeModal.Init()
@@ -1352,7 +1352,7 @@ func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
 	message := "Upgrade " + strconv.Itoa(n) + " selected packages?"
 
 	m.pendingAction = "batch-upgrade"
-	modal := modal.NewConfirmModal(modal.ActionUpgrade, "Confirm Batch Upgrade", message).
+	modal := modal.NewConfirmModal(modal.ActionUpgrade, "Batch Upgrade", message).
 		WithDetail("Installs the newest version of each selected package.")
 	m.activeModal = modal
 	return m, m.activeModal.Init()
