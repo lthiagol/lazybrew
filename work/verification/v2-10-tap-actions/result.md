@@ -98,7 +98,7 @@ All other frames are byte-identical to `before/`.
 ## AC-01 — the actions that apply now (commit 1e91fad)
 
 - `tapActionHints(tap, trustKnown)`: untrusted `t trust  x untap  r repair`;
-  trusted `t untrust  x untap  r repair`; official `x untap  r repair`; trust
+  trusted `t untrust  x untap  r repair`; official `r repair` (no `x`: lazybrew refuses to untap an official tap, Q-v2-10-a); trust
   unknown `x untap  r repair` (no `t`).
 - The Tap Info key line is drawn from it. The footer is `tapsHints`: those
   actions, then `j/k navigate`, then `a add tap`.
@@ -153,8 +153,11 @@ All other frames are byte-identical to `before/`.
 
 Recorded in `work/questions.md` as Q-v2-10-a and Q-v2-10-b for the orchestrator.
 
-- Official tap: the key line and footer offer `x untap` (brief, AC-01), but `x` is
-  refused on official taps by the existing guard. Kept both.
+- Official tap (Q-v2-10-a, orchestrator ruling): the key line and footer show
+  `r repair` only, with `a add tap` in the footer. The existing guard still
+  refuses `x` on an official tap ("Cannot untap official taps"). Regenerated
+  frame 13 (both sizes) for this: it is the only frame with an official tap on
+  screen, and its key line and footer lost `x untap`.
 - Trust unread: `t` is left out of the key line and footer (the brief does not
   say). `t` and `T` refuse with the toast.
 - The T menu's "Untrust tap" entry confirms (the brief names the confirm only for `t`).

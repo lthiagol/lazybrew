@@ -19,7 +19,7 @@ var tapStates = []struct {
 }{
 	{"untrusted", brew.Tap{Name: "user/tool"}, true, "t trust  x untap  r repair"},
 	{"trusted", brew.Tap{Name: "user/tool", Trusted: true}, true, "t untrust  x untap  r repair"},
-	{"official", brew.Tap{Name: "homebrew/core", IsOfficial: true}, true, "x untap  r repair"},
+	{"official", brew.Tap{Name: "homebrew/core", IsOfficial: true}, true, "r repair"},
 	{"unread", brew.Tap{Name: "user/tool"}, false, "x untap  r repair"},
 }
 

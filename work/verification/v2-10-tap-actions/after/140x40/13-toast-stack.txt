@@ -8,7 +8,7 @@
 │  ✓ alsa-lib                         1.2.16.1_1││ Trusted:   trusted                    Casks:     0                                      │
 │▸ ✓ bash                                 5.3.20││ Official:  yes                                                                          │
 │  ✓ bat                                  0.26.1││                                                                                         │
-╰───────────────────────────────────────────────╯│  x untap  r repair                                                                      │
+╰───────────────────────────────────────────────╯│  r repair                                                                               │
 ╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│                                                                                         │
 │▸ ✓ Claude Code                         2.1.311││                                                                                         │
 │  ✓ Google Cloud CLI                    594.0.0││                                                                                         │
@@ -37,4 +37,4 @@
 │                                               │╭─ Log ────────────────────────────────────────────────────╭──────────────────────────────╮
 │                                               ││ No commands executed yet                                 │ ⚠ Cannot untap official taps │
 ╰───────────────────────────────────────────────╯╰──────────────────────────────────────────────────────────╰──────────────────────────────╯
- x untap  r repair  j/k navigate  a add tap  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  q quit  PgUp/Dn scroll     
+ r repair  j/k navigate  a add tap  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  q quit  PgUp/Dn scroll              
