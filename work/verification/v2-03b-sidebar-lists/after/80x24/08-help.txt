@@ -9,8 +9,8 @@
 │     j/k   Scroll list        p   Pin/Unpin selected   U   Upgrade all        │
 │     PgUp/PgDn   Scroll       L   Toggle leaves        F   Fetch              │
 │  content by a page        filter                                             │
-│     Home/End, g/G            F   Fetch selected                              │
-│  Top/bottom of content                                                       │
+│     Home/End   Top/bottom    F   Fetch selected                              │
+│  (g/G outside Search)                                                        │
 │     [/]   Switch tabs                                                        │
 │  Actions                                                                     │
 │     R   Refresh all data                                                     │

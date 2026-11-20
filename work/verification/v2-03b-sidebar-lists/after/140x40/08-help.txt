@@ -7,7 +7,7 @@
 │     1-7   Jump to panel                          u   Upgrade selected                         r   Reinstall                              │
 │     j/k   Scroll list                            U   Upgrade all                              u   Upgrade                                │
 │     PgUp/PgDn   Scroll content by a page         p   Pin/Unpin selected                       U   Upgrade all                            │
-│     Home/End, g/G   Top/bottom of content        L   Toggle leaves filter                     F   Fetch                                  │
+│     Home/End   Top/bottom (g/G outside Search)   L   Toggle leaves filter                     F   Fetch                                  │
 │     [/]   Switch tabs                            F   Fetch selected                                                                      │
 │  Actions                                                                                                                                 │
 │     R   Refresh all data                                                                                                                 │
