@@ -553,6 +553,35 @@ func TestEarlySwitchCountReachesTheDashboard(t *testing.T) {
 	}
 }
 
+// TestFailedReadForgetsItsCount covers F-r2-02: once a later read of a panel
+// fails, the count an earlier read gave is not shown, neither at once nor through
+// a Status load that lands after the failure.
+func TestFailedReadForgetsItsCount(t *testing.T) {
+	var calls []string
+	m := preloadModel(t, preloadConfig(), &calls, "")
+	m, _ = preloadStep(m, tea.WindowSizeMsg{Width: 140, Height: 40})
+	m, _ = preloadStep(m, tea.KeyPressMsg{Code: '1', Text: "1"})
+
+	// Outdated has one package, then a later read of it fails.
+	m, _ = preloadStep(m, DataLoadedMsg{
+		PanelID:  PanelOutdated,
+		Items:    []string{"git-delta"},
+		Formulae: []brew.Formula{{Name: "git-delta"}},
+	})
+	m, _ = preloadStep(m, DataLoadedMsg{PanelID: PanelOutdated, Err: errors.New("timeout")})
+
+	view := ansi.Strip(m.View().Content)
+	if strings.Contains(view, "1 package") || !strings.Contains(view, "press R") {
+		t.Errorf("after the failed read the dashboard still shows the older count:\n%s", view)
+	}
+
+	m, _ = preloadStep(m, statusLoaded())
+	view = ansi.Strip(m.View().Content)
+	if strings.Contains(view, "1 package") || !strings.Contains(view, "press R") {
+		t.Errorf("a Status load after the failure shows the older count:\n%s", view)
+	}
+}
+
 // TestProductionDefaultPreloads pins the production default: the background
 // preload is on unless gui.preload or LAZYBREW_PRELOAD turns it off.
 func TestProductionDefaultPreloads(t *testing.T) {

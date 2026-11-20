@@ -59,6 +59,25 @@ func (s *statusSummary) absorbPanel(id PanelID, msg DataLoadedMsg) {
 	}
 }
 
+// forgetPanel makes a panel's counts unknown again. A failed read does this, so
+// the dashboard shows no count the failure has overtaken (F-r2-02).
+func (s *statusSummary) forgetPanel(id PanelID) {
+	switch id {
+	case PanelFormulae:
+		s.Formulae = knownCount{}
+	case PanelCasks:
+		s.Casks = knownCount{}
+	case PanelOutdated:
+		s.Outdated = knownCount{}
+	case PanelTaps:
+		s.Taps = knownCount{}
+		s.OfficialTaps = 0
+	case PanelServices:
+		s.Services = knownCount{}
+		s.ServicesStarted = 0
+	}
+}
+
 // fillUnknown takes from src each count that s does not know. It keeps a count
 // that a panel landing read when a Status load that finished later read the same
 // source too late to see it (v2-08 F-r1-01).

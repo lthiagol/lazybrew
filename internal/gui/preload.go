@@ -78,15 +78,24 @@ func (m *Model) nextPreloadReads() []tea.Cmd {
 // absorbLanded puts a panel's landed read into the Status dashboard, and the
 // Status sidebar's rows with it, for every landing with the preload on: a
 // preloaded read or one the user's switch started (F-r1-01). The count is also
-// kept in m.landed, so a Status load that lands later keeps it (fillUnknown). A
-// failed read adds nothing: its count stays unknown, and its error shows on its
-// own panel alone (AC-02.2).
+// kept in m.landed, so a Status load that lands later keeps it (fillUnknown).
+//
+// A failed read forgets its source's count instead (F-r2-02): the dashboard and
+// m.landed must not keep a count older than the failure. Its cache entry goes
+// too, so a Status load that lands later cannot read the older cached value
+// either. The error shows on its own panel alone (AC-02.2).
 func (m *Model) absorbLanded(msg DataLoadedMsg) {
-	if msg.Err != nil || !m.cfg.GUI.Preload {
+	if !m.cfg.GUI.Preload {
 		return
 	}
-	m.landed.absorbPanel(msg.PanelID, msg)
-	m.status.absorbPanel(msg.PanelID, msg)
+	if msg.Err != nil {
+		m.landed.forgetPanel(msg.PanelID)
+		m.status.forgetPanel(msg.PanelID)
+		m.invalidatePanelCache(msg.PanelID)
+	} else {
+		m.landed.absorbPanel(msg.PanelID, msg)
+		m.status.absorbPanel(msg.PanelID, msg)
+	}
 	if status := m.panels[PanelStatus]; status.loaded {
 		status.items = statusRows(m.status)
 		status.normalize()
