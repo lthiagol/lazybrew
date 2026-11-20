@@ -460,26 +460,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.isUpdating = true
 		m.updateOutput = nil
-		t := &task.Task{
-			ID:    "brew-update",
-			Title: "brew update",
-			Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-				ch, errCh := m.client.Runner.ExecuteStream(ctx, "update")
-				if ch == nil {
-					ch = closedCh()
-				}
-				return ch, errCh, nil
-			},
-		}
-		// A dropped enqueue would leave isUpdating stuck true and block
-		// every later R update, so surface the failure and reset the flag
-		// (r1 finding 7).
-		if _, err := m.tasks.Enqueue(t); err != nil {
-			m.isUpdating = false
-			c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-			return m, c
-		}
-		return m, m.tasks.RunNext()
+		return m, m.startBrewUpdate()
 
 	case TaskOutputMsg:
 		if m.isUpdating {
@@ -868,27 +849,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cfg.Brew.UpdateOnStart && !m.isUpdating {
 				m.isUpdating = true
 				m.updateOutput = nil
-				t := &task.Task{
-					ID:    "brew-update",
-					Title: "brew update",
-					Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-						ch, errCh := m.client.Runner.ExecuteStream(ctx, "update")
-						if ch == nil {
-							ch = closedCh()
-						}
-						return ch, errCh, nil
-					},
-				}
-				// A dropped enqueue would leave isUpdating stuck true and
-				// permanently block the R update path (r1 finding 7).
-				if _, err := m.tasks.Enqueue(t); err != nil {
-					m.isUpdating = false
-					c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-					return m, tea.Batch(
-						c,
-						func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
-					)
-				}
 				// The update task and the load-flagged refresh travel
 				// together: R is an explicit user request, so the
 				// outdated count must be loaded even when R also runs
@@ -896,7 +856,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// setting it in the brew-update completion handler
 				// would also load the count at startup (M9).
 				return m, tea.Batch(
-					m.tasks.RunNext(),
+					m.startBrewUpdate(),
 					func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
 				)
 			}
@@ -1289,6 +1249,31 @@ func (m Model) render() string {
 		return base
 	}
 	return compose(base, m.width, m.height, overlays...)
+}
+
+// startBrewUpdate enqueues `brew update` and starts it. It runs through
+// DiagnosticsWrite.Update, so the update's cache group is dropped when it
+// finishes. A dropped enqueue resets isUpdating and returns a warning toast.
+func (m *Model) startBrewUpdate() tea.Cmd {
+	client := m.client
+	t := &task.Task{
+		ID:    "brew-update",
+		Title: "brew update",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			ch, errCh := client.DiagnosticsWrite.Update(ctx)
+			if ch == nil {
+				ch = closedCh()
+			}
+			return ch, errCh, nil
+		},
+	}
+	// A dropped enqueue would leave isUpdating stuck true and block every
+	// later R update, so surface the failure and reset the flag (r1 finding 7).
+	if _, err := m.tasks.Enqueue(t); err != nil {
+		m.isUpdating = false
+		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
+	}
+	return m.tasks.RunNext()
 }
 
 // invalidatePanelCache drops brew cache entries for a panel so the next
