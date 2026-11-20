@@ -18,6 +18,7 @@ type GUIConfig struct {
 	Theme              string `yaml:"theme"`
 	SidebarWidth       int    `yaml:"sidebar_width"`
 	ShowIcons          bool   `yaml:"show_icons"`
+	Icons              string `yaml:"icons"` // nerd or unicode
 	Mouse              bool   `yaml:"mouse"`
 	AutoRefreshSeconds int    `yaml:"auto_refresh_seconds"`
 	// AutoRefreshPause is the window after a key event during which
@@ -61,6 +62,7 @@ func Default() *Config {
 			Theme:              "dark",
 			SidebarWidth:       30,
 			ShowIcons:          true,
+			Icons:              IconsNerd,
 			Mouse:              true,
 			AutoRefreshSeconds: 0,
 			AutoRefreshPause:   DefaultAutoRefreshPause,
@@ -78,7 +80,41 @@ func Default() *Config {
 	}
 }
 
+// IconsEnv overrides gui.icons for one run: LAZYBREW_ICONS=unicode.
+const IconsEnv = "LAZYBREW_ICONS"
+
+// The icon set names gui.icons and LAZYBREW_ICONS accept.
+const (
+	IconsNerd    = "nerd"
+	IconsUnicode = "unicode"
+)
+
+// Load reads the config file and then applies LAZYBREW_ICONS. An unknown
+// icon set is an error, from the file or from the environment.
 func Load(path string) (*Config, error) {
+	cfg, err := loadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if !validIcons(cfg.GUI.Icons) {
+		return nil, fmt.Errorf("gui.icons: unknown value %q (want %s or %s)",
+			cfg.GUI.Icons, IconsNerd, IconsUnicode)
+	}
+	if v := os.Getenv(IconsEnv); v != "" {
+		if !validIcons(v) {
+			return nil, fmt.Errorf("%s: unknown value %q (want %s or %s)",
+				IconsEnv, v, IconsNerd, IconsUnicode)
+		}
+		cfg.GUI.Icons = v
+	}
+	return cfg, nil
+}
+
+func validIcons(name string) bool {
+	return name == IconsNerd || name == IconsUnicode
+}
+
+func loadFile(path string) (*Config, error) {
 	cfg := Default()
 
 	if path == "" {

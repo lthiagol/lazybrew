@@ -82,10 +82,14 @@ gui:
   sidebar_width: 30
   mouse: true
   auto_refresh_seconds: 60
+  icons: nerd             # nerd (Nerd Font glyphs) or unicode (no Nerd Font needed)
+  show_icons: true        # false draws no icons at all
 brew:
   path: ""                # auto-detect if empty
   update_on_start: false
 ```
+
+`LAZYBREW_ICONS=unicode` (or `nerd`) overrides `gui.icons` for one run.
 
 ## Development
 

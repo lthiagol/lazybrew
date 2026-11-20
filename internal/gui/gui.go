@@ -87,6 +87,9 @@ type Model struct {
 	// logCollapsed hides the command log pane (Shift+C / "C"). Default false.
 	logCollapsed bool
 
+	// icons is the glyph set every renderer draws with; resolved once in New.
+	icons style.Icons
+
 	// lastKeyAt tracks the last time the user pressed a key. The auto
 	// refresh tick consults this to pause refreshes during interaction
 	// (M12 AC-03) so typing/navigation is not janked by a full
@@ -132,6 +135,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		commandLog:  cl,
 		spinner:     s,
 		searchInput: ti,
+		icons:       iconSet(cfg),
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).
