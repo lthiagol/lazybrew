@@ -21,6 +21,7 @@ gate. Never run brew write commands (see the brief's Safety section).
 - **V3 tests (AC-02):** every changed test still proves what it proved (read
   old vs new side by side); no assertion dropped; production durations
   unchanged.
+- **V3b CI (AC-02b):** both workflows run `-race` with CGO on; no other workflow change.
 - **V4 invariants:** no GUI change; tests not weakened; one commit per AC.
 
 ## Severity
