@@ -18,6 +18,10 @@ import (
 // last ones.
 const logsTailLines = 200
 
+// logsPollInterval is how often the Logs tab reads its log again while it is
+// shown. A test may set it.
+var logsPollInterval = time.Second
+
 // logStream is the log the Logs tab reads: brew's stdout log (LogPath) or its
 // stderr log (ErrorLogPath). The zero value is stdout.
 type logStream int
@@ -51,20 +55,35 @@ type logsView struct {
 	// gen numbers the reads this view has started. A read that lands with an
 	// older gen is stale and is dropped.
 	gen int
-	// started is set while a read is started for this view and it is shown.
+	// started is set while the view's loop runs: a read or the tick before the
+	// next one is in flight, and the view is shown.
 	started bool
 	loaded  bool
+	path    string
 	lines   []string
 	size    int64
 	modTime time.Time
 	err     error
 }
 
-// logsReadMsg is the result of one read of the view's log file.
+// logsReadMsg is the result of one read of the view's log file, from path.
 type logsReadMsg struct {
 	gen  int
+	path string
 	tail logtail.Tail
 	err  error
+}
+
+// logsTickMsg is the wake-up that starts the next read of the view's log.
+type logsTickMsg struct {
+	gen int
+}
+
+// logsTick schedules the next read of the view for gen, one poll interval on.
+func logsTick(gen int) tea.Cmd {
+	return tea.Tick(logsPollInterval, func(time.Time) tea.Msg {
+		return logsTickMsg{gen: gen}
+	})
 }
 
 // selectedServiceName is the name of the service the Services cursor is on, or
@@ -107,8 +126,9 @@ func (m Model) logsSameFile() bool {
 }
 
 // syncLogs brings the Logs view in step with the model after each update. A
-// new service resets the view to stdout; a visit to the Logs tab starts one
-// read. It returns the command that read starts, if any.
+// new service resets the view to stdout; a visit to the Logs tab starts the
+// loop, which reads at once and then every poll interval. It returns the
+// command that first read starts, if any.
 func (m *Model) syncLogs() tea.Cmd {
 	if name := m.selectedServiceName(); name != m.logs.service {
 		m.logs = logsView{service: name, gen: m.logs.gen}
@@ -137,20 +157,27 @@ func (m *Model) readLogsCmd() tea.Cmd {
 	gen, path, read := m.logs.gen, m.logPath(), m.readLog
 	return func() tea.Msg {
 		if path == "" {
-			return logsReadMsg{gen: gen, err: logtail.ErrNoPath}
+			return logsReadMsg{gen: gen, path: path, err: logtail.ErrNoPath}
 		}
 		tail, err := read(path, logsTailLines)
-		return logsReadMsg{gen: gen, tail: tail, err: err}
+		return logsReadMsg{gen: gen, path: path, tail: tail, err: err}
 	}
 }
 
 // applyLogs stores a read's result. The view follows the newest line: when it
 // was at the bottom, it stays there as the lines change; when the user had
-// scrolled up, it does not move.
+// scrolled up, it does not move. A read of a file that has not changed since
+// the last one (same path, size, modification time and error) keeps the lines
+// as they are and rebuilds nothing.
 func (m *Model) applyLogs(msg logsReadMsg) {
+	if m.logs.loaded && msg.path == m.logs.path && sameError(msg.err, m.logs.err) &&
+		msg.tail.Size == m.logs.size && msg.tail.ModTime.Equal(m.logs.modTime) {
+		return
+	}
 	key := m.contentKey()
 	atBottom := m.contentScroll[key] >= m.contentLast()
 	m.logs.loaded = true
+	m.logs.path = msg.path
 	m.logs.lines = msg.tail.Lines
 	m.logs.size = msg.tail.Size
 	m.logs.modTime = msg.tail.ModTime
@@ -158,6 +185,14 @@ func (m *Model) applyLogs(msg logsReadMsg) {
 	if atBottom {
 		m.contentScroll[key] = m.contentLast()
 	}
+}
+
+// sameError is whether two read errors are the same error text, or both nil.
+func sameError(a, b error) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.Error() == b.Error()
 }
 
 // contentHead is the header of the main content that stays on screen while the
