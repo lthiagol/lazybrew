@@ -1,0 +1,39 @@
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                        │
+│  Global                                       Formulae                                     Casks                                       │
+│  Navigation                                      i   Install selected                         i   Install                              │
+│     Tab   Next panel                             x   Uninstall selected                       x   Uninstall                            │
+│     Shift+Tab   Previous panel                   r   Reinstall selected                       X   Zap uninstall                        │
+│     1-7   Jump to panel                          u   Upgrade selected                         r   Reinstall                            │
+│     j/k   Scroll list                            U   Upgrade all                              u   Upgrade                              │
+│     [/]   Switch tabs                            p   Pin/Unpin selected                       U   Upgrade all                          │
+│  Actions                                         L   Toggle leaves filter                     F   Fetch                                │
+│     R   Refresh all data                         F   Fetch selected                                                                    │
+│     /   Search packages                                                                                                                │
+│     C   Toggle command log                                                                                                             │
+│     q   Quit lazybrew                                                                                                                  │
+│     ?   This help                                                                                                                      │
+│  Taps                                         Services                                     Outdated                                    │
+│     a   Add tap                                  s   Start                                    u   Upgrade selected                     │
+│     x   Remove tap                               S   Stop                                     U   Upgrade all                          │
+│     t   Trust config                             r   Restart                                  Space   Toggle selection                 │
+│     r   Repair tap                               f   Run (foreground)                         a   Select/deselect all                  │
+│                                                  c   Cleanup stale services                                                            │
+│  Status                                       Search                                                                                   │
+│     R   Refresh all data                      Actions                                                                                  │
+│     c   Run brew cleanup                         /   Type search query                                                                 │
+│     d   Run brew doctor                          Enter   Execute search                                                                │
+│     A   Run brew autoremove                      i   Install selected result                                                           │
+│     B   Brewfile actions                         F   Fetch selected result                                                             │
+│     v   Vulnerability check                                                                                                            │
+│     m   Missing dependencies                                                                                                           │
+│     [ ]   Switch tabs                                                                                                                  │
+│                                                                                                                                        │
+│                                                                                                                                        │
+│                                                                                                                                        │
+│                                                                                                                                        │
+│                                                                                                                                        │
+│                                                                                                                                        │
+│                                                                                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Press ? or Esc to close

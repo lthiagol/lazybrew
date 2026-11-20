@@ -1,0 +1,39 @@
+╭────────────────────────────────────────────────────────────────────────────╮
+│                                                                            │
+│  Global                   Formulae                 Casks                   │
+│  Navigation                  i   Install selected     i   Install          │
+│     Tab   Next panel         x   Uninstall selected   x   Uninstall        │
+│     Shift+Tab   Previous     r   Reinstall selected   X   Zap uninstall    │
+│  panel                       u   Upgrade selected     r   Reinstall        │
+│     1-7   Jump to panel      U   Upgrade all          u   Upgrade          │
+│     j/k   Scroll list        p   Pin/Unpin selected   U   Upgrade all      │
+│     [/]   Switch tabs        L   Toggle leaves        F   Fetch            │
+│  Actions                  filter                                           │
+│     R   Refresh all data     F   Fetch selected                            │
+│     /   Search packages                                                    │
+│     C   Toggle command log                                                 │
+│     q   Quit lazybrew                                                      │
+│     ?   This help                                                          │
+│  Taps                     Services                 Outdated                │
+│     a   Add tap              s   Start                u   Upgrade          │
+│  selected                                                                  │
+│     x   Remove tap           S   Stop                 U   Upgrade all      │
+│     t   Trust config         r   Restart              Space   Toggle       │
+│     r   Repair tap           f   Run (foreground)  selection               │
+│                              c   Cleanup stale        a   Select/deselect  │
+│                           services                 all                     │
+│  Status                   Search                                           │
+│     R   Refresh all data  Actions                                          │
+│     c   Run brew cleanup     /   Type search query                         │
+│     d   Run brew doctor      Enter   Execute search                        │
+│     A   Run brew             i   Install selected                          │
+│  autoremove               result                                           │
+│     B   Brewfile actions     F   Fetch selected                            │
+│     v   Vulnerability     result                                           │
+│  check                                                                     │
+│     m   Missing                                                            │
+│  dependencies                                                              │
+│     [ ]   Switch tabs                                                      │
+│                                                                            │
+╰────────────────────────────────────────────────────────────────────────────╯
+  Press ? or Esc to close

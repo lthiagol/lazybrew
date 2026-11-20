@@ -1,0 +1,31 @@
+╭──────────────────────╮╭────────────────────────────────────────────────────╮  
+│1 Status  16          ││Status › Dashboard                                  │  
+│                      ││  Dashboard    Config    Doctor                     │  
+╰──────────────────────╯│━━━━━━━━━━━━━                                       │  
+╭──────────────────────╮│▸ Homebrew 7.0.15-36-g1f335ae                       │  
+│2 Formulae            ││  Prefix: /home/linuxbrew/.linuxbrew                │  
+│(empty)               ││                                                    │  
+╰──────────────────────╯│  Formulae:  125 installed                          │  
+╭──────────────────────╮│  Casks:     2 installed                            │  
+│3 Casks               ││  Outdated:  — not loaded (press R to load)         │  
+│(empty)               ││                                                    │  
+╰──────────────────────╯│  Taps:      3 total                                │  
+╭──────────────────────╮│             0 official, 3 third-party              │  
+│4 Outdated            ││                                                    │  
+│(empty)               ││  Services:  3 total                                │  
+╰──────────────────────╯│             1 running, 2 stopped                   │  
+╭──────────────────────╮│                                                    │  
+│5 Taps                ││╭──────────────────────────────────────────────────╮│  
+│(empty)               │││Log                                               ││  
+╰──────────────────────╯││No commands executed yet                          ││  
+╭──────────────────────╮│╰──────────────────────────────────────────────────╯│  
+│6 Services            │╰────────────────────────────────────────────────────╯  
+│(empty)               │                                                        
+╰──────────────────────╯                                                        
+╭──────────────────────╮                                                        
+│7 Search              │                                                        
+│(empty)               │                                                        
+╰──────────────────────╯                                                        
+  Tab  next S-Tab  prev 1-7  jump /  search ?  help R  refresh C  log q  quit   
+  R  refresh c  cleanup d  doctor A  autoremove B  brewfile v  vulns m          
+ missing                                                                        
