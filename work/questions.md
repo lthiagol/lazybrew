@@ -653,3 +653,12 @@ sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
 - **Parked (LB-11):** suspend the TUI for brew steps that need a terminal
   (macOS `.pkg` casks asking for sudo) with `tea.ExecProcess`, as lazygit does
   for the editor. Until then they fail fast with the needs-sudo text (v2-11).
+
+## Q-backlog-next — the user's ruling after LB-08 (2026-11-20)
+
+- **Smoke deferred:** the user ran their own tests and deferred the LB-05 human
+  smoke (`SMOKE-CHECKLIST.md` Run 2); the backlog goes first.
+- **Order:** `lb04-lb10-small-fixes` (LB-04 chunked tap-info + LB-10 cut-row
+  column, one slice) → LB-09 Services logs (design questions to the user before
+  its brief). **LB-11 deferred.** Same lane flow (Haiku builder, Opus reviewer,
+  ≤ 5 rounds, push `wip` per closed slice).
