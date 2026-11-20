@@ -2,6 +2,7 @@ package gui
 
 import (
 	"image/color"
+	"math"
 	"strconv"
 	"strings"
 
@@ -222,6 +223,9 @@ func (m Model) renderTabBar(width int) string {
 	if len(m.tabs) == 0 {
 		return ""
 	}
+	if x, w, moving := m.tabUnderlineSpan(); moving {
+		return m.renderTabBarSliding(x, w)
+	}
 
 	var tabs []string
 	for i, tab := range m.tabs {
@@ -232,6 +236,41 @@ func (m Model) renderTabBar(width int) string {
 		}
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+}
+
+// activeTabSpan is where the active tab's underline rests: its column from the
+// left of the tab bar, and its width. The underline spans the tab's padding
+// too, as the tab's bottom border does.
+func (m Model) activeTabSpan() (x, w int) {
+	for i, tab := range m.tabs {
+		if i == m.activeTab {
+			return x, lipgloss.Width(style.TabActive.Render(" " + tab.name + " "))
+		}
+		x += lipgloss.Width(style.TabInactive.Render(" " + tab.name + " "))
+	}
+	return 0, 0
+}
+
+// renderTabBarSliding draws the tab bar while the underline is on its way to
+// the active tab: the tab names, then a row with the underline at x, w cells
+// wide. At rest the same geometry draws exactly what renderTabBar draws.
+func (m Model) renderTabBarSliding(x, w float64) string {
+	var tabs []string
+	for i, tab := range m.tabs {
+		if i == m.activeTab {
+			tabs = append(tabs, style.TabActive.UnsetBorderBottom().Render(" "+tab.name+" "))
+		} else {
+			tabs = append(tabs, style.TabInactive.Render(" "+tab.name+" "))
+		}
+	}
+	row := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+	total := lipgloss.Width(row)
+	left := min(max(int(math.Round(x)), 0), total)
+	span := min(max(int(math.Round(w)), 0), total-left)
+	rule := strings.Repeat(" ", left) +
+		lipgloss.NewStyle().Foreground(style.AccentColor).Render(strings.Repeat("━", span)) +
+		strings.Repeat(" ", total-left-span)
+	return row + "\n" + rule
 }
 
 func (m Model) computeContentHeights() []int {
