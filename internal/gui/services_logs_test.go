@@ -156,6 +156,26 @@ func TestLogsStderrSameFileNote(t *testing.T) {
 	}
 }
 
+// The note is a header row, so it stays on screen while the lines scroll.
+func TestLogsStderrSameFileNoteStaysWhileFollowing(t *testing.T) {
+	shared := writeLog(t, "moshi-hook.log", numberedLines(250)...)
+	m := pressKey(logsModel(t, 80, 24, shared, shared), "e")
+	view := plainView(m)
+	if !strings.Contains(view, "stderr goes to the same file as stdout") || !strings.Contains(view, "line 250") {
+		t.Errorf("the note or the newest line is off screen:\n%s", view)
+	}
+	assertFrameSize(t, m.View().Content, 80, 24)
+}
+
+// Without the lines there is no note: a missing file says so instead.
+func TestLogsNoNoteWithoutLines(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "absent.log")
+	m := pressKey(logsModel(t, 140, 40, missing, missing), "e")
+	if view := plainView(m); strings.Contains(view, "same file as stdout") {
+		t.Errorf("a missing shared file shows the note:\n%s", view)
+	}
+}
+
 // The stream goes back to stdout when the service changes, and no line of the
 // old service's log is kept.
 func TestLogsStreamResetsOnServiceChange(t *testing.T) {

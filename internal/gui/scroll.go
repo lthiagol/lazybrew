@@ -28,12 +28,16 @@ func (m Model) scrolledContent(content string, w, h int) string {
 }
 
 // contentHeadRows is how many rows of the main content stay on screen above
-// the scrolled part: the Logs tab's header. contentHead draws it.
+// the scrolled part: the Logs tab's header, and its note when it has one.
+// contentHead draws them.
 func (m Model) contentHeadRows() int {
-	if m.onLogsTab() {
-		return 1
+	if !m.onLogsTab() {
+		return 0
 	}
-	return 0
+	if m.logsNote() {
+		return 2
+	}
+	return 1
 }
 
 // scrollRows is how many rows of a main content area contentH rows tall scroll.
