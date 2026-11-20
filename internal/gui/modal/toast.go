@@ -3,6 +3,7 @@ package modal
 import (
 	"image/color"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -26,6 +27,16 @@ type Toast struct {
 	Message string
 	Type    ToastType
 	created time.Time
+	id      uint64
+}
+
+// toastSeq numbers the toasts NewToastAt makes.
+var toastSeq atomic.Uint64
+
+// ID is the toast's identity: unique among the toasts NewToast and NewToastAt
+// make, and the same for the toast's whole life.
+func (t *Toast) ID() uint64 {
+	return t.id
 }
 
 // ToastTickMsg is the tick that re-checks the toast stack for expiry.
@@ -37,7 +48,7 @@ func NewToast(message string, t ToastType) *Toast {
 
 // NewToastAt is NewToast with its start time given, so a test can age a toast.
 func NewToastAt(message string, t ToastType, at time.Time) *Toast {
-	return &Toast{Message: message, Type: t, created: at}
+	return &Toast{Message: message, Type: t, created: at, id: toastSeq.Add(1)}
 }
 
 // Lifetime is how long the toast stays up. Errors stay twice as long, so the
