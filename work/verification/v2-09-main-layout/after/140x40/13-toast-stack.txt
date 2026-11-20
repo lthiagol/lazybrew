@@ -4,11 +4,11 @@
 │  Prefix    /home/linuxbrew/.linuxbrew         ││ ━━━━━━━━━━━━                                                                            │
 │  Formulae  125                                ││ 1 taps · 1 official · 1 trusted · 0 untrusted                                           │
 ╰───────────────────────────────────────────────╯│                                                                                         │
-╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:       homebrew/cask-versions                                                       │
-│  ✓ alsa-lib                         1.2.16.1_1││ Trusted:   trusted                                                                      │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:       homebrew/cask-versions     Formulae:  0                                      │
+│  ✓ alsa-lib                         1.2.16.1_1││ Trusted:   trusted                    Casks:     0                                      │
 │▸ ✓ bash                                 5.3.20││ Official:  yes                                                                          │
-│  ✓ bat                                  0.26.1││ Formulae:  0                                                                            │
-╰───────────────────────────────────────────────╯│ Casks:     0                                                                            │
+│  ✓ bat                                  0.26.1││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
 ╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│                                                                                         │
 │▸ ✓ Claude Code                         2.1.311││                                                                                         │
 │  ✓ Google Cloud CLI                    594.0.0││                                                                                         │

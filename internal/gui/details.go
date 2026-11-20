@@ -62,7 +62,7 @@ func tapDetails(t *brew.Tap, width int) string {
 		{Label: "Tap", Value: t.Name},
 		{Label: "Trusted", Value: trusted},
 		{Label: "Official", Value: boolStr(t.IsOfficial)},
-		{Label: "Remote", Value: t.Remote, Role: style.InfoColor},
+		{Label: "Remote", Value: t.Remote, Role: style.InfoColor, Right: true},
 		{Label: "Formulae", Value: strconv.Itoa(t.FormulaCount), Right: true},
 		{Label: "Casks", Value: strconv.Itoa(t.CaskCount), Right: true},
 	}, width)
@@ -160,7 +160,7 @@ func serviceInfoDetail(s brew.ServiceInfo, width int, icons style.Icons) string 
 		{Label: "User", Value: s.User},
 		{Label: "Loaded", Value: boolStr(s.Loaded)},
 		{Label: "Registered", Value: boolStr(s.Registered)},
-		{Label: "Unit file", Value: s.File},
+		{Label: "Unit file", Value: s.File, Right: true},
 		{Label: "Command", Value: s.Command, Right: true},
 		{Label: "Working dir", Value: s.WorkingDir, Right: true},
 		{Label: "Log", Value: s.LogPath, Right: true},

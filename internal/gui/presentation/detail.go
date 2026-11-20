@@ -23,12 +23,16 @@ type Field struct {
 }
 
 // splitWidth is the content width from which an Info view splits into two
-// columns. The main box's inner width is 100 at this content width: its
-// padding takes one cell either side.
-const splitWidth = 98
+// columns (Q-v2-09-a). The main box's inner width is 84 at this content width:
+// its padding takes one cell either side.
+const splitWidth = 82
 
 // infoGap is the space between the two columns of a split Info view.
 const infoGap = 4
+
+// infoMinRight is the narrowest the right column of a split Info view is kept
+// at, so the prose beside a long field list stays readable.
+const infoMinRight = 26
 
 // Info draws an Info view within width cells. Narrower than splitWidth it is
 // one column, the fields in order. Wider, the fields not marked Right sit in a
@@ -48,9 +52,9 @@ func Info(fields []Field, width int) string {
 			left = append(left, f)
 		}
 	}
-	// The left column is as wide as its fields need, between two and three
-	// fifths of the width; the right column takes the rest.
-	leftW := min(max(width*2/5, lipgloss.Width(Detail(left, 0))), width*3/5)
+	// The left column is as wide as its fields need, but at least two fifths of
+	// the width, and it leaves the right column infoMinRight cells.
+	leftW := min(max(width*2/5, lipgloss.Width(Detail(left, 0))), width-infoGap-infoMinRight)
 	rightW := width - leftW - infoGap
 	return lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().Width(leftW).Render(Detail(left, leftW)),

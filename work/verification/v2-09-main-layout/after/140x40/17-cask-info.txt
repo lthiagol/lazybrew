@@ -2,12 +2,12 @@
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Casks › Info ──────────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                 ││   Info    Deps    Caveats                                                               │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││ ━━━━━━━━                                                                                │
-│  Formulae  125                                ││ Name:         Claude Code                                                               │
-╰───────────────────────────────────────────────╯│ Version:      2.1.311                                                                   │
-╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:          homebrew/cask                                                             │
-│  ✓ alsa-lib                         1.2.16.1_1││ Status:       ✓ installed                                                               │
-│▸ ✓ bash                                 5.3.20││ Homepage:     https://claude.com/product/claude-code                                    │
-│  ✓ bat                                  0.26.1││ Description:  Terminal-based AI coding assistant                                        │
+│  Formulae  125                                ││ Name:      Claude Code                               Description:  Terminal-based AI    │
+╰───────────────────────────────────────────────╯│ Version:   2.1.311                                                 coding assistant     │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:       homebrew/cask                                                                │
+│  ✓ alsa-lib                         1.2.16.1_1││ Status:    ✓ installed                                                                  │
+│▸ ✓ bash                                 5.3.20││ Homepage:  https://claude.com/product/claude-code                                       │
+│  ✓ bat                                  0.26.1││                                                                                         │
 ╰───────────────────────────────────────────────╯│                                                                                         │
 ╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│                                                                                         │
 │▸ ✓ Claude Code                         2.1.311││                                                                                         │

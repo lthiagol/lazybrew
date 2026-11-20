@@ -2,18 +2,18 @@
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Services › Info ───────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                 ││   Info                                                                                  │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││ ━━━━━━━━                                                                                │
-│  Formulae  125                                ││ Name:         moshi-hook                                                                │
-╰───────────────────────────────────────────────╯│ Status:       ▶ running                                                                 │
-╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ PID:          1332457                                                                   │
-│  ✓ alsa-lib                         1.2.16.1_1││ User:         agent                                                                     │
-│▸ ✓ bash                                 5.3.20││ Loaded:       yes                                                                       │
-│  ✓ bat                                  0.26.1││ Registered:   yes                                                                       │
-╰───────────────────────────────────────────────╯│ Unit file:    /home/agent/.config/systemd/user/sh.brew.moshi-hook.service               │
-╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│ Command:      /home/linuxbrew/.linuxbrew/opt/moshi-hook/bin/moshi-hook serve            │
-│▸ ✓ Claude Code                         2.1.311││ Working dir:  /home/linuxbrew/.linuxbrew/var                                            │
-│  ✓ Google Cloud CLI                    594.0.0││ Log:          /home/linuxbrew/.linuxbrew/var/log/moshi-hook.log                         │
+│  Formulae  125                                ││ Name:        moshi-hook               Unit file:    /home/agent/.config/systemd/user/sh │
+╰───────────────────────────────────────────────╯│ Status:      ▶ running                              .brew.moshi-hook.service            │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ PID:         1332457                  Command:      /home/linuxbrew/.linuxbrew/opt/mosh │
+│  ✓ alsa-lib                         1.2.16.1_1││ User:        agent                                  i-hook/bin/moshi-hook serve         │
+│▸ ✓ bash                                 5.3.20││ Loaded:      yes                      Working dir:  /home/linuxbrew/.linuxbrew/var      │
+│  ✓ bat                                  0.26.1││ Registered:  yes                      Log:          /home/linuxbrew/.linuxbrew/var/log/ │
+╰───────────────────────────────────────────────╯│                                                     moshi-hook.log                      │
+╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│                                                                                         │
+│▸ ✓ Claude Code                         2.1.311││  S stop  r restart  c cleanup                                                           │
+│  ✓ Google Cloud CLI                    594.0.0││                                                                                         │
 │                                               ││                                                                                         │
-╰───────────────────────────────────────────────╯│  S stop  r restart  c cleanup                                                           │
+╰───────────────────────────────────────────────╯│                                                                                         │
 ╭─ 4 ↑ Outdated ──────────────────────────── 1 ─╮│                                                                                         │
 │▸ ↑ git-delta                   0.21.1 → 0.21.2││                                                                                         │
 │                                               ││                                                                                         │

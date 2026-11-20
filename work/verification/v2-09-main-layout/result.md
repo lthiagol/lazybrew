@@ -122,10 +122,12 @@ Expectation changes, all in tests that checked the same facts:
 `presentation.Info` takes the fields. A field with `Right: true` goes to the right
 column. Below the threshold it is one column, in the listed order, as today.
 
-Threshold: the content width is **≥ 98**, which is a main box inner width of
-**≥ 100** (the padding takes a cell either side). See **Q-v2-09-a** below: at
-140x40 with the default `sidebar_width` 35 the inner width is 89, so no Info view
-splits at that size.
+Threshold (Q-v2-09-a, ruled by the orchestrator, r3): the main box's **inner width
+≥ 84** splits the view. In code this is one named constant, `splitWidth` in
+`presentation/detail.go`, set to **82**, the content width at inner 84 (the padding
+takes a cell either side). The first AC-03 threshold was inner ≥ 100; at the default
+140x40 layout (`sidebar_width` 35, inner 89) that never split, which is why the
+ruling lowered it.
 
 Split per view (left = fields, right = prose and lists):
 
@@ -133,21 +135,40 @@ Split per view (left = fields, right = prose and lists):
 |---|---|---|
 | Formulae Info, Outdated (formula) | Name, Version, Tap, Status, License, Homepage, Bottled | Description |
 | Casks Info, Outdated (cask) | Name, Version, Tap, Status, Homepage | Description |
-| Tap Info | Tap, Trusted, Official, Remote | Formulae and Casks counts |
-| Services Info | Name … Unit file, Exit code, Interval, Cron | Command, Working dir, Log, Error log |
+| Tap Info | Tap, Trusted, Official | Remote, Formulae and Casks counts |
+| Services Info | Name … Exit code, Interval, Cron | Unit file, Command, Working dir, Log, Error log |
 
 Services' actions line stays under both columns. The left column is as wide as its
-fields need, between 2/5 and 3/5 of the width (the refinement commit 7f6e93b; the
-first AC-03 commit used a fixed 2/5, which cut the Unit file path), with a gap of
-4; the right column takes the rest. Right-column values wrap with the v2-05 hanging indent and are not
-cut.
+fields need, but at least 2/5 of the width, and it leaves the right column at least
+`infoMinRight` = 26 cells; a gap of 4 separates them. (The first AC-03 commit used a
+fixed 2/5, which cut the Unit file path. The refinement commit 7f6e93b used up to
+3/5, which cut long left values such as the Remote and Unit file.) Right-column
+values wrap with the v2-05 hanging indent and are never cut.
+
+Revision r3 moved the Unit file (Services) and the Remote (Tap Info) to the right
+column: they are paths and URLs, the long values that the 140x40 split squeezed.
+Paths have no spaces, so a long path breaks mid-word at the column edge; that is
+the wrap, not a cut.
 
 Expectation change: `services_view_test.go` at width 100 expects the log path to
 wrap (`/home/linuxbrew/.linuxbrew/var/log/moshi-` then `hook.log`). The test used to
 look for the whole path on one line. It now checks both halves.
 
-Tests: `presentation/info_test.go` (split from 98, one column below, wrap, order)
-and `info_split_test.go` (Tap Info split at 100 and 97).
+Tests: `presentation/info_test.go` (split at the constant, one column one cell below,
+wrap, order), `info_split_test.go` (Tap Info split at 82 and one column at 81; the
+140x40 Formulae Info splits, `TestInfoSplitsAt140x40`). The Tap Info test now checks
+the counts sit past the left column, because the Remote is on the right above them.
+
+### Changed by r3 (Q-v2-09-a): the 140x40 screens
+
+At 140x40 the Info views now split. The screens that changed because of the split
+(the others at 140x40 are unchanged by it): 02 formulae (Info is the default tab),
+03 formulae info, 06 taps (Tap Info), 17 cask info, 19 services info, and the
+overlays that sit over those Info views: 07 confirm modal, 10 toast, 12 confirm
+upgrade, 13 toast stack, 14 input modal, 20 services stop confirm. 80x24 and 200x60
+are byte-identical to before this revision (80x24 is below the threshold; 200x60 was
+already split).
+
 
 ## AC-04 — the Log box gives the space back when idle
 
@@ -207,10 +228,10 @@ and the Log box, plus the table or the Info change named below.
 |---|---|---|---|
 | 01 status | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
 | 02 formulae | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
-| 03 formulae info | padded, single column, Log 3 rows | same | AC-01, AC-03 (single column below 98), AC-04 |
+| 03 formulae info | padded, split: Description on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
 | 04 formulae deps | Deps table: Name/Version/Description, groups as heading rows | Deps table: Description kept and cut with `…`, Version kept | AC-02, AC-01 |
 | 05 outdated | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
-| 06 taps (Tap Info) | padded, single column, Log 3 rows | same | AC-01, AC-03, AC-04 |
+| 06 taps (Tap Info) | padded, split: counts on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
 | 07 confirm modal | backdrop padded, Log 3 rows | same | AC-01, AC-04 |
 | 08 help | unchanged | unchanged | help covers the main area |
 | 09 search | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
@@ -221,9 +242,9 @@ and the Log box, plus the table or the Info change named below.
 | 14 input modal | padded, Log 3 rows | same | AC-01, AC-04 |
 | 15 menu brewfile | padded, Log 3 rows | padded | AC-01, AC-04 |
 | 16 help scrolled | unchanged | unchanged | help covers the main area |
-| 17 cask info | padded, single column, Log 3 rows | same | AC-01, AC-03 (single column), AC-04 |
+| 17 cask info | padded, split: Description on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
 | 18 doctor | padded, Log 3 rows | same | AC-01, AC-04 |
-| 19 services info | padded, single column, Log 3 rows | same | AC-01, AC-03 (single column), AC-04 |
+| 19 services info | padded, split: paths on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
 | 20 services stop confirm | padded, Log 3 rows | same | AC-01, AC-04 |
 
 The 200x60 set shows the AC-03 split on the Info screens: 03 (formula Description
@@ -238,14 +259,13 @@ right), 17 (cask Description right), 06 (Formulae count right of the Tap row) an
 
 ## Questions
 
-- **Q-v2-09-a** (`work/questions.md`): the 100-column threshold on the box's inner
-  width gives no split at 140x40 with the default sidebar. Implemented as the brief
-  says. The 200x60 set shows the split.
+- **Q-v2-09-a** (`work/questions.md`): resolved by the orchestrator's ruling in r3:
+  the split threshold is box inner width ≥ 84, so 140x40 splits. See AC-03 above.
 
 ## What the next session must know
 
 - The Log box is not padded: its text touches its left border.
-- Q-v2-09-a is open. Until it is answered, the 140x40 frames show no split.
-- The split threshold is one constant, `splitWidth` in `presentation/detail.go`.
+- The split threshold is one constant, `splitWidth` in `presentation/detail.go`
+  (82 content cells = box inner 84).
 - The Deps tab no longer uses `tabContent`. Anything that expects a stored Deps
   string needs the rendered view instead.
