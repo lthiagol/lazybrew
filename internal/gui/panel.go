@@ -280,6 +280,18 @@ func (p *panelData) selectServiceNamed(name string) {
 	}
 }
 
+// selectTapNamed moves the cursor to the named tap when the list still has it.
+// Otherwise the cursor stays on its index, which after an untap is the tap that
+// followed the removed one (v2-10 AC-04.1).
+func (p *panelData) selectTapNamed(name string) {
+	for i, t := range p.taps {
+		if name != "" && t.Name == name {
+			p.selected = i
+			return
+		}
+	}
+}
+
 func emptyPanel(width, height int) string {
 	return lipgloss.NewStyle().Width(width).Height(height).Render(
 		style.SubtleText.Render("No selection"),

@@ -484,10 +484,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.setToast(failureText(msg.ID, msg.Title, msg.Err), modal.ToastError),
 				m.tasks.RunNext(),
 				serviceReload(msg.ID),
+				tapsReload(msg.ID),
 			)
 		}
 		if errors.Is(msg.Err, context.Canceled) {
-			return m, tea.Batch(m.tasks.RunNext(), serviceReload(msg.ID))
+			return m, tea.Batch(m.tasks.RunNext(), serviceReload(msg.ID), tapsReload(msg.ID))
 		}
 		closeCmd := m.autoCloseCmd()
 		switch msg.ID {
@@ -621,6 +622,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.invalidatePanelCache(PanelServices)
 		m.panels[PanelServices].loading = true
 		return m, fetchPanelData(m.client, PanelServices)
+
+	case tapsReloadMsg:
+		m.invalidatePanelCache(PanelTaps)
+		m.panels[PanelTaps].loading = true
+		return m, fetchPanelData(m.client, PanelTaps)
 
 	case RefreshMsg:
 		m.clearTabContent()
@@ -1069,6 +1075,11 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 		if s := p.selectedService(); msg.PanelID == PanelServices && s != nil {
 			selectedService = s.Name
 		}
+		// A reload keeps the cursor on the same tap by name (v2-10 AC-04.1).
+		selectedTap := ""
+		if t := p.selectedTap(); msg.PanelID == PanelTaps && t != nil {
+			selectedTap = t.Name
+		}
 		p.loading = false
 		p.loaded = true
 		p.err = msg.Err
@@ -1088,6 +1099,7 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 				}
 			}
 			p.selectServiceNamed(selectedService)
+			p.selectTapNamed(selectedTap)
 		}
 		p.normalize()
 	}
