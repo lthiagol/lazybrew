@@ -156,6 +156,10 @@ type Model struct {
 	motionShown modal.Modal
 	// motionStack is the toast stack the slots were last laid out for.
 	motionStack []*modal.Toast
+	// toastMotionNames are the motion names of the toasts in that stack, by
+	// toast id, so a frame reads their offsets without building names (cr3
+	// F-r1-02).
+	toastMotionNames map[uint64]toastNames
 	// opBar is the batch's progress bar, and opBarOp the operation it belongs
 	// to. Its fill springs to the batch's share when the count changes.
 	opBar   progress.Model
