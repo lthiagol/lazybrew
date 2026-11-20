@@ -1,0 +1,98 @@
+package dump
+
+import (
+	"fmt"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui"
+)
+
+// drain runs cmds synchronously, skipping anything that takes > 3s (ticks).
+func drain(m tea.Model, cmd tea.Cmd, depth int) tea.Model {
+	if cmd == nil || depth > 6 {
+		return m
+	}
+	ch := make(chan tea.Msg, 1)
+	go func() { ch <- cmd() }()
+	var msg tea.Msg
+	select {
+	case msg = <-ch:
+	case <-time.After(20 * time.Second):
+		return m
+	}
+	if msg == nil {
+		return m
+	}
+	if b, ok := msg.(tea.BatchMsg); ok {
+		for _, c := range b {
+			m = drain(m, c, depth+1)
+		}
+		return m
+	}
+	if reflect.TypeOf(msg).String() == "tea.sequenceMsg" {
+		v := reflect.ValueOf(msg)
+		for i := 0; i < v.Len(); i++ {
+			c := v.Index(i).Interface().(tea.Cmd)
+			m = drain(m, c, depth+1)
+		}
+		return m
+	}
+	nm, nc := m.Update(msg)
+	return drain(nm, nc, depth+1)
+}
+
+func key(m tea.Model, k tea.KeyPressMsg) tea.Model {
+	nm, c := m.Update(k)
+	return drain(nm, c, 0)
+}
+
+func runes(s string) tea.KeyPressMsg { return tea.KeyPressMsg{Code: []rune(s)[0], Text: s} }
+
+func TestDump(t *testing.T) {
+	r, err := brew.NewDefaultRunner()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, sz := range [][2]int{{140, 40}, {80, 24}} {
+		var m tea.Model = gui.New(brew.NewClient(r), config.Default())
+		m = drain(m, m.Init(), 0)
+		nm, c := m.Update(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+		m = drain(nm, c, 0)
+		out := fmt.Sprintf("%s/%dx%d", os.Getenv("DUMP_DIR"), sz[0], sz[1])
+		os.MkdirAll(out, 0o755)
+		shot := func(name string) {
+			v := m.View().Content
+			os.WriteFile(out+"/"+name+".ansi", []byte(v), 0o644)
+			os.WriteFile(out+"/"+name+".txt", []byte(ansi.Strip(v)), 0o644)
+		}
+		shot("01-status")
+		m = key(m, runes("2"))
+		shot("02-formulae")
+		m = key(m, runes("j"))
+		m = key(m, runes("]"))
+		shot("03-formulae-info")
+		m = key(m, runes("]"))
+		shot("04-formulae-deps")
+		m = key(m, runes("4"))
+		shot("05-outdated")
+		m = key(m, runes("5"))
+		shot("06-taps")
+		m = key(m, runes("2"))
+		m = key(m, runes("x"))
+		shot("07-confirm-modal")
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+		m = key(m, runes("?"))
+		shot("08-help")
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+		m = key(m, runes("7"))
+		shot("09-search")
+	}
+	fmt.Println("ok")
+}

@@ -90,8 +90,9 @@ func (m *ConfirmModal) View() tea.View {
 		buttons,
 	)
 
+	// Width counts the border in v2; add it back so the box is the v1 size.
 	return tea.NewView(lipgloss.NewStyle().
-		Width(width).
+		Width(width + 2).
 		Align(lipgloss.Center).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(style.AccentColor).

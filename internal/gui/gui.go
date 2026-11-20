@@ -970,9 +970,11 @@ func (m Model) render() string {
 
 	if m.showHelp {
 		helpContent := renderHelp(m.width)
+		// Width and Height count the border (v2); v1 added it on top, so
+		// the box is 2 cells wider and taller than the bare numbers.
 		helpView := lipgloss.NewStyle().
-			Width(m.width-4).
-			Height(m.height-4).
+			Width(m.width-2).
+			Height(m.height-2).
 			Padding(1, 2).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(style.AccentColor).
