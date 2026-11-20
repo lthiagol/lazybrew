@@ -14,6 +14,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui/anim"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
@@ -110,6 +111,15 @@ type Model struct {
 	// within the pause window. The next tick will re-evaluate; the
 	// pending refresh is rescheduled for one AutoRefreshSeconds later.
 	autoRefreshPaused bool
+
+	// motion holds the values the screen animates, and motionOn is whether it
+	// does (gui.animations, LAZYBREW_ANIMATIONS). motionTicking is set while a
+	// frame tick is in flight, so a screen has one tick chain; motionAt is the
+	// time of the last frame, zero when no run is under way.
+	motion        *anim.Set
+	motionOn      bool
+	motionTicking bool
+	motionAt      time.Time
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -140,6 +150,8 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		searchInput:   ti,
 		icons:         icons,
 		contentScroll: make(map[string]int),
+		motion:        anim.NewSet(),
+		motionOn:      animationsOn(cfg),
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).
@@ -221,6 +233,24 @@ func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if tick, ok := msg.(anim.TickMsg); ok {
+		return m.stepMotion(tick.At)
+	}
+	next, cmd := m.update(msg)
+	// A handler on *Model returns the pointer, so the settled model goes back
+	// into it and the returned type stays the same.
+	if p, ok := next.(*Model); ok {
+		var nm Model
+		nm, cmd = p.settleMotion(cmd)
+		*p = nm
+		return p, cmd
+	}
+	return next.(Model).settleMotion(cmd)
+}
+
+// update is the message switch. Update wraps it, so the motion targets are
+// settled after every message, whichever branch handled it.
+func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {

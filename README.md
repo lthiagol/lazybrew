@@ -84,12 +84,16 @@ gui:
   auto_refresh_seconds: 60
   icons: nerd             # nerd (Nerd Font glyphs) or unicode (no Nerd Font needed)
   show_icons: true        # false draws no icons at all
+  animations: true        # false draws every change at once, with no motion
 brew:
   path: ""                # auto-detect if empty
   update_on_start: false
 ```
 
 `LAZYBREW_ICONS=unicode` (or `nerd`) overrides `gui.icons` for one run.
+
+`LAZYBREW_ANIMATIONS=0` (or `1`) overrides `gui.animations` for one run. The
+motion is short and never delays a key: a closing overlay disappears at once.
 
 ## Development
 

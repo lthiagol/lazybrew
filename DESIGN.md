@@ -91,6 +91,7 @@ See the config ADR topic (configuration schema decisions).
 | `gui.sidebar_width` | Wired | Integer |
 | `gui.show_icons` | Wired | `false` draws no icons at all |
 | `gui.icons` | Wired | `nerd` (default) or `unicode`; `LAZYBREW_ICONS` overrides |
+| `gui.animations` | Wired | `true` (default) springs the motion; `false` draws every change at once; `LAZYBREW_ANIMATIONS` overrides |
 | `gui.mouse` | Wired | `View().MouseMode = tea.MouseModeCellMotion` |
 | `gui.auto_refresh_seconds` | Planned | Tick in M20.8 |
 | `brew.path` | Planned | Custom runner path in M20.8 |
