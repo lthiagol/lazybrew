@@ -316,6 +316,12 @@ func (m Model) renderContent(width, height int) string {
 			}
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
+				switch m.activeTab {
+				case formulaUsesTab:
+					return m.renderUses(content)
+				case formulaFilesTab:
+					return renderFiles(content)
+				}
 				return content
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
@@ -337,14 +343,18 @@ func (m Model) renderContent(width, height int) string {
 			return presentation.FormatCaskInfo(*c, width, m.icons)
 		case 1:
 			c := panel.selectedCask()
-			if c == nil || len(c.DependsOn) == 0 {
-				return style.SubtleText.Render("No dependencies")
+			if c == nil {
+				return style.SubtleText.Render(noDependencies)
 			}
-			result := ""
-			for _, d := range c.DependsOn {
-				result += d + "\n"
+			view := m.renderDepGroups([]depGroup{
+				{heading: "Formulae", names: c.DependsOnFormulae, check: depFormula},
+				{heading: "Casks", names: c.DependsOnCasks, check: depCask},
+				{heading: "Requirements", names: c.Requirements, check: depNone},
+			})
+			if view == "" {
+				return style.SubtleText.Render(noDependencies)
 			}
-			return result
+			return view
 		case 2:
 			c := panel.selectedCask()
 			if c == nil {
@@ -470,12 +480,8 @@ func (m Model) renderSearchInfo(width, height int) string {
 		{Label: "Description", Value: info.Description, Prose: true},
 	}, width)
 
-	if len(info.Dependencies) > 0 {
-		deps := "\n\n" + style.AccentText.Render("Dependencies:") + "\n"
-		for _, d := range info.Dependencies {
-			deps += "  " + d + "\n"
-		}
-		result += deps
+	if view := m.renderDepGroups(info.Groups); view != "" {
+		result += "\n\n" + style.AccentText.Render("Dependencies:") + "\n" + view
 	}
 	if info.Caveats != "" {
 		result += "\n\n" + presentation.Detail([]presentation.Field{

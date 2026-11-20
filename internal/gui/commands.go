@@ -674,17 +674,18 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 }
 
 type pkgInfo struct {
-	Name         string
-	Version      string
-	Type         string
-	Bottled      bool
-	Installed    bool
-	InstallPath  string
-	License      string
-	Description  string
-	Homepage     string
-	Dependencies []string
-	Caveats      string
+	Name        string
+	Version     string
+	Type        string
+	Bottled     bool
+	Installed   bool
+	InstallPath string
+	License     string
+	Description string
+	Homepage    string
+	// Groups are the dependency lists of the package, each under its heading.
+	Groups  []depGroup
+	Caveats string
 }
 
 func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
@@ -698,29 +699,36 @@ func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
 	if len(result.Formulae) > 0 {
 		f := result.Formulae[0]
 		return &pkgInfo{
-			Name:         f.Name,
-			Version:      f.Version,
-			Type:         "formula",
-			Bottled:      f.Bottled,
-			Installed:    len(f.Installed) > 0 || f.InstalledOnReq || f.InstalledAsDep,
-			InstallPath:  f.InstallPath,
-			License:      f.License,
-			Description:  f.Description,
-			Homepage:     f.Homepage,
-			Dependencies: append(f.Dependencies, f.BuildDeps...),
-			Caveats:      f.Caveats,
+			Name:        f.Name,
+			Version:     f.Version,
+			Type:        "formula",
+			Bottled:     f.Bottled,
+			Installed:   len(f.Installed) > 0 || f.InstalledOnReq || f.InstalledAsDep,
+			InstallPath: f.InstallPath,
+			License:     f.License,
+			Description: f.Description,
+			Homepage:    f.Homepage,
+			Groups: []depGroup{
+				{heading: "Runtime", names: f.Dependencies, check: depFormula},
+				{heading: "Build", names: f.BuildDeps, check: depFormula},
+			},
+			Caveats: f.Caveats,
 		}, nil
 	}
 	if len(result.Casks) > 0 {
 		c := result.Casks[0]
 		return &pkgInfo{
-			Name:         c.Name,
-			Version:      c.Version,
-			Type:         "cask",
-			Installed:    len(c.Installed) > 0,
-			Description:  c.Description,
-			Homepage:     c.Homepage,
-			Dependencies: c.DependsOn,
+			Name:        c.Name,
+			Version:     c.Version,
+			Type:        "cask",
+			Installed:   len(c.Installed) > 0,
+			Description: c.Description,
+			Homepage:    c.Homepage,
+			Groups: []depGroup{
+				{heading: "Formulae", names: c.DependsOnFormulae, check: depFormula},
+				{heading: "Casks", names: c.DependsOnCasks, check: depCask},
+				{heading: "Requirements", names: c.Requirements, check: depNone},
+			},
 		}, nil
 	}
 	return nil, fmt.Errorf("no package info found")
@@ -1053,7 +1061,7 @@ func (m *Model) loadTabContent() tea.Cmd {
 		if _, ok := m.tabContent[key]; ok {
 			return nil
 		}
-		if content, ok := renderCachedTabContent(panelID, tabIdx, panel); ok {
+		if content, ok := m.renderCachedTabContent(panelID, tabIdx, panel); ok {
 			m.tabContent[key] = content
 			return nil
 		}
@@ -1068,41 +1076,15 @@ func (m *Model) loadTabContent() tea.Cmd {
 // fetchTabContentCmd. The boolean lets the caller distinguish "rendered
 // something terminal" from "no fast path" — empty strings still count as
 // a terminal state (e.g. "No dependencies").
-func renderCachedTabContent(panelID PanelID, tabIdx int, panel *panelData) (string, bool) {
+func (m *Model) renderCachedTabContent(panelID PanelID, tabIdx int, panel *panelData) (string, bool) {
 	if panelID == PanelFormulae && tabIdx == formulaDepsTab {
 		f := panel.selectedFormula()
 		if f == nil {
 			return "", false
 		}
-		return renderFormulaDeps(f), true
+		return m.formulaDepsView(f), true
 	}
 	return "", false
-}
-
-// renderFormulaDeps formats the flat dependency list already on the
-// Formula model (runtime + build deps). Returns "No dependencies" when the
-// formula declares none, so the tab always reaches a terminal state without
-// shelling out.
-func renderFormulaDeps(f *brew.Formula) string {
-	runtime := f.Dependencies
-	build := f.BuildDeps
-	if len(runtime) == 0 && len(build) == 0 {
-		return "No dependencies"
-	}
-	var b strings.Builder
-	if len(runtime) > 0 {
-		b.WriteString("Runtime:\n")
-		for _, d := range runtime {
-			b.WriteString("  " + d + "\n")
-		}
-	}
-	if len(build) > 0 {
-		b.WriteString("Build:\n")
-		for _, d := range build {
-			b.WriteString("  " + d + "\n")
-		}
-	}
-	return strings.TrimRight(b.String(), "\n")
 }
 
 func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string) tea.Cmd {
@@ -1158,7 +1140,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 					result += u + "\n"
 				}
 				if result == "" {
-					result = "No dependents"
+					result = noDependents
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: result}
 			case formulaFilesTab:
@@ -1168,7 +1150,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 				}
 				content := string(output)
 				if content == "" {
-					content = "No files installed"
+					content = noFilesInstalled
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: content}
 			}

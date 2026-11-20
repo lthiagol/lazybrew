@@ -1,0 +1,390 @@
+{
+  "formulae": [],
+  "casks": [
+    {
+      "token": "claude-code",
+      "full_token": "claude-code",
+      "old_tokens": [],
+      "tap": "homebrew/cask",
+      "name": [
+        "Claude Code"
+      ],
+      "desc": "Terminal-based AI coding assistant",
+      "homepage": "https://claude.com/product/claude-code",
+      "url": "https://downloads.claude.ai/claude-code-releases/2.1.311/linux-arm64/claude",
+      "url_specs": {},
+      "version": "2.1.311",
+      "autobump": true,
+      "no_autobump_message": null,
+      "skip_livecheck": false,
+      "installed": "2.1.311",
+      "installed_time": 1794957826,
+      "bundle_version": null,
+      "bundle_short_version": null,
+      "pinned": false,
+      "pinned_version": null,
+      "outdated": false,
+      "sha256": "2e2496c9a8065df93acb0fca2d341f59a6b8777649b2e025ab8c9bcd5eef61f3",
+      "artifacts": [
+        {
+          "binary": [
+            "claude"
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/bin/claude"
+        },
+        {
+          "zap": [
+            {
+              "trash": [
+                "~/.cache/claude",
+                "~/.claude.json*",
+                "~/.config/claude",
+                "~/.local/bin/claude",
+                "~/.local/share/claude",
+                "~/.local/state/claude",
+                "~/Library/Caches/claude-cli-nodejs"
+              ],
+              "rmdir": "~/.claude"
+            }
+          ]
+        }
+      ],
+      "caveats": null,
+      "caveats_rosetta": null,
+      "depends_on": {},
+      "conflicts_with": {
+        "cask": [
+          "claude-code@latest"
+        ]
+      },
+      "container": null,
+      "rename": [],
+      "auto_updates": null,
+      "deprecated": false,
+      "deprecation_date": null,
+      "deprecation_reason": null,
+      "deprecation_replacement_formula": null,
+      "deprecation_replacement_cask": null,
+      "deprecate_args": null,
+      "disabled": false,
+      "disable_date": null,
+      "disable_reason": null,
+      "disable_replacement_formula": null,
+      "disable_replacement_cask": null,
+      "disable_args": null,
+      "tap_git_head": "c4eb56478a3bae8196a8d3923bf358fafebf9e64",
+      "languages": [],
+      "ruby_source_path": "Casks/c/claude-code.rb",
+      "ruby_source_checksum": {
+        "sha256": "c04066c2a4f771c8bac604d50855c3e54cc396d4caf3c0b1a69ce89d4bf51b70"
+      }
+    },
+    {
+      "token": "gcloud-cli",
+      "full_token": "gcloud-cli",
+      "old_tokens": [
+        "google-cloud-sdk"
+      ],
+      "tap": "homebrew/cask",
+      "name": [
+        "Google Cloud CLI"
+      ],
+      "desc": "Set of tools to manage resources and applications hosted on Google Cloud",
+      "homepage": "https://cloud.google.com/cli/",
+      "url": "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-594.0.0-linux-arm.tar.gz",
+      "url_specs": {},
+      "version": "594.0.0",
+      "autobump": true,
+      "no_autobump_message": null,
+      "skip_livecheck": false,
+      "installed": "592.0.0",
+      "installed_time": 1793815812,
+      "bundle_version": null,
+      "bundle_short_version": null,
+      "pinned": false,
+      "pinned_version": null,
+      "outdated": false,
+      "sha256": "e58fb86fff3dfd7101e1ff138f06bd4e338c7bf12a7508a7871985e7ea886275",
+      "artifacts": [
+        {
+          "preflight_steps": [
+            {
+              "steps": [
+                {
+                  "source": {
+                    "base": "staged_path",
+                    "path": "google-cloud-sdk/."
+                  },
+                  "target": {
+                    "base": "homebrew_prefix",
+                    "path": "share/google-cloud-sdk"
+                  },
+                  "recursive": true,
+                  "type": "copy"
+                },
+                {
+                  "paths": [
+                    {
+                      "base": "staged_path",
+                      "path": "google-cloud-sdk"
+                    }
+                  ],
+                  "recursive": true,
+                  "type": "remove"
+                },
+                {
+                  "source": {
+                    "path": "{{HOMEBREW_PREFIX}}/share/google-cloud-sdk"
+                  },
+                  "target": {
+                    "base": "staged_path",
+                    "path": "google-cloud-sdk"
+                  },
+                  "type": "symlink"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "uninstall": [
+            {
+              "trash": "/home/linuxbrew/.linuxbrew/Caskroom/gcloud-cli/latest"
+            }
+          ]
+        },
+        {
+          "installer": [
+            {
+              "script": {
+                "executable": "google-cloud-sdk/install.sh",
+                "args": [
+                  "--quiet",
+                  "--usage-reporting",
+                  "false",
+                  "--bash-completion",
+                  "false",
+                  "--path-update",
+                  "false",
+                  "--rc-path",
+                  "false",
+                  "--update-installed-components"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "binary": [
+            "google-cloud-sdk/bin/git-credential-gcloud.sh",
+            {
+              "target": "git-credential-gcloud"
+            }
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/bin/git-credential-gcloud"
+        },
+        {
+          "binary": [
+            "google-cloud-sdk/bin/gsutil"
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/bin/gsutil"
+        },
+        {
+          "binary": [
+            "google-cloud-sdk/bin/bq"
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/bin/bq"
+        },
+        {
+          "binary": [
+            "google-cloud-sdk/bin/docker-credential-gcloud"
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/bin/docker-credential-gcloud"
+        },
+        {
+          "binary": [
+            "google-cloud-sdk/bin/gcloud"
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/bin/gcloud"
+        },
+        {
+          "bash_completion": [
+            "google-cloud-sdk/completion.bash.inc",
+            {
+              "target": "google-cloud-sdk"
+            }
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/etc/bash_completion.d/google-cloud-sdk"
+        },
+        {
+          "zsh_completion": [
+            "google-cloud-sdk/completion.zsh.inc",
+            {
+              "target": "_google_cloud_sdk"
+            }
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/share/zsh/site-functions/_google_cloud_sdk"
+        },
+        {
+          "postflight_steps": [
+            {
+              "steps": [
+                {
+                  "source": {
+                    "path": "{{staged_path}}"
+                  },
+                  "target": {
+                    "path": "{{caskroom_path}}/latest"
+                  },
+                  "force": true,
+                  "guards": [
+                    {
+                      "path": "{{caskroom_path}}/latest",
+                      "condition": "unless_exists",
+                      "id": "1"
+                    }
+                  ],
+                  "type": "symlink"
+                },
+                {
+                  "command": {
+                    "base": "homebrew_prefix",
+                    "path": "share/google-cloud-sdk/bin/gcloud"
+                  },
+                  "guards": [
+                    {
+                      "condition": "on",
+                      "value": "macos",
+                      "id": "2"
+                    },
+                    {
+                      "path": "~/.config/gcloud/virtenv",
+                      "condition": "if_exists",
+                      "id": "3"
+                    }
+                  ],
+                  "type": "run",
+                  "args": [
+                    "config",
+                    "virtualenv",
+                    "delete",
+                    "-q"
+                  ],
+                  "env": {
+                    "CLOUDSDK_PYTHON": "{{HOMEBREW_PREFIX}}/opt/python@3.14/libexec/bin/python"
+                  }
+                },
+                {
+                  "command": {
+                    "base": "homebrew_prefix",
+                    "path": "share/google-cloud-sdk/bin/gcloud"
+                  },
+                  "network_access": true,
+                  "guards": [
+                    {
+                      "condition": "on",
+                      "value": "macos",
+                      "id": "2"
+                    }
+                  ],
+                  "type": "run",
+                  "args": [
+                    "config",
+                    "virtualenv",
+                    "create",
+                    "--python-to-use",
+                    "{{HOMEBREW_PREFIX}}/opt/python@3.14/libexec/bin/python"
+                  ],
+                  "env": {
+                    "CLOUDSDK_PYTHON": "{{HOMEBREW_PREFIX}}/opt/python@3.14/libexec/bin/python"
+                  }
+                },
+                {
+                  "command": {
+                    "base": "homebrew_prefix",
+                    "path": "share/google-cloud-sdk/bin/gcloud"
+                  },
+                  "guards": [
+                    {
+                      "condition": "on",
+                      "value": "macos",
+                      "id": "2"
+                    }
+                  ],
+                  "type": "run",
+                  "args": [
+                    "config",
+                    "virtualenv",
+                    "enable"
+                  ],
+                  "env": {
+                    "CLOUDSDK_PYTHON": "{{HOMEBREW_PREFIX}}/opt/python@3.14/libexec/bin/python"
+                  }
+                },
+                {
+                  "command": {
+                    "base": "homebrew_prefix",
+                    "path": "share/google-cloud-sdk/bin/gcloud"
+                  },
+                  "guards": [
+                    {
+                      "condition": "on",
+                      "value": "macos",
+                      "id": "2"
+                    }
+                  ],
+                  "type": "run",
+                  "args": [
+                    "version"
+                  ],
+                  "env": {
+                    "CLOUDSDK_PYTHON": "{{HOMEBREW_PREFIX}}/opt/python@3.14/libexec/bin/python"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "zap": [
+            {
+              "trash": [
+                "/home/linuxbrew/.linuxbrew/share/google-cloud-sdk.staging",
+                "/home/linuxbrew/.linuxbrew/share/google-cloud-sdk"
+              ]
+            }
+          ]
+        }
+      ],
+      "caveats": "To use additional binary components installed via gcloud, add the \"/home/linuxbrew/.linuxbrew/share/google-cloud-sdk/bin\"\ndirectory to your PATH environment variable, e.g., (for Bash shell):\n   export PATH=/home/linuxbrew/.linuxbrew/share/google-cloud-sdk/bin:\"$PATH\"\n",
+      "caveats_rosetta": null,
+      "depends_on": {
+        "formula": [
+          "python@3.14"
+        ]
+      },
+      "conflicts_with": null,
+      "container": null,
+      "rename": [],
+      "auto_updates": true,
+      "deprecated": false,
+      "deprecation_date": null,
+      "deprecation_reason": null,
+      "deprecation_replacement_formula": null,
+      "deprecation_replacement_cask": null,
+      "deprecate_args": null,
+      "disabled": false,
+      "disable_date": null,
+      "disable_reason": null,
+      "disable_replacement_formula": null,
+      "disable_replacement_cask": null,
+      "disable_args": null,
+      "tap_git_head": "c4eb56478a3bae8196a8d3923bf358fafebf9e64",
+      "languages": [],
+      "ruby_source_path": "Casks/g/gcloud-cli.rb",
+      "ruby_source_checksum": {
+        "sha256": "29a077cfcfda97edb1393e4387986f37280e4d3bee164880242c01237a401fe9"
+      }
+    }
+  ]
+}

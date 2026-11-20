@@ -5,7 +5,7 @@ package style
 // only when it is non-empty.
 type Icons struct {
 	App, Status, Formula, Cask, Outdated, Tap, Service, Search string
-	Installed, Upgradable, Pinned, Running, Stopped            string
+	Installed, Absent, Upgradable, Pinned, Running, Stopped    string
 	Error, Warn, OK, Info, Marker, Refresh                     string
 }
 
@@ -22,6 +22,7 @@ var NerdIcons = Icons{
 	Service:    "\uf013", // cog
 	Search:     "\uf002", // search
 	Installed:  "\uf058", // check-circle
+	Absent:     "\uf10c", // circle-o
 	Upgradable: "\uf062", // arrow-up
 	Pinned:     "\uf08d", // thumb-tack
 	Running:    "\uf144", // play-circle
@@ -45,6 +46,7 @@ var UnicodeIcons = Icons{
 	Service:    "◎",
 	Search:     "⌕",
 	Installed:  "✓",
+	Absent:     "○",
 	Upgradable: "↑",
 	Pinned:     "•",
 	Running:    "▶",
