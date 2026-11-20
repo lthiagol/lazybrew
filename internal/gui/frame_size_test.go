@@ -35,7 +35,7 @@ var frameStates = []frameState{
 	{"log collapsed", func(m *Model) *Model { return sendKey(m, "C") }},
 	{"help", func(m *Model) *Model { return sendKey(m, "?") }},
 	{"confirm modal", func(m *Model) *Model {
-		m.activeModal = modal.NewConfirmModal("Uninstall bash", "Remove bash? Other packages may depend on it.")
+		m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Uninstall bash", "Remove bash? Other packages may depend on it.")
 		return m
 	}},
 	{"input modal", func(m *Model) *Model {

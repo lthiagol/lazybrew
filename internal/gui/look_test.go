@@ -361,7 +361,7 @@ func TestFooterLeadsWithThePanelsKeys(t *testing.T) {
 // the keys that modal answers to.
 func TestFooterShowsTheOpenModalsKeys(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
-	m.activeModal = modal.NewConfirmModal("Uninstall bash", "Remove bash?")
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Uninstall bash", "Remove bash?")
 	if plain := plainLine(m.renderBottomBar()); !strings.HasPrefix(plain, " y yes  n no  esc cancel") {
 		t.Fatalf("confirm footer = %q, want the confirm keys", plain)
 	}
