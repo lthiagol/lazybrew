@@ -33,6 +33,7 @@ make test-integration
 | `internal/app/` | Bootstrap: config, theme, runner, `gui.New` | `go test ./internal/app/...` |
 | `internal/brew/` | Domain models, `Runner`, services, cache, parsers | `go test ./internal/brew/...` |
 | `internal/config/` | YAML config loading/validation | `go test ./internal/config/...` |
+| `internal/logtail/` | Bounded read of a log file's last lines, safe to draw | `go test ./internal/logtail/...` |
 | `internal/gui/` | Bubble Tea model, panels, rendering, keybindings | `go test ./internal/gui/...` |
 | `internal/gui/modal/` | Reusable modals (confirm, input, toast, menu) | `go test ./internal/gui/modal/...` |
 | `internal/gui/presentation/` | Formatters and snapshot tests | `go test ./internal/gui/presentation/...` |
