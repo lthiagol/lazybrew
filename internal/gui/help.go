@@ -175,7 +175,7 @@ const helpColumnGap = 4
 // helpUnit is one page as rows: its title, then each section with its heading
 // and items. A section's key column is as wide as its widest key.
 func helpUnit(p helpPage) []string {
-	keyStyle := lipgloss.NewStyle().Foreground(style.AccentColor).Bold(true)
+	keyStyle := style.AccentText
 	rows := []string{style.AccentText.Render(p.title)}
 	for _, sec := range p.sections {
 		rows = append(rows, "")

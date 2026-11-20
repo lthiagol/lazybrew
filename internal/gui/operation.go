@@ -251,7 +251,7 @@ func (m Model) operationBody(op *Operation, room int) []string {
 		slices.Reverse(rows)
 		return rows
 	}
-	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
+	muted := style.MutedText
 	for i := len(op.steps) - 1; i >= 0 && len(rows) < room; i-- {
 		s := op.steps[i]
 		for j := len(s.output) - 1; j >= 0; j-- {
@@ -269,14 +269,14 @@ func (m Model) operationBody(op *Operation, room int) []string {
 func (m Model) stepMark(op *Operation, last bool) string {
 	switch {
 	case !last:
-		return lipgloss.NewStyle().Foreground(style.SuccessColor).Render(m.icons.Installed)
+		return style.SuccessText.Render(m.icons.Installed)
 	case op.Status == opRunning:
 		return m.spinner.View()
 	case op.Status == opError:
-		return lipgloss.NewStyle().Foreground(style.ErrorColor).Render(m.icons.Error)
+		return style.ErrorText.Render(m.icons.Error)
 	case op.Status == opCancelled:
 		return style.SubtleText.Render(m.icons.Stopped)
 	default:
-		return lipgloss.NewStyle().Foreground(style.SuccessColor).Render(m.icons.Installed)
+		return style.SuccessText.Render(m.icons.Installed)
 	}
 }

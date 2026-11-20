@@ -116,7 +116,7 @@ func Detail(fields []Field, width int) string {
 	labelW += 2
 	valueW := max(1, width-labelW)
 	indent := strings.Repeat(" ", labelW)
-	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
+	muted := style.MutedText
 
 	var rows []string
 	for _, f := range shown {

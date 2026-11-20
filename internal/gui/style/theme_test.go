@@ -246,3 +246,44 @@ func TestThemeConcurrency(t *testing.T) {
 	<-done
 	ApplyTheme(DarkTheme())
 }
+
+// TestSharedTextStylesDrawWhatTheyReplace (cr3 AC-06): the shared foreground
+// styles draw exactly what the per-render style of each role drew, in both
+// themes, and the badges that are the same role reuse them.
+func TestSharedTextStylesDrawWhatTheyReplace(t *testing.T) {
+	defer ApplyTheme(DarkTheme())
+	for _, th := range []*Theme{DarkTheme(), LightTheme()} {
+		ApplyTheme(th)
+		cases := []struct {
+			name string
+			got  lipgloss.Style
+			want color.Color
+		}{
+			{"MutedText", MutedText, th.Muted},
+			{"SuccessText", SuccessText, th.Success},
+			{"WarningText", WarningText, th.Warning},
+			{"ErrorText", ErrorText, th.Error},
+			{"TextStyle", TextStyle, th.Text},
+		}
+		for _, c := range cases {
+			want := lipgloss.NewStyle().Foreground(c.want).Render("sample")
+			if got := c.got.Render("sample"); got != want {
+				t.Errorf("%s = %q, want the per-render style %q", c.name, got, want)
+			}
+		}
+		badges := []struct {
+			name          string
+			badge, shared lipgloss.Style
+		}{
+			{"OutdatedBadge", OutdatedBadge, WarningText},
+			{"InstalledBadge", InstalledBadge, SuccessText},
+			{"ErrorBadge", ErrorBadge, ErrorText},
+			{"NormalItem", NormalItem, TextStyle},
+		}
+		for _, b := range badges {
+			if b.badge.Render("sample") != b.shared.Render("sample") {
+				t.Errorf("%s should draw the shared style of its role", b.name)
+			}
+		}
+	}
+}

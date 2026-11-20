@@ -80,3 +80,23 @@ func BenchmarkViewCommandLog(b *testing.B) {
 		_ = m.View()
 	}
 }
+
+// BenchmarkFormulaePanelView is View() at 140x40 with a 300-formula list, the
+// panel and its sidebar rows drawn (cr3 AC-06).
+func BenchmarkFormulaePanelView(b *testing.B) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	var msg DataLoadedMsg
+	msg.PanelID = PanelFormulae
+	for i := 0; i < 300; i++ {
+		name := fmt.Sprintf("pkg%03d", i)
+		msg.Items = append(msg.Items, name)
+		msg.Formulae = append(msg.Formulae, brew.Formula{Name: name, Version: "1.0", Description: "a formula"})
+	}
+	m = updateModel(m, msg)
+	m = sendKey(m, "2")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = m.View()
+	}
+}
