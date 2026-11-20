@@ -5,7 +5,7 @@
 │  Formulae  125                                ││✓ Your system is ready to brew.                                                          │
 │  Casks     2                                  ││                                                                                         │
 │  Outdated  1                                  ││                                                                                         │
-│  Taps      3                                  ││                                                                                         │
+│  Taps      0                                  ││                                                                                         │
 │  Services  3                                  ││                                                                                         │
 │                                               ││                                                                                         │
 │                                               ││                                                                                         │
