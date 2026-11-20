@@ -123,9 +123,12 @@ type Model struct {
 	// motionPanel is the panel the tab underline last aimed at, so a switch
 	// to another panel snaps the underline rather than sliding it.
 	motionPanel PanelID
-	// motionSize is the window size the sidebar last aimed at. A resize snaps
-	// the boxes rather than sliding them.
+	// motionSize is the window size the animated values last aimed at. A
+	// resize snaps them rather than sliding them.
 	motionSize [2]int
+	// motionShown is the modal whose entrance was last started, so a new modal
+	// slides in once and an open one does not restart.
+	motionShown modal.Modal
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -1092,8 +1095,8 @@ func (m Model) render() string {
 	var overlays []*lipgloss.Layer
 	overlays = append(overlays, m.toastLayers()...)
 	if m.activeModal != nil {
-		base = dimBackdrop(base)
-		overlays = append(overlays, centred(m.activeModal.View().Content, m.width, m.height))
+		base = fadeBackdrop(base, m.backdropFadeAt())
+		overlays = append(overlays, centred(m.activeModal.View().Content, m.width, m.height, m.modalDropAt()))
 	}
 	if len(overlays) == 0 {
 		return base
