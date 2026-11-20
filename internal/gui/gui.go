@@ -346,6 +346,14 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case opAutoCloseMsg:
+		// Only the operation the timer names, and only once it is done with no
+		// batch still in flight. A newer or running operation is left alone.
+		if m.opState != nil && m.opState == msg.op && m.opState.Done() && m.batchCount == 0 {
+			m.opState = nil
+		}
+		return m, nil
+
 	case TaskStartedMsg:
 		title := msg.Title
 		op := &Operation{
@@ -473,18 +481,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if errors.Is(msg.Err, context.Canceled) {
 			return m, tea.Batch(m.tasks.RunNext(), serviceReload(msg.ID))
 		}
+		closeCmd := m.autoCloseCmd()
 		switch msg.ID {
 		case "cleanup-preview":
 			m.pendingAction = "cleanup"
 			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup",
 				"Run brew cleanup?").WithDetail("This will remove old versions.")
-			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
+			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
 		case "autoremove-preview":
 			m.pendingAction = "autoremove"
 			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Autoremove",
 				"Remove orphaned dependencies?").
 				WithDetail("Removes dependencies that no installed package needs any more.")
-			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
+			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
 		}
 		var toastTick tea.Cmd
 		if msg.Title != "" {
@@ -493,6 +502,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds := []tea.Cmd{
 			m.tasks.RunNext(),
 			func() tea.Msg { return RefreshMsg{} },
+			closeCmd,
 		}
 		if toastTick != nil {
 			cmds = append(cmds, toastTick)
