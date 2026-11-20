@@ -74,3 +74,20 @@ these and nothing else:
   `TestScrollKeysMoveAndClamp`).
 - **Frame sizes:** every `.txt` frame is exactly W×H (checked by row count and
   width).
+
+## Fix round r2
+
+Re-captured at `b501d1f` with the same harness, real Homebrew 7.0.15, Unicode
+icons. The only frames that changed against round r1 are the help screen
+(08), at both sizes and at 140x40 in `.ansi`:
+
+- **08-help, 140x40:** the Navigation row reads `Home/End   Top/bottom (g/G
+  outside Search)` on one line. The round-r1 row wrapped mid-phrase in its
+  45-cell column (F-r2-01).
+- **08-help, 80x24:** the same row, wrapped at the 25-cell column; the help was
+  already cut at 24 rows (Q-v2-help).
+
+No other frame changed. The g/G change on Search (F-r2-01) and the plural
+trust story (F-r2-02) are not in the harness: the harness does not type into
+Search after Esc, and does not open the Trust tab. They are covered by
+`TestLetterKeysOnUnfocusedSearchTypeToSearch` and `TestTrustStoryPluralises`.
