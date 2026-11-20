@@ -12,21 +12,18 @@ Brief `work/briefs/fix-v2-09-main-layout-r3.md`. Gate per Q-v2-builder-speed.
 - Log padding 5d04885 — Log box gets `mainPadX` either side. Test:
   `TestLogBoxHasInnerPadding`.
 
-## Frames (regenerated after each item)
+## Frames
 
-- Q-v2-09-a: 140x40 changed on 02, 03, 06, 07, 10, 12, 13, 14, 17, 19, 20. 80x24
-  unchanged. 200x60 changed on 06, 14, 19, 20 (the moved values).
-- Log padding: every frame with a Log box changes in its Log rows (72 files);
-  the rest of each frame is unchanged.
-- Named in `result.md` per screen.
+- Q-v2-09-a: 140x40 changed on 02, 03, 06, 07, 10, 12, 13, 14, 17, 19, 20; 80x24
+  unchanged; 200x60 changed on 06, 14, 19, 20.
+- Log padding: every frame with a Log box changes in its Log rows (72 files).
+- `result.md` names the screens.
 
 ## Readability at 140x40 (by eye)
 
-- Formulae Info: fields left, Description wraps right. Tap Info: fields left,
-  Remote and counts right.
-- Services Info: paths on the right wrap mid-word where no space exists. Not a cut;
-  stated in `result.md`.
+- Formulae and Tap Info read well. Services Info paths wrap mid-word on the right
+  (no space to break at); stated in `result.md`, not a cut.
 
 ## Gate (final tree, after 5d04885)
 
-- `make build`, `make lint`, `go test -race ./...`, `make cover-check`: all ok.
+- build, lint, `go test -race ./...`, cover-check: all ok.
