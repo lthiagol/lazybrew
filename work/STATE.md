@@ -288,11 +288,15 @@ and cancelled runs stay with ` · Esc to close`; the footer leads with
 `esc close`; switching panel closes a finished operation. Resting frames equal
 v2-06 except moshi-hook's live PID (ruling Q-v2-07-pid).
 
-**v2-08-preload — implemented, awaiting reviewer.** `gui.preload` (default on;
-`LAZYBREW_PRELOAD` overrides) loads every panel but Search in the background after
-the Status dashboard, two reads at a time, through the scheduler in
-`internal/gui/preload.go`. The dashboard counts fill in as panels land; the sidebar
-shows the spinner, not `not loaded`, while a read is queued or in flight. Frames and
-the judgement calls are in `work/verification/v2-08-preload/result.md`. Brew is slow
-on this machine today: `brew tap-info` takes ~87 s, past the 30 s read cap, so the
-Taps frames (06, 14) show the degraded read the lazy path shows too.
+**v2-08-preload — implemented, awaiting reviewer (fix round r1 applied).** `gui.preload`
+(default on; `LAZYBREW_PRELOAD` overrides) loads every panel but Search in the
+background after the Status dashboard, two reads at a time, through the scheduler in
+`internal/gui/preload.go`. With the preload on, every panel landing (preloaded or
+opened early) fills the dashboard count (F-r1-01). The sidebar shows the spinner, not
+`not loaded`, while a read is queued or in flight. The committed frames are the
+recapture in `a8a1c38`, taken with brew at normal speed: Taps shows its trust data,
+and Outdated shows the one real outdated package. Frames 15 and 18 were regenerated
+after F-r1-01 (see that commit). The first capture, taken while brew was slow, is
+superseded: its Taps frames were degraded, and that text is no longer current. Q-v2-08-b
+stays open: a slow `brew tap-info` still degrades the Taps panel without an error. The
+judgement calls are in `work/verification/v2-08-preload/result.md`.
