@@ -507,6 +507,52 @@ func sidebarTitleLine(sidebar, title string) string {
 	return ""
 }
 
+// TestEarlySwitchCountReachesTheDashboard covers F-r1-01: a panel the user opens
+// before the Status dashboard lands is read by the switch, not by the preload.
+// Its count must still reach the dashboard, whichever of the two lands first.
+func TestEarlySwitchCountReachesTheDashboard(t *testing.T) {
+	for _, outdatedFirst := range []bool{true, false} {
+		name := "status lands first"
+		if outdatedFirst {
+			name = "outdated lands first"
+		}
+		t.Run(name, func(t *testing.T) {
+			var calls []string
+			m := preloadModel(t, preloadConfig(), &calls, "")
+			m, _ = preloadStep(m, tea.WindowSizeMsg{Width: 140, Height: 40})
+
+			// Outdated is opened before Status has landed: the switch reads it.
+			m, switchCmd := preloadStep(m, tea.KeyPressMsg{Code: '4', Text: "4"})
+			lazy := drainCmds(switchCmd)
+			if len(lazy) != 1 {
+				t.Fatalf("the early switch started %d reads, want 1", len(lazy))
+			}
+
+			m, statusCmd := preloadStep(m, statusLoaded())
+			pending := drainCmds(statusCmd)
+			if outdatedFirst {
+				m, _ = preloadStep(m, lazy[0])
+				m, _ = landPreloadFrom(t, m, pending)
+			} else {
+				m, _ = landPreloadFrom(t, m, pending)
+				m, _ = preloadStep(m, lazy[0])
+			}
+			if !m.panels[PanelOutdated].loaded {
+				t.Fatal("Outdated did not load")
+			}
+
+			m, _ = preloadStep(m, tea.KeyPressMsg{Code: '1', Text: "1"})
+			view := ansi.Strip(m.View().Content)
+			if strings.Contains(view, "press R") {
+				t.Errorf("Outdated has loaded, but the dashboard says press R:\n%s", view)
+			}
+			if !strings.Contains(view, "0 packages") {
+				t.Errorf("the dashboard does not show the Outdated count:\n%s", view)
+			}
+		})
+	}
+}
+
 // TestProductionDefaultPreloads pins the production default: the background
 // preload is on unless gui.preload or LAZYBREW_PRELOAD turns it off.
 func TestProductionDefaultPreloads(t *testing.T) {

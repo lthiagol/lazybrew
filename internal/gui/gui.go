@@ -105,6 +105,9 @@ type Model struct {
 	// preload is the background load of the panels after the Status dashboard
 	// (gui.preload); see preload.go.
 	preload preloadState
+	// landed is the counts the panel landings have read with the preload on. A
+	// Status load fills its unknown counts from it (fillUnknown).
+	landed statusSummary
 
 	// lastKeyAt tracks the last time the user pressed a key. The auto
 	// refresh tick consults this to pause refreshes during interaction
@@ -598,6 +601,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case DataLoadedMsg:
 		cmd := m.landData(msg, false)
+		if msg.PanelID != PanelStatus {
+			m.absorbLanded(msg)
+		}
 		// The first Status load starts the preload. With update_on_start that
 		// is the load after the brew update, so the preload reads fresh data.
 		if msg.PanelID == PanelStatus && m.cfg.GUI.Preload && !m.preload.started {
@@ -608,7 +614,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case preloadedMsg:
 		m.preload.inFlight--
 		cmd := m.landData(DataLoadedMsg(msg), true)
-		m.absorbPreload(DataLoadedMsg(msg))
+		m.absorbLanded(DataLoadedMsg(msg))
 		return m, tea.Batch(cmd, tea.Batch(m.nextPreloadReads()...))
 
 	case servicesReloadMsg:
@@ -1070,6 +1076,10 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 			p.serviceInfo = msg.ServiceInfo
 			if msg.PanelID == PanelStatus {
 				m.status = msg.Summary
+				if m.cfg.GUI.Preload {
+					m.status.fillUnknown(m.landed)
+					p.items = statusRows(m.status)
+				}
 			}
 			p.selectServiceNamed(selectedService)
 		}
