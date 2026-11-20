@@ -119,17 +119,17 @@ func logBorderStyle(busy bool) lipgloss.Style {
 }
 
 func (m Model) renderCommandLogBox(width, height int) string {
-	// height is the full vertical budget for the log section. Lip Gloss
-	// Width/Height apply to the content box; border adds 2 rows/cols outside,
-	// so keep content within height-2 / width-2 so the main panel still fits.
+	// height is the full vertical budget for the log section. Lip Gloss v2
+	// Width/Height include the border, so the box is exactly width x height
+	// and its content is 2 smaller on each axis.
 	innerH := max(1, height-2)
 	innerW := max(1, width-2)
 	bodyH := max(0, innerH-1) // one row for the "Log" title
 	body := m.commandLog.View(innerW, bodyH)
 	titled := lipgloss.JoinVertical(lipgloss.Top, style.PanelTitle.Render("Log"), body)
 	return logBorderStyle(m.logBusy()).
-		Width(innerW).
-		Height(innerH).
+		Width(width).
+		Height(height).
 		Render(titled)
 }
 
