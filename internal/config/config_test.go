@@ -12,8 +12,8 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.GUI.Theme != "dark" {
 		t.Errorf("default theme = %q, want dark", cfg.GUI.Theme)
 	}
-	if cfg.GUI.SidebarWidth != 30 {
-		t.Errorf("default sidebar = %d, want 30", cfg.GUI.SidebarWidth)
+	if cfg.GUI.SidebarWidth != 35 {
+		t.Errorf("default sidebar = %d, want 35", cfg.GUI.SidebarWidth)
 	}
 	if !cfg.GUI.ShowIcons {
 		t.Error("ShowIcons should default to true")

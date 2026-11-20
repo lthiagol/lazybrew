@@ -1134,7 +1134,7 @@ func TestBatchSelectionShowsIndicator(t *testing.T) {
 	batch := map[int]bool{0: true, 2: true}
 
 	// Check sidebar content shows batch indicator
-	sidebar := p.renderSidebarContent(20, 5, batch)
+	sidebar := p.renderSidebarContent(20, 5, batch, style.Icons{}, true)
 	if !strings.Contains(sidebar, "●") {
 		t.Fatal("expected batch indicator in sidebar for selected items")
 	}
@@ -1147,7 +1147,7 @@ func TestBatchSelectionShowsIndicator(t *testing.T) {
 
 	// Item at cursor that's also selected shows combined indicator
 	p.selected = 0
-	sidebar = p.renderSidebarContent(20, 5, batch)
+	sidebar = p.renderSidebarContent(20, 5, batch, style.Icons{}, true)
 	if !strings.Contains(sidebar, "▸●") {
 		t.Fatal("expected combined cursor+batch indicator, got:", sidebar)
 	}

@@ -79,7 +79,7 @@ Config file at `~/.config/lazybrew/config.yml`:
 ```yaml
 gui:
   theme: dark             # dark or light
-  sidebar_width: 30
+  sidebar_width: 35       # percent of the terminal width, 15-50; default 35
   mouse: true
   auto_refresh_seconds: 60
   icons: nerd             # nerd (Nerd Font glyphs) or unicode (no Nerd Font needed)

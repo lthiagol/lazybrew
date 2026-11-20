@@ -32,7 +32,7 @@ func (m Model) renderSidebar() string {
 		if rows <= 0 {
 			rows = heights[i]
 		}
-		body := p.renderSidebarContent(sw-2, rows, m.batch.selected)
+		body := p.renderSidebarContent(sw-2, rows, m.batch.selected, m.icons, active)
 		boxes = append(boxes, panel(title, m.sidebarLabel(p), body, sw, heights[i]+2, active))
 	}
 

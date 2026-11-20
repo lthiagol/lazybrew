@@ -437,6 +437,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p := m.panels[PanelFormulae]
 			if !p.leavesActive {
 				p.unfilteredItems = p.items
+				p.unfilteredFormulae = p.formulae
 				leavesSet := make(map[string]bool, len(msg.Leaves))
 				for _, l := range msg.Leaves {
 					leavesSet[l] = true
@@ -448,11 +449,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						filtered = append(filtered, item)
 					}
 				}
+				formulae := make([]brew.Formula, 0, len(msg.Leaves))
+				for _, f := range p.formulae {
+					if leavesSet[f.Name] {
+						formulae = append(formulae, f)
+					}
+				}
 				p.items = filtered
+				p.formulae = formulae
 				p.leavesActive = true
 			} else {
 				p.items = p.unfilteredItems
+				p.formulae = p.unfilteredFormulae
 				p.unfilteredItems = nil
+				p.unfilteredFormulae = nil
 				p.leavesActive = false
 			}
 			p.normalize()
@@ -1205,8 +1215,8 @@ func sidebarWidth(cfg *config.Config, totalWidth int) int {
 	if w < 20 {
 		w = 20
 	}
-	if w > 40 {
-		w = 40
+	if w > 60 {
+		w = 60
 	}
 	return w
 }
