@@ -2000,7 +2000,7 @@ func TestStatusDashboardReportsCachedOutdatedCount(t *testing.T) {
 		t.Errorf("fetchStatusData must not shell-call outdated when cache is fresh, got %d calls", outdatedCalls)
 	}
 	joined := dashboardCards(dMsg)
-	if !strings.Contains(joined, "1 package") {
+	if !oneOutdated.MatchString(joined) {
 		t.Errorf("dashboard should reflect cached outdated count (1), got:\n%s", joined)
 	}
 }
@@ -2097,7 +2097,7 @@ func TestStatusDashboardExplicitLoadShellsOutdatedOnce(t *testing.T) {
 		t.Errorf("explicit load must shell `brew outdated` exactly once, got %d calls", got)
 	}
 	joined := dashboardCards(dMsg)
-	if !strings.Contains(joined, "Outdated:  1 package") {
+	if !oneOutdated.MatchString(joined) {
 		t.Errorf("explicit load must show the real count, got:\n%s", joined)
 	}
 }
@@ -2120,7 +2120,7 @@ func TestStatusDashboardExplicitLoadShellsOneCallPerOutdatedClass(t *testing.T) 
 		t.Errorf("explicit load must shell `brew outdated` once per class, got %d calls", got)
 	}
 	joined := dashboardCards(dMsg)
-	if !strings.Contains(joined, "Outdated:  1 package") {
+	if !oneOutdated.MatchString(joined) {
 		t.Errorf("explicit load must show the real count, got:\n%s", joined)
 	}
 }
@@ -2235,7 +2235,7 @@ func TestRefreshMsgWithLoadOutdatedShellsOutdated(t *testing.T) {
 		}
 		found = true
 		joined := dashboardCards(dMsg)
-		if !strings.Contains(joined, "Outdated:  1 package") {
+		if !oneOutdated.MatchString(joined) {
 			t.Errorf("loaded dashboard must show the real count, got:\n%s", joined)
 		}
 	}

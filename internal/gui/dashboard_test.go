@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -166,3 +167,7 @@ func TestStackedCardsPutHealthNearTheTop(t *testing.T) {
 		t.Fatalf("a failed doctor reads as unavailable with its reason, got %q", words)
 	}
 }
+
+// oneOutdated matches the singular row. "1 packages" does not match: the \b
+// after "package" needs the word to end there (fix F-r2-02).
+var oneOutdated = regexp.MustCompile(`Outdated: +1 package\b`)
