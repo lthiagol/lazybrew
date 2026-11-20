@@ -46,10 +46,12 @@ func TestInfoRightColumnWraps(t *testing.T) {
 	if strings.Contains(out, "…") {
 		t.Fatalf("the description should wrap, not be cut, got:\n%s", out)
 	}
-	// The right column starts after the left one and the gap: 100*2/5 + 4 cells.
+	// The right column starts where the description label is on the first row.
+	lines := strings.Split(ansi.Strip(FormatFormulaInfo(f, 100, style.UnicodeIcons)), "\n")
+	start := ansi.StringWidth(lines[0][:strings.Index(lines[0], "Description:")])
 	var right []string
-	for _, line := range strings.Split(ansi.Strip(FormatFormulaInfo(f, 100, style.UnicodeIcons)), "\n") {
-		right = append(right, ansi.Cut(line, 44, 100))
+	for _, line := range lines {
+		right = append(right, ansi.Cut(line, start, 100))
 	}
 	if flat := strings.Join(strings.Fields(strings.Join(right, " ")), " "); !strings.Contains(flat, strings.Join(strings.Fields(desc), " ")) {
 		t.Fatalf("every word of the description should be shown across its rows, got right column:\n%s", strings.Join(right, "\n"))

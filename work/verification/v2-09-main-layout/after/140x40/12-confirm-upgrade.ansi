@@ -2,14 +2,14 @@
 [38;2;108;112;134m╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Formulae › Info ───────────────────────────────────────────────────────────────────────╮[m
 [38;2;108;112;134m│▸ Homebrew  7.0.15-36-g1f335ae                 ││   Info    Deps    Used By    Caveats    Files                                           │[m
 [38;2;108;112;134m│  Prefix    /home/linuxbrew/.linuxbrew         ││ ━━━━━━━━                                                                                │[m
-[38;2;108;112;134m│  Formulae  125                                ││ Name:         bash                                                                      │[m
-[38;2;108;112;134m╰───────────────────────────────────────────────╯│ Version:      5.3.20                                                                    │[m
-[38;2;108;112;134m╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:          homebrew/core                                                             │[m
-[38;2;108;112;134m│  ✓ alsa-lib                         1.2.16.1_1││ Status:       ✓ installed                                                               │[m
-[38;2;108;112;134m│▸ ✓ bash                                 5.3.20││ License:      GPL-3.0-or-later                                                          │[m
-[38;2;108;112;134m│  ✓ bat                                  0.26.1││ Homepage:     https://www.gnu.org/software/bash/                                        │[m
-[38;2;108;112;134m│  ✓ brotli                                1.2.1││ Bottled:      yes                                                                       │[m
-[38;2;108;112;134m│  ✓ btop                                  1.4.8││ Description:  Bourne-Again SHell, a UNIX command interpreter                            │[m
+[38;2;108;112;134m│  Formulae  125                                ││ Name:      bash                                  Description:  Bourne-Again SHell, a    │[m
+[38;2;108;112;134m╰───────────────────────────────────────────────╯│ Version:   5.3.20                                              UNIX command interpreter │[m
+[38;2;108;112;134m╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:       homebrew/core                                                                │[m
+[38;2;108;112;134m│  ✓ alsa-lib                         1.2.16.1_1││ Status:    ✓ installed                                                                  │[m
+[38;2;108;112;134m│▸ ✓ bash                                 5.3.20││ License:   GPL-3.0-or-later                                                             │[m
+[38;2;108;112;134m│  ✓ bat                                  0.26.1││ Homepage:  https://www.gnu.org/software/bash/                                           │[m
+[38;2;108;112;134m│  ✓ brotli                                1.2.1││ Bottled:   yes                                                                          │[m
+[38;2;108;112;134m│  ✓ btop                                  1.4.8││                                                                                         │[m
 [38;2;108;112;134m│  ✓ bzip2                                 1.0.8││                                                                                         │[m
 [38;2;108;112;134m│  ✓ ca-certificates                  2026-11-05││                                                                                         │[m
 [38;2;108;112;134m│  ✓ curl                                 8.23.0││                                                                                         │[m
