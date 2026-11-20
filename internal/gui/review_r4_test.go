@@ -55,7 +55,7 @@ func TestCancelledTrustMenuDoesNotPoisonBrewfileMenu(t *testing.T) {
 
 	// Open the trust menu and cancel it.
 	m = sendKey(m, "5")
-	m = sendKey(m, "t")
+	m = sendKey(m, "T")
 	if m.activeModal == nil {
 		t.Fatal("expected the trust menu to open")
 	}

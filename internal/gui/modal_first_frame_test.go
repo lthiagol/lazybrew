@@ -33,7 +33,7 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 			open: func(m *Model) *Model {
 				m = sendKey(m, "5")
 				m.panels[PanelTaps].items = []string{"homebrew/foo"}
-				return sendKey(m, "t")
+				return sendKey(m, "T")
 			},
 			want: "Trust entire tap: homebrew/foo",
 		},
