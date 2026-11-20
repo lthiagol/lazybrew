@@ -45,10 +45,11 @@ type TaskStartedMsg struct {
 	Title string
 }
 
-// TaskOutputMsg carries a single line of streaming output from a running task.
+// TaskOutputMsg carries the next lines of streaming output from a running
+// task, in order: up to taskOutputBatch of them in one message.
 type TaskOutputMsg struct {
-	ID   string
-	Line string
+	ID    string
+	Lines []string
 }
 
 // TaskCompletedMsg signals that a task has finished.

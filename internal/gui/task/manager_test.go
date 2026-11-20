@@ -3,8 +3,12 @@ package task
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync/atomic"
 	"testing"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
 )
 
 var assertAnError = errors.New("test error")
@@ -225,7 +229,7 @@ func TestManager_StreamingOutput(t *testing.T) {
 		msg := m.RunNext()()
 		switch v := msg.(type) {
 		case TaskOutputMsg:
-			got = append(got, v.Line)
+			got = append(got, v.Lines...)
 		case TaskCompletedMsg:
 			goto done
 		default:
@@ -392,7 +396,7 @@ func TestManager_DrainsOutputBeforeError(t *testing.T) {
 		msg := m.RunNext()()
 		switch v := msg.(type) {
 		case TaskOutputMsg:
-			got = append(got, v.Line)
+			got = append(got, v.Lines...)
 			continue
 		case TaskCompletedMsg:
 			if len(got) != len(lines) {
@@ -438,5 +442,123 @@ func TestManager_CancelledStatus(t *testing.T) {
 	}
 	if task.Status != StatusCancelled {
 		t.Fatalf("expected StatusCancelled, got %v", task.Status)
+	}
+}
+
+// TestManager_ErrorDoesNotDropBufferedLines (C10): a task that writes its lines
+// and then its error at once loses none of its lines, whichever case the
+// reader's select takes first. Run 500 times under -race.
+func TestManager_ErrorDoesNotDropBufferedLines(t *testing.T) {
+	const lines = 20
+	for iter := 0; iter < 500; iter++ {
+		m := NewManager(10)
+		m.Enqueue(&Task{
+			ID:    "c10",
+			Title: "c10",
+			Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+				out := make(chan string, lines)
+				errCh := make(chan error, 1)
+				go func() {
+					for i := 0; i < lines; i++ {
+						out <- fmt.Sprint(i)
+					}
+					errCh <- assertAnError
+					close(out)
+				}()
+				return out, errCh, nil
+			},
+		})
+		m.RunNext()()
+		got := 0
+		for done := false; !done; {
+			switch v := m.RunNext()().(type) {
+			case TaskOutputMsg:
+				got += len(v.Lines)
+			case TaskCompletedMsg:
+				if got != lines {
+					t.Fatalf("iteration %d: %d of %d lines arrived before the completion", iter, got, lines)
+				}
+				done = true
+			default:
+				t.Fatalf("unexpected msg %T", v)
+			}
+		}
+	}
+}
+
+// TestManager_CancelEndsTheDrain (C10, cancel path): a task that never closes
+// its output still completes once it is cancelled. The reader does not wait on
+// output that will not come.
+func TestManager_CancelEndsTheDrain(t *testing.T) {
+	m := NewManager(10)
+	m.Enqueue(&Task{
+		ID:    "cancel",
+		Title: "cancel",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			out := make(chan string)
+			errCh := make(chan error, 1)
+			go func() {
+				<-ctx.Done()
+				errCh <- ctx.Err()
+			}()
+			return out, errCh, nil
+		},
+	})
+	m.RunNext()()
+	done := make(chan tea.Msg)
+	go func() { done <- m.RunNext()() }()
+	m.CancelCurrent()
+	select {
+	case msg := <-done:
+		c, ok := msg.(TaskCompletedMsg)
+		if !ok || !errors.Is(c.Err, context.Canceled) {
+			t.Fatalf("want a cancelled completion, got %#v", msg)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("a cancelled task never completed: the reader waits on output that will not come")
+	}
+}
+
+// TestManager_OutputArrivesInOrderInBatches: the lines of a long run come in
+// order, in batches of at most taskOutputBatch.
+func TestManager_OutputArrivesInOrderInBatches(t *testing.T) {
+	const lines = 3*taskOutputBatch + 7
+	m := NewManager(10)
+	m.Enqueue(&Task{
+		ID:    "batch",
+		Title: "batch",
+		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			out := make(chan string, lines)
+			for i := 0; i < lines; i++ {
+				out <- fmt.Sprint(i)
+			}
+			close(out)
+			errCh := make(chan error, 1)
+			errCh <- nil
+			return out, errCh, nil
+		},
+	})
+	m.RunNext()()
+	var got []string
+	for done := false; !done; {
+		switch v := m.RunNext()().(type) {
+		case TaskOutputMsg:
+			if len(v.Lines) > taskOutputBatch {
+				t.Fatalf("a batch of %d lines, want at most %d", len(v.Lines), taskOutputBatch)
+			}
+			got = append(got, v.Lines...)
+		case TaskCompletedMsg:
+			done = true
+		default:
+			t.Fatalf("unexpected msg %T", v)
+		}
+	}
+	if len(got) != lines {
+		t.Fatalf("got %d lines, want %d", len(got), lines)
+	}
+	for i, line := range got {
+		if line != fmt.Sprint(i) {
+			t.Fatalf("line %d = %q, want %q", i, line, fmt.Sprint(i))
+		}
 	}
 }
