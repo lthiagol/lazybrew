@@ -86,6 +86,7 @@ type panelData struct {
 	casks              []brew.Cask
 	taps               []brew.Tap
 	services           []brew.Service
+	serviceInfo        []brew.ServiceInfo
 	visibleRows        int
 	// loaded is set once a fetch result has landed for this panel, error or
 	// not. It tells "never fetched" (not loaded) from "fetched, nothing
@@ -250,6 +251,17 @@ func (p *panelData) selectedOutdatedCask() *brew.Cask {
 func (p *panelData) selectedService() *brew.Service {
 	if p.selected >= 0 && p.selected < len(p.services) {
 		return &p.services[p.selected]
+	}
+	return nil
+}
+
+// serviceInfoFor is the Info view's entry for the named service, nil when
+// `brew services info` has not loaded it.
+func (p *panelData) serviceInfoFor(name string) *brew.ServiceInfo {
+	for i := range p.serviceInfo {
+		if p.serviceInfo[i].Name == name {
+			return &p.serviceInfo[i]
+		}
 	}
 	return nil
 }

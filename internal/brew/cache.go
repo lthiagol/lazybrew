@@ -14,6 +14,7 @@ const (
 	KeyOutdatedCasks    CacheKey = "outdated:casks"
 	KeyTapsList         CacheKey = "taps:list"
 	KeyServicesList     CacheKey = "services:list"
+	KeyServicesInfo     CacheKey = "services:info"
 	KeyTrustList        CacheKey = "trust:list"
 	KeyDoctorResult     CacheKey = "doctor:result"
 	KeyConfig           CacheKey = "config"
@@ -24,7 +25,7 @@ var InvalidateGroups = map[string][]CacheKey{
 	"uninstall":  {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
 	"reinstall":  {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
 	"upgrade":    {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
-	"update":     {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks, KeyTapsList, KeyServicesList, KeyTrustList, KeyDoctorResult, KeyConfig},
+	"update":     {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks, KeyTapsList, KeyServicesList, KeyServicesInfo, KeyTrustList, KeyDoctorResult, KeyConfig},
 	"pin":        {KeyFormulaeList, KeyOutdatedFormulae},
 	"unpin":      {KeyFormulaeList, KeyOutdatedFormulae},
 	"tap":        {KeyTapsList},

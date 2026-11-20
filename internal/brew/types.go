@@ -160,14 +160,41 @@ type Service struct {
 	ExitCode int           `json:"exit_code"`
 }
 
+// ServiceInfo is one entry of `brew services info --all --json`, the detail
+// the Services Info view shows. Brew reports some fields as null: a string
+// that is null is "" here, a pointer or map that is null is nil. The schema is
+// brew's own, in Library/Homebrew/services/formula_wrapper.rb (to_hash).
+type ServiceInfo struct {
+	Name         string         `json:"name"`
+	ServiceName  string         `json:"service_name"`
+	Running      bool           `json:"running"`
+	Loaded       bool           `json:"loaded"`
+	Schedulable  bool           `json:"schedulable"`
+	PID          *int           `json:"pid"`
+	ExitCode     *int           `json:"exit_code"`
+	User         string         `json:"user"`
+	Status       ServiceStatus  `json:"status"`
+	File         string         `json:"file"`
+	Registered   bool           `json:"registered"`
+	LoadedFile   string         `json:"loaded_file"`
+	Command      string         `json:"command"`
+	WorkingDir   string         `json:"working_dir"`
+	RootDir      string         `json:"root_dir"`
+	LogPath      string         `json:"log_path"`
+	ErrorLogPath string         `json:"error_log_path"`
+	Interval     *int           `json:"interval"`
+	Cron         map[string]any `json:"cron"`
+}
+
 // ServiceStatus represents the status of a service
 type ServiceStatus string
 
 const (
-	ServiceStarted ServiceStatus = "started"
-	ServiceStopped ServiceStatus = "stopped"
-	ServiceError   ServiceStatus = "error"
-	ServiceNone    ServiceStatus = "none"
+	ServiceStarted   ServiceStatus = "started"
+	ServiceStopped   ServiceStatus = "stopped"
+	ServiceError     ServiceStatus = "error"
+	ServiceNone      ServiceStatus = "none"
+	ServiceScheduled ServiceStatus = "scheduled"
 )
 
 // String returns the string representation of ServiceStatus
@@ -186,6 +213,8 @@ func ParseServiceStatus(s string) ServiceStatus {
 		return ServiceError
 	case "none":
 		return ServiceNone
+	case "scheduled":
+		return ServiceScheduled
 	default:
 		return ServiceNone
 	}

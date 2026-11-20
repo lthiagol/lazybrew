@@ -20,6 +20,9 @@ type DataLoadedMsg struct {
 	Casks    []brew.Cask
 	Taps     []brew.Tap
 	Services []brew.Service
+	// ServiceInfo is the Services Info view's data: `brew services info`. It is
+	// empty when that read failed, and the Info view then shows the list's fields.
+	ServiceInfo []brew.ServiceInfo
 	// Summary is set by the status dashboard load only: the typed facts the
 	// sidebar rows, the header counts and the dashboard cards are built from.
 	Summary statusSummary

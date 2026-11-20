@@ -1574,7 +1574,10 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			for i, s := range services {
 				items[i] = presentation.FormatService(s, 0)
 			}
-			return DataLoadedMsg{PanelID: panel, Items: items, Services: services}
+			// A failed info read is not a failed panel: the Info view falls
+			// back to the list's fields (AC-02.3), so its error is dropped.
+			info, _ := boundedRead(brewReadTimeout, "services", client.Services.Info)
+			return DataLoadedMsg{PanelID: panel, Items: items, Services: services, ServiceInfo: info}
 
 		default:
 			// PanelStatus and PanelSearch are not fetched here. Init and
