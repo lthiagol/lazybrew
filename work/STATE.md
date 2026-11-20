@@ -3,6 +3,36 @@
 One row per slice. This file is the resume record: a cold session reads it to
 learn what is done, what is in flight, and where to pick up.
 
+## ▶ Resume here (2026-11-20, end of the orchestrator session)
+
+**Where we are.** LB-08 is code-complete on `wip`: the overhaul (v2-01 … v2-06,
+v2-05s) and the user's follow-ups (v2-07 … v2-11, ruling `Q-v2-next`) are all
+closed `ok`, pushed, `wip-ci` green (with `-race`). No agent is running.
+
+**Next, in order.**
+1. **User:** run the human smoke — `SMOKE-CHECKLIST.md`, *Run 2* (LB-05). Fill
+   in its Result table.
+2. If the smoke finds problems: a new slice per problem (brief → builder →
+   reviewer, `work/README.md` runbook), then back to 1.
+3. On the user's go-ahead: open the PR `wip` → `stable` (`gh pr create --base
+   stable --head wip`). Never push to `stable` directly. Then the release
+   procedure in `AGENTS.md` (tag, tap formula).
+
+**Read before acting.** `work/README.md` (lane flow + herdr runbook: Haiku 5.5
+high builder, Opus 5.5 medium reviewer, fresh pair per slice, ≤ 5 review
+rounds, push `wip` per closed slice); the user rulings at the bottom of
+`work/questions.md` (`Q-v2-next`, `Q-v2-builder-speed` + amendment,
+`Q-v2-09-a`, `Q-v2-11-b`, `Q-v2-10-a/b`); `work/backlog.md` (parked LB-09,
+LB-10, LB-11; LB-04 still open).
+
+**Checkpoint pages** (private claude.ai artifacts, owner only):
+overhaul https://claude.ai/artifact/SXy5t4jDeZDASph52RD2UG · follow-ups
+https://claude.ai/artifact/7oLz5pJxfcGxuFwfcG7aW4.
+
+**Gate.** `make ci` (full, ~30 s here); per commit `make test-fast
+PKG=<pkgs>`. Never run brew write commands from an agent on this machine
+(`moshi-hook` is live).
+
 | slice | commits | state | verdict |
 |---|---|---|---|
 | detach-master-plan | 3a770a7, b95af56, 7428739, 3431b9d, 180d398, 17b1b8d, dce1468, 26f44cf, 88dbed9 | closed | ok |
