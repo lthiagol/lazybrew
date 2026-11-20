@@ -20,6 +20,7 @@ type GUIConfig struct {
 	ShowIcons          bool   `yaml:"show_icons"`
 	Icons              string `yaml:"icons"` // nerd or unicode
 	Mouse              bool   `yaml:"mouse"`
+	Animations         bool   `yaml:"animations"` // motion; LAZYBREW_ANIMATIONS overrides
 	AutoRefreshSeconds int    `yaml:"auto_refresh_seconds"`
 	// AutoRefreshPause is the window after a key event during which
 	// the auto-refresh tick defers its work so typing/navigation is
@@ -64,6 +65,7 @@ func Default() *Config {
 			ShowIcons:          true,
 			Icons:              IconsNerd,
 			Mouse:              true,
+			Animations:         true,
 			AutoRefreshSeconds: 0,
 			AutoRefreshPause:   DefaultAutoRefreshPause,
 		},
@@ -83,14 +85,19 @@ func Default() *Config {
 // IconsEnv overrides gui.icons for one run: LAZYBREW_ICONS=unicode.
 const IconsEnv = "LAZYBREW_ICONS"
 
+// AnimationsEnv overrides gui.animations for one run: LAZYBREW_ANIMATIONS=0
+// turns the motion off, LAZYBREW_ANIMATIONS=1 turns it on.
+const AnimationsEnv = "LAZYBREW_ANIMATIONS"
+
 // The icon set names gui.icons and LAZYBREW_ICONS accept.
 const (
 	IconsNerd    = "nerd"
 	IconsUnicode = "unicode"
 )
 
-// Load reads the config file and then applies LAZYBREW_ICONS. An unknown
-// icon set is an error, from the file or from the environment.
+// Load reads the config file and then applies LAZYBREW_ICONS and
+// LAZYBREW_ANIMATIONS. An unknown icon set or animation switch is an error,
+// from the file or from the environment.
 func Load(path string) (*Config, error) {
 	cfg, err := loadFile(path)
 	if err != nil {
@@ -106,6 +113,15 @@ func Load(path string) (*Config, error) {
 				IconsEnv, v, IconsNerd, IconsUnicode)
 		}
 		cfg.GUI.Icons = v
+	}
+	switch v := os.Getenv(AnimationsEnv); v {
+	case "":
+	case "0":
+		cfg.GUI.Animations = false
+	case "1":
+		cfg.GUI.Animations = true
+	default:
+		return nil, fmt.Errorf("%s: unknown value %q (want 0 or 1)", AnimationsEnv, v)
 	}
 	return cfg, nil
 }
