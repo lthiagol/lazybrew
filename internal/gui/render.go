@@ -411,7 +411,7 @@ func (m Model) renderContent(width, height int) string {
 			}
 			return presentation.FormatFormulaInfo(*f, width, m.icons)
 		case formulaDepsTab, formulaUsesTab, formulaFilesTab:
-			itemName := selectedItemName(panel)
+			itemName := panel.selectedName()
 			if itemName == "" {
 				// No item to fetch for: without this explicit state the
 				// tab showed a spinner forever because no fetch could be

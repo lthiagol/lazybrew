@@ -428,6 +428,7 @@ func TestDoMutationRejectedWhenRunning(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.panels[PanelFormulae].items = []string{"test  1.0  bottled"}
+	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "test"}}
 	m.panels[PanelFormulae].selected = 0
 
 	_, cmd := m.doMutation(mutInstall, "Install")
@@ -476,6 +477,7 @@ func TestToggleLeaves(t *testing.T) {
 	m := newTestModel()
 	p := m.panels[PanelFormulae]
 	p.items = []string{"formula1  1.0  bottled", "formula2  2.0  bottled"}
+	p.formulae = []brew.Formula{{Name: "formula1"}, {Name: "formula2"}}
 	p.unfilteredItems = nil
 	p.leavesActive = false
 
@@ -506,6 +508,7 @@ func TestConfirmUninstall(t *testing.T) {
 	m.activePanel = PanelFormulae
 	p := m.panels[PanelFormulae]
 	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{{Name: "ripgrep"}}
 	p.selected = 0
 
 	_, cmd := m.confirmUninstall(mutUninstall)
@@ -522,6 +525,7 @@ func TestConfirmZap(t *testing.T) {
 	m := newTestModel()
 	p := m.panels[PanelCasks]
 	p.items = []string{"google-chrome  132.0  auto-update"}
+	p.casks = []brew.Cask{{Name: "google-chrome"}}
 	p.selected = 0
 	m.activePanel = PanelCasks
 
@@ -602,6 +606,7 @@ func TestConfirmRepair(t *testing.T) {
 	m.switchPanel(PanelTaps)
 	p := m.panels[PanelTaps]
 	p.items = []string{"nicknisi/tap"}
+	p.taps = []brew.Tap{{Name: "nicknisi/tap"}}
 	p.selected = 0
 
 	tm, _ := m.confirmRepair()
@@ -615,6 +620,7 @@ func TestConfirmUntap(t *testing.T) {
 	m.switchPanel(PanelTaps)
 	p := m.panels[PanelTaps]
 	p.items = []string{"nicknisi/tap"}
+	p.taps = []brew.Tap{{Name: "nicknisi/tap"}}
 	p.selected = 0
 
 	tm, _ := m.confirmUntap()
@@ -628,6 +634,7 @@ func TestConfirmUntapOfficial(t *testing.T) {
 	m.switchPanel(PanelTaps)
 	p := m.panels[PanelTaps]
 	p.items = []string{"homebrew/core"}
+	p.taps = []brew.Tap{{Name: "homebrew/core"}}
 	p.selected = 0
 
 	tm, _ := m.confirmUntap()
@@ -2270,6 +2277,7 @@ func TestMutationShowsConfirmModal(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.panels[PanelFormulae].items = []string{"foo  1.0"}
+	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "foo"}}
 	m.panels[PanelFormulae].selected = 0
 
 	nm, _ := m.confirmMutation(mutInstall, "Install")

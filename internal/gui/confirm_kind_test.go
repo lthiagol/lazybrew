@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
@@ -29,11 +30,13 @@ func TestConfirmKindsByCallSite(t *testing.T) {
 	formulae := func(m *Model) {
 		m.activePanel = PanelFormulae
 		m.panels[PanelFormulae].items = []string{"foo  1.0"}
+		m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "foo"}}
 		m.panels[PanelFormulae].selected = 0
 	}
 	taps := func(m *Model) {
 		m.activePanel = PanelTaps
 		m.panels[PanelTaps].items = []string{"user/tap  3 formulae"}
+		m.panels[PanelTaps].taps = []brew.Tap{{Name: "user/tap"}}
 		m.panels[PanelTaps].selected = 0
 	}
 	cases := []struct {
@@ -65,6 +68,7 @@ func TestConfirmKindsByCallSite(t *testing.T) {
 		}, modal.ActionUpgrade, "Reinstall", "foo"},
 		{"batch upgrade", func(m *Model) tea.Model {
 			m.panels[PanelOutdated].items = []string{"foo  1.0"}
+			m.panels[PanelOutdated].formulae = []brew.Formula{{Name: "foo"}}
 			m.batch.selected = map[int]bool{0: true}
 			nm, _ := m.confirmBatchUpgrade()
 			return nm
@@ -126,6 +130,7 @@ func TestUninstallConfirmIsDanger(t *testing.T) {
 		m := newTestModel()
 		m.activePanel = PanelFormulae
 		m.panels[PanelFormulae].items = []string{"ripgrep  14.1.1  bottled"}
+		m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "ripgrep"}}
 		m.panels[PanelFormulae].selected = 0
 
 		_, cmd := m.confirmUninstall(tc.mut)

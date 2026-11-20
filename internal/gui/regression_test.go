@@ -22,9 +22,10 @@ func TestTabContentChangesWithSelection_Refetch(t *testing.T) {
 	m.activePanel = PanelFormulae
 	p := m.panels[PanelFormulae]
 	p.items = []string{"ripgrep  14.1.1  bottled", "neovim  0.10.4  bottled"}
+	p.formulae = []brew.Formula{{Name: "ripgrep"}, {Name: "neovim"}}
 	p.selected = 0
 
-	m.activeTab = formulaDepsTab
+	m.activeTab = formulaUsesTab
 
 	cmd := m.loadTabContent()
 	if cmd == nil {

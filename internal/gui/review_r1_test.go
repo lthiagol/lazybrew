@@ -191,6 +191,7 @@ func TestEnqueueQueuedOutcomeToastsQueueing(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.panels[PanelFormulae].items = []string{"foo  1.0"}
+	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "foo"}}
 	m.panels[PanelFormulae].selected = 0
 
 	_, cmd := m.doMutation(mutInstall, "Install")
@@ -269,6 +270,7 @@ func TestSearchInstallUsesCaskWriterForCasks(t *testing.T) {
 	m.searchResults = []brew.SearchResult{{Name: "firefox", IsCask: true}}
 	p := m.panels[PanelSearch]
 	p.items = []string{"firefox  cask"}
+	p.results = m.searchResults
 	p.selected = 0
 
 	nm, _ := m.confirmMutation(mutInstall, "Install")
@@ -309,6 +311,7 @@ func TestSearchInstallUsesFormulaWriterForFormulae(t *testing.T) {
 	m.searchResults = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
 	p := m.panels[PanelSearch]
 	p.items = []string{"ripgrep  formula"}
+	p.results = m.searchResults
 	p.selected = 0
 
 	nm, _ := m.confirmMutation(mutInstall, "Install")
@@ -340,13 +343,10 @@ func TestTogglePinLooksUpPinnedStateByName(t *testing.T) {
 	m := New(brew.NewClient(r), testConfig())
 	m.activePanel = PanelFormulae
 	p := m.panels[PanelFormulae]
-	// Leaves filter: items show only "bar", but formulae keeps both —
-	// the old index-based lookup read foo's Pinned flag for bar.
+	// Leaves filter: items and formulae are both narrowed to "bar", index
+	// for index. The pinned flag must be read for the row's own name.
 	p.items = []string{"bar  2.0  bottled"}
-	p.formulae = []brew.Formula{
-		{Name: "foo", Pinned: false},
-		{Name: "bar", Pinned: true},
-	}
+	p.formulae = []brew.Formula{{Name: "bar", Pinned: true}}
 	p.selected = 0
 
 	tm, cmd := m.togglePin()
@@ -408,6 +408,8 @@ func TestUpgradeAllRestrictedToPackagePanels(t *testing.T) {
 		m := newTestModel()
 		m.activePanel = panel
 		m.panels[panel].items = []string{"pkg  1.0"}
+		m.panels[panel].formulae = []brew.Formula{{Name: "pkg"}}
+		m.panels[panel].casks = []brew.Cask{{Name: "pkg"}}
 		m.panels[panel].selected = 0
 		m = sendKey(m, "U")
 		if m.activeModal == nil {
@@ -592,6 +594,7 @@ func TestSearchInstallKeyIHasHandler(t *testing.T) {
 	p := m.panels[PanelSearch]
 	p.items = []string{"ripgrep  formula"}
 	m.searchResults = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
+	p.results = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
 	p.selected = 0
 
 	m = sendKey(m, "I")

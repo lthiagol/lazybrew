@@ -261,6 +261,7 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 		m.activePanel = PanelFormulae
 		p := m.panels[PanelFormulae]
 		p.items = []string{"foo  1.0"}
+		p.formulae = []brew.Formula{{Name: "foo"}}
 		p.selected = 0
 
 		_, cmd := m.doMutation(tc.mut, tc.label)
@@ -288,6 +289,7 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.panels[PanelFormulae].items = []string{"foo  1.0"}
+	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "foo"}}
 	m.panels[PanelFormulae].selected = 0
 	_, cmd := m.togglePin()
 	check("togglePin", cmd, "pin:")
@@ -295,6 +297,7 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 	m = newTestModel()
 	m.activePanel = PanelServices
 	m.panels[PanelServices].items = []string{"redis  started"}
+	m.panels[PanelServices].services = []brew.Service{{Name: "redis"}}
 	m.panels[PanelServices].selected = 0
 	_, cmd = m.runServiceTask("restart", "redis")
 	check("runServiceTask", cmd, "service-restart:")
@@ -302,18 +305,21 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 	m = newTestModel()
 	m.activePanel = PanelTaps
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
+	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
 	m.panels[PanelTaps].selected = 0
 	_, cmd = m.executeUntap()
 	check("executeUntap", cmd, "untap:")
 
 	m = newTestModel()
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
+	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
 	m.panels[PanelTaps].selected = 0
 	_, cmd = m.executeRepair()
 	check("executeRepair", cmd, "repair:")
 
 	m = newTestModel()
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
+	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
 	m.panels[PanelTaps].selected = 0
 	cmd = m.executeTrustAction(0)
 	check("executeTrustAction", cmd, "trust:")
@@ -326,6 +332,8 @@ func TestInstallKeyIOnFormulaeAndCasks(t *testing.T) {
 		m := newTestModel()
 		m.activePanel = panel
 		m.panels[panel].items = []string{"foo  1.0"}
+		m.panels[panel].formulae = []brew.Formula{{Name: "foo"}}
+		m.panels[panel].casks = []brew.Cask{{Name: "foo"}}
 		m.panels[panel].selected = 0
 
 		m = sendKey(m, "i")
@@ -349,6 +357,7 @@ func TestCaskInstallFromCasksPanelUsesCaskWriter(t *testing.T) {
 	m := New(brew.NewClient(r), testConfig())
 	m.activePanel = PanelCasks
 	m.panels[PanelCasks].items = []string{"firefox  1.0"}
+	m.panels[PanelCasks].casks = []brew.Cask{{Name: "firefox"}}
 	m.panels[PanelCasks].selected = 0
 
 	nm, _ := m.confirmMutation(mutInstall, "Install")
