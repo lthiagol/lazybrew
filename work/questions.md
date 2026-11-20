@@ -316,3 +316,44 @@ redirect it.
   always stays. Fix in the v2-03 fix round (F-orch-03).
 - **Q-v2-03-e:** accepted — validating at `Load` and failing at startup is the
   precedent. Other fields are not validated in this overhaul.
+
+## Questions raised — slice `v2-03b-sidebar-lists` (runner lane)
+
+Each is a judgement call or a defect outside the brief's ACs. None blocked a
+criterion; the code is as described and the orchestrator can redirect it.
+
+### Q-v2-03b-a — the batch markers show on every sidebar list (pre-existing)
+
+- **Question:** the batch selection is one map of indices into the Outdated
+  list. The sidebar draws it on every panel, so after a batch on Outdated the
+  Formulae, Casks, Taps and Services rows at the same indices show `●`. The old
+  sidebar did the same; this slice did not introduce it. Fix it (pass the batch
+  only when the active panel is Outdated, one line in `renderSidebar`), or
+  leave it?
+- **Raised by:** runner lane (slice `v2-03b-sidebar-lists`). Not fixed here.
+
+### Q-v2-03b-b — an unknown Status count: left out, or a muted `–`?
+
+- **Runner's decision:** left out. AC-03.4 says unknown values are omitted, so
+  the Status sidebar has no `Outdated` row until the count is loaded; the
+  Dashboard tab still says `not loaded (press R to load)`. A `–` row is a
+  one-line change if preferred.
+- **Raised by:** runner lane (slice `v2-03b-sidebar-lists`).
+
+### Q-v2-03b-c — Tap Info and Trust show the same details block
+
+- **Runner's decision:** both as the brief's table says. Tap Info is the
+  summary line plus the selected tap's details; Trust keeps its details block.
+  The two blocks now overlap. Should Trust show only the trust state?
+- **Raised by:** runner lane (slice `v2-03b-sidebar-lists`).
+
+### Q-v2-03b-d — the model's viewport is removed
+
+- **Finding:** the viewport's content was set inside `render`, on a copy of the
+  model, so the model's viewport never held content and a wheel over the main
+  panel never scrolled. AC-04.1 needs it to scroll.
+- **Runner's decision:** the viewport is removed; a scroll offset per tab item
+  (`contentKey`: panel, tab and item) lives in the model, and the wheel moves it.
+  The keys the viewport used to receive without content (PgUp and similar) now
+  reach nothing. Confirm this reading.
+- **Raised by:** runner lane (slice `v2-03b-sidebar-lists`).
