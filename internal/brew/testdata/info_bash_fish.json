@@ -1,0 +1,83 @@
+{
+  "formulae": [
+    {
+      "name": "bash",
+      "full_name": "bash",
+      "tap": "homebrew/core",
+      "versions": {
+        "stable": "5.3.20",
+        "head": "HEAD",
+        "bottle": true
+      },
+      "desc": "Bourne-Again SHell, a UNIX command interpreter",
+      "homepage": "https://www.gnu.org/software/bash/",
+      "license": "GPL-3.0-or-later",
+      "installed": [
+        {
+          "sbom": "/home/linuxbrew/.linuxbrew/Cellar/bash/5.3.20/sbom.spdx.json",
+          "version": "5.3.20",
+          "used_options": [],
+          "built_as_bottle": true,
+          "poured_from_bottle": true,
+          "time": 1793798897,
+          "runtime_dependencies": [
+            {
+              "full_name": "ncurses",
+              "version": "6.6",
+              "revision": 0,
+              "bottle_rebuild": 0,
+              "pkg_version": "6.6",
+              "declared_directly": true,
+              "compatibility_version": 1
+            },
+            {
+              "full_name": "readline",
+              "version": "8.3.6",
+              "revision": 0,
+              "bottle_rebuild": 0,
+              "pkg_version": "8.3.6",
+              "declared_directly": true,
+              "compatibility_version": 1
+            }
+          ],
+          "installed_on_request": false
+        }
+      ],
+      "dependencies": [
+        "ncurses",
+        "readline"
+      ],
+      "build_dependencies": [],
+      "caveats": "DEFAULT_LOADABLE_BUILTINS_PATH: $HOMEBREW_PREFIX/lib/bash:/usr/local/lib/bash:/usr/lib/bash:/opt/local/lib/bash:/usr/pkg/lib/bash:/opt/pkg/lib/bash:.",
+      "keg_only": false,
+      "pinned": false,
+      "bottle": {}
+    },
+    {
+      "name": "fish",
+      "full_name": "fish",
+      "tap": "homebrew/core",
+      "versions": {
+        "stable": "4.9.3",
+        "head": "HEAD",
+        "bottle": true
+      },
+      "desc": "User-friendly command-line shell for UNIX-like operating systems",
+      "homepage": "https://fishshell.com",
+      "license": "GPL-2.0-only",
+      "installed": [],
+      "dependencies": [
+        "pcre2"
+      ],
+      "build_dependencies": [
+        "cmake",
+        "rust",
+        "sphinx-doc"
+      ],
+      "caveats": null,
+      "keg_only": false,
+      "pinned": false,
+      "bottle": {}
+    }
+  ]
+}
