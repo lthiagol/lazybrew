@@ -1030,9 +1030,7 @@ func (m Model) render() string {
 	// a row, so the screen behind them keeps its size and position. While a
 	// modal is open the frame behind it is muted first (dimBackdrop).
 	var overlays []*lipgloss.Layer
-	if len(m.toasts) > 0 {
-		overlays = append(overlays, m.toastLayer())
-	}
+	overlays = append(overlays, m.toastLayers()...)
 	if m.activeModal != nil {
 		base = dimBackdrop(base)
 		overlays = append(overlays, centred(m.activeModal.View().Content, m.width, m.height))
