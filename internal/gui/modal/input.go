@@ -56,12 +56,14 @@ func (m *InputModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *InputModal) View() tea.View {
-	keys := textutil.Clip(keyLine(
-		keyHint(style.AccentColor, "enter", "submit"),
-		keyHint(style.AccentColor, "esc", "cancel"),
-	), innerWidth(formWidth))
+	keys := textutil.Clip(keyLine(hintViews(style.AccentColor, m.Hints())...), innerWidth(formWidth))
 	prompt := proseLines(m.prompt, style.NormalItem, formWidth)
 	return tea.NewView(dialog(style.AccentColor, m.action, formWidth, append(prompt, "", m.input.View()), keys))
+}
+
+// Hints are the keys the input answers to: enter, and esc.
+func (m *InputModal) Hints() []Hint {
+	return []Hint{{Key: "enter", Desc: "submit"}, hintCancel}
 }
 
 func (m *InputModal) Done() bool      { return m.done }

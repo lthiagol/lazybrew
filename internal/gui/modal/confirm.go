@@ -125,7 +125,7 @@ func (m *ConfirmModal) choices(accent color.Color) string {
 	return keyLine(
 		choice(accent, "[y]", "es", m.selected == 0),
 		choice(accent, "[n]", "o", m.selected == 1),
-		keyHint(accent, "esc", "cancel"),
+		keyHint(accent, hintCancel.Key, hintCancel.Desc),
 	)
 }
 
@@ -135,6 +135,11 @@ func choice(accent color.Color, key, rest string, selected bool) string {
 		word = style.SelectedItem.Reverse(true)
 	}
 	return lipgloss.NewStyle().Foreground(accent).Bold(true).Render(key) + word.Render(rest)
+}
+
+// Hints are the keys the confirm answers to: y, n, and esc.
+func (m *ConfirmModal) Hints() []Hint {
+	return []Hint{{Key: "y", Desc: "yes"}, {Key: "n", Desc: "no"}, hintCancel}
 }
 
 func (m *ConfirmModal) Done() bool      { return m.done }

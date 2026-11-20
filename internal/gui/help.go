@@ -17,16 +17,12 @@ type helpPage struct {
 
 type helpSection struct {
 	heading string
-	items   []helpItem
+	items   []keyHint
 }
 
-type helpItem struct {
-	key  string
-	desc string
-}
-
-// buildHelp documents the LIVE keys — every entry must have a handler in
-// gui.go's Update, and every handled key should appear here (r1 finding 24).
+// buildHelp documents the LIVE keys. Each page lists its entries of the key
+// tables (keybindings.go), so a key that is answered is listed, and
+// a listed key is answered (keymap_test.go).
 func buildHelp() []helpPage {
 	return []helpPage{
 		{
@@ -34,25 +30,11 @@ func buildHelp() []helpPage {
 			sections: []helpSection{
 				{
 					heading: "Navigation",
-					items: []helpItem{
-						{"Tab", "Next panel"},
-						{"Shift+Tab", "Previous panel"},
-						{"1-7", "Jump to panel"},
-						{"j/k", "Scroll list"},
-						{"PgUp/PgDn", "Scroll content by a page"},
-						{"Home/End", "Top/bottom (g/G outside Search)"},
-						{"[/]", "Switch tabs"},
-					},
+					items:   []keyHint{keyNext, keyPrev, keyJump, keyScroll, keyPage, keyEnds, keyTabs},
 				},
 				{
 					heading: "Actions",
-					items: []helpItem{
-						{"R", "Refresh all data"},
-						{"/", "Search packages"},
-						{"C", "Toggle command log"},
-						{"q", "Quit lazybrew"},
-						{"?", "This help"},
-					},
+					items:   []keyHint{keyRefresh, keySearch, keyLog, keyQuit, keyHelp},
 				},
 			},
 		},
@@ -60,16 +42,7 @@ func buildHelp() []helpPage {
 			title: "Formulae",
 			sections: []helpSection{
 				{
-					items: []helpItem{
-						{"i", "Install selected"},
-						{"x", "Uninstall selected"},
-						{"r", "Reinstall selected"},
-						{"u", "Upgrade selected"},
-						{"U", "Upgrade all"},
-						{"p", "Pin/Unpin selected"},
-						{"L", "Toggle leaves filter"},
-						{"F", "Fetch selected"},
-					},
+					items: []keyHint{fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch},
 				},
 			},
 		},
@@ -77,15 +50,7 @@ func buildHelp() []helpPage {
 			title: "Casks",
 			sections: []helpSection{
 				{
-					items: []helpItem{
-						{"i", "Install"},
-						{"x", "Uninstall"},
-						{"X", "Zap uninstall"},
-						{"r", "Reinstall"},
-						{"u", "Upgrade"},
-						{"U", "Upgrade all"},
-						{"F", "Fetch"},
-					},
+					items: []keyHint{cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch},
 				},
 			},
 		},
@@ -93,13 +58,7 @@ func buildHelp() []helpPage {
 			title: "Taps",
 			sections: []helpSection{
 				{
-					items: []helpItem{
-						{"a", "Add tap"},
-						{"x", "Untap"},
-						{"t", "Trust or untrust tap"},
-						{"T", "Trust a formula or cask"},
-						{"r", "Repair tap"},
-					},
+					items: []keyHint{tAdd, tUntap, tTrust, tTrustItem, tRepair},
 				},
 			},
 		},
@@ -107,14 +66,7 @@ func buildHelp() []helpPage {
 			title: "Services",
 			sections: []helpSection{
 				{
-					items: []helpItem{
-						{"s", "Start"},
-						{"S", "Stop"},
-						{"r", "Restart"},
-						{"f", "Run (foreground)"},
-						{"c", "Cleanup stale services"},
-						{"e", "Logs tab: stdout or stderr"},
-					},
+					items: []keyHint{svStart, svStop, svRestart, svRun, svCleanup, svLogStream},
 				},
 			},
 		},
@@ -122,12 +74,7 @@ func buildHelp() []helpPage {
 			title: "Outdated",
 			sections: []helpSection{
 				{
-					items: []helpItem{
-						{"u", "Upgrade selected"},
-						{"U", "Upgrade all"},
-						{"Space", "Toggle selection"},
-						{"a", "Select/deselect all"},
-					},
+					items: []keyHint{keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll},
 				},
 			},
 		},
@@ -135,16 +82,7 @@ func buildHelp() []helpPage {
 			title: "Status",
 			sections: []helpSection{
 				{
-					items: []helpItem{
-						{"R", "Refresh all data"},
-						{"c", "Run brew cleanup"},
-						{"d", "Run brew doctor"},
-						{"A", "Run brew autoremove"},
-						{"B", "Brewfile actions"},
-						{"v", "Vulnerability check"},
-						{"m", "Missing dependencies"},
-						{"[ ]", "Switch tabs"},
-					},
+					items: []keyHint{keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, stTabs},
 				},
 			},
 		},
@@ -153,12 +91,7 @@ func buildHelp() []helpPage {
 			sections: []helpSection{
 				{
 					heading: "Actions",
-					items: []helpItem{
-						{"/", "Type search query"},
-						{"Enter", "Execute search"},
-						{"i", "Install selected result"},
-						{"F", "Fetch selected result"},
-					},
+					items:   []keyHint{sType, sExecute, sInstall, sFetch},
 				},
 			},
 		},
@@ -186,11 +119,11 @@ func helpUnit(p helpPage) []string {
 		}
 		keyW := 0
 		for _, it := range sec.items {
-			keyW = max(keyW, lipgloss.Width(it.key))
+			keyW = max(keyW, lipgloss.Width(it.helpKeyText()))
 		}
 		for _, it := range sec.items {
-			rows = append(rows, keyStyle.Render(fmt.Sprintf("%-*s", keyW, it.key))+
-				"  "+style.SubtleText.Render(it.desc))
+			rows = append(rows, keyStyle.Render(fmt.Sprintf("%-*s", keyW, it.helpKeyText()))+
+				"  "+style.SubtleText.Render(it.help))
 		}
 	}
 	return rows

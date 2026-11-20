@@ -900,26 +900,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "shift+tab":
 			cmd := m.prevPanel()
 			return m, cmd
-		case "1":
-			cmd := m.switchPanel(PanelStatus)
-			return m, cmd
-		case "2":
-			cmd := m.switchPanel(PanelFormulae)
-			return m, cmd
-		case "3":
-			cmd := m.switchPanel(PanelCasks)
-			return m, cmd
-		case "4":
-			cmd := m.switchPanel(PanelOutdated)
-			return m, cmd
-		case "5":
-			cmd := m.switchPanel(PanelTaps)
-			return m, cmd
-		case "6":
-			cmd := m.switchPanel(PanelServices)
-			return m, cmd
-		case "7":
-			cmd := m.switchPanel(PanelSearch)
+		case "1", "2", "3", "4", "5", "6", "7":
+			// The digits follow the panel order: 1 is the first panel.
+			cmd := m.switchPanel(PanelID(msg.String()[0] - '1'))
 			return m, cmd
 
 		case "j", "down":
@@ -955,17 +938,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.scrollContentTo(m.contentLast()), nil
 			}
 
-		case "[":
+		case "[", "left":
 			c := m.prevTab()
 			return m, c
-		case "]":
-			c := m.nextTab()
-			return m, c
-
-		case "left":
-			c := m.prevTab()
-			return m, c
-		case "right":
+		case "]", "right":
 			c := m.nextTab()
 			return m, c
 
