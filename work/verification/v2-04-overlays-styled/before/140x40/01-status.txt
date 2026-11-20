@@ -1,0 +1,40 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
+╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Status › Dashboard ────────────────────────────────────────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││  Dashboard    Config    Doctor                                                          │
+│  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━━━━━━                                                                            │
+│  Formulae  125                                ││Homebrew 7.0.15-36-g1f335ae                                                              │
+│  Casks     2                                  ││Prefix: /home/linuxbrew/.linuxbrew                                                       │
+│  Taps      3                                  ││                                                                                         │
+│  Services  3                                  ││Formulae:  125 installed                                                                 │
+│                                               ││Casks:     2 installed                                                                   │
+│                                               ││Outdated:  — not loaded (press R to load)                                                │
+│                                               ││                                                                                         │
+│                                               ││Taps:      3 total                                                                       │
+╰───────────────────────────────────────────────╯│           0 official, 3 third-party                                                     │
+╭─ 2 ∘ Formulae ─────────────────── not loaded ─╮│                                                                                         │
+│                                               ││Services:  3 total                                                                       │
+│                                               ││           1 running, 2 stopped                                                          │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│R to refresh                                                                             │
+╭─ 3 ▣ Casks ────────────────────── not loaded ─╮│                                                                                         │
+│                                               ││Doctor: No issues                                                                        │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 4 ↑ Outdated ─────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 5 ⊕ Taps ─────────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 6 ◎ Services ─────────────────── not loaded ─╮╰─────────────────────────────────────────────────────────────────────────────────────────╯
+│                                               │╭─ Log ───────────────────────────────────────────────────────────────────────────────────╮
+│                                               ││No commands executed yet                                                                 │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
+ R refresh  c cleanup  d doctor  A autoremove  B brewfile  v vulns  m missing  Tab next  S-Tab prev  1-7 jump  / search  ? help  ? more     
