@@ -43,7 +43,7 @@ func plainLine(row string) string {
 // title is inside the top border at the left, the label at the right, and
 // the box is exactly w by h.
 func TestPanelTitleAndLabelSitInTheBorder(t *testing.T) {
-	got := panel("2 Formulae", "125", "row one\nrow two", 24, 4, false)
+	got := panel("2 Formulae", borderLabel{full: "125"}, "row one\nrow two", 24, 4, false)
 	rows := strings.Split(got, "\n")
 	if len(rows) != 4 {
 		t.Fatalf("panel has %d rows, want 4", len(rows))
@@ -68,12 +68,12 @@ func TestPanelTitleAndLabelSitInTheBorder(t *testing.T) {
 // TestPanelCutsLinesNeverWraps: a long title or body line is cut with an
 // ellipsis, and the box keeps its height.
 func TestPanelCutsLinesNeverWraps(t *testing.T) {
-	title := panel("a title far too long for the box", "", "", 20, 3, true)
+	title := panel("a title far too long for the box", borderLabel{}, "", 20, 3, true)
 	if top := plainLine(strings.Split(title, "\n")[0]); lipgloss.Width(top) != 20 || !strings.Contains(top, "…") {
 		t.Fatalf("long title should be cut with an ellipsis at 20 cells, got %q", top)
 	}
 
-	body := panel("t", "", "this body line is far too long for the box", 20, 3, false)
+	body := panel("t", borderLabel{}, "this body line is far too long for the box", 20, 3, false)
 	rows := strings.Split(body, "\n")
 	if len(rows) != 3 {
 		t.Fatalf("a long body line must not add rows: %d rows, want 3", len(rows))
@@ -83,7 +83,7 @@ func TestPanelCutsLinesNeverWraps(t *testing.T) {
 	}
 
 	// Body rows past the height are dropped, not drawn past the bottom border.
-	many := panel("t", "", "a\nb\nc\nd\ne", 20, 4, false)
+	many := panel("t", borderLabel{}, "a\nb\nc\nd\ne", 20, 4, false)
 	if n := len(strings.Split(many, "\n")); n != 4 {
 		t.Fatalf("five body lines in a 4-row box drew %d rows, want 4", n)
 	}
@@ -92,7 +92,7 @@ func TestPanelCutsLinesNeverWraps(t *testing.T) {
 // TestPanelFocusChangesBorder: focus is a visible difference, not only a
 // title change.
 func TestPanelFocusChangesBorder(t *testing.T) {
-	if panel("t", "", "x", 12, 3, true) == panel("t", "", "x", 12, 3, false) {
+	if panel("t", borderLabel{}, "x", 12, 3, true) == panel("t", borderLabel{}, "x", 12, 3, false) {
 		t.Fatal("a focused panel should draw differently from an unfocused one")
 	}
 }
@@ -103,23 +103,23 @@ func TestSidebarLabelStates(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	casks := m.panels[PanelCasks]
 
-	if got := plainLine(m.sidebarLabel(casks)); got != "not loaded" {
+	if got := plainLine(m.sidebarLabel(casks).full); got != "not loaded" {
 		t.Fatalf("never-loaded label = %q, want not loaded", got)
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{}})
-	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks])); got != "(empty)" {
+	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "(empty)" {
 		t.Fatalf("loaded-empty label = %q, want (empty)", got)
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{"a", "b"}})
-	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks])); got != "2" {
+	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "2" {
 		t.Fatalf("loaded label = %q, want the count 2", got)
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Err: assertAnError})
-	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks])); got != "!" {
+	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "!" {
 		t.Fatalf("failed label = %q, want !", got)
 	}
 	m.panels[PanelCasks].loading = true
-	if got := m.sidebarLabel(m.panels[PanelCasks]); got != m.spinner.View() {
+	if got := m.sidebarLabel(m.panels[PanelCasks]).full; got != m.spinner.View() {
 		t.Fatalf("loading label = %q, want the spinner", got)
 	}
 }
@@ -512,14 +512,53 @@ func TestHeaderOperationOutranksBadges(t *testing.T) {
 // show.
 func TestStatusBoxLabelShowsNoCount(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
-	if got := plainLine(m.sidebarLabel(m.panels[PanelStatus])); got != "not loaded" {
+	if got := plainLine(m.sidebarLabel(m.panels[PanelStatus]).full); got != "not loaded" {
 		t.Fatalf("unloaded Status label = %q, want not loaded", got)
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Items: []string{"Homebrew 4.5.2", "Prefix: /opt", "Formulae: 125 installed"}})
-	if got := m.sidebarLabel(m.panels[PanelStatus]); got != "" {
+	if got := m.sidebarLabel(m.panels[PanelStatus]).full; got != "" {
 		t.Fatalf("loaded Status label = %q, want no count", got)
 	}
 	if top := plainLine(strings.Split(m.renderSidebar(), "\n")[0]); strings.Contains(top, "3") {
 		t.Fatalf("Status border must not show the dashboard's line count: %q", top)
+	}
+}
+
+// TestSidebarLabelsAtEightyColumns (F-orch-02): at 80x24 the sidebar box is 24
+// cells, so a label may not fit whole. Not loaded shows as the short dash, a
+// count is never cut, a label with no room is left out, and the loading
+// spinner and the error mark stay.
+func TestSidebarLabelsAtEightyColumns(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Items: []string{"a", "b", "c"}})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelSearch, Err: assertAnError})
+	m.panels[PanelOutdated].loading = true
+
+	rows := strings.Split(m.renderSidebar(), "\n")
+	top := func(title string) string {
+		t.Helper()
+		for _, r := range rows {
+			if p := plainLine(r); strings.Contains(p, title) {
+				return p
+			}
+		}
+		t.Fatalf("no sidebar border shows %q", title)
+		return ""
+	}
+	if got := top("3 ▣ Casks"); !strings.HasSuffix(got, " – ─╮") {
+		t.Errorf("unloaded Casks at 80 columns should show the short dash, got %q", got)
+	}
+	if got := top("5 ⊕ Taps"); !strings.HasSuffix(got, " 3 ─╮") {
+		t.Errorf("the Taps count must show in full, got %q", got)
+	}
+	if got := top("6 ◎ Services"); strings.Contains(got, "(e") {
+		t.Errorf("an empty label with no room must be left out, not cut: %q", got)
+	}
+	if got := top("4 ↑ Outdated"); !strings.HasSuffix(got, " "+plainLine(m.spinner.View())+" ─╮") {
+		t.Errorf("the loading spinner should stay at 80 columns, got %q", got)
+	}
+	if got := top("7 ⌕ Search"); !strings.HasSuffix(got, " ! ─╮") {
+		t.Errorf("the error mark should stay at 80 columns, got %q", got)
 	}
 }
