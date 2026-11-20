@@ -240,3 +240,77 @@ func TestLogsFollowFrameSizeAtEachSize(t *testing.T) {
 		}
 	}
 }
+
+// Past 200 lines the window slides: a view scrolled up keeps the same line at
+// its top, so the offset drops by the lines that left the top.
+func TestLogsFollowScrolledUpReanchorsOnSlide(t *testing.T) {
+	path := writeLog(t, "moshi-hook.log", numberedLines(250)...)
+	m := logsModel(t, 80, 24, path, path)
+	m.scrollContentTo(10)
+	key := m.contentKey()
+	if got := m.logs.lines[m.contentScroll[key]]; got != "line 061" {
+		t.Fatalf("the test did not scroll to line 061: top is %q", got)
+	}
+
+	// Three lines arrive: the window holds lines 054 to 253, and line 061 has
+	// moved from row 10 to row 7.
+	appendLog(t, path, "line 251", "line 252", "line 253")
+	m = tick(m)
+	if got := m.contentScroll[key]; got != 7 {
+		t.Errorf("offset = %d after the slide, want 7", got)
+	}
+	if got := m.logs.lines[m.contentScroll[key]]; got != "line 061" {
+		t.Errorf("the top line is %q after the slide, want line 061", got)
+	}
+	if view := plainView(m); !strings.Contains(view, "line 061") {
+		t.Errorf("line 061 is off the view after the slide:\n%s", view)
+	}
+	assertFrameSize(t, m.View().Content, 80, 24)
+}
+
+// When the line at the top of a scrolled-up view leaves the window, the view
+// clamps to the top of the window.
+func TestLogsFollowScrolledUpClampsWhenTopLineLeaves(t *testing.T) {
+	path := writeLog(t, "moshi-hook.log", numberedLines(250)...)
+	m := logsModel(t, 80, 24, path, path)
+	m.scrollContentTo(2)
+	key := m.contentKey()
+	if got := m.logs.lines[m.contentScroll[key]]; got != "line 053" {
+		t.Fatalf("the test did not scroll to line 053: top is %q", got)
+	}
+
+	// Five lines arrive: the window holds lines 056 to 255, and line 053 is gone.
+	var more []string
+	for i := 251; i <= 255; i++ {
+		more = append(more, fmt.Sprintf("line %03d", i))
+	}
+	appendLog(t, path, more...)
+	m = tick(m)
+	if got := m.contentScroll[key]; got != 0 {
+		t.Errorf("offset = %d after its line left, want 0", got)
+	}
+	if got := m.logs.lines[0]; got != "line 056" {
+		t.Errorf("the window starts at %q, want line 056", got)
+	}
+}
+
+// shiftedBy counts the lines that left the top of a window between two reads.
+func TestShiftedBy(t *testing.T) {
+	cases := []struct {
+		name      string
+		old, next []string
+		want      int
+	}{
+		{"nothing read yet", nil, []string{"a", "b"}, 0},
+		{"same lines", []string{"a", "b"}, []string{"a", "b"}, 0},
+		{"appended, nothing left", []string{"a", "b", "c"}, []string{"a", "b", "c", "d", "e"}, 0},
+		{"two left the top", []string{"a", "b", "c", "d"}, []string{"c", "d", "e", "f"}, 2},
+		{"no line kept", []string{"a", "b"}, []string{"x", "y"}, 2},
+		{"file shrank", []string{"a", "b", "c"}, []string{"a"}, 3},
+	}
+	for _, c := range cases {
+		if got := shiftedBy(c.old, c.next); got != c.want {
+			t.Errorf("%s: shiftedBy = %d, want %d", c.name, got, c.want)
+		}
+	}
+}

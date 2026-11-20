@@ -167,3 +167,22 @@ Nothing was deleted, skipped or weakened.
    which pins it to the bottom.
 5. **The stream resets on a service change only.** Leaving Logs and coming back
    keeps the stream.
+
+## Q-lb09-slide — ruled: re-anchor
+
+The orchestrator ruled on note 1 (`questions.md`, Q-lb09-slide): the same line
+stays at the top of a scrolled-up view. `applyLogs` now lowers the offset by the
+lines that left the top (`shiftedBy`: the smallest k at which the old lines from
+k on open the new read), and clamps to 0 when the top line itself left. A
+bottom-pinned view is unchanged.
+
+Tests: `TestLogsFollowScrolledUpReanchorsOnSlide` (250-line log, view at line
+061, three lines arrive: offset 10 → 7, line 061 still at the top);
+`TestLogsFollowScrolledUpClampsWhenTopLineLeaves` (view at line 053, five lines
+arrive: offset → 0, window starts at line 056); `TestShiftedBy` (table). Both
+slide tests fail when the offset rule is replaced by the old one.
+
+Limit: when the file repeats lines, a shift can be read as smaller than it was,
+since the old and new windows match at more than one place. The rule takes the
+smallest shift, so the view then moves less than the lines did. Timestamped logs
+(as moshi-hook's are) match in one place only.
