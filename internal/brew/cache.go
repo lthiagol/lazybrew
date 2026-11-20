@@ -22,8 +22,9 @@ const (
 	KeyConfig           CacheKey = "config"
 )
 
-// invalidateGroups names the cache keys each write group drops. Every writer
-// calls InvalidateFor with its group, once its command has finished.
+// invalidateGroups names the cache keys each group drops: the write groups,
+// which every writer calls once its command has finished, and the panel
+// groups the GUI drops before a refresh (see InvalidateFor).
 var invalidateGroups = map[string][]CacheKey{
 	"install":    {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
 	"uninstall":  {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
@@ -39,6 +40,13 @@ var invalidateGroups = map[string][]CacheKey{
 	"services":   {KeyServicesList, KeyServicesInfo},
 	"cleanup":    {KeyFormulaeList, KeyCasksList},
 	"autoremove": {KeyFormulaeList, KeyOutdatedFormulae},
+
+	"formulae":    {KeyFormulaeList},
+	"casks":       {KeyCasksList},
+	"outdated":    {KeyOutdatedFormulae, KeyOutdatedCasks},
+	"taps":        {KeyTapsList},
+	"status":      {KeyFormulaeList, KeyCasksList, KeyTapsList, KeyServicesList},
+	"diagnostics": {KeyDoctorResult, KeyConfig},
 }
 
 type cacheEntry struct {
