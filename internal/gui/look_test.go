@@ -402,3 +402,39 @@ func TestSearchInputDrawsFromRoles(t *testing.T) {
 		}
 	}
 }
+
+// TestOperationAndLogGlyphsFollowIcons: the operation title and the Log's
+// status marks come from the icon set, and show_icons: false draws none.
+func TestOperationAndLogGlyphsFollowIcons(t *testing.T) {
+	cases := []struct {
+		name  string
+		icons string
+		show  bool
+		want  style.Icons
+	}{
+		{"nerd", config.IconsNerd, true, style.NerdIcons},
+		{"unicode", config.IconsUnicode, true, style.UnicodeIcons},
+		{"off", config.IconsNerd, false, style.Icons{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(config.IconsEnv, "")
+			cfg := config.Default()
+			cfg.GUI.Icons = tc.icons
+			cfg.GUI.ShowIcons = tc.show
+			m := New(brew.NewClient(brew.NewMockRunner()), cfg)
+
+			m.opState = &Operation{Title: "upgrading curl", Status: opRunning}
+			title := strings.Split(m.renderOperation(60, 10), "\n")[0]
+			if got, want := strings.TrimRight(plainLine(title), " "), withIcon(tc.want.Refresh, "upgrading curl"); got != want {
+				t.Errorf("operation title = %q, want %q", got, want)
+			}
+
+			id := m.commandLog.Append("install bash")
+			m.commandLog.SetStatus(id, CommandSuccess)
+			if got, want := plainLine(m.commandLog.View(40, 4)), withIcon(tc.want.OK, "brew install bash"); !strings.HasPrefix(got, want) {
+				t.Errorf("log line = %q, want it to start %q", got, want)
+			}
+		})
+	}
+}

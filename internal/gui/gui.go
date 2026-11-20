@@ -126,6 +126,8 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	ti.Placeholder = "Search packages..."
 	ti.SetWidth(40)
 	ti.SetStyles(searchStyles())
+	icons := iconSet(cfg)
+	cl.SetIcons(icons)
 	m := &Model{
 		client:      client,
 		cfg:         cfg,
@@ -139,7 +141,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		commandLog:  cl,
 		spinner:     s,
 		searchInput: ti,
-		icons:       iconSet(cfg),
+		icons:       icons,
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).
