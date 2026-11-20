@@ -1333,7 +1333,7 @@ func TestDataLoadedOnNonFetchTabDoesNotReissueFetch(t *testing.T) {
 	})
 
 	if cmd != nil {
-		t.Errorf("did not expect re-fetch cmd on List tab (tab 0 is not a fetch tab), got %T", cmd())
+		t.Errorf("did not expect re-fetch cmd on Info tab (tab 0 is not a fetch tab), got %T", cmd())
 	}
 }
 
