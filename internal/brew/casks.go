@@ -65,44 +65,66 @@ func (f *flexString) UnmarshalJSON(data []byte) error {
 
 type flexStrings []string
 
-// depName returns the name brew gives a dependency object. Brew writes
-// full_name for tap-qualified dependencies (and for installed runtime
+// dependencyName reads one dependency: a name string, or an object. Brew
+// writes full_name for tap-qualified dependencies (and for installed runtime
 // dependencies, which are objects with full_name, version, ...), so it is
-// preferred; name is the fallback.
-func depName(obj map[string]interface{}) (string, bool) {
-	if name, ok := obj["full_name"].(string); ok {
-		return name, true
-	}
-	name, ok := obj["name"].(string)
-	return name, ok
-}
-
-func (f *flexStrings) UnmarshalJSON(data []byte) error {
-	var a []interface{}
-	if err := json.Unmarshal(data, &a); err == nil {
-		for _, v := range a {
-			switch val := v.(type) {
-			case string:
-				*f = append(*f, val)
-			case map[string]interface{}:
-				if name, ok := depName(val); ok {
-					*f = append(*f, name)
-				}
+// preferred; name is the fallback. Any other value reads as no name.
+func dependencyName(raw json.RawMessage) (string, bool) {
+	switch jsonKind(raw) {
+	case '"':
+		var name string
+		if err := json.Unmarshal(raw, &name); err == nil {
+			return name, true
+		}
+	case '{':
+		var dep struct {
+			Name     *string `json:"name"`
+			FullName *string `json:"full_name"`
+		}
+		if err := json.Unmarshal(raw, &dep); err == nil {
+			if dep.FullName != nil {
+				return *dep.FullName, true
+			}
+			if dep.Name != nil {
+				return *dep.Name, true
 			}
 		}
-		if *f == nil {
-			*f = flexStrings{}
+	}
+	return "", false
+}
+
+// jsonKind is the first byte of a JSON value: '"' for a string, '{' for an
+// object, '[' for an array, 'n' for null, and 0 for no bytes.
+func jsonKind(raw []byte) byte {
+	if len(raw) == 0 {
+		return 0
+	}
+	return raw[0]
+}
+
+// UnmarshalJSON reads a list of dependencies: a JSON array whose items are
+// names or dependency objects, or a single dependency object. null and an
+// empty array both read as an empty, non-nil list.
+func (f *flexStrings) UnmarshalJSON(data []byte) error {
+	*f = flexStrings{}
+	switch jsonKind(data) {
+	case '[':
+		var items []json.RawMessage
+		if err := json.Unmarshal(data, &items); err != nil {
+			return err
+		}
+		for _, item := range items {
+			if name, ok := dependencyName(item); ok {
+				*f = append(*f, name)
+			}
 		}
 		return nil
-	}
-	var obj map[string]interface{}
-	if err := json.Unmarshal(data, &obj); err == nil {
-		if name, ok := depName(obj); ok {
+	case '{':
+		if name, ok := dependencyName(data); ok {
 			*f = append(*f, name)
 		}
-		if *f == nil {
-			*f = flexStrings{}
-		}
+		return nil
+	case 'n':
 		return nil
 	}
 	return json.Unmarshal(data, (*[]string)(f))
