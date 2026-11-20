@@ -36,3 +36,8 @@ receipt is `work/inbox/runner-lb02-fetch-timeouts.md`.
 **LB-07 closed** — the last two unbounded brew reads (the uninstall dependency pre-check and `toggleLeaves`) are bounded by `brewReadTimeout`, and a timed-out dependency check now says so in the uninstall confirm dialog instead of looking like "nothing depends on this package"; receipt `work/inbox/runner-lb07-bound-remaining-reads.md`.
 
 **LB-03 closed** — the status dashboard now says the outdated count is not loaded until the user presses R, which is the only path that loads it; receipt `work/inbox/runner-lb03-dashboard-outdated-count.md`.
+
+**LB-12 (parked)** — cask rows carry brew's display name (`Claude Code`), not
+the token (`claude-code`), so every cask action sends the wrong name.
+`parseCask` should read `token` (fall back to `name`), with a fixture in the
+current brew shape. Raised by cr1 (`Q-cr1-cask-name`).
