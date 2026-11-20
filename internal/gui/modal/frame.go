@@ -64,6 +64,16 @@ func fitLine(s string, width int) string {
 	return ansi.Truncate(s, innerWidth(width), "…")
 }
 
+// cutRow is the ellipsis that replaces the last body row a dialog cannot hold.
+// It keeps that row's indent and is padded to its width, so when each row is
+// centred on its own it lands in the column of the row it replaces, not alone
+// in the middle of the box.
+func cutRow(line string) string {
+	plain := ansi.Strip(line)
+	row := strings.Repeat(" ", len(plain)-len(strings.TrimLeft(plain, " "))) + "…"
+	return row + strings.Repeat(" ", max(lipgloss.Width(line)-lipgloss.Width(row), 0))
+}
+
 // dialog frames a modal the change-gate way: a thick border in accent, the
 // action as a chip on top, then the body, then the key line. Width counts the
 // border and padding (v2), so the box is exactly width cells. The body is the
@@ -81,7 +91,7 @@ func dialog(accent color.Color, label string, width int, body []string, keys str
 	// and padding that is 8 rows of the box that are not body.
 	if maxBody := dialogMaxRows - 8; len(lines) > maxBody {
 		lines = lines[:maxBody]
-		lines[maxBody-1] = "…"
+		lines[maxBody-1] = cutRow(lines[maxBody-1])
 	}
 
 	// Each row is centred on its own, so a wrapped line and a short one both

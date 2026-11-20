@@ -1,0 +1,24 @@
+◆ lazybrew                                                   1 formulae  0 casks
+╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Info ────────────────────────────────╮
+│▸ F┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   │
+╰───┃                                                                      ┃   │
+╭─ 2┃                              UNINSTALL                               ┃   │
+│▸ ✓┃                                                                      ┃   │
+│   ┃            Uninstall testformula? This cannot be undone.             ┃   │
+╰───┃            removes testformula; 30 packages depend on it             ┃   │
+╭─ 3┃                                                                      ┃   │
+│   ┃                                                                      ┃   │
+╰───┃                 The following depend on testformula:                 ┃   │
+╭─ 4┃                   dependent-formula-00                               ┃   │
+│   ┃                   dependent-formula-01                               ┃   │
+╰───┃                   dependent-formula-02                               ┃   │
+╭─ 5┃                   dependent-formula-03                               ┃   │
+│   ┃                   dependent-formula-04                               ┃   │
+╰───┃                   dependent-formula-05                               ┃   │
+╭─ 6┃                                  …                                   ┃   │
+│   ┃                                                                      ┃   │
+╰───┃                      [y]es   [n]o   esc cancel                       ┃───╯
+╭─ 7┃                                                                      ┃───╮
+│   ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛   │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ y yes  n no  esc cancel                                                        
