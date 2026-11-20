@@ -189,7 +189,7 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 	tabY0 := 0
 	tabY1 := tabY0 + tabBarH
 	if len(m.tabs) > 0 && iy >= tabY0 && iy < tabY1 {
-		return m.handleTabBarClick(ix)
+		return m.handleTabBarClick(ix - mainPadX)
 	}
 
 	// A click on the content selects nothing: the sidebar is the list.

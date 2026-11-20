@@ -31,8 +31,8 @@ func (m Model) scrolledContent(content string, w, h int) string {
 // area: the offset at which the content's last row is on the area's bottom row.
 func (m Model) contentLast() int {
 	l := m.screenLayout()
-	innerW := max(1, l.mainW-2)
-	rows := wrapContent(m.renderContent(innerW, l.contentH), innerW)
+	cw := m.mainContentWidth()
+	rows := wrapContent(m.renderContent(cw, l.contentH), cw)
 	return max(0, len(rows)-l.contentH)
 }
 
