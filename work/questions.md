@@ -152,3 +152,17 @@ resolved.
   set, with a plain-Unicode fallback selectable by config (`gui.icons:
   unicode`) or `LAZYBREW_ICONS=unicode`. The focus/selection accent stays
   **Catppuccin mauve** (`#cba6f7`). Applies from slice `v2-03`. Closed.
+
+## Q-v2-run — autonomous run v2-02 → v2-06 (the user is away)
+
+- **Owner's rulings (the user, 2026-11-19):**
+  - Run `v2-02` through `v2-06` back to back; **one** checkpoint with the user
+    after `v2-06` (before/after frames of every slice), then the release step.
+  - Animations (`v2-06`) are **on by default**; `gui.animations: false` turns
+    them off; tests always run with them off.
+  - Push `wip` after each slice closes with reviewer `verdict: ok`. Never push
+    to `stable`.
+  - A slice with findings left after review round 5: close it as
+    `open-findings`, record the findings in `work/STATE.md` and
+    `work/backlog.md`, and continue only with slices that do not depend on
+    the unfixed part; otherwise stop and wait for the user. Closed.
