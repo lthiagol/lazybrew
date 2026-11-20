@@ -140,7 +140,9 @@ func (m Model) tabBarRows() int {
 	if len(m.tabs) == 0 {
 		return 1
 	}
-	return lipgloss.Height(m.renderTabBar(0))
+	// renderTabBar draws the active tab's underline as its second row, so a
+	// tab bar is always two rows. TestTabBarRowsMatchTheRender holds this.
+	return 2
 }
 
 // fitBox sizes s to exactly w cells by h rows: long lines wrap, short ones
@@ -269,11 +271,18 @@ func (m Model) renderTabBar(width int) string {
 func (m Model) activeTabSpan() (x, w int) {
 	for i, tab := range m.tabs {
 		if i == m.activeTab {
-			return x, lipgloss.Width(style.TabActive.Render(" " + tab.name + " "))
+			return x, tabWidth(tab.name)
 		}
-		x += lipgloss.Width(style.TabInactive.Render(" " + tab.name + " "))
+		x += tabWidth(tab.name)
 	}
 	return 0, 0
+}
+
+// tabWidth is the width of a tab drawn with its name: the name, a space either
+// side, and the style's one-cell padding either side. TestTabWidthMatchesTheRender
+// holds it to the rendered tab.
+func tabWidth(name string) int {
+	return lipgloss.Width(name) + 4
 }
 
 // renderTabBarSliding draws the tab bar while the underline is on its way to
