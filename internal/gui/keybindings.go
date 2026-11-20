@@ -1,17 +1,27 @@
 package gui
 
+import "github.com/lthiagol/lazybrew/internal/brew"
+
 type keyHint struct {
 	key  string
 	desc string
 }
 
 // serviceActionHints are the Services actions that apply to a service in its
-// state: a running service stops and restarts, a stopped one starts and runs.
-func serviceActionHints(running bool) []keyHint {
-	if running {
-		return []keyHint{{"S", "stop"}, {"r", "restart"}}
+// state. A service that is not running starts and runs. One that stops and
+// restarts (serviceStoppable) also offers stop and restart.
+func serviceActionHints(s brew.Service) []keyHint {
+	var hints []keyHint
+	if !serviceRunning(s) {
+		hints = append(hints, keyHint{"s", "start"})
 	}
-	return []keyHint{{"s", "start"}, {"f", "run"}}
+	if serviceStoppable(s) {
+		hints = append(hints, keyHint{"S", "stop"}, keyHint{"r", "restart"})
+	}
+	if !serviceRunning(s) {
+		hints = append(hints, keyHint{"f", "run"})
+	}
+	return hints
 }
 
 // servicesHints is the Services footer: the actions for the selected service
@@ -19,7 +29,7 @@ func serviceActionHints(running bool) []keyHint {
 func servicesHints(p *panelData) []keyHint {
 	hints := []keyHint{{"j/k", "navigate"}, {"c", "cleanup"}}
 	if s := p.selectedService(); s != nil {
-		hints = append(serviceActionHints(serviceRunning(*s)), hints...)
+		hints = append(serviceActionHints(*s), hints...)
 	}
 	return hints
 }

@@ -132,7 +132,7 @@ func renderServiceInfo(p *panelData, width int, icons style.Icons) string {
 	if info := p.serviceInfoFor(s.Name); info != nil {
 		fields = serviceInfoDetail(*info, width, icons)
 	}
-	keys := append(serviceActionHints(serviceRunning(*s)), keyHint{"c", "cleanup"})
+	keys := append(serviceActionHints(*s), keyHint{"c", "cleanup"})
 	return fields + "\n\n" + footerLine(keys, width)
 }
 
@@ -176,10 +176,23 @@ func serviceInfoDetail(s brew.ServiceInfo, width int, icons style.Icons) string 
 	return presentation.Detail(fields, width)
 }
 
-// serviceRunning is whether a service runs now. The actions are chosen by it
-// and the guards check it.
+// serviceRunning is whether a service runs now: brew's started status, which
+// is a running pid. Start is refused on it.
 func serviceRunning(s brew.Service) bool {
 	return s.Status == brew.ServiceStarted
+}
+
+// serviceStoppable is whether stop and restart apply: a running service, or a
+// loaded one that is not running. brew derives the status in
+// Library/Homebrew/services/formula_wrapper.rb (to_hash): error and scheduled
+// are loaded units, and brew's stop acts on any loaded unit. brew also reports
+// stopped as loaded; AC-03.1 of the brief keeps stop and restart refused there.
+func serviceStoppable(s brew.Service) bool {
+	switch s.Status {
+	case brew.ServiceStarted, brew.ServiceError, brew.ServiceScheduled:
+		return true
+	}
+	return false
 }
 
 // serviceStatus is the Status row of a service: its icon and word, in the role
