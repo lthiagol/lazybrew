@@ -5,6 +5,25 @@ type keyHint struct {
 	desc string
 }
 
+// serviceActionHints are the Services actions that apply to a service in its
+// state: a running service stops and restarts, a stopped one starts and runs.
+func serviceActionHints(running bool) []keyHint {
+	if running {
+		return []keyHint{{"S", "stop"}, {"r", "restart"}}
+	}
+	return []keyHint{{"s", "start"}, {"f", "run"}}
+}
+
+// servicesHints is the Services footer: the actions for the selected service
+// lead, then the keys that apply in any state.
+func servicesHints(p *panelData) []keyHint {
+	hints := []keyHint{{"j/k", "navigate"}, {"c", "cleanup"}}
+	if s := p.selectedService(); s != nil {
+		hints = append(serviceActionHints(serviceRunning(*s)), hints...)
+	}
+	return hints
+}
+
 // panelHints lists the LIVE keys per panel — every entry here must have a
 // handler in gui.go's Update, and every handled key should appear here
 // (r1 finding 24).

@@ -27,6 +27,12 @@ var frameStates = []frameState{
 	{"outdated", func(m *Model) *Model { return sendKey(m, "4") }},
 	{"taps", func(m *Model) *Model { return sendKey(m, "5") }},
 	{"services", func(m *Model) *Model { return sendKey(m, "6") }},
+	{"services info running", func(m *Model) *Model {
+		return selectService(loadServices(m, servicesList(), servicesInfo()), "moshi-hook")
+	}},
+	{"services info scheduled", func(m *Model) *Model {
+		return selectService(loadServices(m, servicesList(), servicesInfo()), "backup")
+	}},
 	{"search", func(m *Model) *Model { return sendKey(m, "7") }},
 	{"panel loading", func(m *Model) *Model {
 		m.panels[PanelFormulae].loading = true
