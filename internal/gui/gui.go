@@ -1115,7 +1115,7 @@ func (m Model) render() string {
 	var overlays []*lipgloss.Layer
 	overlays = append(overlays, m.toastLayers()...)
 	if m.activeModal != nil {
-		base = fadeBackdrop(base, m.backdropFadeAt())
+		base = dimBackdrop(base)
 		overlays = append(overlays, centred(m.activeModal.View().Content, m.width, m.height, m.modalDropAt()))
 	}
 	if len(overlays) == 0 {

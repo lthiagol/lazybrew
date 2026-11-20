@@ -26,7 +26,7 @@ positions, not wall-clock samples. Every frame is checked to be exactly 140×40.
 |---|---|---|
 | `motion-tab` | 01–05 | the tab underline slides from *Tap Info* to *Trust*; the bar's `━` run moves right, between the two tabs, and settles on *Trust*. |
 | `motion-focus` | 01–05 | Taps to Formulae: the Formulae box's bottom border moves from row 12 to row 16 by frame 5, and the Taps box's top border from row 22 to row 26. |
-| `motion-modal` | 01–05 | the *Add tap* prompt starts three rows above its place (row 16) and springs down (row 18 by frame 5); the backdrop fades in over the same frames. It rests on row 19, as the harness's frame 14 does. |
+| `motion-modal` | 01–05 | the *Add tap* prompt starts three rows above its place (row 16) and springs down (row 18 by frame 5); the backdrop is dimmed at once, on the first frame (no fade: see the fix round r2). It rests on row 19, as the harness's frame 14 does. |
 
 ## Checks
 
@@ -44,7 +44,7 @@ positions, not wall-clock samples. Every frame is checked to be exactly 140×40.
 
 ## Not verified here
 
-- The motion as the eye sees it in a real terminal (frame rate, colour fade):
+- The motion as the eye sees it in a real terminal (frame rate, the slide):
   the human smoke gate, `SMOKE-CHECKLIST.md`.
 - Keys and mouse in a real terminal during a motion: covered by unit tests
   (`TestKeysWorkWhileTheUnderlineSlides`, `TestModalTakesKeysFromItsFirstFrame`),
@@ -82,3 +82,16 @@ gate. The reviewer reproduced the failure at `7c79a51` in a worktree.
   in that commit message. Resting frames re-checked: identical to v2-05s.
 - F-r1-04 `7a66ae2`: the modal fade starts at the subtle role, on a 0..100
   scale. The modal frames in `motion/` are re-dumped. Resting frames unchanged.
+
+## Fix round r2 (F-r2-01)
+
+The backdrop fade is removed. The brief's option was a per-cell blend from each
+cell's own colour to the muted role. It cannot meet its own constraints: the
+resting frame must be the all-muted backdrop (v2-04, frames 07 and 14), and in
+Mocha the inactive borders (`#45475a`) are darker than the muted role
+(`#6c7086`). Any blend to the muted role brightens those borders at some step,
+so "steps never brighten" and "resting frames unchanged" cannot both hold. The
+brief's fallback applies: the backdrop is dimmed at once, and the modal's slide
+is kept. Tests: `TestBackdropIsDimAtOnce` (both themes): the first frame of a
+new modal has the resting backdrop. The motion/ modal frames are re-dumped; the
+resting frames are unchanged (`diff -rq` against v2-05s-services/after is empty).

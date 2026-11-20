@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"image/color"
 	"strings"
 	"testing"
 
@@ -67,16 +66,19 @@ func TestModalSlidesDownIntoItsPlace(t *testing.T) {
 	}
 }
 
-func TestBackdropFadesIntoTheMutedRole(t *testing.T) {
-	off := openTapPrompt(overlayModel(t, 140, 40, "0"))
-	on := openTapPrompt(overlayModel(t, 140, 40, "1"))
-	first := strings.Split(on.View().Content, "\n")[0]
-	settled := strings.Split(settle(t, frames(on, 2)).View().Content, "\n")[0]
-	if first == settled {
-		t.Fatal("the backdrop is already at its resting colour on the first frame")
-	}
-	if want := strings.Split(off.View().Content, "\n")[0]; settled != want {
-		t.Fatal("the settled backdrop differs from the resting backdrop")
+// TestBackdropIsDimAtOnce: a new modal's backdrop is the resting backdrop on
+// its first frame. It is not faded in: see dimBackdrop.
+func TestBackdropIsDimAtOnce(t *testing.T) {
+	defer style.ApplyTheme(style.DarkTheme())
+	for name, theme := range map[string]*style.Theme{"dark": style.DarkTheme(), "light": style.LightTheme()} {
+		style.ApplyTheme(theme)
+		off := openTapPrompt(overlayModel(t, 140, 40, "0"))
+		on := openTapPrompt(overlayModel(t, 140, 40, "1"))
+		first := strings.Split(on.View().Content, "\n")
+		rest := strings.Split(off.View().Content, "\n")
+		if first[0] != rest[0] {
+			t.Fatalf("%s theme: the backdrop on a new modal's first frame is not the resting backdrop", name)
+		}
 	}
 }
 
@@ -181,54 +183,5 @@ func TestOverlayFramesAreTerminalSize(t *testing.T) {
 				t.Fatalf("%dx%d frame %d is %dx%d", sz[0], sz[1], i, w, h)
 			}
 		}
-	}
-}
-
-// luma is the relative brightness of a colour, from its red, green and blue.
-func luma(c color.Color) float64 {
-	r, g, b, _ := c.RGBA()
-	return 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
-}
-
-// TestBackdropFadeNeverBrightens holds every step of the fade to the one before
-// it: the backdrop only ever dims, from the subtle role to the muted role.
-func TestBackdropFadeNeverBrightens(t *testing.T) {
-	if !(luma(style.MutedColor) < luma(style.SubtleColor) && luma(style.SubtleColor) < luma(style.TextColor)) {
-		t.Fatal("the theme's roles are not ordered text > subtle > muted: the fade's premise fails")
-	}
-	prev := luma(backdropColor(0))
-	if prev > luma(style.SubtleColor) {
-		t.Fatalf("the fade starts at %v, brighter than the subtle role", prev)
-	}
-	for f := 0.0; f <= 1.0; f += 0.01 {
-		l := luma(backdropColor(f))
-		if l > prev {
-			t.Fatalf("fade %.2f is brighter than the step before it: %v > %v", f, l, prev)
-		}
-		prev = l
-	}
-	if got, want := luma(backdropColor(1)), luma(style.MutedColor); got != want {
-		t.Fatalf("the resting backdrop is not the muted role: %v, want %v", got, want)
-	}
-}
-
-// TestModalFadeSpringIsMonotone runs a modal's fade frame by frame: it rises
-// without overshoot, in steps of at most a quarter, and settles exactly on 1.
-func TestModalFadeSpringIsMonotone(t *testing.T) {
-	m := openTapPrompt(overlayModel(t, 140, 40, "1"))
-	prev := m.backdropFadeAt()
-	if prev != 0 {
-		t.Fatalf("a new modal's backdrop starts at fade %v; want 0", prev)
-	}
-	for i := 0; i < 60 && !m.motion.Settled(); i++ {
-		m = frames(m, 1)
-		f := m.backdropFadeAt()
-		if f < prev || f > 1 || f-prev > 0.25 {
-			t.Fatalf("frame %d: fade went from %v to %v", i, prev, f)
-		}
-		prev = f
-	}
-	if got := m.backdropFadeAt(); got != 1 {
-		t.Fatalf("the fade settled at %v; want exactly 1", got)
 	}
 }
