@@ -1,6 +1,6 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Search ────────────────────────────────────────────────────────────────────────────────╮
-│▸ Homebrew 7.0.15-36-g1f335ae                  ││                                                                                         │
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││                                                                                         │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││/ > Search packages...                                                                   │
 │  Formulae  125                                ││  Enter to search  |  Esc to clear                                                       │
 ╰───────────────────────────────────────────────╯│                                                                                         │
@@ -37,4 +37,4 @@
 │                                               ││                                                                                         │
 │                                               ││                                                                                         │
 ╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
- j/k navigate  Enter search  i install  I install  F fetch  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  q quit      
+ j/k navigate  Enter search  i install  I install  F fetch  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  ? more      

@@ -1,6 +1,6 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Taps › Tap Info ───────────────────────────────────────────────────────────────────────╮
-│▸ Homebrew 7.0.15-36-g1f335ae                  ││  Tap Info    Trust    Formulae                                                          │
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││  Tap Info    Trust    Formulae                                                          │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━━━━━                                                                             │
 │  Formulae  125                                ││3 taps · 0 official · 2 trusted · 1 untrusted                                            │
 ╰───────────────────────────────────────────────╯│                                                                                         │
@@ -37,4 +37,4 @@
 │                                               ││                                                                                         │
 │                                               ││                                                                                         │
 ╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
- j/k navigate  a add  x remove  t trust  r repair  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  q quit               
+ j/k navigate  a add  x remove  t trust  r repair  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  q quit  ? more       

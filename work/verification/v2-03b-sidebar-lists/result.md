@@ -48,3 +48,29 @@ summary is `TestOutdatedVersionsShowsBatchSummary`; the Services detail is
 None in the product. The one thing that looked wrong, the 11 screens' names
 after the List tab went, was the harness key sequence, not the GUI, and is fixed
 in the harness copy above.
+
+## Fix round r1
+
+Re-captured at `752583b` with the same harness, real Homebrew 7.0.15, Unicode
+icons. `after/` now holds these frames; `after/140x40/*.ansi` is updated.
+Compared with the round-0 frames (`33f6348`-era `after/`), the changed rows are
+these and nothing else:
+
+- **Every frame with the Status sidebar (F-r1-02):** the first row reads
+  `Homebrew  7.0.15-…` (label in the same ten-column field as `Prefix`,
+  `Formulae`, …). One row per frame, at both sizes.
+- **06-taps and 09-search, 140x40 and 80x24:** the same Homebrew row. At 140x40
+  the footer also ends `q quit  ? more` (06) and `C log  ? more` (09): the
+  page-key hint (`PgUp/Dn scroll`, F-orch-03) is the lowest-priority global hint
+  and is cut first. Footer rows of the other frames are unchanged, `? help`
+  still shows.
+- **08-help, 140x40 and 80x24:** the Navigation section gains `PgUp/PgDn  Scroll
+  content by a page` and `Home/End, g/G  Top/bottom of content` (F-orch-03). The
+  help's columns reflow. At 80x24 the help was already cut at 24 rows (Q-v2-help,
+  v2-05); the new rows push the cut lower.
+- **Not in the harness:** the batch marks (F-orch-01: no batch was made in these
+  screens, so no frame changes), the Trust tab (F-orch-02: the harness does not
+  visit Trust), and the page keys' effect on the content (F-orch-03: covered by
+  `TestScrollKeysMoveAndClamp`).
+- **Frame sizes:** every `.txt` frame is exactly W×H (checked by row count and
+  width).

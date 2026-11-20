@@ -6,9 +6,11 @@
 │     Shift+Tab   Previous panel                   r   Reinstall selected                       X   Zap uninstall                          │
 │     1-7   Jump to panel                          u   Upgrade selected                         r   Reinstall                              │
 │     j/k   Scroll list                            U   Upgrade all                              u   Upgrade                                │
-│     [/]   Switch tabs                            p   Pin/Unpin selected                       U   Upgrade all                            │
-│  Actions                                         L   Toggle leaves filter                     F   Fetch                                  │
-│     R   Refresh all data                         F   Fetch selected                                                                      │
+│     PgUp/PgDn   Scroll content by a page         p   Pin/Unpin selected                       U   Upgrade all                            │
+│     Home/End, g/G   Top/bottom of content        L   Toggle leaves filter                     F   Fetch                                  │
+│     [/]   Switch tabs                            F   Fetch selected                                                                      │
+│  Actions                                                                                                                                 │
+│     R   Refresh all data                                                                                                                 │
 │     /   Search packages                                                                                                                  │
 │     C   Toggle command log                                                                                                               │
 │     q   Quit lazybrew                                                                                                                    │
@@ -28,8 +30,6 @@
 │     v   Vulnerability check                                                                                                              │
 │     m   Missing dependencies                                                                                                             │
 │     [ ]   Switch tabs                                                                                                                    │
-│                                                                                                                                          │
-│                                                                                                                                          │
 │                                                                                                                                          │
 │                                                                                                                                          │
 │                                                                                                                                          │

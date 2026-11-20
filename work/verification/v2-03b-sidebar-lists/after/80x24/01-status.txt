@@ -1,6 +1,6 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
 ╭─ 1 ◉ Status ─────────────╮╭─ Status › Dashboard ─────────────────────────────╮
-│▸ Homebrew 7.0.15-36-g1f3…││  Dashboard    Config    Doctor                   │
+│▸ Homebrew  7.0.15-36-g1f…││  Dashboard    Config    Doctor                   │
 │  Prefix    /home/linuxbr…││━━━━━━━━━━━━━                                     │
 ╰──────────────────────────╯│Homebrew 7.0.15-36-g1f335ae                       │
 ╭─ 2 ∘ Formulae ─────── – ─╮│Prefix: /home/linuxbrew/.linuxbrew                │

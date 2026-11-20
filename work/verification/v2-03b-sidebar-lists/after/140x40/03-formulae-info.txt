@@ -1,6 +1,6 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Formulae › Info ───────────────────────────────────────────────────────────────────────╮
-│▸ Homebrew 7.0.15-36-g1f335ae                  ││  Info    Deps    Used By    Caveats    Files                                            │
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││  Info    Deps    Used By    Caveats    Files                                            │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━                                                                                 │
 │  Formulae  125                                ││Name:        bash                                                                        │
 ╰───────────────────────────────────────────────╯│Version:     5.3.20                                                                      │
