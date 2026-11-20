@@ -18,6 +18,7 @@ gate. Never run brew write commands (see the brief's Safety section).
   frame exactly W×H; new screens present; the confirm screens were closed
   with `esc` (read the harness — a `y`/`enter` on a tap confirm is a
   **blocker**). Remove `internal/gui/dump` after.
+- **V2b trust unknown (AC-00):** a timed-out or failed tap-info gives a flagged, uncached list; the panel says `trust unknown — press R`; `t`/`T` refused; other keys work.
 - **V3 state-aware actions (AC-01, AC-02):** each tap state (official,
   trusted, untrusted) shows the right action line and footer; refused
   actions toast and never enqueue (tests with the mock runner).
