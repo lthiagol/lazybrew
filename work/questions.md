@@ -662,3 +662,11 @@ sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
   column, one slice) → LB-09 Services logs (design questions to the user before
   its brief). **LB-11 deferred.** Same lane flow (Haiku builder, Opus reviewer,
   ≤ 5 rounds, push `wip` per closed slice).
+
+### Q-lb09-design — Services logs, the user's answers (2026-11-20)
+
+- **Mode:** last ~200 lines, following new lines while the tab is open (polled
+  tail through `tea.Cmd`/tick messages, no raw goroutines).
+- **Streams:** one Logs tab; a toggle key switches stdout (`log_path`) and
+  stderr (`error_log_path`); the title names the stream; a missing/unset path
+  says there is no log file.
