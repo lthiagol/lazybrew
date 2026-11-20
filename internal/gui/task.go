@@ -92,9 +92,8 @@ type Operation struct {
 	Started time.Time
 	Ended   time.Time
 	// BatchDone and BatchTotal are the progress of a batch when BatchTotal is
-	// more than 0. Upgrades says BatchDone is read from the packages brew has
-	// begun upgrading, as an upgrade of everything reports them, rather than
-	// fixed at start.
+	// more than 0. Upgrades says the progress is read from brew's output
+	// instead, as an upgrade of everything reports it.
 	BatchDone  int
 	BatchTotal int
 	Upgrades   bool

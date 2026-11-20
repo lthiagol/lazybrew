@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -78,7 +79,7 @@ func (m Model) renderOperation(width, height int) string {
 		style.AccentText.Render(withIcon(icon, op.Title)),
 		m.operationStatus(op),
 	}
-	if op.BatchTotal > 0 {
+	if _, total := operationProgress(op); total > 0 {
 		head = append(head, m.operationBar(op, width))
 	}
 	head = append(head, "")
@@ -108,34 +109,62 @@ func (m Model) operationStatus(op *Operation) string {
 
 // operationBar is the batch's progress: a bar, then n/total.
 func (m Model) operationBar(op *Operation, width int) string {
-	done := min(max(0, m.operationDone(op)), op.BatchTotal)
+	done, total := operationProgress(op)
 	bar := progress.New(
 		progress.WithColors(style.AccentColor),
 		progress.WithFillCharacters('━', '╌'),
 		progress.WithoutPercentage(),
 		progress.WithWidth(max(10, min(operationBarWidth, width-12))),
 	)
-	return bar.ViewAs(float64(done)/float64(op.BatchTotal)) + " " +
-		style.SubtleText.Render(fmt.Sprintf("%d/%d", done, op.BatchTotal))
+	return bar.ViewAs(float64(done)/float64(total)) + " " +
+		style.SubtleText.Render(fmt.Sprintf("%d/%d", done, total))
 }
 
-// operationDone is how many of a batch's packages are done. An upgrade of
-// everything counts the packages brew has begun upgrading, less the one still
-// in progress.
-func (m Model) operationDone(op *Operation) int {
+// operationProgress is how many of a batch's packages are done, and how many
+// there are. A batch reads its fixed counts. An upgrade of everything reads
+// them from brew: the total is the N in its header, which names the packages
+// brew will upgrade (pinned ones are skipped), and a package is done once its
+// own step has run. Until the header comes, the total is 0 and no bar shows.
+func operationProgress(op *Operation) (done, total int) {
 	if !op.Upgrades {
-		return op.BatchDone
+		return op.BatchDone, op.BatchTotal
 	}
 	begun := 0
 	for _, s := range parseSteps(op.Lines) {
-		if strings.HasPrefix(s.title, "Upgrading ") {
+		if n, ok := upgradeHeaderCount(s.title); ok {
+			total = n
+		} else if isPackageUpgrade(s.title) {
 			begun++
 		}
 	}
-	if op.Status == opRunning {
-		begun--
+	switch {
+	case op.Status == opSuccess:
+		done = total
+	case begun > 0:
+		// The package in progress, or the one that failed, is not done.
+		done = begun - 1
 	}
-	return begun
+	return min(max(0, done), total), total
+}
+
+// upgradeHeaderCount reads brew's header of an upgrade of everything,
+// "Upgrading N outdated package(s):", and its N.
+func upgradeHeaderCount(title string) (int, bool) {
+	if !strings.HasPrefix(title, "Upgrading ") || !strings.Contains(title, "outdated package") {
+		return 0, false
+	}
+	fields := strings.Fields(title)
+	if len(fields) < 2 {
+		return 0, false
+	}
+	n, err := strconv.Atoi(fields[1])
+	return n, err == nil
+}
+
+// isPackageUpgrade is a step that upgrades one package, "Upgrading bash ...".
+// The header that counts them is not one.
+func isPackageUpgrade(title string) bool {
+	return strings.HasPrefix(title, "Upgrading ") && !strings.Contains(title, "outdated package")
 }
 
 // operationBody is the step list of the run: each step with its mark, and the
