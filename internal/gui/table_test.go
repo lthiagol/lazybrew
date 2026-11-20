@@ -79,6 +79,35 @@ func TestTableDropsDescriptionThenVersion(t *testing.T) {
 	}
 }
 
+// TestLongDescriptionIsCutNotDropped (v2-09 F-r1-01): a description longer than
+// the slack is kept and cut with …; the name and the version stay with it, and
+// every line is the table's width.
+func TestLongDescriptionIsCutNotDropped(t *testing.T) {
+	rows := []tableRow{
+		{cells: []string{"✓", "ncurses", "6.6", "Text-based UI library"}},
+		{cells: []string{"✓", "openssl@3", "3.4.1", strings.Repeat("Cryptography and SSL/TLS toolkit ", 4)}},
+	}
+	out := ansi.Strip(renderTable(pkgTableCols, rows, 87))
+	lines := strings.Split(out, "\n")
+	if len(lines) != 3 {
+		t.Fatalf("a header and two rows should be three lines, got %d:\n%s", len(lines), out)
+	}
+	if !strings.Contains(lines[0], "Description") || !strings.Contains(lines[0], "Version") {
+		t.Fatalf("the Description and Version columns should both be kept, got header %q", lines[0])
+	}
+	if !strings.HasSuffix(strings.TrimRight(lines[2], " "), "…") {
+		t.Fatalf("the long description should be cut with …, got %q", lines[2])
+	}
+	if !strings.Contains(lines[2], "3.4.1") || !strings.Contains(lines[2], "openssl@3") {
+		t.Fatalf("the name and version should stay with the long description, got %q", lines[2])
+	}
+	for i, line := range lines {
+		if got := lipgloss.Width(line); got != 87 {
+			t.Fatalf("line %d is %d cells, want the table's 87: %q", i, got, line)
+		}
+	}
+}
+
 // TestTableHeaderIsMuted: the header row is drawn in the Muted role.
 func TestTableHeaderIsMuted(t *testing.T) {
 	out := renderTable([]tableCol{{head: "Path"}}, []tableRow{{cells: []string{"/a/b"}}}, 20)
