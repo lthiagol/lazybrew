@@ -1,0 +1,40 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                         125 formulae
+╭─ 1 ◉ Status ─────────────────────────╮╭─ Formulae › List ────────────────────────────────────────────────────────────────────────────────╮
+│▸ Homebrew 7.0.15-36-g1f335ae         ││  List    Info    Deps    Used By    Caveats    Files                                             │
+│  Prefix: /home/linuxbrew/.linuxbrew  ││━━━━━━━━                                                                                          │
+│                                      ││Name                                                          Version          Status     Tap     │
+╰──────────────────────────────────────╯│──────────────────────────────────────────────────────────────────────────────────────────────────│
+╭─ 2 ∘ Formulae ───────────────── 125 ─╮│alsa-lib                                                      1.2.16.1_1       installed  hb/c    │
+│▸ alsa-lib               1.2.16.1_1...││bash                                                          5.3.20           installed  hb/c    │
+│  bash                   5.3.20    ...││bat                                                           0.26.1           installed  hb/c    │
+│  bat                    0.26.1    ...││brotli                                                        1.2.1            installed  hb/c    │
+│  brotli                 1.2.1     ...││btop                                                          1.4.8            installed  hb/c    │
+│  btop                   1.4.8     ...││bzip2                                                         1.0.8            installed  hb/c    │
+│  bzip2                  1.0.8     ...││ca-certificates                                               2026-11-05       installed  hb/c    │
+│  ca-certificates        2026-11-05...││curl                                                          8.23.0           installed  hb/c    │
+│  curl                   8.23.0    ...││cyrus-sasl                                                    2.1.28_4         installed  hb/c    │
+│  cyrus-sasl             2.1.28_4  ...││dav1d                                                         1.5.5            installed  hb/c    │
+│  dav1d                  1.5.5     ...││dbus                                                          1.16.4           installed  hb/c    │
+╰──────────────────────────────────────╯│direnv                                                        2.38.2           installed  hb/c    │
+╭─ 3 ▣ Casks ───────────── not loaded ─╮│dust                                                          1.2.7            installed  hb/c    │
+│                                      ││expat                                                         2.10.0           installed  hb/c    │
+│                                      ││eza                                                           0.23.5           installed  hb/c    │
+│                                      ││fd                                                            10.5.2           installed  hb/c    │
+╰──────────────────────────────────────╯│ffmpeg                                                        9.0.2_1          installed  hb/c    │
+╭─ 4 ↑ Outdated ────────── not loaded ─╮│ffmpegthumbnailer                                             2.4.2            installed  hb/c    │
+│                                      ││flac                                                          1.5.0            installed  hb/c    │
+│                                      ││frond                                                         0.6.1            installed  lt/tap  │
+╰──────────────────────────────────────╯│fzf                                                           0.75.0           installed  hb/c    │
+╭─ 5 ⊕ Taps ────────────── not loaded ─╮│gh                                                            2.105.0          installed  hb/c    │
+│                                      ││git-delta                                                     0.21.1           installed  hb/c    │
+│                                      ││gitleaks                                                      8.30.1           installed  hb/c    │
+╰──────────────────────────────────────╯│glib                                                          2.90.1           installed  hb/c    │
+╭─ 6 ◎ Services ────────── not loaded ─╮╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+│                                      │╭─ Log ────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                      ││No commands executed yet                                                                          │
+╰──────────────────────────────────────╯│                                                                                                  │
+╭─ 7 ⌕ Search ──────────── not loaded ─╮│                                                                                                  │
+│                                      ││                                                                                                  │
+│                                      ││                                                                                                  │
+╰──────────────────────────────────────╯╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+ j/k navigate  [ ] tabs  i install  x remove  r reinstall  u upgrade  U upgrade all  p pin  L leaves  F fetch  Tab next  S-Tab prev  ? more 

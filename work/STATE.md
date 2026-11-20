@@ -13,6 +13,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-01-charm-v2 | 1861585, 0a89f8e, 0f65ba6, 10aade4, 6eec052, 7f32f2f | closed | ok |
 | v2-02-layout-bugs | 2611e00, a9ccbbe, a56fd8e, 2498d26, 23a031c, 5525dfd, 9046165, 8d9af6b, 690e5dd, 4a649cf | closed | ok |
 | v2-03-look-foundation | a6f22ab, c569ee0, 85f5e3f, 0d4593e, e56d97c, d58fb96, 4aaa3b0, f6c950a, 02fcbae, 18796ad, b79b0e3, 96a5508, 6736abd, 56e78c0, f4f4abf, 3677383 | closed | ok |
+| v2-03b-sidebar-lists | — | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
