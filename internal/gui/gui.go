@@ -275,9 +275,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func followLogs(next tea.Model, cmd tea.Cmd) (tea.Model, tea.Cmd) {
 	switch nm := next.(type) {
 	case *Model:
-		return nm, tea.Batch(cmd, nm.syncLogs())
+		c := nm.syncLogs()
+		return nm, tea.Batch(cmd, c)
 	case Model:
-		return nm, tea.Batch(cmd, nm.syncLogs())
+		c := nm.syncLogs()
+		return nm, tea.Batch(cmd, c)
 	}
 	return next, cmd
 }
@@ -437,7 +439,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// (r1 finding 7).
 		if _, err := m.tasks.Enqueue(t); err != nil {
 			m.isUpdating = false
-			return m, m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
+			c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
+			return m, c
 		}
 		return m, m.tasks.RunNext()
 
@@ -506,8 +509,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		if msg.Err != nil && !errors.Is(msg.Err, context.Canceled) {
+			c := m.setToast(failureText(msg.ID, msg.Title, msg.Err), modal.ToastError)
 			return m, tea.Batch(
-				m.setToast(failureText(msg.ID, msg.Title, msg.Err), modal.ToastError),
+				c,
 				m.tasks.RunNext(),
 				serviceReload(msg.ID),
 				tapsReload(msg.ID),
@@ -581,13 +585,15 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.activeModal = nil
 		if msg.Err == nil && msg.Leaves == nil {
+			c := m.setToast(msg.Name+" completed", modal.ToastSuccess)
 			return m, tea.Batch(
-				m.setToast(msg.Name+" completed", modal.ToastSuccess),
+				c,
 				func() tea.Msg { return RefreshMsg{} },
 			)
 		} else if msg.Err != nil {
+			c := m.setToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
 			return m, tea.Batch(
-				m.setToast(msg.Name+": "+msg.Err.Error(), modal.ToastError),
+				c,
 				func() tea.Msg { return RefreshMsg{} },
 			)
 		}
@@ -642,7 +648,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.preload.inFlight--
 		cmd := m.landData(DataLoadedMsg(msg), true)
 		m.absorbLanded(DataLoadedMsg(msg))
-		return m, tea.Batch(cmd, tea.Batch(m.nextPreloadReads()...))
+		c := tea.Batch(cmd, tea.Batch(m.nextPreloadReads()...))
+		return m, c
 
 	case logsReadMsg:
 		// A read for a view this model no longer has is stale, and it ends
@@ -667,7 +674,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.logs.started = false
 			return m, nil
 		}
-		return m, m.readLogsCmd()
+		c := m.readLogsCmd()
+		return m, c
 
 	case servicesReloadMsg:
 		m.invalidatePanelCache(PanelServices)
@@ -775,7 +783,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				q := strings.TrimSpace(m.searchInput.Value())
 				if q != "" {
 					m.searchInput.Blur()
-					return m, m.executeSearch(q)
+					c := m.executeSearch(q)
+					return m, c
 				}
 				return m, nil
 			case "q", "ctrl+c":
@@ -836,8 +845,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// permanently block the R update path (r1 finding 7).
 				if _, err := m.tasks.Enqueue(t); err != nil {
 					m.isUpdating = false
+					c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 					return m, tea.Batch(
-						m.setToast("Queue full: "+err.Error(), modal.ToastWarning),
+						c,
 						func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
 					)
 				}
@@ -905,13 +915,15 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "j", "down":
 			m.panels[m.activePanel].down()
 			if needsTabFetch(m.activePanel, m.activeTab) {
-				return m, m.loadTabContent()
+				c := m.loadTabContent()
+				return m, c
 			}
 			return m, nil
 		case "k", "up":
 			m.panels[m.activePanel].up()
 			if needsTabFetch(m.activePanel, m.activeTab) {
-				return m, m.loadTabContent()
+				c := m.loadTabContent()
+				return m, c
 			}
 			return m, nil
 
@@ -934,14 +946,18 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "[":
-			return m, m.prevTab()
+			c := m.prevTab()
+			return m, c
 		case "]":
-			return m, m.nextTab()
+			c := m.nextTab()
+			return m, c
 
 		case "left":
-			return m, m.prevTab()
+			c := m.prevTab()
+			return m, c
 		case "right":
-			return m, m.nextTab()
+			c := m.nextTab()
+			return m, c
 
 		case "/":
 			m.switchPanel(PanelSearch)
@@ -950,7 +966,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if m.activePanel == PanelSearch && m.searchInput.Focused() {
 				m.searchInput.Blur()
-				return m, m.executeSearch(m.searchInput.Value())
+				c := m.executeSearch(m.searchInput.Value())
+				return m, c
 			}
 			if m.activePanel == PanelSearch && len(m.searchResults) > 0 {
 				return m, m.fetchSelectedSearchInfo()
