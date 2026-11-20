@@ -29,6 +29,14 @@ func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	if m.showHelp {
 		if leftClick {
 			m.showHelp = false
+			return m, nil
+		}
+		// The wheel scrolls the help text, three rows a notch.
+		switch mouse.Button {
+		case tea.MouseWheelUp:
+			return m.scrollHelpTo(m.helpScroll - 3), nil
+		case tea.MouseWheelDown:
+			return m.scrollHelpTo(m.helpScroll + 3), nil
 		}
 		return m, nil
 	}
