@@ -182,6 +182,10 @@ here and not decided in code.
   useful ones fit?
 - **Raised by:** runner, v2-02-layout-bugs. Not decided: it belongs with the
   header and bottom-bar work in v2-03.
+- **Orchestrator ruling:** v2-03. The footer becomes **one** context line: the
+  panel's most useful keys first, then globals, cut at the frame width with a
+  trailing `? more` that is always visible. Everything else lives in `?` help.
+  Closed.
 
 ### Q-v2-help — help text is taller than an 80×24 terminal
 
@@ -189,6 +193,8 @@ here and not decided in code.
   cuts the rest (54 words of the lower sections). The baseline overflowed the
   terminal instead. Should help scroll, or be split into pages at small sizes?
 - **Raised by:** runner, v2-02-layout-bugs.
+- **Orchestrator ruling:** v2-05. Help scrolls (j/k, arrows, PgUp/PgDn, mouse
+  wheel) with a scroll position hint; v2-02's cut-to-box stays until then. Closed.
 
 ### Q-v2-small — an 80×24 sidebar has no room for inactive panels' rows
 
@@ -199,6 +205,9 @@ here and not decided in code.
   (28 box rows in 24). This is part of the lazygit-style sidebar decision
   (Q-v2-sidebar, v2-03).
 - **Raised by:** runner, v2-02-layout-bugs.
+- **Orchestrator ruling:** v2-03. With titles drawn in the border, an
+  inactive panel's count / `not loaded` state goes **in its border title**
+  (e.g. `╭─ 3 Casks ── not loaded ╮`), so a collapsed box still shows it. Closed.
 
 ### Q-v2-cask-deps — the cask `depends_on` shape is not read (pre-existing)
 
@@ -209,6 +218,9 @@ here and not decided in code.
   change this: cask parsing is identical before and after. Should the Casks
   Deps tab show the `formula` and `cask` lists?
 - **Raised by:** runner, v2-02-layout-bugs.
+- **Orchestrator ruling:** yes, in v2-05 (content): parse the object shape and
+  show `Formulae:` / `Casks:` lists (and macOS/arch requirements when present).
+  Closed.
 
 ## Q-v2-services — Services panel in the overhaul
 
