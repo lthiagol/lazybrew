@@ -551,3 +551,13 @@ lines, half tests) is normal. Rulings (user, both recommended):
   before the receipt. Where a brief says "every commit passes the tests", this
   ruling defines it. CI still runs the full suite on every push.
 - Builder stays on high effort.
+
+### Orchestrator ruling on Q-v2-09-a (2026-11-20)
+
+Lower the threshold. The user's complaint ("tables squeezed on the left, we're
+not using the space") is about everyday terminal sizes like 140x40, where the
+main box's inner width is 89 — a threshold that never fires there misses the
+point. New rule: Info views split when the main box's **inner width ≥ 84**
+(140x40 splits; 120 columns and 80x24 stay single-column). The sidebar default
+stays. Also (the r3 note): the Log box gets the same one-column padding as the
+main box, for a consistent right column.
