@@ -141,7 +141,8 @@ func renderTapInfo(p *panelData, width int) string {
 	if t == nil {
 		return header
 	}
-	return header + "\n\n" + tapDetails(t, !p.trustUnknown, width)
+	keys := tapActionHints(*t, !p.trustUnknown)
+	return header + "\n\n" + tapDetails(t, !p.trustUnknown, width) + "\n\n" + footerLine(keys, width)
 }
 
 // renderServiceInfo is the Info tab of Services: the selected service's detail

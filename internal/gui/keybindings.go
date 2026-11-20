@@ -24,6 +24,33 @@ func serviceActionHints(s brew.Service) []keyHint {
 	return hints
 }
 
+// tapActionHints are the Taps actions that apply to a tap in its state (v2-10
+// AC-01). An untrusted tap is trusted with t, a trusted one untrusted with t,
+// and an official one needs no trust, so it has no t. x untaps and r repairs in
+// every state. With the trust state unread, t is left out: it would act on a
+// state nobody has read.
+func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
+	var hints []keyHint
+	switch {
+	case t.IsOfficial || !trustKnown:
+	case t.Trusted:
+		hints = append(hints, keyHint{"t", "untrust"})
+	default:
+		hints = append(hints, keyHint{"t", "trust"})
+	}
+	return append(hints, keyHint{"x", "untap"}, keyHint{"r", "repair"})
+}
+
+// tapsHints is the Taps footer: the actions for the selected tap lead, then the
+// keys that apply to any tap.
+func tapsHints(p *panelData) []keyHint {
+	hints := []keyHint{{"j/k", "navigate"}, {"a", "add tap"}}
+	if t := p.selectedTap(); t != nil {
+		hints = append(tapActionHints(*t, !p.trustUnknown), hints...)
+	}
+	return hints
+}
+
 // servicesHints is the Services footer: the actions for the selected service
 // lead, then the keys that apply in any state.
 func servicesHints(p *panelData) []keyHint {
@@ -46,7 +73,7 @@ func panelHints(id PanelID) []keyHint {
 	case PanelServices:
 		return []keyHint{{"j/k", "navigate"}, {"s", "start"}, {"S", "stop"}, {"r", "restart"}, {"f", "run"}, {"c", "cleanup"}}
 	case PanelTaps:
-		return []keyHint{{"j/k", "navigate"}, {"a", "add"}, {"x", "remove"}, {"t", "trust"}, {"r", "repair"}}
+		return []keyHint{{"j/k", "navigate"}, {"a", "add tap"}, {"x", "untap"}, {"t", "trust"}, {"T", "trust item"}, {"r", "repair"}}
 	case PanelStatus:
 		return []keyHint{{"R", "refresh"}, {"c", "cleanup"}, {"d", "doctor"}, {"A", "autoremove"}, {"B", "brewfile"}, {"v", "vulns"}, {"m", "missing"}}
 	case PanelOutdated:

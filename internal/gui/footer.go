@@ -40,6 +40,9 @@ func (m Model) panelKeyHints() []keyHint {
 	if m.activePanel == PanelServices {
 		return servicesHints(m.panels[PanelServices])
 	}
+	if m.activePanel == PanelTaps {
+		return tapsHints(m.panels[PanelTaps])
+	}
 	return panelHints(m.activePanel)
 }
 
