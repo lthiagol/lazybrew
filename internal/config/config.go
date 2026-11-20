@@ -60,7 +60,7 @@ func Default() *Config {
 	return &Config{
 		GUI: GUIConfig{
 			Theme:              "dark",
-			SidebarWidth:       30,
+			SidebarWidth:       35,
 			ShowIcons:          true,
 			Icons:              IconsNerd,
 			Mouse:              true,

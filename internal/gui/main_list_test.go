@@ -66,7 +66,7 @@ func TestMainListScrollsWithCursor(t *testing.T) {
 			if main := m.renderMainPanel(); !strings.Contains(main, want) {
 				t.Fatalf("cursor past the panel height: main panel should draw %q", want)
 			}
-			if side := m.renderSidebar(); !strings.Contains(side, want) {
+			if side := sgr.ReplaceAllString(m.renderSidebar(), ""); !strings.Contains(side, want) {
 				t.Fatalf("sidebar should still scroll to %q", want)
 			}
 		})

@@ -60,19 +60,22 @@ type panelData struct {
 	icon            string
 	items           []string
 	unfilteredItems []string
-	leavesActive    bool
-	selected        int
-	offset          int
-	width           int
-	height          int
-	active          bool
-	loading         bool
-	err             error
-	formulae        []brew.Formula
-	casks           []brew.Cask
-	taps            []brew.Tap
-	services        []brew.Service
-	visibleRows     int
+	// formulae and casks are the typed rows, index-aligned with items. The
+	// leaves filter narrows both, so a row and its selected package agree.
+	unfilteredFormulae []brew.Formula
+	leavesActive       bool
+	selected           int
+	offset             int
+	width              int
+	height             int
+	active             bool
+	loading            bool
+	err                error
+	formulae           []brew.Formula
+	casks              []brew.Cask
+	taps               []brew.Tap
+	services           []brew.Service
+	visibleRows        int
 	// loaded is set once a fetch result has landed for this panel, error or
 	// not. It tells "never fetched" (not loaded) from "fetched, nothing
 	// there" (empty), which items alone cannot.
@@ -308,7 +311,7 @@ func emptyPanel(width, height int) string {
 // renderSidebarContent is the body of a sidebar box. A pending fetch, a panel
 // that was never loaded and an empty one draw no body: their state is the
 // box's border label (sidebarLabel).
-func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool) string {
+func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool, ic style.Icons, focused bool) string {
 	if p.loading {
 		return ""
 	}
@@ -329,26 +332,9 @@ func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool)
 	if visible <= 0 {
 		return ""
 	}
-	end := p.offset + visible
-	slice := p.items[p.offset:end]
 	lines := make([]string, 0, visible)
-	for i, item := range slice {
-		idx := p.offset + i
-		prefix := "  "
-		itemStyle := style.NormalItem
-		if batch != nil && batch[idx] {
-			prefix = "● "
-		}
-		if idx == p.selected {
-			prefix = "▸ "
-			itemStyle = style.SelectedItem
-		}
-		if batch != nil && batch[idx] && idx == p.selected {
-			prefix = "▸●"
-			itemStyle = style.SelectedItem
-		}
-		text := truncateWithEllipsis(prefix+item, width)
-		lines = append(lines, itemStyle.Render(text))
+	for i := range visible {
+		lines = append(lines, p.sidebarRow(p.offset+i, width, batch, ic, focused))
 	}
 	return lipgloss.JoinVertical(lipgloss.Top, lines...)
 }

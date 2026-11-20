@@ -530,7 +530,11 @@ func TestStatusBoxLabelShowsNoCount(t *testing.T) {
 // count (0 included) is never cut, a label with no room is left out, and the loading
 // spinner and the error mark stay.
 func TestSidebarLabelsAtEightyColumns(t *testing.T) {
-	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
+	// These labels are drawn for a 24-cell sidebar, which is 80 columns at the
+	// old 30% width. The 35% default gives 28 cells, where every label fits whole.
+	m := newTestModel()
+	m.cfg.GUI.SidebarWidth = 30
+	m = updateModel(m, tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Items: []string{"a", "b", "c"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelSearch, Err: assertAnError})
@@ -565,11 +569,14 @@ func TestSidebarLabelsAtEightyColumns(t *testing.T) {
 }
 
 // TestCountsStayWholeAt80Columns (F-r2-01): a count in a sidebar border always
-// shows whole. At 80 columns the box is 24 cells, so the title yields first its
-// icon and then its name; the row stays exactly the box's width.
+// shows whole. At 80 columns with sidebar_width 30 the box is 24 cells, so the
+// title yields first its icon and then its name; the row stays exactly the
+// box's width.
 func TestCountsStayWholeAt80Columns(t *testing.T) {
 	for _, n := range []int{1234, 12345} {
-		m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
+		m := newTestModel()
+		m.cfg.GUI.SidebarWidth = 30
+		m = updateModel(m, tea.WindowSizeMsg{Width: 80, Height: 24})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: make([]string, n)})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: make([]string, n)})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: make([]string, n)})

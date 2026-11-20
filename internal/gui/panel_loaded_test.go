@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // TestNeverLoadedPanelSaysNotLoaded locks AC-05: a panel that has never been
@@ -32,7 +33,7 @@ func TestNeverLoadedPanelSaysNotLoaded(t *testing.T) {
 	}
 
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{"alacritty  0.14"}})
-	if got := m.panels[PanelCasks].renderSidebarContent(30, 5, nil); !strings.Contains(got, "alacritty") {
+	if got := m.panels[PanelCasks].renderSidebarContent(30, 5, nil, style.Icons{}, true); !strings.Contains(got, "alacritty") {
 		t.Fatalf("fetched Casks panel should list its items, got %q", got)
 	}
 }
@@ -44,7 +45,7 @@ func TestFailedFirstFetchIsLoadedNotNotLoaded(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Err: assertAnError})
 
-	got := m.panels[PanelCasks].renderSidebarContent(30, 5, nil)
+	got := m.panels[PanelCasks].renderSidebarContent(30, 5, nil, style.Icons{}, true)
 	if strings.Contains(got, "not loaded") {
 		t.Fatalf("a failed fetch must not say not loaded, got %q", got)
 	}
