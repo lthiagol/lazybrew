@@ -586,3 +586,8 @@ Per-commit runs drop `-race`: each commit builds and passes plain
   `work/inbox/runner-v2-11-cancel-and-test-speed.md`, and the reply names that
   file. The brief's v2-10 paths were not used. If the v2-10 name is intended,
   the receipt can be renamed in one commit.
+
+### Orchestrator ruling on Q-v2-11-a (2026-11-20)
+
+The runner was right: the brief's report and fix-round paths named v2-10 by an
+orchestrator copy error. Fixed in the brief; the v2-11 paths are the record.
