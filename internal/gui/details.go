@@ -107,19 +107,23 @@ func tapTrustStory(t *brew.Tap, trustKnown bool, width int) string {
 		state = "untrusted"
 		meaning = "Homebrew may not load this tap's formulae and casks until the tap is trusted."
 	}
-	story := strings.Join([]string{
+	lines := []string{
 		meaning,
 		fmt.Sprintf("Its %d %s and %d %s follow that state.",
 			t.FormulaCount, plural(t.FormulaCount, "formula", "formulae"),
 			t.CaskCount, plural(t.CaskCount, "cask", "casks")),
-		"",
-		"Press t to trust or untrust the tap, or one of its formulae or casks.",
-	}, "\n")
-	if !trustKnown {
-		story = strings.Join([]string{meaning, fmt.Sprintf("Its %d %s and %d %s follow that state.",
-			t.FormulaCount, plural(t.FormulaCount, "formula", "formulae"),
-			t.CaskCount, plural(t.CaskCount, "cask", "casks")), "", "Press R to read the trust state again."}, "\n")
 	}
+	// The keys named are the ones that act here: t on the tap, T on one of its
+	// formulae or casks (v2-10 AC-02). An official tap refuses both, so it names
+	// neither; an unread one refuses both until R reads the state.
+	switch {
+	case t.IsOfficial:
+	case !trustKnown:
+		lines = append(lines, "", "Press R to read the trust state again.")
+	default:
+		lines = append(lines, "", "Press t to trust or untrust the tap, and T to trust one of its formulae or casks.")
+	}
+	story := strings.Join(lines, "\n")
 	return presentation.Detail([]presentation.Field{
 		{Label: "Tap", Value: t.Name},
 		{Label: "Trust", Value: state},
