@@ -122,9 +122,12 @@ func (m Model) operationBar(op *Operation, width int) string {
 
 // operationProgress is how many of a batch's packages are done, and how many
 // there are. A batch reads its fixed counts. An upgrade of everything reads
-// them from brew: the total is the N in its header, which names the packages
-// brew will upgrade (pinned ones are skipped), and a package is done once its
-// own step has run. Until the header comes, the total is 0 and no bar shows.
+// them from brew's output: the total is the N of every header that names the
+// packages brew will upgrade (one per formula or cask upgrade, and one for the
+// dependents of upgraded formulae; pinned packages are skipped and not named).
+// A package is done once its own step has run. While the run goes on, the
+// latest package step is taken as in progress, so the bar is never full before
+// the run has finished. Until a header comes, the total is 0 and no bar shows.
 func operationProgress(op *Operation) (done, total int) {
 	if !op.Upgrades {
 		return op.BatchDone, op.BatchTotal
@@ -132,7 +135,7 @@ func operationProgress(op *Operation) (done, total int) {
 	begun := 0
 	for _, s := range parseSteps(op.Lines) {
 		if n, ok := upgradeHeaderCount(s.title); ok {
-			total = n
+			total += n
 		} else if isPackageUpgrade(s.title) {
 			begun++
 		}
@@ -147,10 +150,11 @@ func operationProgress(op *Operation) (done, total int) {
 	return min(max(0, done), total), total
 }
 
-// upgradeHeaderCount reads brew's header of an upgrade of everything,
-// "Upgrading N outdated package(s):", and its N.
+// upgradeHeaderCount reads a header of brew's upgrade output that names packages
+// to upgrade, and its N: "Upgrading N outdated package(s):" (formulae, then casks)
+// and "Upgrading N dependent(s) of upgraded formula(e):".
 func upgradeHeaderCount(title string) (int, bool) {
-	if !strings.HasPrefix(title, "Upgrading ") || !strings.Contains(title, "outdated package") {
+	if !strings.HasPrefix(title, "Upgrading ") || !isUpgradeHeader(title) {
 		return 0, false
 	}
 	fields := strings.Fields(title)
@@ -161,10 +165,19 @@ func upgradeHeaderCount(title string) (int, bool) {
 	return n, err == nil
 }
 
-// isPackageUpgrade is a step that upgrades one package, "Upgrading bash ...".
-// The header that counts them is not one.
+// isUpgradeHeader is one of the headers upgradeHeaderCount reads.
+func isUpgradeHeader(title string) bool {
+	return strings.Contains(title, "outdated package") ||
+		(strings.Contains(title, " dependent") && strings.Contains(title, "of upgraded"))
+}
+
+// isPackageUpgrade is a step that upgrades one package, "Upgrading bash" or
+// "Upgrading firefox". A header is not one, and neither is a dependency that
+// brew installs on the way, "Upgrading zsh dependency: ncurses (6.5)": that
+// package is not in any header's count.
 func isPackageUpgrade(title string) bool {
-	return strings.HasPrefix(title, "Upgrading ") && !strings.Contains(title, "outdated package")
+	return strings.HasPrefix(title, "Upgrading ") && !isUpgradeHeader(title) &&
+		!strings.Contains(title, " dependency: ")
 }
 
 // operationBody is the step list of the run: each step with its mark, and the
