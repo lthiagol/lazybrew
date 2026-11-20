@@ -112,3 +112,44 @@ func TestOutdatedVersionsShowsBatchSummary(t *testing.T) {
 		t.Fatalf("Versions should count the batch, got:\n%s", out)
 	}
 }
+
+// sidebarBox is the rows of the sidebar box whose top border carries title, from
+// its top border to its bottom one, with the styling stripped.
+func sidebarBox(side, title string) string {
+	var rows []string
+	in := false
+	for _, row := range strings.Split(side, "\n") {
+		plain := sgr.ReplaceAllString(row, "")
+		if strings.Contains(plain, title) {
+			in = true
+		}
+		if in {
+			rows = append(rows, plain)
+			if strings.HasPrefix(plain, "╰") {
+				break
+			}
+		}
+	}
+	return strings.Join(rows, "\n")
+}
+
+// TestBatchMarksOnlyTheOutdatedList (F-orch-01): a batch made on Outdated marks
+// only the Outdated rows. The Formulae rows at the same indices stay unmarked.
+func TestBatchMarksOnlyTheOutdatedList(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = sendKey(m, "4")
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"alpha", "bravo", "charlie"},
+		Formulae: []brew.Formula{{Name: "alpha", Version: "1", NewVersion: "2"}, {Name: "bravo", Version: "3", NewVersion: "4"}, {Name: "charlie", Version: "5", NewVersion: "6"}}})
+	m.batch.selected = map[int]bool{0: true, 1: true}
+	if box := sidebarBox(m.renderSidebar(), "Outdated"); !strings.Contains(box, "●") {
+		t.Fatalf("the Outdated list should mark its batch, got:\n%s", box)
+	}
+
+	m = sendKey(m, "2")
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"alpha", "bravo", "charlie"},
+		Formulae: []brew.Formula{{Name: "alpha", Version: "1"}, {Name: "bravo", Version: "3"}, {Name: "charlie", Version: "5"}}})
+	side := m.renderSidebar()
+	if box := sidebarBox(side, "Formulae"); strings.Contains(box, "●") {
+		t.Fatalf("the Formulae list must not show the Outdated batch, got:\n%s", box)
+	}
+}

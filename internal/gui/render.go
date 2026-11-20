@@ -32,7 +32,12 @@ func (m Model) renderSidebar() string {
 		if rows <= 0 {
 			rows = heights[i]
 		}
-		body := p.renderSidebarContent(sw-2, rows, m.batch.selected, m.icons, active)
+		// The batch is a set of Outdated rows. Only that list draws its marks.
+		var batch map[int]bool
+		if p.id == PanelOutdated {
+			batch = m.batch.selected
+		}
+		body := p.renderSidebarContent(sw-2, rows, batch, m.icons, active)
 		boxes = append(boxes, panel(title, m.sidebarLabel(p), body, sw, heights[i]+2, active))
 	}
 
