@@ -133,7 +133,7 @@ func TestScrollKeysAreInTheHelpAndFooter(t *testing.T) {
 			}
 		}
 	}
-	for _, want := range []string{"PgUp/PgDn", "Home/End, g/G"} {
+	for _, want := range []string{"PgUp/PgDn", "Home/End (g/G outside Search)"} {
 		if !strings.Contains(help.String(), want) {
 			t.Errorf("the help should document %q", want)
 		}
@@ -146,5 +146,39 @@ func TestScrollKeysAreInTheHelpAndFooter(t *testing.T) {
 	}
 	if !found {
 		t.Error("the footer's global hints should name the page keys")
+	}
+}
+
+// TestLetterKeysOnUnfocusedSearchTypeToSearch (F-r2-01): on the Search panel with
+// the input unfocused, g and G start a search with that letter, as they did
+// before the scroll keys. The scroll keys do not take them there.
+func TestLetterKeysOnUnfocusedSearchTypeToSearch(t *testing.T) {
+	for _, key := range []string{"g", "G"} {
+		m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+		m = sendKey(m, "7")
+		m = sendSpecial(m, tea.KeyEscape)
+		if m.searchInput.Focused() {
+			t.Fatalf("fixture: Esc should leave the search input unfocused")
+		}
+		m = sendKey(m, key)
+		if !m.searchInput.Focused() || m.searchInput.Value() != key {
+			t.Fatalf("%s on unfocused Search: focused=%v value=%q, want focused with %q",
+				key, m.searchInput.Focused(), m.searchInput.Value(), key)
+		}
+	}
+}
+
+// TestScrollLettersOutsideSearch: g and G still scroll the content on another
+// panel, where they are the top and bottom keys.
+func TestScrollLettersOutsideSearch(t *testing.T) {
+	m := scrollFixture(t)
+	last := m.contentLast()
+	m = sendKey(m, "G")
+	if got := m.contentScroll[m.contentKey()]; got != last {
+		t.Fatalf("G outside Search: offset %d, want %d", got, last)
+	}
+	m = sendKey(m, "g")
+	if got := m.contentScroll[m.contentKey()]; got != 0 {
+		t.Fatalf("g outside Search: offset %d, want 0", got)
 	}
 }

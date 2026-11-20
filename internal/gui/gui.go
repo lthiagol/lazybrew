@@ -790,10 +790,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.scrollContent(-m.pageRows()), nil
 		case "pgdown":
 			return m.scrollContent(m.pageRows()), nil
-		case "home", "g":
+		case "home":
 			return m.scrollContentTo(0), nil
-		case "end", "G":
+		case "end":
 			return m.scrollContentTo(m.contentLast()), nil
+		case "g", "G":
+			// On Search these letters are typed into the search box, as before.
+			// Elsewhere they are the top and bottom keys.
+			if m.activePanel != PanelSearch {
+				if msg.String() == "g" {
+					return m.scrollContentTo(0), nil
+				}
+				return m.scrollContentTo(m.contentLast()), nil
+			}
 
 		case "[":
 			return m, m.prevTab()
