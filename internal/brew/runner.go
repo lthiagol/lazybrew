@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -74,6 +73,7 @@ func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, er
 	cmd := exec.CommandContext(ctx, r.brewPath, args...)
 	cmd.Env = append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1")
 	cmd.Stdin = bytes.NewReader(nil)
+	setProcessGroup(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -82,7 +82,7 @@ func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, er
 	start := time.Now()
 	Logger().Debug("brew exec", "args", strings.Join(args, " "))
 
-	err := cmd.Run()
+	err := finishErr(cmd.Run())
 	duration := time.Since(start)
 
 	if err != nil {
@@ -158,73 +158,29 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 		cmd := exec.CommandContext(ctx, r.brewPath, args...)
 		cmd.Env = append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1")
 		cmd.Stdin = bytes.NewReader(nil)
+		setProcessGroup(cmd)
 
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			sendErr(fmt.Errorf("stdout pipe: %w", err))
-			return
-		}
-
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			sendErr(fmt.Errorf("stderr pipe: %w", err))
-			return
-		}
+		// Stdout and stderr are writers, not pipes, so cmd.Wait owns both
+		// copies and waits for them itself, bounded by WaitDelay: a stray
+		// child holding the pipes open cannot hang the stream.
+		lines := &lineWriter{ctx: ctx, out: stdoutChan}
+		var stderr bytes.Buffer
+		cmd.Stdout = lines
+		cmd.Stderr = &stderr
 
 		if err := cmd.Start(); err != nil {
 			sendErr(fmt.Errorf("start: %w", err))
 			return
 		}
 
-		var readerDone sync.WaitGroup
-		readerDone.Add(1)
-		go func() {
-			defer readerDone.Done()
-			buf := make([]byte, 4096)
-			var partial string
-			for {
-				n, err := stdout.Read(buf)
-				if n > 0 {
-					data := partial + string(buf[:n])
-					lines := strings.Split(data, "\n")
-					partial = lines[len(lines)-1]
-					for _, line := range lines[:len(lines)-1] {
-						select {
-						case stdoutChan <- line:
-						case <-ctx.Done():
-							return
-						}
-					}
-				}
-				if err == io.EOF {
-					if partial != "" {
-						select {
-						case stdoutChan <- partial:
-						case <-ctx.Done():
-						}
-					}
-					break
-				}
-				if err != nil {
-					sendErr(fmt.Errorf("stdout read: %w", err))
-					break
-				}
-			}
-		}()
-
-		stderrData, _ := io.ReadAll(stderr)
-		stderrStr := strings.TrimSpace(string(stderrData))
-
-		// Synchronize with the stdout reader before Wait: Wait closes the
-		// pipe, and a still-reading goroutine would get a spurious
-		// "stdout read: file already closed" error (r1 finding 8).
-		readerDone.Wait()
-
-		if err := cmd.Wait(); err != nil {
+		err := finishErr(cmd.Wait())
+		lines.flush()
+		if err != nil {
 			// A cancelled context killed the process: sendErr already
 			// prefers context.Canceled over the local error, so the GUI
 			// maps the completion to "Cancelled" instead of a misleading
 			// "signal: killed" (r1 finding 10, r2 finding NEW-7).
+			stderrStr := strings.TrimSpace(stderr.String())
 			errMsg := stderrStr
 			if errMsg == "" {
 				errMsg = err.Error()
@@ -234,6 +190,51 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 	}()
 
 	return stdoutChan, errChan
+}
+
+// lineWriter splits brew's stdout into lines and sends each one to out. A
+// send blocks until the consumer takes the line or ctx is done, in which case
+// Write fails and the copy stops.
+type lineWriter struct {
+	ctx     context.Context
+	out     chan<- string
+	partial string
+}
+
+func (w *lineWriter) Write(p []byte) (int, error) {
+	data := w.partial + string(p)
+	lines := strings.Split(data, "\n")
+	w.partial = lines[len(lines)-1]
+	for _, line := range lines[:len(lines)-1] {
+		select {
+		case w.out <- line:
+		case <-w.ctx.Done():
+			return 0, w.ctx.Err()
+		}
+	}
+	return len(p), nil
+}
+
+// flush sends the unterminated last line, if any, once the output has ended.
+func (w *lineWriter) flush() {
+	if w.partial == "" {
+		return
+	}
+	select {
+	case w.out <- w.partial:
+	case <-w.ctx.Done():
+	}
+	w.partial = ""
+}
+
+// finishErr is the error of a finished brew process. exec.ErrWaitDelay means
+// brew exited 0 and only a stray child still held its output open past
+// WaitDelay, so that is not a failure.
+func finishErr(err error) error {
+	if errors.Is(err, exec.ErrWaitDelay) {
+		return nil
+	}
+	return err
 }
 
 type MockRunner struct {
