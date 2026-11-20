@@ -73,6 +73,10 @@ type panelData struct {
 	taps            []brew.Tap
 	services        []brew.Service
 	visibleRows     int
+	// loaded is set once a fetch result has landed for this panel, error or
+	// not. It tells "never fetched" (not loaded) from "fetched, nothing
+	// there" (empty), which items alone cannot.
+	loaded bool
 }
 
 func (p *panelData) itemCount() int {
@@ -298,6 +302,9 @@ func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool)
 	}
 	count := len(p.items)
 	if count == 0 {
+		if !p.loaded {
+			return style.SubtleText.Render("not loaded")
+		}
 		return style.SubtleText.Render("(empty)")
 	}
 	// Cursor/offset clamping happens in normalize() from the Update loop;

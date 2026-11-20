@@ -255,6 +255,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case SearchDoneMsg:
 		p := m.panels[PanelSearch]
 		p.loading = false
+		p.loaded = true
 		if msg.Err != nil {
 			p.err = msg.Err
 		} else {
@@ -506,6 +507,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if int(msg.PanelID) < len(m.panels) {
 			p := m.panels[msg.PanelID]
 			p.loading = false
+			p.loaded = true
 			p.err = msg.Err
 			if msg.Err == nil {
 				p.items = msg.Items
