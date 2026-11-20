@@ -43,6 +43,21 @@ func proseLines(s string, st lipgloss.Style, width int) []string {
 	return out
 }
 
+// leftBlock pads each line to the widest of them. Centred row by row, the
+// padded lines keep their starts in one column, so the block reads as a
+// left-aligned block centred in the box, with its indents kept.
+func leftBlock(lines []string) []string {
+	widest := 0
+	for _, line := range lines {
+		widest = max(widest, lipgloss.Width(line))
+	}
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		out = append(out, lipgloss.NewStyle().Width(widest).Render(line))
+	}
+	return out
+}
+
 // fitLine cuts a single-line part (a chip, a key line, a menu item) to the text
 // width of a box, ending it with an ellipsis when it does not fit.
 func fitLine(s string, width int) string {

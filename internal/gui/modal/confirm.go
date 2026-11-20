@@ -111,8 +111,10 @@ func (m *ConfirmModal) View() tea.View {
 		lines = append(lines, proseLines(m.detail, style.SubtleText, confirmWidth)...)
 	}
 	if hasBody {
+		// The body is a list or a note, so it is one left-aligned block, not
+		// centred line by line: its indents must line up.
 		lines = append(lines, "")
-		lines = append(lines, proseLines(body, style.NormalItem, confirmWidth)...)
+		lines = append(lines, leftBlock(proseLines(body, style.NormalItem, confirmWidth))...)
 	}
 	return tea.NewView(dialog(accent, m.action, confirmWidth, lines, fitLine(m.choices(accent), confirmWidth)))
 }
