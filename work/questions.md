@@ -525,3 +525,13 @@ orchestrator can redirect either.
   split), or lower the threshold, or change the sidebar default so 140 columns
   splits.
 - **Raised by:** runner lane (slice `v2-09-main-layout`).
+
+## Q-v2-test-speed — slow gate and the cancel bug (2026-11-20)
+
+The user asked why tests take so long. Measured: race run ~39 s, of which
+`TestExecuteStreamCancelReportsCanceled` is 30 s because cancel kills only
+brew's own process and its children keep the pipe open — a real bug (Esc on a
+running install waits for curl/git to finish). Ruling (user, recommended
+option): a new slice `v2-11-cancel-and-test-speed` **after** v2-10, before the
+final checkpoint — kill the process group on cancel, and drive the gui tests'
+real waits with fake time.
