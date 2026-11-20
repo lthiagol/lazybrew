@@ -20,12 +20,10 @@ type DataLoadedMsg struct {
 	Casks    []brew.Cask
 	Taps     []brew.Tap
 	Services []brew.Service
-	// Dashboard and Summary are set by the status dashboard load only: the
-	// dashboard lines for the Dashboard tab, and the typed facts the sidebar
-	// rows and the header counts are built from.
-	Dashboard []string
-	Summary   statusSummary
-	Err       error
+	// Summary is set by the status dashboard load only: the typed facts the
+	// sidebar rows, the header counts and the dashboard cards are built from.
+	Summary statusSummary
+	Err     error
 }
 
 type TabContentMsg struct {

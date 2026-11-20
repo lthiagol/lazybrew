@@ -87,8 +87,7 @@ func TestStatusRowsAreCompactSummary(t *testing.T) {
 func TestStatusDashboardTabShowsTheFullDashboard(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Summary: dashboardSummary(),
-		Items:     statusRows(dashboardSummary()),
-		Dashboard: []string{"Homebrew 4.5.2", "Formulae:  125 installed", "R to refresh"}})
+		Items: statusRows(dashboardSummary())})
 
 	out := ansi.Strip(m.renderContent(140, 30))
 	for _, line := range []string{"Homebrew", "Packages", "Taps", "Services", "Health",

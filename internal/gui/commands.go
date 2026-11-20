@@ -1593,13 +1593,13 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 // key) passes true.
 func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 	return func() tea.Msg {
-		lines, summary, _ := statusDashboard(client, loadOutdated)
-		return DataLoadedMsg{PanelID: PanelStatus, Items: statusRows(summary), Dashboard: lines, Summary: summary, Err: nil}
+		summary, _ := statusDashboard(client, loadOutdated)
+		return DataLoadedMsg{PanelID: PanelStatus, Items: statusRows(summary), Summary: summary, Err: nil}
 	}
 }
 
 // statusDashboard reads every source the status dashboard aggregates and
-// renders the dashboard lines.
+// returns the typed summary the cards and the sidebar are drawn from.
 //
 // The dashboard aggregates five independent sources plus brew doctor. Each
 // read is capped on its own (brewReadTimeout), and the aggregation as a
@@ -1625,7 +1625,7 @@ func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 // count becomes known. A failed or timed-out outdated read joins the ⚠
 // lines like any other source and the count falls back to "not known", never
 // to a misleading 0.
-func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, statusSummary, []error) {
+func statusDashboard(client *brew.Client, loadOutdated bool) (statusSummary, []error) {
 	totalCtx, cancelTotal := context.WithTimeout(context.Background(), brewStatusTotalTimeout)
 	defer cancelTotal()
 
@@ -1774,26 +1774,20 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, statusSu
 	summary.OfficialTaps = officialTaps
 	summary.ServicesStarted = servicesStarted
 
-	items := presentation.FormatStatusDashboard(
-		len(formulae), len(casks),
-		presentation.OutdatedInfo{Count: summary.Outdated.N, Known: outdatedKnown},
-		len(taps), officialTaps, thirdPartyTaps,
-		len(services), servicesStarted,
-		summary.Version, summary.Prefix,
-	)
-
-	items = append(items, "")
-	items = append(items, presentation.FormatDoctorStatus(warnings, docErr))
-
+	// The doctor failure is the Health card's own line, with its reason; the
+	// other failed sources are ⚠ lines.
+	if docErr != nil {
+		summary.DoctorErr = docErr.Error()
+	}
 	errs := make([]error, 0, len(sources))
 	for _, s := range sources {
-		problem := "⚠ " + s.label + ": " + s.err.Error()
-		items = append(items, problem)
-		summary.Problems = append(summary.Problems, problem)
+		if s.label != "doctor" {
+			summary.Problems = append(summary.Problems, "⚠ "+s.label+": "+s.err.Error())
+		}
 		errs = append(errs, s.err)
 	}
 
-	return items, summary, errs
+	return summary, errs
 }
 
 func parseUpdateSummary(lines []string) string {

@@ -1,7 +1,6 @@
 package presentation
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -88,85 +87,6 @@ func TestFormatService(t *testing.T) {
 	}
 	if !strings.Contains(got, "thiago") {
 		t.Errorf("expected user, got: %s", got)
-	}
-}
-
-func TestFormatStatusDashboard(t *testing.T) {
-	items := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 7, Known: true}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
-	if len(items) == 0 {
-		t.Fatal("expected non-empty dashboard")
-	}
-	full := strings.Join(items, "\n")
-	if !strings.Contains(full, "6.0.0") {
-		t.Errorf("expected version, got: %s", full)
-	}
-	if !strings.Contains(full, "124") {
-		t.Errorf("expected count, got: %s", full)
-	}
-	if !strings.Contains(full, "Outdated:  7 packages") {
-		t.Errorf("expected known outdated count, got: %s", full)
-	}
-}
-
-func TestFormatStatusDashboardOutdatedNotLoaded(t *testing.T) {
-	// A count that was never loaded must not be rendered as a number —
-	// "0 packages" would claim the user has nothing outdated.
-	items := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 0, Known: false}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
-	full := strings.Join(items, "\n")
-	if !strings.Contains(full, "Outdated:  — not loaded (press R to load)") {
-		t.Errorf("expected not-loaded rendering, got: %s", full)
-	}
-	if strings.Contains(full, "0 packages") {
-		t.Errorf("not-loaded dashboard must not claim a package count, got: %s", full)
-	}
-}
-
-func TestFormatStatusDashboardOutdatedKnownZero(t *testing.T) {
-	// A known zero is a real answer (brew outdated was checked and found
-	// nothing) and must still render as a number.
-	items := FormatStatusDashboard(124, 31, OutdatedInfo{Count: 0, Known: true}, 4, 2, 2, 3, 2, "6.0.0", "/opt/homebrew")
-	full := strings.Join(items, "\n")
-	if !strings.Contains(full, "Outdated:  0 packages") {
-		t.Errorf("expected known-zero rendering, got: %s", full)
-	}
-	if strings.Contains(full, "not loaded") {
-		t.Errorf("known zero must not render as not loaded, got: %s", full)
-	}
-}
-
-func TestFormatDoctorStatus(t *testing.T) {
-	clean := FormatDoctorStatus([]brew.DoctorWarning{}, nil)
-	if !strings.Contains(clean, "No issues") {
-		t.Errorf("expected No issues, got: %s", clean)
-	}
-
-	one := FormatDoctorStatus([]brew.DoctorWarning{{Title: "test"}}, nil)
-	if one != "Doctor: 1 warning" {
-		t.Errorf("singular want %q, got %q", "Doctor: 1 warning", one)
-	}
-	if strings.Contains(one, "warnings") {
-		t.Errorf("singular must not use plural 'warnings', got: %s", one)
-	}
-
-	many := FormatDoctorStatus([]brew.DoctorWarning{{Title: "a"}, {Title: "b"}}, nil)
-	if many != "Doctor: 2 warnings" {
-		t.Errorf("plural want %q, got %q", "Doctor: 2 warnings", many)
-	}
-
-	unavailable := FormatDoctorStatus(nil, errors.New("brew not found"))
-	if !strings.Contains(unavailable, "unavailable") {
-		t.Errorf("expected unavailable marker, got: %s", unavailable)
-	}
-	if !strings.Contains(unavailable, "brew not found") {
-		t.Errorf("expected error reason in unavailable line, got: %s", unavailable)
-	}
-
-	errBeatsWarnings := FormatDoctorStatus([]brew.DoctorWarning{{Title: "stale"}}, errors.New("exec failed"))
-	if !strings.Contains(errBeatsWarnings, "unavailable") {
-		t.Errorf("expected unavailable marker when err present, got: %s", errBeatsWarnings)
-	}
-	if strings.Contains(errBeatsWarnings, "stale") || strings.Contains(errBeatsWarnings, "warning") {
-		t.Errorf("err should win; warnings must NOT appear, got: %s", errBeatsWarnings)
 	}
 }
 
@@ -322,27 +242,5 @@ func TestVersionDisplayWithList(t *testing.T) {
 	})
 	if got != "2.0.0 (1.0.0)" {
 		t.Errorf("got %q, want %q", got, "2.0.0 (1.0.0)")
-	}
-}
-
-func TestTruncateShort(t *testing.T) {
-	got := truncate("hello", 10)
-	if got != "hello" {
-		t.Errorf("got %q, want hello (no truncation)", got)
-	}
-}
-
-func TestTruncateLong(t *testing.T) {
-	got := truncate("hello world", 6)
-	if got != "hello…" {
-		t.Errorf("got %q, want %q", got, "hello…")
-	}
-}
-
-func TestTruncateUTF8(t *testing.T) {
-	got := truncate("café latte", 5)
-	want := "café…"
-	if got != want {
-		t.Errorf("got %q, want %q (utf-8 safe)", got, want)
 	}
 }

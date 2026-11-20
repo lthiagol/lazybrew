@@ -89,56 +89,6 @@ func FormatOutdatedCask(c brew.Cask) string {
 	return fmt.Sprintf("%s  %s -> %s  cask", padRight(c.Name, 22), padRight(c.Version, 12), c.NewVersion)
 }
 
-// OutdatedInfo carries the outdated-package count and whether the count is
-// known yet. Known=false means the count has never been loaded — it must not
-// be rendered as a number.
-type OutdatedInfo struct {
-	Count int
-	Known bool
-}
-
-func FormatStatusDashboard(
-	formulaeCount int,
-	casksCount int,
-	outdated OutdatedInfo,
-	tapsCount int,
-	officialTaps int,
-	thirdPartyTaps int,
-	servicesCount int,
-	servicesStarted int,
-	brewVersion string,
-	prefix string,
-) []string {
-	var lines []string
-	if brewVersion != "" {
-		lines = append(lines, fmt.Sprintf("Homebrew %s", brewVersion))
-	}
-	if prefix != "" {
-		lines = append(lines, fmt.Sprintf("Prefix: %s", prefix))
-	}
-	lines = append(lines, "")
-	lines = append(lines, fmt.Sprintf("Formulae:  %d installed", formulaeCount))
-	lines = append(lines, fmt.Sprintf("Casks:     %d installed", casksCount))
-	if outdated.Known {
-		lines = append(lines, fmt.Sprintf("Outdated:  %d packages", outdated.Count))
-	} else {
-		lines = append(lines, "Outdated:  — not loaded (press R to load)")
-	}
-	lines = append(lines, "")
-	lines = append(lines, fmt.Sprintf("Taps:      %d total", tapsCount))
-	lines = append(lines, fmt.Sprintf("           %d official, %d third-party", officialTaps, thirdPartyTaps))
-	lines = append(lines, "")
-	if servicesCount > 0 {
-		lines = append(lines, fmt.Sprintf("Services:  %d total", servicesCount))
-		lines = append(lines, fmt.Sprintf("           %d running, %d stopped", servicesStarted, servicesCount-servicesStarted))
-	} else {
-		lines = append(lines, "Services:  0")
-	}
-	lines = append(lines, "")
-	lines = append(lines, "R to refresh")
-	return lines
-}
-
 // FormatFormulaInfo is the Info tab of a formula: its identity, status and
 // links, as detail rows.
 func FormatFormulaInfo(f brew.Formula, width int, icons style.Icons) string {
@@ -226,27 +176,6 @@ func versionDisplay(f brew.Formula) string {
 		}
 	}
 	return v
-}
-
-func truncate(s string, maxLen int) string {
-	runes := []rune(s)
-	if len(runes) <= maxLen {
-		return s
-	}
-	return string(runes[:maxLen-1]) + "…"
-}
-
-func FormatDoctorStatus(warnings []brew.DoctorWarning, err error) string {
-	if err != nil {
-		return fmt.Sprintf("Doctor: unavailable (%s)", err.Error())
-	}
-	if len(warnings) == 0 {
-		return "Doctor: No issues"
-	}
-	if len(warnings) == 1 {
-		return "Doctor: 1 warning"
-	}
-	return fmt.Sprintf("Doctor: %d warnings", len(warnings))
 }
 
 func padRight(s string, length int) string {
