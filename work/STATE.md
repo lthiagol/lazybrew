@@ -20,7 +20,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-06-animations | 46736ea, 4f54fc0, 7c79a51, 0ebc253, d5fb165, 16358cf, ee7d782, 789caf6, 7a66ae2, 2a135d8 | closed | ok |
 | v2-07-op-dismiss | 0dfd9ff, ede3959, 21b3b21, 21fb1a1 | closed | ok |
 | v2-08-preload | 1471c38, 2237be9, fd55e63, a8a1c38, 253c3ba, e3c4e08, b23a9d8, 3eed39a, f6107b4, 39f34d2 | closed | ok |
-| v2-09-main-layout | — | implemented | awaiting reviewer |
+| v2-09-main-layout | fd1bde3, 12a3b1b, 95766a6, 539a515, 7f6e93b, 801054e, 77f0e2c, d2b31bd, e8bde9a, b2ac4f6, 5d22e50, 5d04885, a3d3d93 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -311,3 +311,15 @@ r1 an early switch lost its dashboard count, stale STATE text; r2 a failed read
 kept a stale count, harness showed an impossible `Taps 0`; r3 result.md
 misstated harness-caused differences; r4 `ok`. Q-v2-08-b (silent name-only
 Taps list) moved into v2-10 as AC-00.
+
+**v2-09-main-layout — closed (r5 `ok`, the last allowed round).** The main
+area has one column of padding (Log box too); lists are full-width tables
+(columns cut with `…`, a column dropped only below its minimum width,
+Description then Version); Info views split into fields | prose when the main
+box's inner width is ≥ 84 (140x40) **and** every path/URL in the right
+column fits whole — so Formulae/Cask Info split at 140x40, Tap/Services Info
+stay single-column there and split wider; the Log box shrinks when idle.
+Review: r1 a long description dropped the whole column, commit order, per-row
+map; r2 a kept column could shrink to `G…`; r3 ok → orchestrator ruling
+Q-v2-09-a lowered the split threshold (100 never fired at 140x40) and padded
+the Log; r4 split broke paths mid-token; r5 `ok`.
