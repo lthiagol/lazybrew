@@ -46,29 +46,21 @@ func NewDiagnosticsWriter(runner Runner, cache *Cache) DiagnosticsWriter {
 }
 
 func (s *diagnosticsReader) Doctor(ctx context.Context) ([]DoctorWarning, error) {
-	if cached, ok := s.cache.Get(KeyDoctorResult); ok {
-		if warnings, ok := cached.([]DoctorWarning); ok {
-			return warnings, nil
+	return cached(s.cache, KeyDoctorResult, s.doctorTTL, func() ([]DoctorWarning, bool, error) {
+		output, err := s.runner.Execute(ctx, "doctor")
+		if err != nil {
+			// brew doctor exits 1 when warnings are found — still parse output
+			if !IsExitCode(err, 1) {
+				return nil, false, err
+			}
 		}
-	}
 
-	output, err := s.runner.Execute(ctx, "doctor")
-	if err != nil {
-		// brew doctor exits 1 when warnings are found — still parse output
-		if !IsExitCode(err, 1) {
-			return nil, err
+		text := string(output)
+		if strings.Contains(text, "Your system is ready to brew") {
+			return []DoctorWarning{}, true, nil
 		}
-	}
-
-	text := string(output)
-	if strings.Contains(text, "Your system is ready to brew") {
-		s.cache.SetWithTTL(KeyDoctorResult, []DoctorWarning{}, s.doctorTTL)
-		return []DoctorWarning{}, nil
-	}
-
-	warnings := parseDoctorWarnings(text)
-	s.cache.SetWithTTL(KeyDoctorResult, warnings, s.doctorTTL)
-	return warnings, nil
+		return parseDoctorWarnings(text), true, nil
+	})
 }
 
 // SetCacheTTLs configures the cache TTL for `brew doctor` results.
@@ -158,44 +150,38 @@ func (s *diagnosticsReader) Vulns(ctx context.Context) (string, error) {
 }
 
 func (s *diagnosticsReader) Config(ctx context.Context) (*BrewConfig, error) {
-	if cached, ok := s.cache.Get(KeyConfig); ok {
-		if cfg, ok := cached.(*BrewConfig); ok {
-			return cfg, nil
+	return cached(s.cache, KeyConfig, 0, func() (*BrewConfig, bool, error) {
+		output, err := s.runner.Execute(ctx, "config")
+		if err != nil {
+			return nil, false, err
 		}
-	}
 
-	output, err := s.runner.Execute(ctx, "config")
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := &BrewConfig{}
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		parts := strings.SplitN(line, ": ", 2)
-		if len(parts) != 2 {
-			continue
+		cfg := &BrewConfig{}
+		lines := strings.Split(string(output), "\n")
+		for _, line := range lines {
+			parts := strings.SplitN(line, ": ", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			switch {
+			case key == "HOMEBREW_VERSION":
+				cfg.HomebrewVersion = value
+			case key == "HOMEBREW_PREFIX":
+				cfg.Prefix = value
+			case key == "HOMEBREW_CELLAR":
+				cfg.Cellar = value
+			case key == "HOMEBREW_REPOSITORY":
+				cfg.Repository = value
+			case key == "HOMEBREW_CORE_TAP":
+				cfg.CoreTap = value
+			case key == "HOMEBREW_SYSTEM":
+				cfg.OS = value
+			}
 		}
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		switch {
-		case key == "HOMEBREW_VERSION":
-			cfg.HomebrewVersion = value
-		case key == "HOMEBREW_PREFIX":
-			cfg.Prefix = value
-		case key == "HOMEBREW_CELLAR":
-			cfg.Cellar = value
-		case key == "HOMEBREW_REPOSITORY":
-			cfg.Repository = value
-		case key == "HOMEBREW_CORE_TAP":
-			cfg.CoreTap = value
-		case key == "HOMEBREW_SYSTEM":
-			cfg.OS = value
-		}
-	}
-
-	s.cache.Set(KeyConfig, cfg)
-	return cfg, nil
+		return cfg, true, nil
+	})
 }
 
 func (s *diagnosticsReader) Version(ctx context.Context) (string, error) {

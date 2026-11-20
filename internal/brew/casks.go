@@ -30,7 +30,6 @@ type casksReader struct {
 	cache       *Cache
 	casksTTL    time.Duration
 	outdatedTTL time.Duration
-	sf          *singleflight
 }
 
 type casksWriter struct {
@@ -39,7 +38,7 @@ type casksWriter struct {
 }
 
 func NewCasksReader(runner Runner, cache *Cache) CasksReader {
-	return &casksReader{runner: runner, cache: cache, sf: newSingleflight()}
+	return &casksReader{runner: runner, cache: cache}
 }
 
 func NewCasksWriter(runner Runner, cache *Cache) CasksWriter {
@@ -132,24 +131,18 @@ type caskJSON struct {
 }
 
 func (s *casksReader) List(ctx context.Context) ([]Cask, error) {
-	if cached, ok := s.cache.Get(KeyCasksList); ok {
-		if casks, ok := cached.([]Cask); ok {
-			return casks, nil
+	return cached(s.cache, KeyCasksList, s.casksTTL, func() ([]Cask, bool, error) {
+		var data casksJSON
+		if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", "--installed", "--cask"); err != nil {
+			return nil, false, err
 		}
-	}
 
-	var data casksJSON
-	if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", "--installed", "--cask"); err != nil {
-		return nil, err
-	}
-
-	casks := make([]Cask, 0, len(data.Casks))
-	for _, c := range data.Casks {
-		casks = append(casks, parseCask(c))
-	}
-
-	s.cache.SetWithTTL(KeyCasksList, casks, s.casksTTL)
-	return casks, nil
+		casks := make([]Cask, 0, len(data.Casks))
+		for _, c := range data.Casks {
+			casks = append(casks, parseCask(c))
+		}
+		return casks, true, nil
+	})
 }
 
 func (s *casksReader) Get(ctx context.Context, name string) (*Cask, error) {
@@ -167,35 +160,18 @@ func (s *casksReader) Get(ctx context.Context, name string) (*Cask, error) {
 }
 
 func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
-	if cached, ok := s.cache.Get(KeyOutdatedCasks); ok {
-		if casks, ok := cached.([]Cask); ok {
-			return casks, nil
-		}
-	}
-
-	val, err := s.sf.Do("outdated:casks", func() (any, error) {
-		if cached, ok := s.cache.Get(KeyOutdatedCasks); ok {
-			if casks, ok := cached.([]Cask); ok {
-				return casks, nil
-			}
-		}
+	return cached(s.cache, KeyOutdatedCasks, s.outdatedTTL, func() ([]Cask, bool, error) {
 		return s.fetchOutdated(ctx)
 	})
-	if err != nil {
-		return nil, err
-	}
-	return val.([]Cask), nil
 }
 
-func (s *casksReader) fetchOutdated(ctx context.Context) (any, error) {
+func (s *casksReader) fetchOutdated(ctx context.Context) ([]Cask, bool, error) {
 	output, err := s.runner.Execute(ctx, "outdated", "--json=v2", "--cask")
 	if err != nil {
 		if IsExitCode(err, 1) {
-			empty := []Cask{}
-			s.cache.SetWithTTL(KeyOutdatedCasks, empty, s.outdatedTTL)
-			return empty, nil
+			return []Cask{}, true, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
 
 	var data struct {
@@ -207,7 +183,7 @@ func (s *casksReader) fetchOutdated(ctx context.Context) (any, error) {
 		} `json:"casks"`
 	}
 	if err := json.Unmarshal(output, &data); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	outdated := make([]Cask, 0, len(data.Casks))
@@ -223,9 +199,7 @@ func (s *casksReader) fetchOutdated(ctx context.Context) (any, error) {
 		}
 		outdated = append(outdated, cask)
 	}
-
-	s.cache.SetWithTTL(KeyOutdatedCasks, outdated, s.outdatedTTL)
-	return outdated, nil
+	return outdated, true, nil
 }
 
 // SetCacheTTLs configures how long `brew list --cask` and

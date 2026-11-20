@@ -46,28 +46,22 @@ type trustEntryJSON struct {
 }
 
 func (s *trustReader) ListTrusted(ctx context.Context) ([]TrustEntry, error) {
-	if cached, ok := s.cache.Get(KeyTrustList); ok {
-		if entries, ok := cached.([]TrustEntry); ok {
-			return entries, nil
+	return cached(s.cache, KeyTrustList, 0, func() ([]TrustEntry, bool, error) {
+		var data trustJSON
+		if err := s.runner.ExecuteJSON(ctx, &data, "trust", "--json=v1"); err != nil {
+			return nil, false, err
 		}
-	}
 
-	var data trustJSON
-	if err := s.runner.ExecuteJSON(ctx, &data, "trust", "--json=v1"); err != nil {
-		return nil, err
-	}
-
-	entries := make([]TrustEntry, 0, len(data.Entries))
-	for _, e := range data.Entries {
-		entries = append(entries, TrustEntry{
-			Name: e.Name,
-			Type: TrustType(e.Type),
-			Tap:  e.Tap,
-		})
-	}
-
-	s.cache.Set(KeyTrustList, entries)
-	return entries, nil
+		entries := make([]TrustEntry, 0, len(data.Entries))
+		for _, e := range data.Entries {
+			entries = append(entries, TrustEntry{
+				Name: e.Name,
+				Type: TrustType(e.Type),
+				Tap:  e.Tap,
+			})
+		}
+		return entries, true, nil
+	})
 }
 
 func (s *trustReader) GetTapTrustStatus(ctx context.Context, tapName string) (TrustStatus, error) {
