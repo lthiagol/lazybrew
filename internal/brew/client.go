@@ -24,6 +24,7 @@ type Client struct {
 
 func NewClient(runner Runner) *Client {
 	cache := NewCache(30 * time.Second)
+	runner = sudoRunner{inner: runner}
 
 	return &Client{
 		Runner:           runner,

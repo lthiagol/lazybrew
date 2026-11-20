@@ -60,6 +60,21 @@ func (e *ServiceNeedsRootError) Error() string {
 	return fmt.Sprintf("%s: needs sudo — run \"sudo brew services %s %s\" in a terminal", e.Name, e.Action, e.Name)
 }
 
+// NeedsSudoError is a brew command that needed a terminal for sudo: sudo had no
+// terminal to ask for a password on, so it failed. lazybrew never runs sudo; the
+// error names the command for the user to run in a terminal. Err is the
+// command's own error.
+type NeedsSudoError struct {
+	Command string
+	Err     error
+}
+
+func (e *NeedsSudoError) Error() string {
+	return fmt.Sprintf("needs sudo — run \"brew %s\" in a terminal", e.Command)
+}
+
+func (e *NeedsSudoError) Unwrap() error { return e.Err }
+
 func IsExitCode(err error, code int) bool {
 	var e *BrewExitError
 	if errors.As(err, &e) {
