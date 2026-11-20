@@ -529,6 +529,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.casks = msg.Casks
 				p.taps = msg.Taps
 				p.services = msg.Services
+				p.serviceInfo = msg.ServiceInfo
 				if msg.PanelID == PanelStatus {
 					m.status = msg.Summary
 				}
@@ -1063,7 +1064,7 @@ func (m *Model) invalidatePanelCache(id PanelID) {
 	case PanelTaps:
 		c.Invalidate(brew.KeyTapsList)
 	case PanelServices:
-		c.Invalidate(brew.KeyServicesList)
+		c.Invalidate(brew.KeyServicesList, brew.KeyServicesInfo)
 	case PanelStatus:
 		// Status dashboard reads formulae/casks/taps/services/doctor from
 		// the cache. It does not own the outdated class: the dashboard

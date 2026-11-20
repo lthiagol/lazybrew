@@ -2,6 +2,8 @@ package brew
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -116,5 +118,159 @@ func TestServicesServiceCleanupInvalidatesCache(t *testing.T) {
 	}
 	if _, ok := cache.Get(KeyServicesList); ok {
 		t.Error("expected KeyServicesList to be invalidated by Cleanup")
+	}
+}
+
+// servicesInfoFixture is the real `brew services info --all --json` output of
+// this machine (testdata/services_info_all.json): a stopped service with nulls,
+// and the running moshi-hook with a pid and a log path.
+func servicesInfoFixture(t *testing.T) []byte {
+	t.Helper()
+	raw, err := os.ReadFile("testdata/services_info_all.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
+}
+
+func TestServicesServiceInfoParsesRealShape(t *testing.T) {
+	r := NewMockRunner()
+	var gotArgs []string
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		gotArgs = args
+		return servicesInfoFixture(t), nil
+	}
+	svc := NewServicesReader(r, NewCache(time.Minute))
+
+	info, err := svc.Info(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "services info --all --json"; strings.Join(gotArgs, " ") != want {
+		t.Errorf("args = %q, want %q", strings.Join(gotArgs, " "), want)
+	}
+	if len(info) != 3 {
+		t.Fatalf("expected 3 services, got %d", len(info))
+	}
+
+	dbus := info[0]
+	if dbus.Name != "dbus" || dbus.Running || dbus.Loaded {
+		t.Errorf("dbus: name %q running %v loaded %v, want stopped and not loaded", dbus.Name, dbus.Running, dbus.Loaded)
+	}
+	if dbus.PID != nil || dbus.ExitCode != nil {
+		t.Errorf("dbus: pid and exit code must be nil (null in brew), got %v and %v", dbus.PID, dbus.ExitCode)
+	}
+	if dbus.User != "" || dbus.Status != ServiceNone || dbus.Interval != nil || dbus.Cron != nil {
+		t.Errorf("dbus: user %q status %q, want empty user, none, and no schedule", dbus.User, dbus.Status)
+	}
+
+	moshi := info[1]
+	if moshi.Name != "moshi-hook" || moshi.ServiceName != "sh.brew.moshi-hook" {
+		t.Errorf("moshi-hook: name %q service_name %q", moshi.Name, moshi.ServiceName)
+	}
+	if !moshi.Running || !moshi.Loaded || !moshi.Registered || moshi.Schedulable {
+		t.Errorf("moshi-hook: running %v loaded %v registered %v schedulable %v", moshi.Running, moshi.Loaded, moshi.Registered, moshi.Schedulable)
+	}
+	if moshi.PID == nil || *moshi.PID != 800 {
+		t.Errorf("moshi-hook: PID = %v, want 800", moshi.PID)
+	}
+	if moshi.Status != ServiceStarted || moshi.User != "agent" {
+		t.Errorf("moshi-hook: status %q user %q, want started and agent", moshi.Status, moshi.User)
+	}
+	if moshi.Command != "/home/linuxbrew/.linuxbrew/opt/moshi-hook/bin/moshi-hook serve" {
+		t.Errorf("moshi-hook: command = %q", moshi.Command)
+	}
+	if moshi.LogPath != "/home/linuxbrew/.linuxbrew/var/log/moshi-hook.log" {
+		t.Errorf("moshi-hook: log path = %q", moshi.LogPath)
+	}
+	if moshi.LoadedFile != "/home/agent/.config/systemd/user/sh.brew.moshi-hook.service; enabled" {
+		t.Errorf("moshi-hook: loaded file = %q", moshi.LoadedFile)
+	}
+	if moshi.RootDir != "" || moshi.Interval != nil || moshi.Cron != nil {
+		t.Errorf("moshi-hook: root dir %q, interval and cron must be empty (null in brew)", moshi.RootDir)
+	}
+}
+
+func TestServicesServiceInfoParsesSchedule(t *testing.T) {
+	r := NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte(`[
+			{"name":"backup","service_name":"sh.brew.backup","running":false,"loaded":true,"schedulable":true,
+			 "pid":null,"exit_code":0,"user":"agent","status":"scheduled","file":"","registered":true,
+			 "loaded_file":null,"command":"/bin/backup","working_dir":null,"root_dir":null,
+			 "log_path":null,"error_log_path":null,"interval":3600,"cron":{"hour":3,"minute":0}}
+		]`), nil
+	}
+	svc := NewServicesReader(r, NewCache(time.Minute))
+
+	info, err := svc.Info(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(info) != 1 {
+		t.Fatalf("expected 1 service, got %d", len(info))
+	}
+	b := info[0]
+	if b.Status != ServiceScheduled {
+		t.Errorf("Status = %q, want scheduled", b.Status)
+	}
+	if b.ExitCode == nil || *b.ExitCode != 0 {
+		t.Errorf("ExitCode = %v, want 0 (present, not null)", b.ExitCode)
+	}
+	if b.Interval == nil || *b.Interval != 3600 {
+		t.Errorf("Interval = %v, want 3600", b.Interval)
+	}
+	if b.Cron["hour"] != float64(3) || b.Cron["minute"] != float64(0) {
+		t.Errorf("Cron = %v, want hour 3 and minute 0", b.Cron)
+	}
+}
+
+func TestServicesServiceInfoIsCached(t *testing.T) {
+	r := NewMockRunner()
+	calls := 0
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		calls++
+		return servicesInfoFixture(t), nil
+	}
+	svc := NewServicesReader(r, NewCache(time.Minute))
+
+	for i := 0; i < 2; i++ {
+		if _, err := svc.Info(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if calls != 1 {
+		t.Errorf("brew ran %d times for two reads, want 1 (cache hit)", calls)
+	}
+}
+
+func TestServicesWritesInvalidateServicesInfo(t *testing.T) {
+	writes := map[string]func(w ServicesWriter) error{
+		"start":   func(w ServicesWriter) error { return w.Start(context.Background(), "redis") },
+		"stop":    func(w ServicesWriter) error { return w.Stop(context.Background(), "redis") },
+		"restart": func(w ServicesWriter) error { return w.Restart(context.Background(), "redis") },
+		"run":     func(w ServicesWriter) error { return w.Run(context.Background(), "redis") },
+		"cleanup": func(w ServicesWriter) error { return w.Cleanup(context.Background()) },
+	}
+	for name, write := range writes {
+		t.Run(name, func(t *testing.T) {
+			r := NewMockRunner()
+			r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+				return []byte(""), nil
+			}
+			cache := NewCache(time.Minute)
+			cache.Set(KeyServicesInfo, []ServiceInfo{{Name: "redis"}})
+			cache.Set(KeyServicesList, []Service{{Name: "redis"}})
+
+			if err := write(NewServicesWriter(r, cache)); err != nil {
+				t.Fatal(err)
+			}
+			if _, ok := cache.Get(KeyServicesInfo); ok {
+				t.Error("expected KeyServicesInfo to be invalidated")
+			}
+			if _, ok := cache.Get(KeyServicesList); ok {
+				t.Error("expected KeyServicesList to be invalidated")
+			}
+		})
 	}
 }
