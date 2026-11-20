@@ -41,6 +41,9 @@ type Model struct {
 	// contentScroll is how far the wheel has scrolled each tab item's content,
 	// in rows, keyed by contentKey. An item starts at the top.
 	contentScroll map[string]int
+	// wrap holds the wrapped rows of the Files and Used By tabs, so scrolling
+	// them does not render them again (cr3 AC-04).
+	wrap *wrapCache
 
 	activeModal modal.Modal
 	// toasts is the stack, oldest first; the newest is drawn lowest.
@@ -187,6 +190,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		searchInput:   ti,
 		icons:         icons,
 		contentScroll: make(map[string]int),
+		wrap:          newWrapCache(),
 		motion:        anim.NewSet(),
 		motionOn:      animationsOn(cfg),
 		opBar:         newProgressBar(),
@@ -594,10 +598,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				p.items = filtered
 				p.formulae = formulae
+				p.indexInstalled()
 				p.leavesActive = true
 			} else {
 				p.items = p.unfilteredItems
 				p.formulae = p.unfilteredFormulae
+				p.indexInstalled()
 				p.unfilteredItems = nil
 				p.unfilteredFormulae = nil
 				p.leavesActive = false
@@ -640,6 +646,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		clear(m.wrap.entries)
 		m.terminalTooSmall = msg.Width < minTerminalWidth || msg.Height < minTerminalHeight
 		m.ready = true
 		// Re-derive the per-panel viewport heights once per resize, then
@@ -1173,6 +1180,7 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 			p.selectServiceNamed(selectedService)
 			p.selectTapNamed(selectedTap)
 		}
+		p.indexInstalled()
 		p.normalize()
 	}
 	// The Outdated panel was just rewritten: an index-based batch

@@ -92,7 +92,7 @@ func (m Model) renderMainPanel() string {
 	// cut, and the bar's trailing padding goes with it.
 	tabBar := fitFrame(m.renderTabBar(cw), cw, m.tabBarRows())
 	h := m.scrollRows(l.contentH)
-	content := m.scrolledContent(m.renderContent(cw, h), cw, h)
+	content := m.scrolledContent(cw, h)
 	if head := m.contentHead(cw); head != "" {
 		content = head + "\n" + content
 	}

@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,5 +42,27 @@ func BenchmarkOperationRenderPerLine(b *testing.B) {
 			m.opState.AppendLine(line)
 			_ = m.renderOperation(140, 40)
 		}
+	}
+}
+
+// BenchmarkFilesTabPageDown is the Files tab of a formula with 5000 installed
+// files, PgDn pressed and the view drawn after each press, at 140x40 (cr3
+// AC-04).
+func BenchmarkFilesTabPageDown(b *testing.B) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"bash"},
+		Formulae: []brew.Formula{{Name: "bash", Version: "5.2"}}})
+	m = sendKey(m, "2")
+	m.activeTab = formulaFilesTab
+	var files strings.Builder
+	for i := 0; i < 5000; i++ {
+		fmt.Fprintf(&files, "/home/linuxbrew/.linuxbrew/Cellar/bash/5.2/share/file%04d.txt\n", i)
+	}
+	m.tabContent[tabKey(PanelFormulae, formulaFilesTab, "bash")] = files.String()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m = sendSpecial(m, tea.KeyPgDown)
+		_ = m.View()
 	}
 }
