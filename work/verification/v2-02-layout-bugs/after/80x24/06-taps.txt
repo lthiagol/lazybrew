@@ -1,0 +1,24 @@
+╭──────────────────────╮╭──────────────────────────────────────────────────────╮
+│1 Status  16          ││Taps › Tap Info                                       │
+╰──────────────────────╯│  Tap Info    Trust    Formulae                       │
+╭──────────────────────╮│━━━━━━━━━━━━                                          │
+│2 Formulae  125       ││3 taps  |  0 official  2 trusted  1 untrusted         │
+╰──────────────────────╯│▸ danielfoehrkn/switch   untrusted   clone            │
+╭──────────────────────╮│  lthiagol/tap           trusted     clone            │
+│3 Casks               ││  rjyo/moshi             trusted     clone            │
+╰──────────────────────╯│                                                      │
+╭──────────────────────╮│                                                      │
+│4 Outdated            ││                                                      │
+╰──────────────────────╯│                                                      │
+╭──────────────────────╮│                                                      │
+│5 Taps  3             ││                                                      │
+│▸ danielfoehrkn/swi...││                                                      │
+╰──────────────────────╯│                                                      │
+╭──────────────────────╮│                                                      │
+│6 Services            │╰──────────────────────────────────────────────────────╯
+╰──────────────────────╯╭──────────────────────────────────────────────────────╮
+╭──────────────────────╮│Log                                                   │
+│7 Search              ││No commands executed yet                              │
+╰──────────────────────╯╰──────────────────────────────────────────────────────╯
+  Tab  next S-Tab  prev 1-7  jump /  search ?  help R  refresh C  log q  quit   
+  j/k  navigate a  add x  remove t  trust r  repair                             

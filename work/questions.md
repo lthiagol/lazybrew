@@ -166,3 +166,46 @@ resolved.
     `open-findings`, record the findings in `work/STATE.md` and
     `work/backlog.md`, and continue only with slices that do not depend on
     the unfixed part; otherwise stop and wait for the user. Closed.
+
+## Questions raised — slice `v2-02-layout-bugs` (runner lane)
+
+Layout-only slice: none of these changes the layout contract. Each is recorded
+here and not decided in code.
+
+### Q-v2-hints — bottom-bar hints are wider than 80 columns
+
+- **Question:** at 80 columns the panel hint line does not fit the bar. Status
+  ends `… vulns m missing`; Formulae ends `… upgrade all p pin L leaves F
+  fetch`. The bar is two rows, so the tail is cut. The v2-01 baseline wrapped
+  the tail onto a third row past row 24, which a 24-row terminal never showed.
+  Should the hints wrap onto more rows, be truncated, or be ordered so the most
+  useful ones fit?
+- **Raised by:** runner, v2-02-layout-bugs. Not decided: it belongs with the
+  header and bottom-bar work in v2-03.
+
+### Q-v2-help — help text is taller than an 80×24 terminal
+
+- **Question:** the help text is 38 rows. At 80×24 the box shows 23 rows and
+  cuts the rest (54 words of the lower sections). The baseline overflowed the
+  terminal instead. Should help scroll, or be split into pages at small sizes?
+- **Raised by:** runner, v2-02-layout-bugs.
+
+### Q-v2-small — an 80×24 sidebar has no room for inactive panels' rows
+
+- **Question:** at 24 rows the sidebar has 8 content rows for 7 boxes. The
+  active box gets two rows and each inactive box gets its title only. So at
+  80×24 the `not loaded`, `(empty)` and item counts are not visible for
+  inactive panels. The baseline showed them only by overflowing the terminal
+  (28 box rows in 24). This is part of the lazygit-style sidebar decision
+  (Q-v2-sidebar, v2-03).
+- **Raised by:** runner, v2-02-layout-bugs.
+
+### Q-v2-cask-deps — the cask `depends_on` shape is not read (pre-existing)
+
+- **Question:** real `brew info --json=v2 --installed --cask` returns
+  `depends_on` as an object, for example `{"formula": ["python@3.14"]}` for
+  gcloud-cli. `flexStrings` reads only arrays and objects that carry `name` or
+  `full_name`, so `Cask.DependsOn` is empty for every real cask. AC-07 did not
+  change this: cask parsing is identical before and after. Should the Casks
+  Deps tab show the `formula` and `cask` lists?
+- **Raised by:** runner, v2-02-layout-bugs.
