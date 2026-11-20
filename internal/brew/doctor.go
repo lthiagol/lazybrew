@@ -205,8 +205,7 @@ func (s *diagnosticsReader) Version(ctx context.Context) (string, error) {
 }
 
 func (s *diagnosticsWriter) Update(ctx context.Context) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("update")
-	return s.runner.ExecuteStream(ctx, "update")
+	return streamWrite(ctx, s.runner, s.cache, "update", "update")
 }
 
 func (s *diagnosticsWriter) Cleanup(ctx context.Context, dryRun bool) (<-chan string, <-chan error) {
@@ -214,7 +213,7 @@ func (s *diagnosticsWriter) Cleanup(ctx context.Context, dryRun bool) (<-chan st
 	if dryRun {
 		args = append(args, "-n")
 	}
-	return s.runner.ExecuteStream(ctx, args...)
+	return streamWrite(ctx, s.runner, s.cache, "cleanup", args...)
 }
 
 func (s *diagnosticsWriter) Autoremove(ctx context.Context, dryRun bool) (<-chan string, <-chan error) {
@@ -222,5 +221,5 @@ func (s *diagnosticsWriter) Autoremove(ctx context.Context, dryRun bool) (<-chan
 	if dryRun {
 		args = append(args, "-n")
 	}
-	return s.runner.ExecuteStream(ctx, args...)
+	return streamWrite(ctx, s.runner, s.cache, "autoremove", args...)
 }

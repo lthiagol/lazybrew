@@ -214,19 +214,19 @@ func chunkTapNames(names []string) [][]string {
 }
 
 func (s *tapsWriter) Tap(ctx context.Context, name string) error {
-	s.cache.InvalidateFor("tap")
+	defer s.cache.InvalidateFor("tap")
 	_, err := s.runner.Execute(ctx, "tap", name)
 	return err
 }
 
 func (s *tapsWriter) TapWithURL(ctx context.Context, name, url string) error {
-	s.cache.InvalidateFor("tap")
+	defer s.cache.InvalidateFor("tap")
 	_, err := s.runner.Execute(ctx, "tap", name, url)
 	return err
 }
 
 func (s *tapsWriter) Untap(ctx context.Context, name string) error {
-	s.cache.InvalidateFor("untap")
+	defer s.cache.InvalidateFor("untap")
 	_, err := s.runner.Execute(ctx, "untap", name)
 	return err
 }
@@ -234,7 +234,7 @@ func (s *tapsWriter) Untap(ctx context.Context, name string) error {
 func (s *tapsWriter) Repair(ctx context.Context, name string) error {
 	// Invalidate like every other taps write: a repaired tap can change
 	// its remote/manifest state (r1 finding 20).
-	s.cache.InvalidateFor("tap")
+	defer s.cache.InvalidateFor("tap")
 	_, err := s.runner.Execute(ctx, "tap", "--repair", name)
 	return err
 }

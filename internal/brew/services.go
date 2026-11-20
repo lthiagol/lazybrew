@@ -104,19 +104,19 @@ func (s *servicesReader) SetCacheTTLs(ttls CacheTTLs) {
 }
 
 func (s *servicesWriter) Start(ctx context.Context, name string) error {
-	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
+	defer s.cache.InvalidateFor("services")
 	_, err := s.runner.Execute(ctx, "services", "start", name)
 	return serviceWriteError("start", name, err)
 }
 
 func (s *servicesWriter) Stop(ctx context.Context, name string) error {
-	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
+	defer s.cache.InvalidateFor("services")
 	_, err := s.runner.Execute(ctx, "services", "stop", name)
 	return serviceWriteError("stop", name, err)
 }
 
 func (s *servicesWriter) Restart(ctx context.Context, name string) error {
-	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
+	defer s.cache.InvalidateFor("services")
 	_, err := s.runner.Execute(ctx, "services", "restart", name)
 	return serviceWriteError("restart", name, err)
 }
@@ -124,13 +124,13 @@ func (s *servicesWriter) Restart(ctx context.Context, name string) error {
 func (s *servicesWriter) Run(ctx context.Context, name string) error {
 	// Invalidate like every other services write: `services run` changes
 	// service state just as start/stop do (r1 finding 19).
-	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
+	defer s.cache.InvalidateFor("services")
 	_, err := s.runner.Execute(ctx, "services", "run", name)
 	return serviceWriteError("run", name, err)
 }
 
 func (s *servicesWriter) Cleanup(ctx context.Context) error {
-	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
+	defer s.cache.InvalidateFor("services")
 	_, err := s.runner.Execute(ctx, "services", "cleanup")
 	return err
 }
