@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                             125 formulae
+╭─ 1 ◉ Status ──── 16 ─╮╭─ Formulae › Deps ────────────────────────────────────╮
+│▸ Homebrew 7.0.15-3...││  List    Info    Deps    Used By    Caveats    Files │
+╰──────────────────────╯│                ━━━━━━━━                              │
+╭─ 2 ∘ Formulae ─ 125 ─╮│Runtime:                                              │
+│  alsa-lib         ...││  ncurses                                             │
+│▸ bash             ...││  readline                                            │
+╰──────────────────────╯│                                                      │
+╭─ 3 ▣ Casks ─ not l… ─╮│                                                      │
+│                      ││                                                      │
+╰──────────────────────╯│                                                      │
+╭─ 4 ↑ Outdated ─ (e… ─╮│                                                      │
+│                      ││                                                      │
+╰──────────────────────╯│                                                      │
+╭─ 5 ⊕ Taps ─────── 3 ─╮│                                                      │
+│▸ danielfoehrkn/swi...││                                                      │
+╰──────────────────────╯│                                                      │
+╭─ 6 ◎ Services ─ no… ─╮│                                                      │
+│                      │╰──────────────────────────────────────────────────────╯
+╰──────────────────────╯╭─ Log ────────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ─ not … ─╮│No commands executed yet                              │
+│                      ││                                                      │
+╰──────────────────────╯╰──────────────────────────────────────────────────────╯
+ j/k navigate  [ ] tabs  i install  x remove  r reinstall  u upgrade  ? more    

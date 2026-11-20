@@ -240,3 +240,62 @@ here and not decided in code.
 - **Safety:** lanes must **never** run `brew services start|stop|restart|run|cleanup`
   against this machine's real services (`moshi-hook` is live here). Tests use
   the mock runner only.
+
+## Questions raised — slice `v2-03-look-foundation` (runner lane)
+
+Each is a judgement call made while building the slice. None blocked a
+criterion; each is decided in code as described, and the orchestrator can
+redirect it.
+
+### Q-v2-03-a — the Status sidebar's count is the dashboard's line count
+
+- **Question:** the sidebar label shows the item count when a panel is loaded.
+  The Status panel's items are dashboard lines, so its label reads `16`, which
+  counts nothing the user recognises. Should Status show no count?
+- **Runner's decision:** the count is shown, as AC-03.3 says ("the count when
+  loaded"). Dropping it for Status is a one-line change if preferred.
+- **Raised by:** runner lane (slice `v2-03-look-foundation`).
+
+### Q-v2-03-b — header counts come from the panels, not the dashboard
+
+- **Question:** the header shows `N formulae` / `N casks` only once the
+  Formulae / Casks panels are loaded. The Status dashboard knows the counts,
+  but only as text lines, so the header does not show them on first launch.
+  Should the dashboard load carry the counts into the model?
+- **Runner's decision:** the header shows a count only when the panel's own
+  data is known (AC-04.2: unknown is omitted). Carrying counts from the
+  dashboard needs a second return value from `statusDashboard`; it was not
+  done here.
+- **Raised by:** runner lane (slice `v2-03-look-foundation`).
+
+### Q-v2-03-c — 80×24 sidebar labels are cut hard
+
+- **Question:** at 80 columns the sidebar is 24 cells, so a box's border has
+  about 5 cells for its label: `not loaded` shows as `no…`. The name keeps
+  priority. Is that acceptable, or should narrow boxes use shorter states
+  (for example a dot for `not loaded`)?
+- **Runner's decision:** the name keeps priority and the state is cut. No
+  shorter vocabulary was introduced, because the brief fixes the words.
+- **Raised by:** runner lane (slice `v2-03-look-foundation`).
+
+### Q-v2-03-d — a running operation is dropped at 80 columns
+
+- **Question:** the header's middle shows the running operation, but at 80
+  columns the badges take the room and the operation disappears. The Log box
+  still names the task. Should the operation outrank the badges?
+- **Runner's decision:** badges keep priority (AC-04.2 says badges drop when
+  space is short, and does not say the operation survives). A refresh with no
+  operation also shows in the middle; the brief did not list it, and the old
+  bottom bar showed it, so it has a place to live.
+- **Raised by:** runner lane (slice `v2-03-look-foundation`).
+
+### Q-v2-03-e — the config's first validation
+
+- **Question:** AC-02.2 says an unknown `gui.icons` is "a config error like
+  other invalid fields". No config field was validated before: `Load` only
+  returned a YAML parse error. `Load` now returns an error for an unknown
+  `gui.icons` and for an unknown `LAZYBREW_ICONS`. Is that the intended
+  precedent, or should validation of other fields wait?
+- **Runner's decision:** the error is returned from `Load`, so `app.go` fails at
+  startup with the message, as it does for a YAML error.
+- **Raised by:** runner lane (slice `v2-03-look-foundation`).

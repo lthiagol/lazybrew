@@ -89,7 +89,8 @@ See the config ADR topic (configuration schema decisions).
 |---|---|---|
 | `gui.theme` | Wired | `dark` or `light` |
 | `gui.sidebar_width` | Wired | Integer |
-| `gui.show_icons` | Deferred P2 | No-op until M17 |
+| `gui.show_icons` | Wired | `false` draws no icons at all |
+| `gui.icons` | Wired | `nerd` (default) or `unicode`; `LAZYBREW_ICONS` overrides |
 | `gui.mouse` | Wired | `View().MouseMode = tea.MouseModeCellMotion` |
 | `gui.auto_refresh_seconds` | Planned | Tick in M20.8 |
 | `brew.path` | Planned | Custom runner path in M20.8 |
