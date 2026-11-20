@@ -10,6 +10,18 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
+// hasRow reports whether a row of out shows the icon before the name. A package
+// row keeps its icon and name in separate table columns, so they are not one
+// string.
+func hasRow(out, icon, name string) bool {
+	for _, line := range strings.Split(out, "\n") {
+		if i := strings.Index(line, name); i >= 0 && strings.Contains(line[:i], icon) {
+			return true
+		}
+	}
+	return false
+}
+
 // formulaWithDeps opens the Formulae panel with bash selected, whose runtime
 // dependency ncurses is installed and whose build dependency cmake is not.
 func formulaWithDeps(t *testing.T) *Model {
@@ -30,12 +42,17 @@ func TestFormulaDepsShowInstalledState(t *testing.T) {
 	m := formulaWithDeps(t)
 	m = sendKey(m, "]")
 	out := ansi.Strip(m.renderContent(70, 20))
-	for _, want := range []string{"Runtime", "Build", "✓ ncurses", "○ readline", "○ cmake"} {
+	for _, want := range []string{"Runtime", "Build"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("the Deps tab should show %q, got:\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "✓ readline") || strings.Contains(out, "○ ncurses") {
+	for _, row := range [][2]string{{"✓", "ncurses"}, {"○", "readline"}, {"○", "cmake"}} {
+		if !hasRow(out, row[0], row[1]) {
+			t.Fatalf("the Deps tab should show %s %s, got:\n%s", row[0], row[1], out)
+		}
+	}
+	if hasRow(out, "✓", "readline") || hasRow(out, "○", "ncurses") {
 		t.Fatalf("installed state is per package, got:\n%s", out)
 	}
 }
@@ -91,12 +108,15 @@ func TestCaskDepsGroupFormulaeCasksAndRequirements(t *testing.T) {
 		}}})
 	m = sendKey(m, "]")
 	out := ansi.Strip(m.renderContent(70, 20))
-	for _, want := range []string{"Formulae", "○ python@3.14", "Casks", "○ docker", "Requirements", "  macOS ≥ 13"} {
+	for _, want := range []string{"Formulae", "Casks", "Requirements", "macOS ≥ 13"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("the cask Deps tab should show %q, got:\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "○ macOS") || strings.Contains(out, "✓ macOS") {
+	if !hasRow(out, "○", "python@3.14") || !hasRow(out, "○", "docker") {
+		t.Fatalf("the cask Deps tab should show the formula and cask rows unlisted, got:\n%s", out)
+	}
+	if hasRow(out, "○", "macOS") || hasRow(out, "✓", "macOS") {
 		t.Fatalf("a requirement is not a package and carries no icon, got:\n%s", out)
 	}
 }
@@ -106,7 +126,7 @@ func TestUsedByListsInstalledDependents(t *testing.T) {
 	m = sendKey(m, "]")
 	m = sendKey(m, "]")
 	m.tabContent[tabKey(PanelFormulae, formulaUsesTab, "bash")] = "ncurses\n"
-	if out := ansi.Strip(m.renderContent(70, 20)); !strings.Contains(out, "✓ ncurses") {
+	if out := ansi.Strip(m.renderContent(70, 20)); !hasRow(out, "✓", "ncurses") {
 		t.Fatalf("the Used By tab should list the installed dependent, got:\n%s", out)
 	}
 	m.tabContent[tabKey(PanelFormulae, formulaUsesTab, "bash")] = noDependents
@@ -119,19 +139,22 @@ func TestUsedByListsInstalledDependents(t *testing.T) {
 // count, and each path draws its file name after its directory.
 func TestFilesCountAndStyleThePaths(t *testing.T) {
 	content := "/opt/homebrew/Cellar/bash/5.2/bin/bash\n/opt/homebrew/Cellar/bash/5.2/share/man/man1/bash.1\n"
-	out := renderFiles(content)
+	out := renderFiles(content, 70)
 	plain := ansi.Strip(out)
 	lines := strings.Split(plain, "\n")
 	if lines[0] != "2 files" {
 		t.Fatalf("the first line should count the files, got %q", lines[0])
 	}
-	if lines[1] != "/opt/homebrew/Cellar/bash/5.2/bin/bash" {
-		t.Fatalf("the path should be kept whole, got %q", lines[1])
+	if strings.TrimSpace(lines[1]) != "Path" {
+		t.Fatalf("the table should head its paths, got %q", lines[1])
+	}
+	if strings.TrimSpace(lines[2]) != "/opt/homebrew/Cellar/bash/5.2/bin/bash" {
+		t.Fatalf("the path should be kept whole, got %q", lines[2])
 	}
 	if !strings.Contains(out, "\x1b[") {
 		t.Fatal("the directory and the file name should be styled apart")
 	}
-	if got := ansi.Strip(renderFiles(noFilesInstalled)); got != noFilesInstalled {
+	if got := ansi.Strip(renderFiles(noFilesInstalled, 70)); got != noFilesInstalled {
 		t.Fatalf("an empty list should say %q, got %q", noFilesInstalled, got)
 	}
 }
@@ -144,9 +167,12 @@ func TestSearchResultDependenciesCheckInstalled(t *testing.T) {
 	m.searchInfoContent = `{"formulae":[{"name":"wget","versions":{"stable":"1.25"},` +
 		`"dependencies":["ncurses"],"build_dependencies":["cmake"]}],"casks":[]}`
 	out := ansi.Strip(m.renderContent(70, 30))
-	for _, want := range []string{"Dependencies:", "Runtime", "✓ ncurses", "Build", "○ cmake"} {
+	for _, want := range []string{"Dependencies:", "Runtime", "Build"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("the search result should show %q, got:\n%s", want, out)
 		}
+	}
+	if !hasRow(out, "✓", "ncurses") || !hasRow(out, "○", "cmake") {
+		t.Fatalf("the search result should show ncurses installed and cmake not, got:\n%s", out)
 	}
 }

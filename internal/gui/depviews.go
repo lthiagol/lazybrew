@@ -37,78 +37,119 @@ type depGroup struct {
 	check   depCheck
 }
 
-// listedCheck returns whether a name is in the installed list the check reads.
-// It returns nil when that list has not loaded, so no row claims an icon it
-// cannot back up.
-func (m Model) listedCheck(c depCheck) func(string) bool {
-	listed := make(map[string]bool)
+// installedPkg is what a dependency table knows of an installed package: its
+// installed version and description, both from the loaded lists.
+type installedPkg struct {
+	version, desc string
+}
+
+// installedList is the installed packages a check reads, by name. It returns
+// nil when that list has not loaded, so no row claims an icon it cannot back up.
+func (m Model) installedList(c depCheck) map[string]installedPkg {
 	switch c {
 	case depFormula:
 		p := m.panels[PanelFormulae]
 		if !p.loaded {
 			return nil
 		}
+		list := make(map[string]installedPkg, len(p.formulae))
 		for _, f := range p.formulae {
-			listed[f.Name] = true
+			list[f.Name] = installedPkg{version: f.Version, desc: f.Description}
 		}
+		return list
 	case depCask:
 		p := m.panels[PanelCasks]
 		if !p.loaded {
 			return nil
 		}
+		list := make(map[string]installedPkg, len(p.casks))
 		for _, c := range p.casks {
-			listed[c.Name] = true
+			list[c.Name] = installedPkg{version: c.Version, desc: c.Description}
 		}
-	default:
-		return nil
+		return list
 	}
-	return func(name string) bool { return listed[name] }
+	return nil
 }
 
-// renderDepGroups draws each non-empty group: its heading, then one row per
-// name. It returns "" when every group is empty.
-func (m Model) renderDepGroups(groups []depGroup) string {
-	var blocks []string
+// renderDepGroups draws the groups as one table at most width cells wide: a
+// header row, then each non-empty group's heading and its rows. It returns ""
+// when every group is empty.
+func (m Model) renderDepGroups(groups []depGroup, width int) string {
+	var rows []tableRow
 	for _, g := range groups {
 		if len(g.names) == 0 {
 			continue
 		}
-		listed := m.listedCheck(g.check)
-		var rows []string
+		if len(rows) > 0 {
+			rows = append(rows, tableRow{})
+		}
 		if g.heading != "" {
-			rows = append(rows, style.SubtleText.Render(g.heading))
+			rows = append(rows, tableRow{heading: g.heading})
 		}
 		for _, name := range g.names {
-			rows = append(rows, depRow(name, listed, m.icons))
+			rows = append(rows, m.pkgRow(name, g.check))
 		}
-		blocks = append(blocks, strings.Join(rows, "\n"))
 	}
-	return strings.Join(blocks, "\n\n")
+	if len(rows) == 0 {
+		return ""
+	}
+	return renderTable(m.pkgColumns(), rows, width)
 }
 
-// depRow is one dependency: an installed or not-installed icon, then the name.
-// With icons off the state is written out after the name instead.
-func depRow(name string, listed func(string) bool, icons style.Icons) string {
-	if listed == nil {
-		return "  " + name
+// pkgColumns is the column set of a package table: the installed icon when
+// icons are on, the name, then the installed version and the description. The
+// description is the first to go when the table is narrow, then the version.
+func (m Model) pkgColumns() []tableCol {
+	cols := []tableCol{{head: ""}, {head: "Name"}, {head: "Version", drop: 1}, {head: "Description", drop: 2}}
+	if m.iconsOff() {
+		return cols[1:]
 	}
-	mark, role, word := icons.Absent, style.MutedColor, "not installed"
-	if listed(name) {
-		mark, role, word = icons.Installed, style.SuccessColor, "installed"
+	return cols
+}
+
+// iconsOff is whether the installed state is written out after each name, not
+// drawn as an icon.
+func (m Model) iconsOff() bool {
+	return m.icons.Absent == ""
+}
+
+// pkgRow is one package in a package table, its cells in the order pkgColumns
+// gives. The state is an installed or not-installed icon, or the word after the
+// name when icons are off. Version and description are empty when unknown.
+func (m Model) pkgRow(name string, check depCheck) tableRow {
+	list := m.installedList(check)
+	pkg, installed := list[name]
+	var cells []string
+	if m.iconsOff() {
+		if list != nil {
+			word := "not installed"
+			if installed {
+				word = "installed"
+			}
+			name += " " + lipgloss.NewStyle().Foreground(style.MutedColor).Render("("+word+")")
+		}
+		cells = []string{name}
+	} else {
+		icon := ""
+		if list != nil {
+			mark, role := m.icons.Absent, style.MutedColor
+			if installed {
+				mark, role = m.icons.Installed, style.SuccessColor
+			}
+			icon = lipgloss.NewStyle().Foreground(role).Render(mark)
+		}
+		cells = []string{icon, name}
 	}
-	if mark == "" {
-		return "  " + name + " " + lipgloss.NewStyle().Foreground(role).Render("("+word+")")
-	}
-	return "  " + lipgloss.NewStyle().Foreground(role).Render(mark) + " " + name
+	return tableRow{cells: append(cells, pkg.version, pkg.desc)}
 }
 
 // formulaDepsView is the Deps tab of a formula: its runtime and build
 // dependencies, each with its installed state.
-func (m Model) formulaDepsView(f *brew.Formula) string {
+func (m Model) formulaDepsView(f *brew.Formula, width int) string {
 	view := m.renderDepGroups([]depGroup{
 		{heading: "Runtime", names: f.Dependencies, check: depFormula},
 		{heading: "Build", names: f.BuildDeps, check: depFormula},
-	})
+	}, width)
 	if view == "" {
 		return style.SubtleText.Render(noDependencies)
 	}
@@ -118,28 +159,30 @@ func (m Model) formulaDepsView(f *brew.Formula) string {
 // renderUses is the Used By tab: the installed formulae that depend on the
 // selected one. `brew uses --installed` lists only installed packages, so
 // each row is checked against the installed formulae like any other.
-func (m Model) renderUses(content string) string {
+func (m Model) renderUses(content string, width int) string {
 	if content == noDependents {
 		return style.SubtleText.Render(content)
 	}
-	return m.renderDepGroups([]depGroup{{names: lines(content), check: depFormula}})
+	return m.renderDepGroups([]depGroup{{names: lines(content), check: depFormula}}, width)
 }
 
 // renderFiles is the Files tab: a count of the files `brew list` printed, then
-// each path with its directory in the Muted role and its file name in Text.
-func renderFiles(content string) string {
+// a table of their paths, each with its directory in the Muted role and its
+// file name in Text.
+func renderFiles(content string, width int) string {
 	paths := lines(content)
 	if content == noFilesInstalled || len(paths) == 0 {
 		return style.SubtleText.Render(noFilesInstalled)
 	}
-	rows := []string{style.SubtleText.Render(fmt.Sprintf("%d %s", len(paths), plural(len(paths), "file", "files")))}
 	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
 	text := lipgloss.NewStyle().Foreground(style.TextColor)
+	rows := make([]tableRow, 0, len(paths))
 	for _, p := range paths {
 		dir, file := path.Split(p)
-		rows = append(rows, muted.Render(dir)+text.Render(file))
+		rows = append(rows, tableRow{cells: []string{muted.Render(dir) + text.Render(file)}})
 	}
-	return strings.Join(rows, "\n")
+	count := style.SubtleText.Render(fmt.Sprintf("%d %s", len(paths), plural(len(paths), "file", "files")))
+	return count + "\n" + renderTable([]tableCol{{head: "Path"}}, rows, width)
 }
 
 // lines is the non-empty, trimmed lines of a fetched list.

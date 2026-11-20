@@ -11,6 +11,7 @@ import (
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -1244,11 +1245,10 @@ func TestDepsTabPopulatedAfterDataLoaded(t *testing.T) {
 		Formulae: []brew.Formula{{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}}},
 	})
 
-	key := tabKey(PanelFormulae, formulaDepsTab, "ripgrep")
 	if cmd == nil {
-		content, ok := m.tabContent[key]
-		if !ok || !strings.Contains(content, "pcre2") {
-			t.Fatalf("expected Deps tabContent populated after DataLoadedMsg, got cmd=nil content=%q ok=%v", content, ok)
+		// The Deps tab is drawn from the loaded formula, so it is ready at once.
+		if content := ansi.Strip(m.renderContent(100, 20)); !strings.Contains(content, "pcre2") {
+			t.Fatalf("expected Deps shown after DataLoadedMsg, got %q", content)
 		}
 		return
 	}
@@ -1400,11 +1400,7 @@ func TestDepsFastPathRendersCachedDependencies(t *testing.T) {
 		t.Fatal("expected nil cmd from fast path (Dependencies already on model)")
 	}
 
-	key := tabKey(PanelFormulae, formulaDepsTab, "ripgrep")
-	content, ok := m.tabContent[key]
-	if !ok {
-		t.Fatal("expected tabContent populated synchronously by fast path")
-	}
+	content := ansi.Strip(m.renderContent(100, 20))
 	for _, want := range []string{"pcre2", "rust", "cmake"} {
 		if !strings.Contains(content, want) {
 			t.Errorf("fast-path content missing %q, got %q", want, content)
@@ -1428,11 +1424,7 @@ func TestDepsFastPathNoDependenciesShowsExplicitMessage(t *testing.T) {
 		t.Fatal("expected nil cmd from fast path (no deps means no shell call)")
 	}
 
-	key := tabKey(PanelFormulae, formulaDepsTab, "zlib")
-	content, ok := m.tabContent[key]
-	if !ok {
-		t.Fatal("expected tabContent populated by fast path even when deps are empty")
-	}
+	content := ansi.Strip(m.renderContent(100, 20))
 	if !strings.Contains(strings.ToLower(content), "no dependencies") {
 		t.Errorf("expected explicit empty-state text, got %q", content)
 	}
@@ -1459,8 +1451,7 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 	if cmd := m.loadTabContent(); cmd != nil {
 		t.Fatal("expected fast-path nil cmd for ripgrep")
 	}
-	keyA := tabKey(PanelFormulae, formulaDepsTab, "ripgrep")
-	if c := m.tabContent[keyA]; !strings.Contains(c, "pcre2") {
+	if c := ansi.Strip(m.renderContent(100, 20)); !strings.Contains(c, "pcre2") {
 		t.Fatalf("expected ripgrep deps pcre2, got %q", c)
 	}
 
@@ -1468,10 +1459,9 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 	if p.selected != 1 {
 		t.Fatalf("expected selected=1 after j, got %d", p.selected)
 	}
-	keyB := tabKey(PanelFormulae, formulaDepsTab, "zlib")
-	contentB, ok := m.tabContent[keyB]
-	if !ok || !strings.Contains(contentB, "none-dep-marker") {
-		t.Fatalf("expected zlib deps after j, ok=%v content=%q", ok, contentB)
+	contentB := ansi.Strip(m.renderContent(100, 20))
+	if !strings.Contains(contentB, "none-dep-marker") {
+		t.Fatalf("expected zlib deps after j, got %q", contentB)
 	}
 	if strings.Contains(contentB, "pcre2") {
 		t.Errorf("zlib deps content should not contain ripgrep dep pcre2, got %q", contentB)
