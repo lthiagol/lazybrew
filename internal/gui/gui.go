@@ -402,12 +402,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "cleanup-preview":
 			m.pendingAction = "cleanup"
 			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Confirm Cleanup",
-				"Run brew cleanup? This will remove old versions.")
+				"Run brew cleanup?").WithDetail("This will remove old versions.")
 			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
 		case "autoremove-preview":
 			m.pendingAction = "autoremove"
 			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Confirm Autoremove",
-				"Remove orphaned dependencies?")
+				"Remove orphaned dependencies?").
+				WithDetail("Removes dependencies that no installed package needs any more.")
 			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
 		}
 		var toastTick tea.Cmd

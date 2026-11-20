@@ -8,14 +8,14 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
-// confirmKindOf returns the action kind of the confirm dialog m has open.
-func confirmKindOf(t *testing.T, m *Model) modal.ActionKind {
+// confirmOf returns the confirm dialog m has open.
+func confirmOf(t *testing.T, m *Model) *modal.ConfirmModal {
 	t.Helper()
 	cm, ok := m.activeModal.(*modal.ConfirmModal)
 	if !ok {
 		t.Fatalf("expected a confirm modal, got %T", m.activeModal)
 	}
-	return cm.Kind()
+	return cm
 }
 
 // TestConfirmKindsByCallSite locks AC-01: every confirm dialog is opened with
@@ -86,10 +86,13 @@ func TestConfirmKindsByCallSite(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := newTestModel()
-			got := confirmKindOf(t, asModel(tc.open(m)))
-			if got != tc.want {
-				t.Fatalf("kind = %v, want %v", got, tc.want)
+			cm := confirmOf(t, asModel(tc.open(newTestModel())))
+			if cm.Kind() != tc.want {
+				t.Fatalf("kind = %v, want %v", cm.Kind(), tc.want)
+			}
+			// F-r1-02: every confirm says what will happen, not only the question.
+			if cm.Detail() == "" {
+				t.Fatal("the dialog has no consequence line under its question")
 			}
 		})
 	}
@@ -113,7 +116,7 @@ func TestUninstallConfirmIsDanger(t *testing.T) {
 			t.Fatalf("mutation %v: detail = %q, want it to name what goes", mut, dMsg.Detail)
 		}
 		nm := updateModel(newTestModel(), dMsg)
-		if got := confirmKindOf(t, nm); got != modal.ActionDanger {
+		if got := confirmOf(t, nm).Kind(); got != modal.ActionDanger {
 			t.Fatalf("mutation %v: kind = %v, want ActionDanger", mut, got)
 		}
 	}
