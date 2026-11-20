@@ -327,13 +327,19 @@ func (r *LoggingRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 		r.OnStart(args, nil)
 	}
 	stdoutChan, errChan := r.inner.ExecuteStream(ctx, args...)
-	if r.OnExec != nil {
-		go func() {
-			err := <-errChan
-			r.OnExec(args, err)
-		}()
+	if r.OnExec == nil {
+		return stdoutChan, errChan
 	}
-	return stdoutChan, errChan
+	// This goroutine is the inner channel's only reader. It logs the error,
+	// then hands the same error to the caller on a channel of its own.
+	out := make(chan error, 1)
+	go func() {
+		defer close(out)
+		err := <-errChan
+		r.OnExec(args, err)
+		out <- err
+	}()
+	return stdoutChan, out
 }
 
 func (r *LoggingRunner) BrewPath() string {
