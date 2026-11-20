@@ -932,6 +932,16 @@ func serviceReload(id string) tea.Cmd {
 	return func() tea.Msg { return servicesReloadMsg{} }
 }
 
+// tapsReload asks for the Taps list and its trust state again when a taps write
+// fails or is cancelled (v2-10 AC-04). It is nil for every other task; a
+// successful one reloads through RefreshMsg, as every task does.
+func tapsReload(id string) tea.Cmd {
+	if !isTapTask(id) {
+		return nil
+	}
+	return func() tea.Msg { return tapsReloadMsg{} }
+}
+
 // failureText is the error toast of a failed task: its title and the error. A
 // services write that needs sudo says so in its own words, which already name
 // the service and the command to run (AC-04.1). A taps write says brew's first

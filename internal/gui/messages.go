@@ -67,6 +67,10 @@ type RefreshMsg struct {
 // so the error toast stays the last word (F-r1-02).
 type servicesReloadMsg struct{}
 
+// tapsReloadMsg reloads the Taps panel alone, after a taps write fails or is
+// cancelled. Like servicesReloadMsg it shows no "Data refreshed" toast.
+type tapsReloadMsg struct{}
+
 // opAutoCloseMsg is the timer of a successful operation. It names the operation
 // it is for, so a timer that fires after a newer operation started closes
 // nothing.
