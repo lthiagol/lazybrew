@@ -132,6 +132,12 @@ func TestDump(t *testing.T) {
 		m = nm
 		m = key(m, runes("x"))
 		shot("13-toast-stack")
+		// New in v2-04 r3: the Brewfile menu, for the menu frame. Only opened
+		// and closed: Enter would run a brew bundle action, so it is not sent.
+		m = key(m, runes("1"))
+		m = key(m, runes("B"))
+		shot("15-menu-brewfile")
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
 	}
 	fmt.Println("ok")
 }

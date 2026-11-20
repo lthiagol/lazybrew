@@ -12,7 +12,7 @@
 ╭─ 4┃                                                                      ┃ … │
 │   ┃                                                                      ┃   │
 ╰───┃                    The following depend on bash:                     ┃   │
-╭─ 5┃                                 direnv                               ┃   │
+╭─ 5┃                      direnv                                          ┃   │
 │▸ ⚠┃                                                                      ┃   │
 ╰───┃                      [y]es   [n]o   esc cancel                       ┃   │
 ╭─ 6┃                                                                      ┃   │
