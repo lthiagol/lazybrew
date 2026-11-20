@@ -81,7 +81,7 @@ func TestServiceInfoShowsDetailAndRunningActions(t *testing.T) {
 	text := infoText(m, 100)
 
 	for _, want := range []string{"running", "PID", "800", "User", "agent", "Loaded", "yes",
-		"Unit file", "Command", "moshi-hook serve", "Working dir", "Log", "moshi-hook.log"} {
+		"Unit file", "Command", "moshi-hook serve", "Working dir", "Log", "/home/linuxbrew/.linuxbrew/var/log/moshi-"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("Info of a running service lacks %q:\n%s", want, text)
 		}
@@ -91,6 +91,11 @@ func TestServiceInfoShowsDetailAndRunningActions(t *testing.T) {
 	}
 	if strings.Contains(text, "s start") {
 		t.Errorf("a running service offers start:\n%s", text)
+	}
+	// At 100 cells the Info view is two columns and the log path wraps in the
+	// right one, so the second half of the path is on its own row.
+	if !strings.Contains(text, "hook.log") {
+		t.Errorf("the wrapped log path lacks its end:\n%s", text)
 	}
 	if strings.Count(text, "Log") != 1 {
 		t.Errorf("identical log and error log should show one Log row:\n%s", text)

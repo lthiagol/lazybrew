@@ -93,7 +93,7 @@ func FormatOutdatedCask(c brew.Cask) string {
 // links, as detail rows.
 func FormatFormulaInfo(f brew.Formula, width int, icons style.Icons) string {
 	status, role := formulaStatus(f, icons)
-	return Detail([]Field{
+	return Info([]Field{
 		{Label: "Name", Value: f.Name},
 		{Label: "Version", Value: versionDisplay(f)},
 		{Label: "Tap", Value: f.Tap},
@@ -101,20 +101,20 @@ func FormatFormulaInfo(f brew.Formula, width int, icons style.Icons) string {
 		{Label: "License", Value: f.License},
 		{Label: "Homepage", Value: f.Homepage, Role: style.InfoColor},
 		{Label: "Bottled", Value: yesNo(f.Bottled)},
-		{Label: "Description", Value: f.Description, Prose: true},
+		{Label: "Description", Value: f.Description, Prose: true, Right: true},
 	}, width)
 }
 
 // FormatCaskInfo is the Info tab of a cask, as detail rows.
 func FormatCaskInfo(c brew.Cask, width int, icons style.Icons) string {
 	status, role := caskStatus(c, icons)
-	return Detail([]Field{
+	return Info([]Field{
 		{Label: "Name", Value: c.Name},
 		{Label: "Version", Value: c.Version},
 		{Label: "Tap", Value: c.Tap},
 		{Label: "Status", Value: status, Role: role},
 		{Label: "Homepage", Value: c.Homepage, Role: style.InfoColor},
-		{Label: "Description", Value: c.Description, Prose: true},
+		{Label: "Description", Value: c.Description, Prose: true, Right: true},
 	}, width)
 }
 
