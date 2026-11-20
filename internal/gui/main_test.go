@@ -16,3 +16,13 @@ func TestMain(m *testing.M) {
 	os.Setenv(config.AnimationsEnv, "0")
 	os.Exit(m.Run())
 }
+
+// testConfig is the production default with the background preload off. The
+// tests read each panel themselves and count the reads they expect; a preload
+// running behind them would add reads to every count. The preload tests turn it
+// on by hand, and TestProductionDefaultPreloads pins the production default.
+func testConfig() *config.Config {
+	cfg := config.Default()
+	cfg.GUI.Preload = false
+	return cfg
+}

@@ -77,7 +77,7 @@ func TestIconSelectionMatrix(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv(config.IconsEnv, tc.env)
-			cfg := config.Default()
+			cfg := testConfig()
 			cfg.GUI.Icons = tc.icons
 			cfg.GUI.ShowIcons = tc.show
 			if got := iconSet(cfg); got != tc.want {
@@ -100,7 +100,7 @@ func TestWithIconLeavesNoStraySpace(t *testing.T) {
 // so renderers read m.icons and never the environment.
 func TestModelResolvesIconsOnce(t *testing.T) {
 	t.Setenv(config.IconsEnv, config.IconsNerd)
-	m := New(nil, config.Default())
+	m := New(nil, testConfig())
 	if m.icons != style.NerdIcons {
 		t.Errorf("model icons = %+v, want the nerd set", m.icons)
 	}

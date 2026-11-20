@@ -12,7 +12,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
@@ -143,7 +142,7 @@ func TestFailedBatchTaskDecrementsCounter(t *testing.T) {
 		}
 		return ch, errCh
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	seedOutdatedBatch(m, 2)
 
 	nm, cmd := m.batchUpgrade()
@@ -347,7 +346,7 @@ func TestCaskInstallFromCasksPanelUsesCaskWriter(t *testing.T) {
 		close(errCh)
 		return ch, errCh
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.activePanel = PanelCasks
 	m.panels[PanelCasks].items = []string{"firefox  1.0"}
 	m.panels[PanelCasks].selected = 0

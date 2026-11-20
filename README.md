@@ -85,6 +85,7 @@ gui:
   icons: nerd             # nerd (Nerd Font glyphs) or unicode (no Nerd Font needed)
   show_icons: true        # false draws no icons at all
   animations: true        # false draws every change at once, with no motion
+  preload: true           # false loads each panel only when it is first opened
 brew:
   path: ""                # auto-detect if empty
   update_on_start: false
@@ -94,6 +95,11 @@ brew:
 
 `LAZYBREW_ANIMATIONS=0` (or `1`) overrides `gui.animations` for one run. The
 motion is short and never delays a key: a closing overlay disappears at once.
+
+`LAZYBREW_PRELOAD=0` (or `1`) overrides `gui.preload` for one run. With the
+preload on, every panel loads in the background once the Status dashboard has
+loaded, two reads at a time, so the sidebar fills in without a visit; keys work
+while it runs.
 
 ## Development
 

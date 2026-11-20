@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 func TestTabContentChangesWithSelection_KeyDiffers(t *testing.T) {
@@ -50,7 +49,7 @@ func TestTabContentChangesWithSelection_Refetch(t *testing.T) {
 }
 
 func TestBatchUpgradeCallsBrewWithSelectedNames(t *testing.T) {
-	cfg := config.Default()
+	cfg := testConfig()
 	client := brew.NewClient(brew.NewMockRunner())
 	m := New(client, cfg)
 	m.activePanel = PanelOutdated

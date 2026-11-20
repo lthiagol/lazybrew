@@ -9,7 +9,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 )
@@ -24,7 +23,7 @@ func servicesActionModel(t *testing.T, services []brew.Service) (*Model, *[][]st
 		*calls = append(*calls, args)
 		return []byte(""), nil
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.switchPanel(PanelServices)
 	p := m.panels[PanelServices]
 	p.services = services

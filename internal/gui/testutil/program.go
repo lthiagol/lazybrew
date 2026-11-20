@@ -12,8 +12,13 @@ import (
 // NewModel is the model the helpers drive: the production wiring over the
 // runner, with the motion off whatever the environment says, so every frame
 // it draws is a resting frame.
+//
+// The background preload is off too: the flows read each panel as they open
+// it, and a preload behind them would add reads to what they count.
 func NewModel(runner brew.Runner) *gui.Model {
-	return gui.New(brew.NewClient(runner), config.Default()).WithoutMotion()
+	cfg := config.Default()
+	cfg.GUI.Preload = false
+	return gui.New(brew.NewClient(runner), cfg).WithoutMotion()
 }
 
 func NewTestModel(t *testing.T, opts ...teatest.TestOption) *teatest.TestModel {

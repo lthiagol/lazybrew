@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
@@ -18,7 +17,7 @@ func failedServiceToast(t *testing.T, runErr error) string {
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return nil, runErr
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.switchPanel(PanelServices)
 	p := m.panels[PanelServices]
 	p.services = []brew.Service{runningService("moshi-hook")}

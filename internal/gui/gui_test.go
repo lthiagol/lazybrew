@@ -12,7 +12,6 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -20,7 +19,7 @@ import (
 var assertAnError = errors.New("test error")
 
 func newTestModel() *Model {
-	cfg := config.Default()
+	cfg := testConfig()
 	client := brew.NewClient(brew.NewMockRunner())
 	return New(client, cfg)
 }
@@ -1537,7 +1536,7 @@ func TestDepsTabLoads(t *testing.T) {
 		}
 		return []byte(`{"formulae":[],"casks":[],"taps":[],"services":[]}`), nil
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 
 	formulae, err := m.client.Formulae.List(context.Background())
@@ -1741,7 +1740,7 @@ func TestRefreshForcesCacheBypass(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 	client.SetCacheTTLs(brew.CacheTTLs{Formulae: time.Hour})
-	m := New(client, config.Default())
+	m := New(client, testConfig())
 	m.activePanel = PanelFormulae
 	m.panels[PanelFormulae].items = []string{"seed"}
 	m.cfg.GUI.AutoRefreshSeconds = 0
@@ -1819,7 +1818,7 @@ func TestInitDoesNotFetchOutdated(t *testing.T) {
 		}
 		return []byte(`{"formulae":[],"casks":[]}`), nil
 	}
-	cfg := config.Default()
+	cfg := testConfig()
 	cfg.Brew.UpdateOnStart = false
 	m := New(brew.NewClient(r), cfg)
 
@@ -2189,7 +2188,7 @@ func TestRefreshMsgPlainDoesNotShellOutdated(t *testing.T) {
 	// M9's invariant.
 	var outdatedCalls int32
 	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
-	m := New(client, config.Default())
+	m := New(client, testConfig())
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
 
@@ -2212,7 +2211,7 @@ func TestRefreshMsgWithLoadOutdatedShellsOutdated(t *testing.T) {
 	var outdatedCalls int32
 	client := brew.NewClient(outdatedCountingRunner(&outdatedCalls))
 	client.Cache.SetWithTTL(brew.KeyOutdatedCasks, []brew.Cask{}, time.Minute)
-	m := New(client, config.Default())
+	m := New(client, testConfig())
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
 
