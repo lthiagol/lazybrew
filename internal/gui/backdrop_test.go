@@ -80,3 +80,34 @@ func TestDimBackdropKeepsText(t *testing.T) {
 		t.Fatalf("footer row changed: %q", out[1])
 	}
 }
+
+// TestModalBoxKeepsItsOwnStyling locks F-r1-05: the cells inside the modal box
+// carry the modal's own styling, not the muted backdrop role. The box's border
+// is drawn in the danger accent on every row, and every row keeps its border
+// cell at the column the modal drew it, with the same text.
+func TestModalBoxKeepsItsOwnStyling(t *testing.T) {
+	danger := lipgloss.NewStyle().Foreground(style.ErrorColor).Render("x")
+	danger = danger[:strings.Index(danger, "x")]
+	for _, sz := range [][2]int{{140, 40}, {80, 24}, {200, 60}} {
+		t.Run(fmt.Sprintf("%dx%d", sz[0], sz[1]), func(t *testing.T) {
+			w, h := sz[0], sz[1]
+			withModal := updateModel(newTestModel(), tea.WindowSizeMsg{Width: w, Height: h})
+			withModal.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Uninstall", "Uninstall bash?")
+			withRows := strings.Split(withModal.View().Content, "\n")
+
+			overlayRows := strings.Split(withModal.activeModal.View().Content, "\n")
+			y0 := (h - len(overlayRows)) / 2
+			x0 := (w - lipgloss.Width(overlayRows[0])) / 2
+			for i, row := range overlayRows {
+				border := []rune(sgr.ReplaceAllString(row, ""))[0]
+				if !strings.Contains(withRows[y0+i], danger+string(border)) {
+					t.Fatalf("modal row %d: its border is not in the danger accent: %q", i, withRows[y0+i])
+				}
+				cells := []rune(ansi.Strip(withRows[y0+i]))
+				if got, want := string(cells[x0:x0+lipgloss.Width(row)]), sgr.ReplaceAllString(row, ""); got != want {
+					t.Fatalf("modal row %d text is %q, want %q", i, got, want)
+				}
+			}
+		})
+	}
+}
