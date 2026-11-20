@@ -91,8 +91,8 @@ func TestBatchUpgradeQueueFullAtFirstEnqueueSurfacesToast(t *testing.T) {
 
 	nm, cmd := m.batchUpgrade()
 	rm := nm.(Model)
-	if rm.toast == nil || !strings.Contains(rm.toast.Message, "Queue full") {
-		t.Fatalf("expected a queue-full warning toast when no batch task could be enqueued, got %+v", rm.toast)
+	if rm.newestToast() == nil || !strings.Contains(rm.newestToast().Message, "Queue full") {
+		t.Fatalf("expected a queue-full warning toast when no batch task could be enqueued, got %+v", rm.newestToast())
 	}
 	if rm.batchCount != 0 || len(rm.batchIDs) != 0 || rm.batchTotal != 0 {
 		t.Fatalf("a fully-refused batch must leave no counter state, got count=%d ids=%v total=%d",

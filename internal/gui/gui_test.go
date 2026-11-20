@@ -444,7 +444,7 @@ func TestDoMutationRejectedWhenRunning(t *testing.T) {
 		t.Fatal("expected queued toast cmd from second doMutation")
 	}
 	updated := nm.(Model)
-	if updated.toast == nil {
+	if updated.newestToast() == nil {
 		t.Fatal("expected 'queued' toast when a task is already running")
 	}
 }
@@ -632,7 +632,7 @@ func TestConfirmUntapOfficial(t *testing.T) {
 
 	tm, _ := m.confirmUntap()
 	mm := tm.(Model)
-	if mm.toast == nil {
+	if mm.newestToast() == nil {
 		t.Error("should show warning toast for official tap")
 	}
 }
@@ -809,7 +809,7 @@ func TestModelTaskCompletedToast(t *testing.T) {
 	m := newTestModel()
 	msg := TaskCompletedMsg{ID: "t1", Title: "Test", Err: nil}
 	m = updateModel(m, msg)
-	if m.toast == nil {
+	if m.newestToast() == nil {
 		t.Fatal("expected toast for successful completion")
 	}
 }
@@ -819,7 +819,7 @@ func TestModelTaskCompletedErrorToast(t *testing.T) {
 	err := assertAnError
 	msg := TaskCompletedMsg{ID: "t1", Title: "Test", Err: err}
 	m = updateModel(m, msg)
-	if m.toast == nil {
+	if m.newestToast() == nil {
 		t.Fatal("expected toast for error completion")
 	}
 }
@@ -900,7 +900,7 @@ func TestOperationCancelShowsCancelled(t *testing.T) {
 	if m.opState.Status != opCancelled {
 		t.Fatalf("expected opCancelled, got %v", m.opState.Status)
 	}
-	if m.toast != nil {
+	if m.newestToast() != nil {
 		t.Fatal("expected no error toast on cancel")
 	}
 
@@ -921,7 +921,7 @@ func TestOperationCompletedNotCancelledOnRealError(t *testing.T) {
 	if m.opState.Status != opError {
 		t.Fatalf("expected opError, got %v", m.opState.Status)
 	}
-	if m.toast == nil {
+	if m.newestToast() == nil {
 		t.Fatal("expected error toast for real error")
 	}
 	content := m.renderContent(60, 20)
@@ -1695,7 +1695,7 @@ func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
 	if m.refreshing != 0 {
 		t.Errorf("after 1 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
 	}
-	if m.toast == nil {
+	if m.newestToast() == nil {
 		t.Fatal("expected 'Data refreshed' toast after last panel load")
 	}
 }

@@ -2,10 +2,13 @@ package modal
 
 import (
 	"image/color"
+	"strings"
 	"testing"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -122,30 +125,51 @@ func TestMenuModalEsc(t *testing.T) {
 	}
 }
 
-func TestToastDismiss(t *testing.T) {
-	toast := NewToast("Test message", ToastSuccess)
-	if toast.Dismissed() {
-		t.Error("new toast should not be dismissed")
+// TestToastLifetimeByType locks AC-04.2: a toast stays up 3 s, and an error
+// 6 s, measured from when it began.
+func TestToastLifetimeByType(t *testing.T) {
+	base := time.Now()
+	cases := []struct {
+		typ     ToastType
+		upTo    time.Duration
+		expired bool
+	}{
+		{ToastSuccess, 2900 * time.Millisecond, false},
+		{ToastSuccess, 3100 * time.Millisecond, true},
+		{ToastInfo, 3100 * time.Millisecond, true},
+		{ToastWarning, 3100 * time.Millisecond, true},
+		{ToastError, 5900 * time.Millisecond, false},
+		{ToastError, 6100 * time.Millisecond, true},
 	}
-	toast.created = toast.created.Add(-4 * time.Second)
-	toast.Update(ToastTickMsg{})
-	if !toast.Dismissed() {
-		t.Error("toast should be dismissed after 3 seconds")
+	for _, tc := range cases {
+		toast := NewToastAt("msg", tc.typ, base)
+		if got := toast.Expired(base.Add(tc.upTo)); got != tc.expired {
+			t.Errorf("type %v at %v: expired = %v, want %v", tc.typ, tc.upTo, got, tc.expired)
+		}
 	}
 }
 
-// TestToastRearmsTick locks the auto-dismiss chain (r1 finding 4): a toast
-// that is not yet expired must return another tick cmd so the chain never
-// stops after the first tick.
-func TestToastRearmsTick(t *testing.T) {
-	toast := NewToast("Test message", ToastInfo)
-	_, cmd := toast.Update(ToastTickMsg{})
-	if cmd == nil {
-		t.Fatal("expected a re-armed tick cmd from an unexpired toast")
+// TestToastViewCutsWithEllipsis locks AC-04.1: the message is cut with an
+// ellipsis to the width it is given, and the icon sits before it.
+func TestToastViewCutsWithEllipsis(t *testing.T) {
+	toast := NewToast("Install a-very-long-formula-name completed successfully", ToastSuccess)
+	view := toast.View("OK", 20)
+	plain := ansi.Strip(view)
+	if !strings.Contains(plain, "OK ") || !strings.Contains(plain, "…") {
+		t.Fatalf("toast lacks its icon or its ellipsis:\n%s", plain)
 	}
-	if toast.Dismissed() {
-		t.Fatal("unexpired toast must not be dismissed")
+	if strings.Contains(plain, "successfully") {
+		t.Fatalf("message was not cut:\n%s", plain)
 	}
+	if !strings.Contains(view, sgrOf(style.SuccessColor)) {
+		t.Fatal("the toast is not drawn in its role colour")
+	}
+}
+
+// sgrOf is the SGR sequence that opens a foreground colour.
+func sgrOf(c color.Color) string {
+	sample := lipgloss.NewStyle().Foreground(c).Render("x")
+	return sample[:strings.Index(sample, "x")]
 }
 
 // TestActionKindAccent locks AC-01.1: each action kind is framed in its theme

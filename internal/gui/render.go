@@ -182,12 +182,13 @@ func dimBackdrop(base string) string {
 	return strings.Join(rows, "\n")
 }
 
-// bottomRight places content flush right on the last body row, just above
-// the bottom bar. A toast sits there, so it never moves the layout.
-func bottomRight(content string, w, h int) *lipgloss.Layer {
-	x := max(0, w-lipgloss.Width(content))
-	y := max(0, h-bottomBarRows-1)
-	return lipgloss.NewLayer(content).X(x).Y(y)
+// bottomRightOrigin is where content goes to sit flush right with its last
+// row on the last body row, just above the bottom bar. A toast stack sits
+// there, so it never moves the layout.
+func bottomRightOrigin(content string, w, h int) (x, y int) {
+	x = max(0, w-lipgloss.Width(content))
+	y = max(0, h-bottomBarRows-lipgloss.Height(content))
+	return x, y
 }
 
 // centred places content in the middle of a w x h frame.

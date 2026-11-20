@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"slices"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -39,6 +40,12 @@ func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 		return m.handleMouseWheel(msg)
 	}
 	if leftClick {
+		// A toast is drawn over the panels, so a click on one dismisses it
+		// and goes no further.
+		if i := m.toastAt(mouse.X, mouse.Y); i >= 0 {
+			m.toasts = slices.Delete(slices.Clone(m.toasts), i, i+1)
+			return m, nil
+		}
 		return m.handleMouseClick(mouse.X, mouse.Y)
 	}
 	return m, nil
