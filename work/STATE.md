@@ -21,7 +21,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-07-op-dismiss | 0dfd9ff, ede3959, 21b3b21, 21fb1a1 | closed | ok |
 | v2-08-preload | 1471c38, 2237be9, fd55e63, a8a1c38, 253c3ba, e3c4e08, b23a9d8, 3eed39a, f6107b4, 39f34d2 | closed | ok |
 | v2-09-main-layout | fd1bde3, 12a3b1b, 95766a6, 539a515, 7f6e93b, 801054e, 77f0e2c, d2b31bd, e8bde9a, b2ac4f6, 5d22e50, 5d04885, a3d3d93 | closed | ok |
-| v2-10-tap-actions | — | implemented | awaiting reviewer |
+| v2-10-tap-actions | 5f91936, 1e91fad, a4eaf97, 6d5c46a, d1ee781, f05b443, 9c4afce, 8dd6f81 | closed | ok |
 | v2-11-cancel-and-test-speed | d76b8de, f11d2a6, 02e9cac, 74c4438, 1872c96, 5174d37 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
@@ -335,3 +335,17 @@ CI runs `-race`. Review: r1 `ok` with an observation (sudo prompt would stop
 silently under `Setpgid`) → orchestrator ruling Q-v2-11-b; r2 `ok`.
 Accepted trade-off: any tty prompt brew triggers (sudo, git credentials) fails
 fast instead of drawing over the TUI.
+
+**v2-10-tap-actions — closed (r2 `ok`).** A Taps list read without tap-info
+says `trust unknown — press R` and refuses `t`/`T` (Q-v2-08-b); Tap Info and
+the footer show the actions that apply (official: `r repair` only); `t` trusts
+an untrusted tap at once and confirms an untrust; `T` opens the per-formula /
+per-cask trust menu; the untap confirm states the consequence and lists
+installed packages from the tap; after a tap task the list reloads with the
+cursor on the same tap. Review: orchestrator ruling Q-v2-10-a before review;
+r1 the Trust tab's key hint was stale; r2 `ok`.
+
+**Q-v2-next run (v2-07 … v2-11) — all closed.** Next: the user checkpoint,
+then LB-05 (human smoke gate) and the `wip` → `stable` PR. Not verified by
+agents: real-terminal feel, any live brew write (install/upgrade/tap/untap/
+trust/services), a real sudo refusal.
