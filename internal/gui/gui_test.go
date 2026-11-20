@@ -2154,7 +2154,7 @@ func TestStatusDashboardExplicitLoadFailureFallsBackToNotLoaded(t *testing.T) {
 	if strings.Contains(joined, "0 packages") {
 		t.Errorf("a failed outdated read must not claim a package count, got:\n%s", joined)
 	}
-	if !strings.Contains(healthWords(dMsg), "⚠ outdated:") {
+	if !strings.Contains(healthWords(dMsg.Summary), "⚠ outdated:") {
 		t.Errorf("a failed outdated read must surface a ⚠ line, got:\n%s", joined)
 	}
 }
@@ -2337,7 +2337,7 @@ func TestStatusDashboardSurfacesDoctorError(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	health := healthWords(dMsg)
+	health := healthWords(dMsg.Summary)
 	if !strings.Contains(health, "⚠ doctor unavailable: brew doctor exited with code 2") {
 		t.Errorf("expected the doctor failure and its reason in Health, got:\n%s", health)
 	}
@@ -2366,7 +2366,7 @@ func TestStatusDashboardDoesNotWarnOnDoctorExitCode1(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	health := healthWords(dMsg)
+	health := healthWords(dMsg.Summary)
 	if !strings.Contains(health, "⚠ 1 warning") {
 		t.Errorf("expected '⚠ 1 warning' in Health, got:\n%s", health)
 	}

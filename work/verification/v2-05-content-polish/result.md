@@ -41,3 +41,18 @@ reads that cached result and runs nothing new. Nothing was confirmed.
   not open it.
 - At 80×24 the five dashboard cards need scrolling to reach Services and
   Health. Nothing overflows the width.
+
+## Fix round r1 (F-r1-04)
+
+Health is the second card, so stacked at 80×24 it is on the first screen; a
+failed doctor reads `⚠ doctor unavailable: <reason>` instead of `press d to run
+doctor`. Only the dashboard changed, so two frames moved, at both sizes where
+they exist. Every other frame is byte-identical to the previous capture.
+
+- **01-status** (140x40 and 80x24, `.ansi` at 140x40): the cards are Homebrew,
+  then Health, Packages, Taps, Services. At 140 wide the first pair is Homebrew
+  and Health. At 80 wide Health sits under Homebrew, with `✓ ready to brew`
+  on row 5; Packages, Taps and Services follow and still need scrolling.
+- **15-menu-brewfile** (140x40, `.ansi`; 80x24 is unchanged): the base frame is
+  the same dashboard, so its cards are in the new order. The Brewfile menu is
+  unchanged.
