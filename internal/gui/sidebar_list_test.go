@@ -153,3 +153,36 @@ func TestBatchMarksOnlyTheOutdatedList(t *testing.T) {
 		t.Fatalf("the Formulae list must not show the Outdated batch, got:\n%s", box)
 	}
 }
+
+// TestTapTrustTabShowsTheTrustStory (F-orch-02): the Trust tab says what the
+// tap's state means for its formulae and casks, and names the key that changes
+// it. Tap Info keeps the details.
+func TestTapTrustTabShowsTheTrustStory(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = sendKey(m, "5")
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Items: []string{"aa/one", "bb/two"},
+		Taps: []brew.Tap{
+			{Name: "aa/one", FormulaCount: 2, CaskCount: 1},
+			{Name: "bb/two", FormulaCount: 4, CaskCount: 0, Trusted: true},
+		}})
+	m = sendKey(m, "]")
+	out := sgr.ReplaceAllString(m.renderContent(70, 20), "")
+	for _, want := range []string{"Trust:", "untrusted", "may not load", "Its 2 formulae and 1 casks", "Press t"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("the untrusted Trust tab should say %q, got:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Remote:") {
+		t.Fatalf("the Trust tab should not repeat the tap details, got:\n%s", out)
+	}
+
+	m = sendKey(m, "j")
+	if out := sgr.ReplaceAllString(m.renderContent(70, 20), ""); !strings.Contains(out, "may load") {
+		t.Fatalf("a trusted tap should say Homebrew may load it, got:\n%s", out)
+	}
+
+	m = sendKey(m, "[")
+	if out := sgr.ReplaceAllString(m.renderContent(70, 20), ""); !strings.Contains(out, "Remote:") {
+		t.Fatalf("Tap Info keeps the details, got:\n%s", out)
+	}
+}

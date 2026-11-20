@@ -376,7 +376,7 @@ func (m Model) renderContent(width, height int) string {
 			if t == nil {
 				return style.SubtleText.Render("No tap selected")
 			}
-			return style.NormalItem.Render(tapDetails(t))
+			return style.NormalItem.Render(tapTrustStory(t))
 		case tapFormulaeTab:
 			t := panel.selectedTap()
 			if t == nil || len(t.FormulaNames) == 0 {
