@@ -282,16 +282,6 @@ func (p *panelData) selectedTap() *brew.Tap {
 	return nil
 }
 
-// selectedOutdatedFormula returns the formula for the cursor when the
-// panel mixes formulae and casks (the Outdated panel): the raw item index
-// is valid for formulae as long as it lands inside the formulae slice.
-func (p *panelData) selectedOutdatedFormula() *brew.Formula {
-	if p.selected >= 0 && p.selected < len(p.formulae) {
-		return &p.formulae[p.selected]
-	}
-	return nil
-}
-
 // selectedOutdatedCask returns the cask for the cursor when the panel
 // mixes formulae and casks (the Outdated panel): cask rows live past the
 // formulae, so the cask index is selected - len(formulae).
@@ -321,23 +311,16 @@ func (p *panelData) serviceInfoFor(name string) *brew.ServiceInfo {
 	return nil
 }
 
-// selectServiceNamed moves the cursor to the named service when the list still
-// has it. An empty or unknown name leaves the cursor where it is.
-func (p *panelData) selectServiceNamed(name string) {
-	for i, s := range p.services {
-		if name != "" && s.Name == name {
-			p.selected = i
-			return
-		}
+// selectNamed moves the cursor of p to the row of rows called name, when the
+// list still has it. An empty or unknown name leaves the cursor where it is:
+// after an untap, that is the tap that followed the removed one (v2-10
+// AC-04.1).
+func selectNamed[T any](p *panelData, rows []T, nameOf func(T) string, name string) {
+	if name == "" {
+		return
 	}
-}
-
-// selectTapNamed moves the cursor to the named tap when the list still has it.
-// Otherwise the cursor stays on its index, which after an untap is the tap that
-// followed the removed one (v2-10 AC-04.1).
-func (p *panelData) selectTapNamed(name string) {
-	for i, t := range p.taps {
-		if name != "" && t.Name == name {
+	for i, row := range rows {
+		if nameOf(row) == name {
 			p.selected = i
 			return
 		}

@@ -550,7 +550,7 @@ func (m Model) renderContent(width, height int) string {
 			// lookup must subtract len(formulae) — indexing selectedCask()
 			// with the raw combined index showed the WRONG cask (r1
 			// finding 11).
-			if f := panel.selectedOutdatedFormula(); f != nil {
+			if f := panel.selectedFormula(); f != nil {
 				return presentation.FormatFormulaInfo(*f, width, m.icons)
 			}
 			if c := panel.selectedOutdatedCask(); c != nil {
