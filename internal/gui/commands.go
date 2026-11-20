@@ -1547,8 +1547,8 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 // key) passes true.
 func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 	return func() tea.Msg {
-		items, _ := statusDashboard(client, loadOutdated)
-		return DataLoadedMsg{PanelID: PanelStatus, Items: items, Err: nil}
+		items, version, _ := statusDashboard(client, loadOutdated)
+		return DataLoadedMsg{PanelID: PanelStatus, Items: items, BrewVersion: version, Err: nil}
 	}
 }
 
@@ -1579,7 +1579,7 @@ func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 // count becomes known. A failed or timed-out outdated read joins the ⚠
 // lines like any other source and the count falls back to "not known", never
 // to a misleading 0.
-func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, []error) {
+func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, string, []error) {
 	totalCtx, cancelTotal := context.WithTimeout(context.Background(), brewStatusTotalTimeout)
 	defer cancelTotal()
 
@@ -1738,7 +1738,7 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, []error)
 		errs = append(errs, s.err)
 	}
 
-	return items, errs
+	return items, brewVersion, errs
 }
 
 func parseUpdateSummary(lines []string) string {

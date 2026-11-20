@@ -27,15 +27,18 @@ func TestLogIsSiblingBoxBelowMainPanel(t *testing.T) {
 			corners = append(corners, r)
 		}
 	}
-	if len(corners) != 2 || corners[0] != 0 || corners[1] != l.mainH {
-		t.Fatalf("top-left corners of the main panel and Log are at rows %v, want [0 %d]", corners, l.mainH)
+	// The body starts below the header, so the main panel's top border is on
+	// row headerRows, and the Log box's top border is headerRows+mainH.
+	mainTop, logTop := headerRows, headerRows+l.mainH
+	if len(corners) != 2 || corners[0] != mainTop || corners[1] != logTop {
+		t.Fatalf("top-left corners of the main panel and Log are at rows %v, want [%d %d]", corners, mainTop, logTop)
 	}
-	if rows[l.mainH-1][col] != '╰' {
-		t.Fatalf("main panel bottom-left corner missing at row %d", l.mainH-1)
+	if rows[logTop-1][col] != '╰' {
+		t.Fatalf("main panel bottom-left corner missing at row %d", logTop-1)
 	}
 	// The Log title sits in the Log box's top border, on its first row.
-	if !strings.HasPrefix(string(rows[l.mainH][col:]), "╭─ Log ") {
-		t.Fatalf("Log title should sit in the Log box's top border at row %d, got %q", l.mainH, string(rows[l.mainH][col:]))
+	if !strings.HasPrefix(string(rows[logTop][col:]), "╭─ Log ") {
+		t.Fatalf("Log title should sit in the Log box's top border at row %d, got %q", logTop, string(rows[logTop][col:]))
 	}
 }
 
@@ -52,7 +55,7 @@ func TestClickOnLogBoxDoesNothing(t *testing.T) {
 	p.selected = 0
 
 	l := m.screenLayout()
-	nm, _ := m.Update(tea.MouseClickMsg{X: l.sideW + 5, Y: l.mainH + 2, Button: tea.MouseLeft})
+	nm, _ := m.Update(tea.MouseClickMsg{X: l.sideW + 5, Y: headerRows + l.mainH + 2, Button: tea.MouseLeft})
 	got := nm.(Model)
 	if got.panels[PanelFormulae].selected != 0 || got.activePanel != PanelFormulae {
 		t.Fatalf("click in the Log box changed selection to %d on panel %v",
@@ -75,9 +78,9 @@ func TestMouseHitsWhatIsDrawn(t *testing.T) {
 
 	l := m.screenLayout()
 	// Inside the main border: tab bar, then the table header and separator,
-	// so body row k is drawn at y = 1 + tabBar + 2 + k. The breadcrumb is
-	// the border title now and takes no row.
-	bravoY := 1 + m.tabBarRows() + 2 + 1
+	// so body row k is drawn at y = headerRows + 1 + tabBar + 2 + k. The
+	// breadcrumb is the border title now and takes no row.
+	bravoY := headerRows + 1 + m.tabBarRows() + 2 + 1
 	rows := plainRows(m.View().Content)
 	if !strings.HasPrefix(strings.TrimLeft(string(rows[bravoY][l.sideW+1:]), " "), "bravo") {
 		t.Fatalf("fixture: row %d should draw bravo, got %q", bravoY, string(rows[bravoY][l.sideW+1:]))

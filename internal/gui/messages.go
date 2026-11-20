@@ -19,7 +19,9 @@ type DataLoadedMsg struct {
 	Casks    []brew.Cask
 	Taps     []brew.Tap
 	Services []brew.Service
-	Err      error
+	// BrewVersion is set by the status dashboard load only.
+	BrewVersion string
+	Err         error
 }
 
 type TabContentMsg struct {

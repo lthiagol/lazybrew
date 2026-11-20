@@ -57,7 +57,7 @@ func TestMouseClickSidebarSelectsRow(t *testing.T) {
 
 	heights := m.computeContentHeights()
 	// Formulae is index 1
-	y0 := heights[0] + 2
+	y0 := headerRows + heights[0] + 2
 	// The title sits in the top border, so the first item is the first body
 	// row: screen y = y0 + 1 (top border) + 0.
 	yItem0 := y0 + 1
