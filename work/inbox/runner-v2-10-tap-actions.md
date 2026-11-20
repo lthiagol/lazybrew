@@ -37,3 +37,7 @@ No brew write command was run. The harness only reads. It sent `t` once, to `lth
 - Interface change: `TapsReader.List` returns `TapList{Taps, TrustUnknown}`, not `[]Tap`. Three callers updated.
 - Changed expectations (named in the commits): `review_r4_test.go` and `modal_first_frame_test.go` open the menu with `T`; `confirm_detail_test.go` looks for the new untap text; `sidebar_list_test.go` passes `trustKnown`; `taps_test.go` reads `.Taps`. None weakened.
 - Worktree clean after this receipt. `bin/lazybrew` is gitignored.
+
+## Fix: Q-v2-10-a
+
+An official tap offers no `x untap` (lazybrew refuses it): Tap Info and the footer show `r repair` only, `a add tap` stays in the footer. Commit 9c4afce; frame 13 regenerated at both sizes, the only frame with an official tap on screen; full gate re-run with -race, all green.
