@@ -398,3 +398,18 @@ criterion; the code is as described and the orchestrator can redirect it.
   unchanged (checked in v2-05s-services frames). The orchestrator can redirect:
   cut the toast again and let only the needs-sudo text wrap, or cut it as before.
 - **Raised by:** runner lane (slice `v2-05s-services`).
+
+## Q-v2-services-icons — the Info view's status glyphs and words
+
+- **Question:** the slice brief writes the Info status as `● running`,
+  `○ stopped`, `✗ error` and `⏲ scheduled`. The Unicode icon set has `▶` for
+  running and `■` for stopped (the sidebar uses those, and the brief says not to
+  restyle it). The Info words were `started` in the list and the brief says
+  `running`.
+- **Runner's decision:** the Info view draws its glyphs from the icon set
+  (`gui.icons`), so `show_icons` and the Nerd set still apply: running `▶`,
+  stopped `■`, error `✗`, and scheduled `⏲` (a new `Scheduled` icon, Unicode
+  `⏲`, Nerd `clock-o`). The word is `running` in the Info view. The sidebar
+  keeps `started`. Hard-coding the brief's `●` and `○` would have bypassed the
+  icon setting. The orchestrator can redirect to the literal glyphs.
+- **Raised by:** runner lane (slice `v2-05s-services`).

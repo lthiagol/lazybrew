@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Info    Deps    Used By    Caveats    Files     │
+╰──────────────────────────╯│━━━━━━━━                                          │
+╭─ 2 ∘ Formulae ───── 125 ─╮│Name:         bash                                │
+│  ✓ alsa-lib    1.2.16.1_1││Version:      5.3.20                              │
+│▸ ✓ bash            5.3.20││Tap:          homebrew/core                       │
+╰──────────────────────────╯│Status:       ✓ installed                         │
+╭─ 3 ▣ Casks ─ not loaded ─╮│License:      GPL-3.0-or-later                    │
+│                          ││Homepage:     https://www.gnu.org/software/bash/  │
+╰──────────────────────────╯│Bottled:      yes                                 │
+╭─ 4 ↑ Outdated ─────── 0 ─╮│Description:  Bourne-Again SHell, a UNIX command  │
+│                          ││              interpreter                         │
+╰──────────────────────────╯│                                                  │
+╭─ 5 ⊕ Taps ─────────── 3 ─╮│                                                  │
+│▸ ⚠ danielfoehr… untrusted││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 6 ◎ Services ─────── – ─╮│                                                  │
+│                          │╰──────────────────────────────────────────────────╯
+╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ───────── – ─╮│No commands executed ye╭──────────────────────────╮
+│                          ││                       │ ✓ Install bash completed │
+╰──────────────────────────╯╰───────────────────────╰──────────────────────────╯
+ j/k navigate  [ ] tabs  i install  x remove  r reinstall  u upgrade  ? more    
