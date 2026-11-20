@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -167,6 +168,18 @@ func compose(base string, w, h int, overlays ...*lipgloss.Layer) string {
 	canvas := lipgloss.NewCanvas(w, h)
 	canvas.Compose(lipgloss.NewCompositor(layers...))
 	return fitFrame(canvas.Render(), w, h)
+}
+
+// dimBackdrop mutes the base frame behind an open modal: every row but the
+// last (the footer, which shows the modal's keys) is drawn in the muted role.
+// Only the style changes; the text of every cell stays as it was.
+func dimBackdrop(base string) string {
+	rows := strings.Split(base, "\n")
+	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
+	for i := 0; i < len(rows)-1; i++ {
+		rows[i] = muted.Render(ansi.Strip(rows[i]))
+	}
+	return strings.Join(rows, "\n")
 }
 
 // bottomRight places content flush right on the last body row, just above
