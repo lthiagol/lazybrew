@@ -130,6 +130,8 @@ type Model struct {
 	// motionShown is the modal whose entrance was last started, so a new modal
 	// slides in once and an open one does not restart.
 	motionShown modal.Modal
+	// motionStack is the toast stack the slots were last laid out for.
+	motionStack []*modal.Toast
 	// opBar is the batch's progress bar, and opBarOp the operation it belongs
 	// to. Its fill springs to the batch's share when the count changes.
 	opBar   progress.Model
@@ -248,6 +250,11 @@ func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// With the motion off nothing is animated: the update is the message
+	// switch, with no copy of the animated values and no motion work.
+	if !m.motionOn {
+		return m.update(msg)
+	}
 	// Each update works on its own copy of the animated values, so a model
 	// kept from before the update is not moved by it.
 	m.motion = m.motion.Clone()

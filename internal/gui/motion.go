@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -149,6 +150,12 @@ func toastName(t *modal.Toast, part string) string {
 // lost one, springs from where it was. A resize snaps the stack, and a toast
 // that has left the stack is forgotten.
 func (m *Model) motionToasts(resized bool) {
+	// The slots only change when the stack or the window does, so the stack
+	// is laid out again only then.
+	if !resized && slices.Equal(m.motionStack, m.toasts) {
+		return
+	}
+	m.motionStack = slices.Clone(m.toasts)
 	alive := make(map[string]bool, len(m.toasts))
 	for i, p := range m.restingToastPlacements() {
 		t := m.toasts[i]
@@ -235,8 +242,20 @@ func (m *Model) motionProgress() tea.Cmd {
 	return m.opBar.SetPercent(share)
 }
 
-// The names of the animated sidebar boxes: one value per panel, by index.
+// sidebarNames are the names of the animated sidebar boxes, one value per
+// panel by index, built once: a name is looked up on every update.
+var sidebarNames = func() []string {
+	names := make([]string, 16)
+	for i := range names {
+		names[i] = "sidebar:" + strconv.Itoa(i)
+	}
+	return names
+}()
+
 func sidebarName(i int) string {
+	if i < len(sidebarNames) {
+		return sidebarNames[i]
+	}
 	return "sidebar:" + strconv.Itoa(i)
 }
 

@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // motionModel is a sized model with animations on, on the Formulae panel:
@@ -174,6 +175,33 @@ func TestSlidingFramesAreTerminalSize(t *testing.T) {
 			if w, h := lipgloss.Width(v), lipgloss.Height(v); w != sz[0] || h != sz[1] {
 				t.Fatalf("%dx%d frame %d is %dx%d", sz[0], sz[1], i, w, h)
 			}
+		}
+	}
+}
+
+// TestTabWidthMatchesTheRender holds the arithmetic width of a tab to the
+// width of the tab the style draws, for every tab of every panel.
+func TestTabWidthMatchesTheRender(t *testing.T) {
+	for _, tabs := range panelTabs {
+		for _, tab := range tabs {
+			want := lipgloss.Width(style.TabInactive.Render(" " + tab.name + " "))
+			if got := tabWidth(tab.name); got != want {
+				t.Errorf("tabWidth(%q) = %d; the rendered tab is %d wide", tab.name, got, want)
+			}
+		}
+	}
+}
+
+// TestTabBarRowsMatchTheRender holds the tab bar's height, without a render, to
+// the height of the bar the render draws, on every panel.
+func TestTabBarRowsMatchTheRender(t *testing.T) {
+	m := newTestModel()
+	for p := range m.panels {
+		m.activePanel = PanelID(p)
+		m.tabs = panelTabs[m.activePanel]
+		m.activeTab = 0
+		if got, want := m.tabBarRows(), lipgloss.Height(m.renderTabBar(0)); got != want {
+			t.Errorf("panel %v: tabBarRows = %d; the bar is %d rows", m.activePanel, got, want)
 		}
 	}
 }
