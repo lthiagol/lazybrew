@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                    125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Services › Info ───────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                 ││  Info                                                                                   │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━                                                                                 │
@@ -14,8 +14,8 @@
 │  ✓ Google Cloud CLI                    594.0.0││Log:          /home/linuxbrew/.linuxbrew/var/log/moshi-hook.log                          │
 │                                               ││                                                                                         │
 ╰───────────────────────────────────────────────╯│ S stop  r restart  c cleanup                                                            │
-╭─ 4 ↑ Outdated ──────────────────────────── 0 ─╮│                                                                                         │
-│                                               ││                                                                                         │
+╭─ 4 ↑ Outdated ──────────────────────────── 1 ─╮│                                                                                         │
+│▸ ↑ git-delta                   0.21.1 → 0.21.2││                                                                                         │
 │                                               ││                                                                                         │
 ╰───────────────────────────────────────────────╯│                                                                                         │
 ╭─ 5 ⊕ Taps ──────────────────────────────── 1 ─╮│                                                                                         │

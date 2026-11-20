@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ─────────────╮╭─ Services › Info ────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f…││  Info                                            │
 ╰──────────────────────────╯│━━━━━━━━                                          │
@@ -9,7 +9,7 @@
 │▸ ✓┃                                                                      ┃   │
 ╰───┃                                 STOP                                 ┃   │
 ╭─ 4┃                                                                      ┃sh…│
-│   ┃                           Stop moshi-hook?                           ┃sh…│
+│▸ ↑┃                           Stop moshi-hook?                           ┃sh…│
 ╰───┃             The service stops until you start it again.              ┃   │
 ╭─ 5┃                                                                      ┃g/…│
 │▸ h┃                      [y]es   [n]o   esc cancel                       ┃   │

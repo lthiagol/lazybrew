@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Deps ────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f…││  Info    Deps    Used By    Caveats    Files     │
 ╰──────────────────────────╯│        ━━━━━━━━                                  │
@@ -9,8 +9,8 @@
 ╭─ 3 ▣ Casks ────────── 2 ─╮│                                                  │
 │▸ ✓ Claude Code    2.1.311││                                                  │
 ╰──────────────────────────╯│                                                  │
-╭─ 4 ↑ Outdated ─────── 0 ─╮│                                                  │
-│                          ││                                                  │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│                                                  │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││                                                  │
 ╰──────────────────────────╯│                                                  │
 ╭─ 5 ⊕ Taps ─────────── 3 ─╮│                                                  │
 │▸ ⚠ danielfoehr… untrusted││                                                  │

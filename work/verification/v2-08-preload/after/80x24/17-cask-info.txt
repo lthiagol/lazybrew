@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ─────────────╮╭─ Casks › Info ───────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f…││  Info    Deps    Caveats                         │
 ╰──────────────────────────╯│━━━━━━━━                                          │
@@ -9,8 +9,8 @@
 │▸ ✓ Claude Code    2.1.311││Homepage:     https://claude.com/product/claude-c…│
 │  ✓ Google Cloud … 594.0.0││Description:  Terminal-based AI coding assistant  │
 ╰──────────────────────────╯│                                                  │
-╭─ 4 ↑ Outdated ─────── 0 ─╮│                                                  │
-│                          ││                                                  │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│                                                  │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││                                                  │
 ╰──────────────────────────╯│                                                  │
 ╭─ 5 ⊕ Taps ─────────── 1 ─╮│                       ╭──────────────────────────╮
 │▸ homebrew/cask-versions …││                       │ ✓ Install bash completed │

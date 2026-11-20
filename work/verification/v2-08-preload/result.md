@@ -56,11 +56,16 @@ confirm, and `S` is cancelled with `esc`.
 `after/140x40/` and `after/80x24/`: 20 screens each, the `.txt` frames plus `.ansi`
 at 140x40. `before/` is `work/verification/v2-07-op-dismiss/after/`, copied.
 
+Captured twice in this slice. The first run (147 s) had brew slow and its Taps
+frames degraded; that is recorded below. The committed frames are the second
+capture, with brew at normal speed (`brew tap-info` 0.8 s, `brew outdated` 1.6 s,
+measured just before the run). The run took 28 s.
+
 Run: `frame_dump_test.go.txt` copied to `internal/gui/dump/dump_test.go`,
 `DUMP_DIR=<this dir>/after CGO_ENABLED=1 go test ./internal/gui/dump/ -count=1 -v`,
-then the copy removed. Result: `ok`, 147 s. The harness settles every command
-until the preload is done, and checks that at most one sidebar box (Search, which
-is never preloaded) says `not loaded`.
+then the copy removed. Result: `ok`. The harness settles every command until the
+preload is done, and checks that at most one sidebar box (Search, which is never
+preloaded) says `not loaded`.
 
 Changes from the v2-07 harness, all in `settle` and the setup:
 1. `settle` replaces `drain` for `Init` and the resize. A preload read starts
@@ -71,48 +76,63 @@ Changes from the v2-07 harness, all in `settle` and the setup:
 3. Spinner ticks are not followed (they run for as long as the program does).
 4. `gui.preload` is set to `true` explicitly.
 
+### Data differs from v2-07 in one way that is not the preload
+
+Brew now reports one outdated formula, `git-delta 0.21.1 → 0.21.2`. v2-07 had
+none. So the Outdated count is `1`, not `0`, and the header shows `1 outdated`.
+That data change appears on every screen, and it is why the Outdated box and the
+Status rows differ from `before/` on screens where the preload did nothing else.
+The frames show the real state of the machine at capture time; nothing was edited.
+
 ### Sidebar: every screen whose sidebar changed, and why
 
-Sidebar changed on 16 of the 20 screens at both sizes: 01 status, 02 formulae,
+Sidebar changed on 18 of the 20 screens at both sizes: 01 status, 02 formulae,
 03 formulae-info, 04 formulae-deps, 05 outdated, 06 taps, 07 confirm-modal,
 09 search, 10 toast, 11 deps-bash, 12 confirm-upgrade, 13 toast-stack,
-14 input-modal, 15 menu-brewfile, 17 cask-info, 18 doctor.
+14 input-modal, 15 menu-brewfile, 17 cask-info, 18 doctor, 19 services-info,
+20 services-stop-confirm.
 
 Why: in v2-07 a panel's box said `not loaded` until the user visited it. Here the
 preload has loaded it before the first frame, so its border shows its count.
-Example, 140x40 `02-formulae`:
+Example, 140x40 `02-formulae` (copied from the frame files):
 
 ```
-before                                         after
-╭─ 3 ▣ Casks ────────────────── not loaded ─╮   ╭─ 3 ▣ Casks ─────────────────────── 2 ─╮
-╭─ 4 ↑ Outdated ─────────────── not loaded ─╮   ╭─ 4 ↑ Outdated ──────────────────── 0 ─╮
-╭─ 5 ⊕ Taps ─────────────────── not loaded ─╮   ╭─ 5 ⊕ Taps ──────────────────────── 3 ─╮
-╭─ 6 ◎ Services ─────────────── not loaded ─╮   ╭─ 6 ◎ Services ──────────────────── 3 ─╮
-╭─ 7 ⌕ Search ───────────────── not loaded ─╮   ╭─ 7 ⌕ Search ───────────── not loaded ─╮
+before                                              after
+╭─ 3 ▣ Casks ────────────────────── not loaded ─╮   ╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮
+╭─ 4 ↑ Outdated ─────────────────── not loaded ─╮   ╭─ 4 ↑ Outdated ──────────────────────────── 1 ─╮
+╭─ 5 ⊕ Taps ─────────────────────── not loaded ─╮   ╭─ 5 ⊕ Taps ──────────────────────────────── 3 ─╮
+╭─ 6 ◎ Services ─────────────────── not loaded ─╮   ╭─ 6 ◎ Services ──────────────────────────── 3 ─╮
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮   ╭─ 7 ⌕ Search ───────────────────── not loaded ─╮
 ```
 
-At 80x24 the same change reads `– ` before (Outdated, Services) and `not loaded`
+At 80x24 the same change reads `–` before (Outdated, Services) and `not loaded`
 before (Casks, Taps), and the counts after. Search still says `not loaded`
 (`–` at 80x24): it is never preloaded (AC-01.2).
 
-Not changed: `08-help`, `16-help-scrolled` (help overlays), and `19-services-info`,
-`20-services-stop-confirm`. In v2-07 those screens came after every panel had
-been visited, so their sidebar was already loaded.
+19 and 20 changed in the sidebar only for the Outdated count (1, from the data
+change above); their services rows are the same as v2-07, including the moshi-hook
+PID row.
+
+Not changed: `08-help` and `16-help-scrolled`. Both are help overlays that cover
+the sidebar.
 
 ### Main area: the three screens that changed
 
-- `01-status` (both sizes) and `15-menu-brewfile` (140x40 only): the dashboard's
-  Packages card shows `Outdated: 0 packages` (before: `not loaded — press R`),
-  and the gauge under it, because the Outdated count now fills in from the
-  preloaded read (AC-02.3). At 80x24 the brewfile menu covers that row.
-- `06-taps` and `14-input-modal` (both sizes): **not a preload effect**, see
-  the environment note below. The Taps header reads `0 trusted · 3 untrusted`
-  where v2-07 read `2 trusted · 1 untrusted`, and the selected tap's details
-  show `Formulae: 0 / Casks: 0` instead of its remote.
+- `01-status` (both sizes): the dashboard's Packages card shows
+  `Outdated: 1 package` with the gauge (before: `not loaded — press R`). That is
+  the preload's count fill-in (AC-02.3), and the 1 is the data change above.
+- `05-outdated` (both sizes): the Outdated list now has `git-delta`, and its
+  Info tab shows it. Data change only; the preload did not alter the panel.
+- `15-menu-brewfile` (140x40 only): the Brewfile menu covers part of the
+  dashboard, and the rows it leaves show `Outdated: 1 package` as in `01`. At 80x24
+  the menu covers that row, so no main change.
 
-## Environment: brew is slow on this machine right now
+`06-taps` and `14-input-modal` no longer differ in the main area: the Taps header
+reads `2 trusted · 1 untrusted` and the selected tap shows its remote, as in v2-07.
 
-Measured with read-only brew commands during this slice:
+## Environment: the first capture ran with brew slow
+
+Measured during the first capture (brew then):
 
 | command | time | note |
 |---|---|---|
@@ -120,21 +140,25 @@ Measured with read-only brew commands during this slice:
 | `brew services list --json` | 0.36 s | |
 | `brew config` | 0.28 s | |
 | `brew doctor` | 1.50 s | |
-| `brew outdated --formula --json=v2` | 20.8 s | prints "Downloading Homebrew API data… falling back to cached version" |
+| `brew outdated --formula --json=v2` | 20.8 s | "Downloading Homebrew API data… falling back to cached version" |
 | `brew outdated --cask --json=v2` | 0.25 s | |
 | `brew tap-info --json <3 taps>` | 87.4 s | rc 0, full data |
 
-The tap-info batch is over the 30 s `brewReadTimeout`. When it times out, the
+The tap-info batch went over the 30 s `brewReadTimeout`. When it times out, the
 tap reader returns the name-only list and does not cache it (`taps.go`), so the
-Taps panel shows no trust and no remote and no error. Preload is not the cause:
-with `gui.preload` off, visiting Taps in this environment gives the same
-`0 trusted · 3 untrusted` line (checked with a throwaway test, reverted). The v2-07
-frames were captured while tap-info was fast. Two runs of the v2-08 harness gave
-the same degraded Taps read.
+Taps panel showed no trust and no remote and no error. Preload was not the cause:
+with `gui.preload` off, visiting Taps during that slow period gave the same
+`0 trusted · 3 untrusted` line (checked with a throwaway test, reverted).
 
-The frames are kept as captured. Taps is loaded, and the sidebar count (3) is
-right; only the Taps main area is degraded. A re-run when brew is quick again
-should bring frames 06 and 14 back to the v2-07 content.
+Brew was fast again at the second capture (tap-info 0.84 s, outdated formula 1.6 s,
+cask 0.23 s), and the committed frames are from that run. The first run's Taps
+frames are not kept; they were replaced.
+
+Notes that predate this recapture and are now superseded: the STATE.md paragraph
+and `work/inbox/runner-v2-08-preload.md` describe the first capture's degraded
+Taps frames (06, 14) and the slow brew. Both are out of this commit's scope.
+Q-v2-08-b (the silent fallback in `tapsReader`) still stands as a question: a
+slow tap-info still degrades the Taps panel without an error.
 
 ## Judgement calls (for the orchestrator to redirect)
 

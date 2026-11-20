@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Info ────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f…││  Info    Deps    Used By    Caveats    Files     │
 ╰──────────────────────────╯│━━━━━━━━                                          │
@@ -10,7 +10,7 @@
 │▸ ✓┃                Uninstall bash? This cannot be undone.                ┃/  │
 ╰───┃                removes bash; 1 package depends on it                 ┃   │
 ╭─ 4┃                                                                      ┃d  │
-│   ┃                                                                      ┃   │
+│▸ ↑┃                                                                      ┃   │
 ╰───┃                    The following depend on bash:                     ┃   │
 ╭─ 5┃                      direnv                                          ┃   │
 │▸ ⚠┃                                                                      ┃   │

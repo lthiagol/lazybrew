@@ -1,10 +1,10 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                    125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Status › Doctor ───────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                 ││  Dashboard    Config    Doctor                                                          │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││                       ━━━━━━━━━━                                                        │
 │  Formulae  125                                ││✓ Your system is ready to brew.                                                          │
 │  Casks     2                                  ││                                                                                         │
-│  Outdated  0                                  ││                                                                                         │
+│  Outdated  1                                  ││                                                                                         │
 │  Taps      3                                  ││                                                                                         │
 │  Services  3                                  ││                                                                                         │
 │                                               ││                                                                                         │
@@ -21,8 +21,8 @@
 │  ✓ Google Cloud CLI                    594.0.0││                                                                                         │
 │                                               ││                                                                                         │
 ╰───────────────────────────────────────────────╯│                                                                                         │
-╭─ 4 ↑ Outdated ──────────────────────────── 0 ─╮│                                                                                         │
-│                                               ││                                                                                         │
+╭─ 4 ↑ Outdated ──────────────────────────── 1 ─╮│                                                                                         │
+│▸ ↑ git-delta                   0.21.1 → 0.21.2││                                                                                         │
 │                                               ││                                                                                         │
 ╰───────────────────────────────────────────────╯│                                                                                         │
 ╭─ 5 ⊕ Taps ──────────────────────────────── 1 ─╮│                                                                                         │
