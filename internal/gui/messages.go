@@ -100,5 +100,5 @@ type autoRefreshTickMsg struct {
 
 // autoRefreshPausedMsg signals that the auto-refresh tick observed a
 // recent key press and rescheduled itself. The handler converts this
-// back into a follow-up autoRefreshCmd() so the next tick re-evaluates.
+// back into a follow-up tick (armAutoRefresh) so the next tick re-evaluates.
 type autoRefreshPausedMsg struct{}
