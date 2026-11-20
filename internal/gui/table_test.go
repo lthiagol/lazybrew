@@ -178,3 +178,34 @@ func TestPkgRowsMatchPkgRow(t *testing.T) {
 		}
 	}
 }
+
+// TestDescriptionKeepsItsFloorBesideALongName (v2-09 F-r2-01): at 46 cells a
+// name of about 29 characters is cut so the description keeps at least its
+// minimum useful width, and the description column is kept and cut with …,
+// never left as a sliver.
+func TestDescriptionKeepsItsFloorBesideALongName(t *testing.T) {
+	rows := []tableRow{{cells: []string{"✓", "gobject-introspection-runtime", "1.86.0_1",
+		"Generate introspection data for GObject libraries"}}}
+	out := ansi.Strip(renderTable(pkgTableCols, rows, 46))
+	lines := strings.Split(out, "\n")
+	if len(lines) != 2 {
+		t.Fatalf("a header and one row should be two lines, got %d:\n%s", len(lines), out)
+	}
+	for i, line := range lines {
+		if got := lipgloss.Width(line); got != 46 {
+			t.Fatalf("line %d is %d cells, want 46: %q", i, got, line)
+		}
+	}
+	head := ansi.StringWidth(lines[0][:strings.Index(lines[0], "Description")])
+	at := strings.Index(lines[1], "Generate")
+	if at < 0 {
+		t.Fatalf("the description should be shown, got %q", lines[1])
+	}
+	if got := ansi.StringWidth(lines[1][:at]); got != head {
+		t.Fatalf("the description starts at cell %d, want the header's %d:\n%s", got, head, out)
+	}
+	shown := strings.TrimRight(lines[1][at:], " ")
+	if lipgloss.Width(shown) < tableMinUseful || !strings.HasSuffix(shown, "…") {
+		t.Fatalf("the description should keep at least %d cells and end with …, got %q", tableMinUseful, shown)
+	}
+}

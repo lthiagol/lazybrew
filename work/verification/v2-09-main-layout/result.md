@@ -77,6 +77,13 @@ even 12 cells of it cannot fit beside the name and the version. (Review F-r1-01:
 the first AC-02 rule dropped Description as soon as one description was wider than
 the slack.)
 
+Every kept column keeps at least its floor, `min(natural, 12)`: when the columns
+do not fit, the other columns (the name) are cut down to their floors before the
+last column is squeezed, so the description is never a sliver (review F-r2-01: at
+46 cells a 29-character name had left the description at `G…`). A column goes only
+when the floors of the kept columns cannot all be met, in the order above. As a last
+resort the other columns are cut to 4 cells (`tableMinW`).
+
 At 80x24 the Deps frames keep Description and cut it: `Library for command-line …`.
 At 140x40 every description fits, so those frames do not change.
 
