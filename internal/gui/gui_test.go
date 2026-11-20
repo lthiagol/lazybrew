@@ -925,8 +925,9 @@ func TestOperationCompletedNotCancelledOnRealError(t *testing.T) {
 		t.Fatal("expected error toast for real error")
 	}
 	content := m.renderContent(60, 20)
-	if !strings.Contains(content, "Error:") {
-		t.Fatal("expected Error message, got:", content)
+	// v2-05 AC-05.1: a failed run reads ✗ Failed: <err> (was "Error: <err>").
+	if !strings.Contains(content, "Failed: test error") {
+		t.Fatal("expected Failed message, got:", content)
 	}
 }
 
