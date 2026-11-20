@@ -16,7 +16,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-03b-sidebar-lists | 0fa39ff, 4b16b65, c30158e, 33f6348, 01fb663, 9ba0f80, d68d66f, 3c38d91, 8d2c171, 752583b, 3fefcf8, 9c91b5d, b501d1f, 020011f | closed | ok |
 | v2-04-overlays-styled | f8a8b10, 54fe613, aa432d6, b8c110d, 6b01ecb, 215aadd, 23dbb79, 40588cf, f6807c4, f4b4127, 64bc9d8 | closed | ok |
 | v2-05-content-polish | 1192a40, ca14a11, c1b4b07, dfb79fb, 158e76e, f818b81, 0a03277, 7f8d584, 730c6ce, 0831cd8, da7d80e | closed | ok |
-| v2-05s-services | — | implemented | awaiting reviewer |
+| v2-05s-services | e8add34, a4bc483, 421c0ba, 7d8b51c, befbf7e, a97a13a | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -241,3 +241,19 @@ ignored the casks/dependents headers (major) + 2 minors; r3 `ok`. Known limit
 (not a defect): a dependency upgraded inside another package's step has no
 step of its own, so the bar reads low mid-run and lands on total/total.
 Frames: `work/verification/v2-05-content-polish/after/`.
+
+**v2-05s-services, closed.** The user's Services request: `brew services info
+--all --json` is read into a cached, typed `ServiceInfo` (invalidated by every
+services write, read through `boundedRead`); the Services `Info` tab shows
+status (icon + word), PID, user, loaded/registered, unit file, command,
+working dir, log paths and schedule, with the actions that apply now as a key
+line and in the footer. `S`/`r` confirm (danger/upgrade); start/stop/restart
+are state-aware following brew's own loaded rule (`started`, `error`,
+`scheduled` are loaded); after a services task the list and info reload with
+the selection kept by name; a root-needing service gets a plain "needs sudo —
+run …" toast (lazybrew never runs sudo). Long toasts wrap to ≤ 3 rows.
+Review: r1 `error`/`scheduled` services could no longer be stopped/restarted
+(major) + 2 minors; r2 `ok`. **Safety:** `moshi-hook` (live on this machine)
+was never touched — MainPID 800, NRestarts 0, active since 2026-11-18 before
+and after the slice. Not verified live: a real needs-sudo refusal (no system
+service here). Logs tab stays parked (LB-09).
