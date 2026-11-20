@@ -4,6 +4,17 @@ import (
 	"time"
 )
 
+// CacheTTLs bundles the per-class cache TTLs. A value of 0 is the cache default
+// TTL (30s) for that class.
+type CacheTTLs struct {
+	Formulae time.Duration
+	Casks    time.Duration
+	Outdated time.Duration
+	Taps     time.Duration
+	Services time.Duration
+	Doctor   time.Duration
+}
+
 type Client struct {
 	Runner           Runner
 	Formulae         FormulaeReader
@@ -45,15 +56,11 @@ func NewClient(runner Runner) *Client {
 	}
 }
 
-// SetCacheTTLs configures per-class cache TTLs on all readers that
-// participate in tiered refresh (M12). A value <= 0 in any field keeps
-// the cache default TTL (30s) for that class, preserving pre-M12
-// behavior. Readers that do not implement the optional TTLSetter
-// interface (e.g. test doubles) are silently skipped.
+// SetCacheTTLs configures per-class cache TTLs on the readers that take them.
 func (c *Client) SetCacheTTLs(ttls CacheTTLs) {
-	for _, r := range []any{c.Formulae, c.Casks, c.Taps, c.Services, c.Diagnostics} {
-		if t, ok := r.(TTLSetter); ok {
-			t.SetCacheTTLs(ttls)
-		}
-	}
+	c.Formulae.SetCacheTTLs(ttls)
+	c.Casks.SetCacheTTLs(ttls)
+	c.Taps.SetCacheTTLs(ttls)
+	c.Services.SetCacheTTLs(ttls)
+	c.Diagnostics.SetCacheTTLs(ttls)
 }

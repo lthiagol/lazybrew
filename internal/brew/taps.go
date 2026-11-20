@@ -9,6 +9,7 @@ import (
 type TapsReader interface {
 	List(ctx context.Context) (TapList, error)
 	Get(ctx context.Context, name string) (*Tap, error)
+	SetCacheTTLs(ttls CacheTTLs)
 }
 
 // TapList is the Taps list. TrustUnknown is set when `brew tap-info` failed or
@@ -143,12 +144,10 @@ func infoToTap(info *tapInfoJSON) *Tap {
 	}
 }
 
-// SetCacheTTLs configures the cache TTL for `brew tap` results.
-// Implements TTLSetter.
+// SetCacheTTLs configures the cache TTL for `brew tap` results. A zero TTL is
+// the cache default.
 func (s *tapsReader) SetCacheTTLs(ttls CacheTTLs) {
-	if ttls.Taps > 0 {
-		s.tapsTTL = ttls.Taps
-	}
+	s.tapsTTL = ttls.Taps
 }
 
 func (s *tapsReader) fetchTapInfo(ctx context.Context, name string) (*tapInfoJSON, error) {

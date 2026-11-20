@@ -75,6 +75,24 @@ func (e *NeedsSudoError) Error() string {
 
 func (e *NeedsSudoError) Unwrap() error { return e.Err }
 
+// errorMentions reports whether the error's text, or the stderr of a failed brew
+// command, contains one of markers, ignoring case. brew's refusals are read this
+// way: the message names the problem, and its stderr says what to do.
+func errorMentions(err error, markers []string) bool {
+	text := err.Error()
+	var exit *BrewExitError
+	if errors.As(err, &exit) {
+		text += "\n" + exit.Stderr
+	}
+	text = strings.ToLower(text)
+	for _, marker := range markers {
+		if strings.Contains(text, marker) {
+			return true
+		}
+	}
+	return false
+}
+
 func IsExitCode(err error, code int) bool {
 	var e *BrewExitError
 	if errors.As(err, &e) {

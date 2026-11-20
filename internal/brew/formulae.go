@@ -180,17 +180,21 @@ func (s *formulaeReader) fetchOutdated(ctx context.Context) ([]Formula, bool, er
 }
 
 // SetCacheTTLs configures how long `brew list` and `brew outdated` results
-// are reused. Implements TTLSetter so *Client.SetCacheTTLs can propagate
-// config without leaking the concrete type. Values <= 0 leave the cache
-// default TTL (30s) in effect for that class, preserving pre-M9/M12
-// behavior.
+// are reused. A zero TTL is the cache default (30s).
 func (s *formulaeReader) SetCacheTTLs(ttls CacheTTLs) {
-	if ttls.Formulae > 0 {
-		s.formulaeTTL = ttls.Formulae
+	s.formulaeTTL = ttls.Formulae
+	s.outdatedTTL = ttls.Outdated
+}
+
+// nonEmptyLines splits output into lines, trims each, and drops the empty ones.
+func nonEmptyLines(output []byte) []string {
+	lines := make([]string, 0)
+	for _, line := range strings.Split(string(output), "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			lines = append(lines, line)
+		}
 	}
-	if ttls.Outdated > 0 {
-		s.outdatedTTL = ttls.Outdated
-	}
+	return lines
 }
 
 func (s *formulaeReader) Leaves(ctx context.Context) ([]string, error) {
@@ -198,16 +202,7 @@ func (s *formulaeReader) Leaves(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	leaves := make([]string, 0)
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			leaves = append(leaves, line)
-		}
-	}
-	return leaves, nil
+	return nonEmptyLines(output), nil
 }
 
 func (s *formulaeReader) Deps(ctx context.Context, name string) (string, error) {
@@ -223,15 +218,7 @@ func (s *formulaeReader) Uses(ctx context.Context, name string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	result := make([]string, 0)
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			result = append(result, line)
-		}
-	}
-	return result, nil
+	return nonEmptyLines(output), nil
 }
 
 func (s *formulaeWriter) Install(ctx context.Context, name string) (<-chan string, <-chan error) {

@@ -225,15 +225,10 @@ func (s *casksReader) fetchOutdated(ctx context.Context) ([]Cask, bool, error) {
 }
 
 // SetCacheTTLs configures how long `brew list --cask` and
-// `brew outdated --cask` results are reused. Implements TTLSetter.
-// Values <= 0 preserve the cache default for that class.
+// `brew outdated --cask` results are reused. A zero TTL is the cache default.
 func (s *casksReader) SetCacheTTLs(ttls CacheTTLs) {
-	if ttls.Casks > 0 {
-		s.casksTTL = ttls.Casks
-	}
-	if ttls.Outdated > 0 {
-		s.outdatedTTL = ttls.Outdated
-	}
+	s.casksTTL = ttls.Casks
+	s.outdatedTTL = ttls.Outdated
 }
 
 func (s *casksWriter) Install(ctx context.Context, name string) (<-chan string, <-chan error) {
@@ -282,8 +277,14 @@ func parseCask(c caskJSON) Cask {
 	artifactNames := make([]string, 0)
 	for _, a := range c.Artifacts {
 		if m, ok := a.(map[string]interface{}); ok {
-			for key, val := range m {
-				switch v := val.(type) {
+			// Map order is random, so the keys are read in sorted order.
+			keys := make([]string, 0, len(m))
+			for key := range m {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				switch v := m[key].(type) {
 				case string:
 					artifactNames = append(artifactNames, v)
 				case []interface{}:
@@ -293,7 +294,6 @@ func parseCask(c caskJSON) Cask {
 						}
 					}
 				}
-				_ = key
 			}
 		}
 	}
