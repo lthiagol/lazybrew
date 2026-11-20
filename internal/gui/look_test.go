@@ -377,3 +377,28 @@ func TestFooterShowsHelpsKeysWhileHelpIsOpen(t *testing.T) {
 		t.Fatalf("help's footer should list its close keys, got %q", last)
 	}
 }
+
+// TestSearchInputDrawsFromRoles: the search input's prompt, text, placeholder
+// and cursor come from the theme roles, on both flavours.
+func TestSearchInputDrawsFromRoles(t *testing.T) {
+	defer style.ApplyTheme(style.DarkTheme())
+	for name, theme := range map[string]*style.Theme{
+		"dark":  style.DarkTheme(),
+		"light": style.LightTheme(),
+	} {
+		style.ApplyTheme(theme)
+		s := newTestModel().searchInput.Styles()
+		if got := s.Focused.Prompt.GetForeground(); got != theme.Accent {
+			t.Errorf("%s: prompt = %v, want the accent %v", name, got, theme.Accent)
+		}
+		if got := s.Focused.Text.GetForeground(); got != theme.Text {
+			t.Errorf("%s: text = %v, want the text role %v", name, got, theme.Text)
+		}
+		if got := s.Focused.Placeholder.GetForeground(); got != theme.Muted {
+			t.Errorf("%s: placeholder = %v, want the muted role %v", name, got, theme.Muted)
+		}
+		if s.Cursor.Color != theme.Accent {
+			t.Errorf("%s: cursor = %v, want the accent %v", name, s.Cursor.Color, theme.Accent)
+		}
+	}
+}
