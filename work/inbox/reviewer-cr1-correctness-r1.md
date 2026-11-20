@@ -1,14 +1,11 @@
 verdict: ok
-
 # Review — cr1-correctness, round r1
 
-Scope: `fe1d103..10c84f0` (AC commits `02bd452` `044b1c5` `05f0f2f` `227b678`
-`5479014` `0a8547e`, receipt `5f9057e`, orchestrator ruling `10c84f0`).
+Scope `fe1d103..10c84f0`: 6 AC commits, receipt `5f9057e`, ruling `10c84f0`.
 
 ## V1 gate
-`make ci` exit 0: gofmt, vet, `go test ./... -race -count=1` all ok; floors met
-(app 70.0/64, brew 81.0/78, gui 86.4/83, others unchanged); build ok.
-`GOOS=darwin go build ./...` ok.
+`make ci` exit 0 (gofmt, vet, `-race` tests, floors app 70.0/64 brew 81.0/78
+gui 86.4/83, build). `GOOS=darwin go build ./...` ok.
 
 ## V2 per AC — fix reverted in a temp worktree, new tests re-run
 | AC | Reverted file(s) | Result without the fix |
@@ -20,8 +17,6 @@ Scope: `fe1d103..10c84f0` (AC commits `02bd452` `044b1c5` `05f0f2f` `227b678`
 | AC-05 [C3,C4] | gui.go, messages.go | `6 tick commands in flight ..., want 1`; update ticker `3 ..., want 1` |
 | AC-06 [C12,C13] | panel.go / app.go (each alone) | `error cut split a rune`; `a debug line reached stderr after setup` |
 
-Every regression test fails without its fix and passes with it.
-
 ## V3 AC-01
 `grep extractPackageName|selectedItemName` (non-test): only the definition
 `gui.go:1447`; `selectedItemName` is deleted (cr5 brief allows "if not already
@@ -31,8 +26,8 @@ asks. Listed from the diff instead, 16 sites: commands.go `executeTrustMenuActio
 `batchUpgrade` (`nameAt`), `openUntrustConfirm`, `startTrustMenu`, `togglePin`,
 `tabItemName`, `confirmUntap`, `confirmRepair`, `confirmUninstall`,
 `confirmMutation`; gui.go leaves filter (`nameAt`); render.go tab fetch.
-These match the grep. The evidence is here now, so this is not raised as a finding.
-`nameAt` index alignment checked: Outdated = formulae then casks (same as
+These match the grep; the evidence is here, so this is not a finding. `nameAt`
+alignment checked: Outdated = formulae then casks (same as
 `selectedOutdatedCask`); the leaves filter narrows `items` and `formulae`
 together; Search `p.results` is set with `p.items` in `SearchDoneMsg`.
 
@@ -46,14 +41,13 @@ The existing pause tests were changed only to read a batch (`finishedMsgs`),
 not weakened. Init arming in both branches was ruled accepted (Q-cr1-init-autorefresh).
 
 ## V5 invariants
-`p.items`, `presentation.Format*`, `extractPackageName` present. No golden,
-testdata, footer or help changes. go.mod unchanged (`x/ansi` already direct).
+`p.items`, `presentation.Format*`, `extractPackageName` present; no golden/
+footer/help changes. go.mod unchanged (`x/ansi` already direct).
 No `program.Send`. The new goroutine is inside `LoggingRunner` (brew pkg, sudo
 pattern), not in a handler. One commit per AC, in order, ids in subjects.
 
 ## Findings
 None.
-
 ## Notes (not findings)
 - `parseCask` now reads brew's string `installed`, so the Casks panel shows
   the installed version, not the latest. This matches formulae, AC-03's cask
@@ -61,8 +55,6 @@ None.
 - `TestTogglePinLooksUpPinnedStateByName`: the fixture is now index-aligned. The
   old misaligned state can't happen any more (the leaves filter narrows both
   lists), and the receipt doesn't mention this change.
-- `tick_chain_test.go` counts a command as "pending" after a 300 ms cutoff. A
-  very slow `-race` run could flake. Worth watching.
-- gui.go:1161 (the generic modal route) keeps the old modal when the result is
-  not a modal. It can't panic and is outside the two routes the brief names.
-  The receipt lists it under "seen, not done".
+- `tick_chain_test.go` counts "pending" after a 300 ms cutoff; a very slow
+  `-race` run could flake. gui.go:1161 (generic modal route) can't panic and
+  is outside the brief's two routes (receipt: "seen, not done").
