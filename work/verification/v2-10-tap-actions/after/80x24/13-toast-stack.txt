@@ -10,7 +10,7 @@
 ╰──────────────────────────╯│ Formulae:  0                                     │
 ╭─ 4 ↑ Outdated ─────── 1 ─╮│ Casks:     0                                     │
 │▸ ↑ git-d… 0.21.1 → 0.21.2││                                                  │
-╰──────────────────────────╯│  x untap  r repair                               │
+╰──────────────────────────╯│  r repair                                        │
 ╭─ 5 ⊕ Taps ─────────── 1 ─╮│                                                  │
 │▸ ✓ homebrew/cas… official││                       ╭──────────────────────────╮
 │                          ││                       │ ✓ Install bash completed │
@@ -21,4 +21,4 @@
 ╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ─────────────╭──────────────────────────────╮
 │                          ││ No commands execut│ ⚠ Cannot untap official taps │
 ╰──────────────────────────╯╰───────────────────╰──────────────────────────────╯
- x untap  r repair  j/k navigate  a add tap  Tab next  S-Tab prev  ? more       
+ r repair  j/k navigate  a add tap  Tab next  S-Tab prev  1-7 jump  ? more      

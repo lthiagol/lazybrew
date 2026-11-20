@@ -26,9 +26,10 @@ func serviceActionHints(s brew.Service) []keyHint {
 
 // tapActionHints are the Taps actions that apply to a tap in its state (v2-10
 // AC-01). An untrusted tap is trusted with t, a trusted one untrusted with t,
-// and an official one needs no trust, so it has no t. x untaps and r repairs in
-// every state. With the trust state unread, t is left out: it would act on a
-// state nobody has read.
+// and an official one needs no trust, so it has no t. x untaps, but lazybrew
+// refuses to untap an official tap (Q-v2-10-a), so an official tap gets no x.
+// r repairs in every state. With the trust state unread, t is left out: it would
+// act on a state nobody has read.
 func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
 	var hints []keyHint
 	switch {
@@ -38,7 +39,10 @@ func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
 	default:
 		hints = append(hints, keyHint{"t", "trust"})
 	}
-	return append(hints, keyHint{"x", "untap"}, keyHint{"r", "repair"})
+	if !t.IsOfficial {
+		hints = append(hints, keyHint{"x", "untap"})
+	}
+	return append(hints, keyHint{"r", "repair"})
 }
 
 // tapsHints is the Taps footer: the actions for the selected tap lead, then the
