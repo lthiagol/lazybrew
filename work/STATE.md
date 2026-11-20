@@ -15,7 +15,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-03-look-foundation | a6f22ab, c569ee0, 85f5e3f, 0d4593e, e56d97c, d58fb96, 4aaa3b0, f6c950a, 02fcbae, 18796ad, b79b0e3, 96a5508, 6736abd, 56e78c0, f4f4abf, 3677383 | closed | ok |
 | v2-03b-sidebar-lists | 0fa39ff, 4b16b65, c30158e, 33f6348, 01fb663, 9ba0f80, d68d66f, 3c38d91, 8d2c171, 752583b, 3fefcf8, 9c91b5d, b501d1f, 020011f | closed | ok |
 | v2-04-overlays-styled | f8a8b10, 54fe613, aa432d6, b8c110d, 6b01ecb, 215aadd, 23dbb79, 40588cf, f6807c4, f4b4127, 64bc9d8 | closed | ok |
-| v2-05-content-polish | — | implemented | awaiting reviewer |
+| v2-05-content-polish | 1192a40, ca14a11, c1b4b07, dfb79fb, 158e76e, f818b81, 0a03277, 7f8d584, 730c6ce, 0831cd8, da7d80e | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -223,3 +223,20 @@ Review: r1 toast padding blanked frame cells and most confirms lacked the
 consequence line (both major) + 3 minors; r2 the input modal was off-centre;
 r3 the per-row centring scattered the dependents list; r4 `ok`. Frames:
 `work/verification/v2-04-overlays-styled/after/` (incl. 12–15).
+
+**v2-05-content-polish, closed.** The main area now says things well: one
+label/value helper for every detail view (Muted labels, Info-role URLs,
+empty fields omitted, prose wraps); dependency lists mark installed vs not;
+cask `depends_on` objects are parsed (formulae, casks, macOS/arch
+requirements); the Status dashboard is cards with an outdated gauge (never `0`
+when unknown) and Health right after Homebrew when stacked; Doctor lists each
+warning; help scrolls and lines up; the Operation view shows steps from
+brew's `==>` lines, elapsed time and, for batch/upgrade-all, a progress bar
+whose total sums every header brew prints (formulae, casks, dependents). The
+dead text dashboard was deleted and its invariant tests retargeted to the
+cards. Review: r1 progress counted brew's header as a package and the
+dashboard tests checked invisible text (both major) + 2 minors; r2 progress
+ignored the casks/dependents headers (major) + 2 minors; r3 `ok`. Known limit
+(not a defect): a dependency upgraded inside another package's step has no
+step of its own, so the bar reads low mid-run and lands on total/total.
+Frames: `work/verification/v2-05-content-polish/after/`.
