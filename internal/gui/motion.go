@@ -27,6 +27,19 @@ func animationsOn(cfg *config.Config) bool {
 	return cfg.GUI.Animations
 }
 
+// WithoutMotion turns the motion off for this model, whatever
+// LAZYBREW_ANIMATIONS says. The test helpers use it, so the frames they build
+// are the resting frames.
+func (m *Model) WithoutMotion() *Model {
+	m.motionOn = false
+	return m
+}
+
+// MotionOn reports whether the model animates.
+func (m *Model) MotionOn() bool {
+	return m.motionOn
+}
+
 // setMotionTarget sets where a named value is going. With animations off the
 // value is put there at once, so no tick is ever needed.
 func (m *Model) setMotionTarget(name string, to float64) {
