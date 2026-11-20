@@ -196,16 +196,19 @@ func fadeBackdrop(base string, fade float64) string {
 	return strings.Join(rows, "\n")
 }
 
-// backdropColor is the colour the backdrop is drawn in at fade. The resting
-// backdrop is exactly the muted role.
+// backdropColor is the colour the backdrop is drawn in at fade. It starts at
+// the subtle role and ends at the muted role, the resting backdrop. The subtle
+// role lies between the text role and the muted role in both themes, so the
+// fade never starts from the brightest role and only moves towards the muted
+// one (TestBackdropFadeNeverBrightens).
 func backdropColor(fade float64) color.Color {
 	if fade >= 1 {
 		return style.MutedColor
 	}
 	if fade <= 0 {
-		return style.TextColor
+		return style.SubtleColor
 	}
-	steps := lipgloss.Blend1D(backdropFadeSteps+1, style.TextColor, style.MutedColor)
+	steps := lipgloss.Blend1D(backdropFadeSteps+1, style.SubtleColor, style.MutedColor)
 	return steps[int(fade*backdropFadeSteps)]
 }
 

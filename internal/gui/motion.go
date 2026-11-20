@@ -82,7 +82,9 @@ func (m Model) stepMotion(at time.Time) (Model, tea.Cmd) {
 }
 
 // The names of the animated modal values: how far above its resting row the
-// modal sits, and how much of the muted backdrop has faded in (0 to 1).
+// modal sits, in cells, and how far the backdrop has faded in, in percent. The
+// fade is in percent so that the settle threshold, half a cell, is half a
+// percent of the fade.
 const (
 	modalDrop = "modal:drop"
 	modalFade = "modal:fade"
@@ -106,7 +108,7 @@ func (m *Model) motionModal() {
 	m.motion.Snap(modalDrop, modalDropRows)
 	m.motion.Snap(modalFade, 0)
 	m.setMotionTarget(modalDrop, 0)
-	m.setMotionTarget(modalFade, 1)
+	m.setMotionTarget(modalFade, 100)
 }
 
 // modalDropAt is how many rows the open modal still sits above its place.
@@ -128,7 +130,7 @@ func (m Model) backdropFadeAt() float64 {
 	if !ok {
 		return 1
 	}
-	return v
+	return v / 100
 }
 
 // The names of a toast's animated values. A toast is named by its pointer, so
