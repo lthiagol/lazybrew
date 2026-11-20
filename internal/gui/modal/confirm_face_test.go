@@ -291,3 +291,35 @@ func TestDialogsFitAndCentreTheirRows(t *testing.T) {
 		})
 	}
 }
+
+// TestDependentsAlignAsOneBlock locks F-r3-01: the dependents list of an
+// uninstall keeps its lines aligned, so every dependent name starts in the same
+// column however long it is.
+func TestDependentsAlignAsOneBlock(t *testing.T) {
+	message := "Uninstall bash? This cannot be undone.\n\nThe following depend on bash:\n" +
+		"  direnv\n  zsh-completions-long-name\n  git"
+	m := NewConfirmModal(ActionDanger, "Uninstall", message).WithDetail("removes bash; 3 packages depend on it")
+	rows := contentRows(m.View().Content, confirmWidth)
+	starts := map[string]int{}
+	for _, name := range []string{"direnv", "zsh-completions-long-name", "git"} {
+		for _, row := range rows {
+			if i := strings.Index(row, name); i >= 0 {
+				starts[name] = len([]rune(row[:i]))
+			}
+		}
+		if _, ok := starts[name]; !ok {
+			t.Fatalf("dependent %q is not drawn:\n%s", name, strings.Join(rows, "\n"))
+		}
+	}
+	if starts["direnv"] != starts["zsh-completions-long-name"] || starts["git"] != starts["direnv"] {
+		t.Fatalf("dependent names start in different columns: %v", starts)
+	}
+	// The names keep the two-cell indent under the heading they belong to.
+	for _, row := range rows {
+		if i := strings.Index(row, "The following"); i >= 0 {
+			if heading := len([]rune(row[:i])); starts["git"] != heading+2 {
+				t.Fatalf("the names are at column %d, want two cells in from the heading at %d", starts["git"], heading)
+			}
+		}
+	}
+}
