@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
 
@@ -66,6 +67,7 @@ type DepCheckMsg struct {
 	Name    string
 	Label   string
 	Message string
+	Kind    modal.ActionKind
 }
 
 // autoRefreshTickMsg is delivered by tea.Tick so Update can evaluate

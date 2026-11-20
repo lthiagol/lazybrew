@@ -1,14 +1,16 @@
 package modal
 
 import (
+	"image/color"
 	"testing"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 func TestConfirmModalYes(t *testing.T) {
-	m := NewConfirmModal("Test", "Are you sure?")
+	m := NewConfirmModal(ActionNeutral, "Test", "Are you sure?")
 	m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	if !m.Done() {
 		t.Error("expected Done after y")
@@ -20,7 +22,7 @@ func TestConfirmModalYes(t *testing.T) {
 }
 
 func TestConfirmModalNo(t *testing.T) {
-	m := NewConfirmModal("Test", "Are you sure?")
+	m := NewConfirmModal(ActionNeutral, "Test", "Are you sure?")
 	m.Update(tea.KeyPressMsg{Code: 'n', Text: "n"})
 	if !m.Done() {
 		t.Error("expected Done after n")
@@ -32,7 +34,7 @@ func TestConfirmModalNo(t *testing.T) {
 }
 
 func TestConfirmModalEsc(t *testing.T) {
-	m := NewConfirmModal("Test", "Are you sure?")
+	m := NewConfirmModal(ActionNeutral, "Test", "Are you sure?")
 	m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 	if !m.Cancelled() {
 		t.Error("expected Cancelled after Esc")
@@ -40,7 +42,7 @@ func TestConfirmModalEsc(t *testing.T) {
 }
 
 func TestConfirmModalDefaultNo(t *testing.T) {
-	m := NewConfirmModal("Test", "Are you sure?")
+	m := NewConfirmModal(ActionNeutral, "Test", "Are you sure?")
 	if m.selected != 1 {
 		t.Error("expected default selection No (index 1)")
 	}
@@ -143,5 +145,27 @@ func TestToastRearmsTick(t *testing.T) {
 	}
 	if toast.Dismissed() {
 		t.Fatal("unexpired toast must not be dismissed")
+	}
+}
+
+// TestActionKindAccent locks AC-01.1: each action kind is framed in its theme
+// role, and the dialog reports the kind it was opened with.
+func TestActionKindAccent(t *testing.T) {
+	cases := []struct {
+		kind ActionKind
+		want color.Color
+	}{
+		{ActionDanger, style.ErrorColor},
+		{ActionUpgrade, style.WarningColor},
+		{ActionInstall, style.InfoColor},
+		{ActionNeutral, style.AccentColor},
+	}
+	for _, tc := range cases {
+		if got := tc.kind.accent(); got != tc.want {
+			t.Errorf("kind %v: accent = %v, want %v", tc.kind, got, tc.want)
+		}
+		if got := NewConfirmModal(tc.kind, "T", "m").Kind(); got != tc.kind {
+			t.Errorf("Kind() = %v, want %v", got, tc.kind)
+		}
 	}
 }

@@ -900,7 +900,7 @@ func (m Model) togglePin() (tea.Model, tea.Cmd) {
 // bypass task.Manager (r1 finding 5).
 func (m Model) serviceCleanup() (tea.Model, tea.Cmd) {
 	m.pendingAction = "services-cleanup"
-	m.activeModal = modal.NewConfirmModal("Cleanup Services", "Remove stale service files?")
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup Services", "Remove stale service files?")
 	return m, m.activeModal.Init()
 }
 
@@ -1189,7 +1189,7 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 		return m, m.setToast("Cannot untap official taps", modal.ToastWarning)
 	}
 	m.pendingAction = "untap"
-	m.activeModal = modal.NewConfirmModal("Untap "+name, "Remove tap "+name+"? Installed formulae from this tap will become unavailable for updates.")
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Untap "+name, "Remove tap "+name+"? Installed formulae from this tap will become unavailable for updates.")
 	return m, m.activeModal.Init()
 }
 
@@ -1207,7 +1207,7 @@ func (m Model) confirmRepair() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.pendingAction = "repair"
-	m.activeModal = modal.NewConfirmModal("Repair "+name, "Repair tap "+name+"?")
+	m.activeModal = modal.NewConfirmModal(modal.ActionInstall, "Repair "+name, "Repair tap "+name+"?")
 	return m, m.activeModal.Init()
 }
 
@@ -1248,7 +1248,7 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 			message += "\n\nDependency check timed out after " + timeoutErr.Timeout.String() +
 				" — the list of packages that depend on " + name + " may be incomplete."
 		}
-		return DepCheckMsg{MutType: mutType, Name: name, Label: label, Message: message}
+		return DepCheckMsg{MutType: mutType, Name: name, Label: label, Message: message, Kind: mutationKind(mutType)}
 	}
 }
 
@@ -1274,9 +1274,23 @@ func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, t
 
 	m.pendingAction = "mutation"
 	m.pendingMutType = mutType
-	modal := modal.NewConfirmModal("Confirm "+actionLabel, message)
+	modal := modal.NewConfirmModal(mutationKind(mutType), "Confirm "+actionLabel, message)
 	m.activeModal = modal
 	return m, m.activeModal.Init()
+}
+
+// mutationKind is the action kind of a package mutation's confirm dialog.
+func mutationKind(mutType mutationType) modal.ActionKind {
+	switch mutType {
+	case mutUninstall, mutZap:
+		return modal.ActionDanger
+	case mutInstall:
+		return modal.ActionInstall
+	case mutUpgrade, mutUpgradeAll, mutReinstall:
+		return modal.ActionUpgrade
+	default:
+		return modal.ActionNeutral
+	}
 }
 
 func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
@@ -1291,7 +1305,7 @@ func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
 	message := "Upgrade " + strconv.Itoa(n) + " selected packages?"
 
 	m.pendingAction = "batch-upgrade"
-	modal := modal.NewConfirmModal("Confirm Batch Upgrade", message)
+	modal := modal.NewConfirmModal(modal.ActionUpgrade, "Confirm Batch Upgrade", message)
 	m.activeModal = modal
 	return m, m.activeModal.Init()
 }

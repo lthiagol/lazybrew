@@ -30,7 +30,7 @@ func TestModalFloatsOverFrame(t *testing.T) {
 		name string
 		new  func() modal.Modal
 	}{
-		{"confirm", func() modal.Modal { return modal.NewConfirmModal("Uninstall bash", "Remove bash?") }},
+		{"confirm", func() modal.Modal { return modal.NewConfirmModal(modal.ActionDanger, "Uninstall bash", "Remove bash?") }},
 		{"input", func() modal.Modal { return modal.NewInputModal("Tap name") }},
 		{"menu", func() modal.Modal { return modal.NewMenuModal("Trust", []string{"Trust tap", "Cancel"}) }},
 	}
@@ -79,7 +79,7 @@ func TestModalFloatsOverFrame(t *testing.T) {
 func TestMouseIgnoredWhileModalOpen(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m.cfg.GUI.Mouse = true
-	m.activeModal = modal.NewConfirmModal("Uninstall bash", "Remove bash?")
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Uninstall bash", "Remove bash?")
 
 	heights := m.computeContentHeights()
 	y := heights[0] + 2 + 1 // the second sidebar box, where a click would switch to Formulae
