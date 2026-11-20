@@ -2,7 +2,6 @@ package gui
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -718,21 +717,20 @@ type pkgInfo struct {
 }
 
 func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
-	var result struct {
-		Formulae []brew.Formula `json:"formulae"`
-		Casks    []brew.Cask    `json:"casks"`
-	}
-	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+	formulae, casks, err := brew.ParseInfo([]byte(rawJSON))
+	if err != nil {
 		return nil, err
 	}
-	if len(result.Formulae) > 0 {
-		f := result.Formulae[0]
+	if len(formulae) > 0 {
+		f := formulae[0]
 		return &pkgInfo{
-			Name:        f.Name,
-			Version:     f.Version,
-			Type:        "formula",
-			Bottled:     f.Bottled,
-			Installed:   len(f.Installed) > 0 || f.InstalledOnReq || f.InstalledAsDep,
+			Name:    f.Name,
+			Version: f.Version,
+			Type:    "formula",
+			Bottled: f.Bottled,
+			// parseFormula sets InstalledOn only from an installed entry, so a
+			// set time means installed even when neither install flag is.
+			Installed:   !f.InstalledOn.IsZero(),
 			InstallPath: f.InstallPath,
 			License:     f.License,
 			Description: f.Description,
@@ -744,8 +742,8 @@ func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
 			Caveats: f.Caveats,
 		}, nil
 	}
-	if len(result.Casks) > 0 {
-		c := result.Casks[0]
+	if len(casks) > 0 {
+		c := casks[0]
 		return &pkgInfo{
 			Name:        c.Name,
 			Version:     c.Version,

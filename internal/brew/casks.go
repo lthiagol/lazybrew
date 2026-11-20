@@ -282,13 +282,10 @@ func (s *casksWriter) Unpin(ctx context.Context, name string) error {
 }
 
 func parseCask(c caskJSON) Cask {
+	installed := installedVersions(c.Installed)
 	version := c.Version
-	if installed, ok := c.Installed.([]interface{}); ok && len(installed) > 0 {
-		if m, ok := installed[0].(map[string]interface{}); ok {
-			if v, ok := m["version"].(string); ok {
-				version = v
-			}
-		}
+	if len(installed) > 0 {
+		version = installed[0].Version
 	}
 
 	artifactNames := make([]string, 0)
@@ -322,9 +319,33 @@ func parseCask(c caskJSON) Cask {
 		Sha256:      c.Sha256,
 		URL:         c.URL,
 		Artifacts:   artifactNames,
+		Installed:   installed,
 	}
 	cask.setDepends(parseCaskDepends(c.DependsOn))
 	return cask
+}
+
+// installedVersions reads a cask's "installed" field. Brew writes the installed
+// version as a string; an older payload wrote a list of objects, each with a
+// version. Nothing installed reads as nil.
+func installedVersions(raw interface{}) []InstalledVersion {
+	switch v := raw.(type) {
+	case string:
+		if v != "" {
+			return []InstalledVersion{{Version: v}}
+		}
+	case []interface{}:
+		var out []InstalledVersion
+		for _, e := range v {
+			if m, ok := e.(map[string]interface{}); ok {
+				if ver, ok := m["version"].(string); ok {
+					out = append(out, InstalledVersion{Version: ver})
+				}
+			}
+		}
+		return out
+	}
+	return nil
 }
 
 // UnmarshalJSON decodes a cask whose depends_on is brew's object shape as well

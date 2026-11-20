@@ -6,39 +6,33 @@ import (
 
 // Formula represents an installed Homebrew formula
 type Formula struct {
-	Name           string    `json:"name"`
-	FullName       string    `json:"full_name"` // e.g., "homebrew/core/neovim"
-	Tap            string    `json:"tap"`
-	Version        string    `json:"version"`
-	Description    string    `json:"desc"`
-	Homepage       string    `json:"homepage"`
-	License        string    `json:"license"`
-	Pinned         bool      `json:"pinned"`
-	Outdated       bool      `json:"outdated"`
-	NewVersion     string    `json:"new_version"` // populated when outdated
-	InstalledOn    time.Time `json:"installed_on"`
-	Dependencies   []string  `json:"dependencies"`
-	BuildDeps      []string  `json:"build_dependencies"`
-	Caveats        string    `json:"caveats"`
-	KegOnly        bool      `json:"keg_only"`
-	Bottled        bool      `json:"bottled"`
-	InstalledOnReq bool      `json:"installed_on_request"` // installed on request vs as dep
-	InstalledAsDep bool      `json:"installed_as_dependency"`
-	InstallPath    string    `json:"install_path"`
-	Size           int64     `json:"size"` // bytes
+	Name           string
+	FullName       string // e.g., "homebrew/core/neovim"
+	Tap            string
+	Version        string
+	Description    string
+	Homepage       string
+	License        string
+	Pinned         bool
+	Outdated       bool
+	NewVersion     string // populated when outdated
+	InstalledOn    time.Time
+	Dependencies   []string
+	BuildDeps      []string
+	Caveats        string
+	KegOnly        bool
+	Bottled        bool
+	InstalledOnReq bool // installed on request vs as dep
+	InstalledAsDep bool
+	InstallPath    string
+	Size           int64 // bytes
 	// 6.0.0 additions
-	Aliases             []string `json:"aliases,omitempty"`
-	Binaries            []string `json:"binaries,omitempty"`             // executables installed by this formula
-	InstalledDependents []string `json:"installed_dependents,omitempty"` // reverse deps (installed only)
-	ListVersions        []string `json:"list_versions,omitempty"`        // all installed version history
-	Revision            int      `json:"revision,omitempty"`             // formula revision
-	Shadowed            bool     `json:"shadowed,omitempty"`             // PATH shadowing warning
-
-	// Installed holds the "installed" entries of a `brew info --json=v2`
-	// payload. A non-empty slice is the authoritative installed signal:
-	// InstalledOnReq/InstalledAsDep can both be false for an installed
-	// formula (r1 finding 22).
-	Installed []InstalledVersion `json:"installed,omitempty"`
+	Aliases             []string
+	Binaries            []string // executables installed by this formula
+	InstalledDependents []string // reverse deps (installed only)
+	ListVersions        []string // all installed version history
+	Revision            int      // formula revision
+	Shadowed            bool     // PATH shadowing warning
 }
 
 // InstalledVersion is one entry of the "installed" array in
