@@ -165,9 +165,10 @@ At 140x40 the Info views now split. The screens that changed because of the spli
 (the others at 140x40 are unchanged by it): 02 formulae (Info is the default tab),
 03 formulae info, 06 taps (Tap Info), 17 cask info, 19 services info, and the
 overlays that sit over those Info views: 07 confirm modal, 10 toast, 12 confirm
-upgrade, 13 toast stack, 14 input modal, 20 services stop confirm. 80x24 and 200x60
-are byte-identical to before this revision (80x24 is below the threshold; 200x60 was
-already split).
+upgrade, 13 toast stack, 14 input modal, 20 services stop confirm. 80x24 is
+byte-identical to before this revision (below the threshold). 200x60 was already
+split; its Tap Info, Services Info and the overlays over them (06, 14, 19, 20) change
+only because the Remote and the Unit file moved to the right column.
 
 
 ## AC-04 — the Log box gives the space back when idle
