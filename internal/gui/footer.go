@@ -11,8 +11,7 @@ import (
 // globalHints are the keys every panel answers to, listed after the panel's
 // own in the footer.
 var globalHints = []keyHint{
-	{"Tab", "next"}, {"S-Tab", "prev"}, {"1-7", "jump"}, {"/", "search"},
-	{"?", "help"}, {"R", "refresh"}, {"C", "log"}, {"q", "quit"}, {"PgUp/Dn", "scroll"},
+	keyNext, keyPrev, keyJump, keySearch, keyHelp, keyRefresh, keyLog, keyQuit, keyPage,
 }
 
 // footerHints is the key row the footer shows: the keys of the open modal,
@@ -23,13 +22,13 @@ func (m Model) footerHints() []keyHint {
 		return modalHints(m.activeModal)
 	}
 	if m.showHelp {
-		return []keyHint{{"?/esc", "close"}}
+		return []keyHint{keyHelpOff}
 	}
 	hints := append([]keyHint{}, m.panelKeyHints()...)
 	hints = append(hints, globalHints...)
 	if m.opState != nil && m.opState.Done() {
 		// A finished operation covers the main area, and Esc clears it.
-		return append([]keyHint{{"esc", "close"}}, hints...)
+		return append([]keyHint{keyClose}, hints...)
 	}
 	return hints
 }
@@ -40,7 +39,7 @@ func (m Model) panelKeyHints() []keyHint {
 	if m.activePanel == PanelServices {
 		hints := servicesHints(m.panels[PanelServices])
 		if m.activeTab == servicesLogsTab {
-			hints = append(hints, keyHint{"e", "stream"})
+			hints = append(hints, svLogStream)
 		}
 		return hints
 	}
@@ -50,18 +49,18 @@ func (m Model) panelKeyHints() []keyHint {
 	return panelHints(m.activePanel)
 }
 
-// modalHints lists the keys a modal answers to, as it handles them.
+// modalHints lists the keys a modal answers to, as the modal lists them in
+// its Hints. A modal that lists none leaves the footer its close key.
 func modalHints(mo modal.Modal) []keyHint {
-	switch mo.(type) {
-	case *modal.ConfirmModal:
-		return []keyHint{{"y", "yes"}, {"n", "no"}, {"esc", "cancel"}}
-	case *modal.MenuModal:
-		return []keyHint{{"↑↓", "move"}, {"enter", "choose"}, {"esc", "cancel"}}
-	case *modal.InputModal:
-		return []keyHint{{"enter", "submit"}, {"esc", "cancel"}}
-	default:
-		return []keyHint{{"esc", "close"}}
+	h, ok := mo.(modal.Hinter)
+	if !ok {
+		return []keyHint{keyClose}
 	}
+	var hints []keyHint
+	for _, x := range h.Hints() {
+		hints = append(hints, keyHint{key: x.Key, desc: x.Desc})
+	}
+	return hints
 }
 
 // renderBottomBar draws the footer: one row of key hints across the bottom.

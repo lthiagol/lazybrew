@@ -24,3 +24,18 @@ type MenuResult struct {
 	SelectedIndex int
 	Cancelled     bool
 }
+
+// Hint is one key a modal answers to, and what it does.
+type Hint struct {
+	Key  string
+	Desc string
+}
+
+// Hinter is a modal that lists the keys it answers to. Its key line and the
+// footer are both drawn from Hints, so the two cannot disagree.
+type Hinter interface {
+	Hints() []Hint
+}
+
+// hintCancel is the key every modal answers with a cancel.
+var hintCancel = Hint{Key: "esc", Desc: "cancel"}

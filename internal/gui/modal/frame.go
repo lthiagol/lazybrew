@@ -113,6 +113,15 @@ func keyHint(accent color.Color, key, desc string) string {
 		style.SubtleText.Render(" "+desc)
 }
 
+// hintViews draws each hint as a key hint, for a key line.
+func hintViews(accent color.Color, hints []Hint) []string {
+	out := make([]string, 0, len(hints))
+	for _, h := range hints {
+		out = append(out, keyHint(accent, h.Key, h.Desc))
+	}
+	return out
+}
+
 // keyLine joins key hints with the gap the footer uses.
 func keyLine(hints ...string) string {
 	return strings.Join(hints, "   ")

@@ -129,7 +129,7 @@ func TestScrollKeysAreInTheHelpAndFooter(t *testing.T) {
 	for _, page := range buildHelp() {
 		for _, sec := range page.sections {
 			for _, item := range sec.items {
-				help.WriteString(item.key + " " + item.desc + "\n")
+				help.WriteString(item.helpKeyText() + " " + item.help + "\n")
 			}
 		}
 	}

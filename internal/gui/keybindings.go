@@ -2,10 +2,125 @@ package gui
 
 import "github.com/lthiagol/lazybrew/internal/brew"
 
+// keyHint is one key a context answers to, and what each surface says about it.
+// key is the footer's spelling of the key, helpKey the help screen's when that
+// differs, and keys the spellings the key dispatch matches (key itself when
+// empty, space-separated otherwise). desc is the footer's word, and an empty
+// desc leaves the key off the footer; help is the help screen's line, and an
+// empty help leaves it off the help screen.
 type keyHint struct {
-	key  string
-	desc string
+	key     string
+	helpKey string
+	keys    string
+	desc    string
+	help    string
 }
+
+// helpKeyText is the key as the help screen shows it.
+func (h keyHint) helpKeyText() string {
+	if h.helpKey != "" {
+		return h.helpKey
+	}
+	return h.key
+}
+
+// The key tables. Every key a context answers to is declared once, here, with
+// its footer word and its help line. The footer and the help screen list these
+// entries in their own order, and the key dispatch in gui.go answers to them;
+// keymap_test.go holds the three to one another.
+
+// Keys every panel answers to.
+var (
+	keyNext    = keyHint{key: "Tab", keys: "tab", desc: "next", help: "Next panel"}
+	keyPrev    = keyHint{key: "S-Tab", helpKey: "Shift+Tab", keys: "shift+tab", desc: "prev", help: "Previous panel"}
+	keyJump    = keyHint{key: "1-7", keys: "1 2 3 4 5 6 7", desc: "jump", help: "Jump to panel"}
+	keyScroll  = keyHint{key: "j/k", keys: "j k down up", help: "Scroll list"}
+	keyPage    = keyHint{key: "PgUp/Dn", helpKey: "PgUp/PgDn", keys: "pgup pgdown", desc: "scroll", help: "Scroll content by a page"}
+	keyEnds    = keyHint{key: "Home/End", keys: "home end g G", help: "Top/bottom (g/G outside Search)"}
+	keyTabs    = keyHint{key: "[/]", keys: "[ ] left right", help: "Switch tabs"}
+	keySearch  = keyHint{key: "/", desc: "search", help: "Search packages"}
+	keyHelp    = keyHint{key: "?", desc: "help", help: "This help"}
+	keyRefresh = keyHint{key: "R", desc: "refresh", help: "Refresh all data"}
+	keyLog     = keyHint{key: "C", desc: "log", help: "Toggle command log"}
+	keyQuit    = keyHint{key: "q", keys: "q ctrl+c", desc: "quit", help: "Quit lazybrew"}
+	keyClose   = keyHint{key: "esc", desc: "close"}
+	keyHelpOff = keyHint{key: "?/esc", keys: "? esc", desc: "close"}
+)
+
+// Keys the panels share, with the same words wherever they appear.
+var (
+	keyNavigate        = keyHint{key: "j/k", keys: "j k down up", desc: "navigate"}
+	keyPanelTabs       = keyHint{key: "[ ]", keys: "[ ] left right", desc: "tabs"}
+	keyUpgradeSelected = keyHint{key: "u", keys: "u", desc: "upgrade", help: "Upgrade selected"}
+	keyUpgradeAll      = keyHint{key: "U", desc: "upgrade all", help: "Upgrade all"}
+)
+
+// Formulae.
+var (
+	fInstall   = keyHint{key: "i", desc: "install", help: "Install selected"}
+	fRemove    = keyHint{key: "x", desc: "remove", help: "Uninstall selected"}
+	fReinstall = keyHint{key: "r", desc: "reinstall", help: "Reinstall selected"}
+	fPin       = keyHint{key: "p", desc: "pin", help: "Pin/Unpin selected"}
+	fLeaves    = keyHint{key: "L", desc: "leaves", help: "Toggle leaves filter"}
+	fFetch     = keyHint{key: "F", desc: "fetch", help: "Fetch selected"}
+)
+
+// Casks.
+var (
+	cInstall   = keyHint{key: "i", desc: "install", help: "Install"}
+	cRemove    = keyHint{key: "x", desc: "remove", help: "Uninstall"}
+	cZap       = keyHint{key: "X", desc: "zap", help: "Zap uninstall"}
+	cReinstall = keyHint{key: "r", desc: "reinstall", help: "Reinstall"}
+	cUpgrade   = keyHint{key: "u", desc: "upgrade", help: "Upgrade"}
+	cFetch     = keyHint{key: "F", desc: "fetch", help: "Fetch"}
+)
+
+// Outdated.
+var (
+	oSelect    = keyHint{key: "Space", keys: "space", desc: "select", help: "Toggle selection"}
+	oSelectAll = keyHint{key: "a", desc: "select all", help: "Select/deselect all"}
+)
+
+// Taps. The trust key's footer word depends on the tap, so it has an entry for
+// each word; the help line sits with the first.
+var (
+	tAdd       = keyHint{key: "a", desc: "add tap", help: "Add tap"}
+	tUntap     = keyHint{key: "x", desc: "untap", help: "Untap"}
+	tTrust     = keyHint{key: "t", desc: "trust", help: "Trust or untrust tap"}
+	tUntrust   = keyHint{key: "t", desc: "untrust"}
+	tTrustItem = keyHint{key: "T", help: "Trust a formula or cask"}
+	tRepair    = keyHint{key: "r", desc: "repair", help: "Repair tap"}
+)
+
+// Services. The action keys' footer words depend on the service's state.
+var (
+	svStart     = keyHint{key: "s", desc: "start", help: "Start"}
+	svStop      = keyHint{key: "S", desc: "stop", help: "Stop"}
+	svRestart   = keyHint{key: "r", desc: "restart", help: "Restart"}
+	svRun       = keyHint{key: "f", desc: "run", help: "Run (foreground)"}
+	svCleanup   = keyHint{key: "c", desc: "cleanup", help: "Cleanup stale services"}
+	svLogStream = keyHint{key: "e", desc: "stream", help: "Logs tab: stdout or stderr"}
+)
+
+// Status.
+var (
+	stCleanup    = keyHint{key: "c", desc: "cleanup", help: "Run brew cleanup"}
+	stDoctor     = keyHint{key: "d", desc: "doctor", help: "Run brew doctor"}
+	stAutoremove = keyHint{key: "A", desc: "autoremove", help: "Run brew autoremove"}
+	stBrewfile   = keyHint{key: "B", desc: "brewfile", help: "Brewfile actions"}
+	stVulns      = keyHint{key: "v", desc: "vulns", help: "Vulnerability check"}
+	stMissing    = keyHint{key: "m", desc: "missing", help: "Missing dependencies"}
+	stTabs       = keyHint{key: "[ ]", keys: "[ ] left right", help: "Switch tabs"}
+)
+
+// Search.
+var (
+	sExecute    = keyHint{key: "Enter", keys: "enter", desc: "search", help: "Execute search"}
+	sType       = keyHint{key: "/", help: "Type search query"}
+	sInstall    = keyHint{key: "i", desc: "install", help: "Install selected result"}
+	sInstallCap = keyHint{key: "I", desc: "install"}
+	sFetch      = keyHint{key: "F", desc: "fetch", help: "Fetch selected result"}
+)
 
 // serviceActionHints are the Services actions that apply to a service in its
 // state. A service that is not running starts and runs. One that stops and
@@ -13,13 +128,13 @@ type keyHint struct {
 func serviceActionHints(s brew.Service) []keyHint {
 	var hints []keyHint
 	if !serviceRunning(s) {
-		hints = append(hints, keyHint{"s", "start"})
+		hints = append(hints, svStart)
 	}
 	if serviceStoppable(s) {
-		hints = append(hints, keyHint{"S", "stop"}, keyHint{"r", "restart"})
+		hints = append(hints, svStop, svRestart)
 	}
 	if !serviceRunning(s) {
-		hints = append(hints, keyHint{"f", "run"})
+		hints = append(hints, svRun)
 	}
 	return hints
 }
@@ -35,20 +150,20 @@ func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
 	switch {
 	case t.IsOfficial || !trustKnown:
 	case t.Trusted:
-		hints = append(hints, keyHint{"t", "untrust"})
+		hints = append(hints, tUntrust)
 	default:
-		hints = append(hints, keyHint{"t", "trust"})
+		hints = append(hints, tTrust)
 	}
 	if !t.IsOfficial {
-		hints = append(hints, keyHint{"x", "untap"})
+		hints = append(hints, tUntap)
 	}
-	return append(hints, keyHint{"r", "repair"})
+	return append(hints, tRepair)
 }
 
 // tapsHints is the Taps footer: the actions for the selected tap lead, then the
 // keys that apply to any tap.
 func tapsHints(p *panelData) []keyHint {
-	hints := []keyHint{{"j/k", "navigate"}, {"a", "add tap"}}
+	hints := []keyHint{keyNavigate, tAdd}
 	if t := p.selectedTap(); t != nil {
 		hints = append(tapActionHints(*t, !p.trustUnknown), hints...)
 	}
@@ -58,33 +173,32 @@ func tapsHints(p *panelData) []keyHint {
 // servicesHints is the Services footer: the actions for the selected service
 // lead, then the keys that apply in any state.
 func servicesHints(p *panelData) []keyHint {
-	hints := []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"c", "cleanup"}}
+	hints := []keyHint{keyNavigate, keyPanelTabs, svCleanup}
 	if s := p.selectedService(); s != nil {
 		hints = append(serviceActionHints(*s), hints...)
 	}
 	return hints
 }
 
-// panelHints lists the LIVE keys per panel — every entry here must have a
-// handler in gui.go's Update, and every handled key should appear here
-// (r1 finding 24).
+// panelHints lists the footer keys of a panel with no state applied: the Taps
+// and Services footers are made by tapsHints and servicesHints, which apply it.
 func panelHints(id PanelID) []keyHint {
 	switch id {
 	case PanelFormulae:
-		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"i", "install"}, {"x", "remove"}, {"r", "reinstall"}, {"u", "upgrade"}, {"U", "upgrade all"}, {"p", "pin"}, {"L", "leaves"}, {"F", "fetch"}}
+		return []keyHint{keyNavigate, keyPanelTabs, fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch}
 	case PanelCasks:
-		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"i", "install"}, {"x", "remove"}, {"X", "zap"}, {"r", "reinstall"}, {"u", "upgrade"}, {"U", "upgrade all"}, {"F", "fetch"}}
+		return []keyHint{keyNavigate, keyPanelTabs, cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch}
 	case PanelServices:
-		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"s", "start"}, {"S", "stop"}, {"r", "restart"}, {"f", "run"}, {"c", "cleanup"}}
+		return []keyHint{keyNavigate, keyPanelTabs, svStart, svStop, svRestart, svRun, svCleanup}
 	case PanelTaps:
-		return []keyHint{{"j/k", "navigate"}, {"a", "add tap"}, {"x", "untap"}, {"t", "trust"}, {"T", "trust item"}, {"r", "repair"}}
+		return []keyHint{keyNavigate, tAdd, tUntap, tTrust, tRepair}
 	case PanelStatus:
-		return []keyHint{{"R", "refresh"}, {"c", "cleanup"}, {"d", "doctor"}, {"A", "autoremove"}, {"B", "brewfile"}, {"v", "vulns"}, {"m", "missing"}}
+		return []keyHint{keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing}
 	case PanelOutdated:
-		return []keyHint{{"j/k", "navigate"}, {"u", "upgrade"}, {"U", "upgrade all"}, {"Space", "select"}, {"a", "select all"}}
+		return []keyHint{keyNavigate, keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll}
 	case PanelSearch:
-		return []keyHint{{"j/k", "navigate"}, {"Enter", "search"}, {"i", "install"}, {"I", "install"}, {"F", "fetch"}}
+		return []keyHint{keyNavigate, sExecute, sInstall, sInstallCap, sFetch}
 	default:
-		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}}
+		return []keyHint{keyNavigate, keyPanelTabs}
 	}
 }

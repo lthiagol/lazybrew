@@ -27,8 +27,8 @@ func TestHelpScrollReachesEveryLineAt80x24(t *testing.T) {
 	for _, page := range buildHelp() {
 		for _, sec := range page.sections {
 			for _, item := range sec.items {
-				if !strings.Contains(seen, item.key) || !strings.Contains(seen, item.desc) {
-					t.Fatalf("paging the help never showed %q %q", item.key, item.desc)
+				if !strings.Contains(seen, item.helpKeyText()) || !strings.Contains(seen, item.help) {
+					t.Fatalf("paging the help never showed %q %q", item.helpKeyText(), item.help)
 				}
 			}
 		}
@@ -111,8 +111,8 @@ func TestHelpSectionsLineUp(t *testing.T) {
 		for _, sec := range page.sections {
 			var descAt []int
 			for _, it := range sec.items {
-				row := ansi.Strip(helpUnitRow(page, it.desc))
-				descAt = append(descAt, strings.Index(row, it.desc))
+				row := ansi.Strip(helpUnitRow(page, it.help))
+				descAt = append(descAt, strings.Index(row, it.help))
 			}
 			for _, at := range descAt[1:] {
 				if at != descAt[0] {

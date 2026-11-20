@@ -162,7 +162,7 @@ func renderServiceInfo(p *panelData, width int, icons style.Icons) string {
 	if info := p.serviceInfoFor(s.Name); info != nil {
 		fields = serviceInfoDetail(*info, width, icons)
 	}
-	keys := append(serviceActionHints(*s), keyHint{"c", "cleanup"})
+	keys := append(serviceActionHints(*s), svCleanup)
 	return fields + "\n\n" + footerLine(keys, width)
 }
 

@@ -69,15 +69,16 @@ func (m *MenuModal) View() tea.View {
 		lines = append(lines, textutil.Clip(itemStyle.Render(shortcut+prefix+item), innerWidth(formWidth)))
 	}
 
-	keys := textutil.Clip(keyLine(
-		keyHint(style.AccentColor, "↑↓", "move"),
-		keyHint(style.AccentColor, "enter", "choose"),
-		keyHint(style.AccentColor, "esc", "cancel"),
-	), innerWidth(formWidth))
+	keys := textutil.Clip(keyLine(hintViews(style.AccentColor, m.Hints())...), innerWidth(formWidth))
 	// Every item is padded to the widest, so the list reads as one block, left
 	// aligned, when each row is centred in the box.
 	list := strings.Join(leftBlock(lines), "\n")
 	return tea.NewView(dialog(style.AccentColor, m.title, formWidth, []string{list}, keys))
+}
+
+// Hints are the keys the menu answers to: the arrows, enter, and esc.
+func (m *MenuModal) Hints() []Hint {
+	return []Hint{{Key: "↑↓", Desc: "move"}, {Key: "enter", Desc: "choose"}, hintCancel}
 }
 
 func (m *MenuModal) Done() bool      { return m.done }
