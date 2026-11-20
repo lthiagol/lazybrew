@@ -413,3 +413,12 @@ criterion; the code is as described and the orchestrator can redirect it.
   keeps `started`. Hard-coding the brief's `●` and `○` would have bypassed the
   icon setting. The orchestrator can redirect to the literal glyphs.
 - **Raised by:** runner lane (slice `v2-05s-services`).
+
+### Orchestrator rulings on the v2-05s runner decisions (2026-11-20)
+
+- **Q-v2-services-toast:** accepted — a toast whose text exceeds its cut width
+  wraps to at most **3** rows (then cut with `…`); short toasts unchanged. The
+  stack still never covers the header or footer.
+- **Q-v2-services-icons:** accepted — Info status glyphs come from the icon set
+  with the word `running`/`stopped`/…; the sidebar keeps brew's status word.
+- Cron shown as `hour 3, minute 0` and `c cleanup` always shown: accepted.
