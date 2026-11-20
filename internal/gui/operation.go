@@ -9,6 +9,7 @@ import (
 	"charm.land/bubbles/v2/progress"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/anim"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -18,6 +19,9 @@ const operationTailLines = 2
 
 // operationBarWidth is the widest the batch progress bar draws.
 const operationBarWidth = 40
+
+// operationCloseHint ends the status row of a finished operation: Esc closes it.
+const operationCloseHint = " · Esc to close"
 
 // operationAutoClose is how long a successful operation stays on screen before
 // it closes itself. The toast has already said it finished.
@@ -96,7 +100,7 @@ func (m Model) renderOperation(width, height int) string {
 	}
 	head := []string{
 		style.AccentText.Render(withIcon(icon, op.Title)),
-		m.operationStatus(op),
+		m.operationStatus(op, width),
 	}
 	if _, total := operationProgress(op); total > 0 {
 		head = append(head, m.operationBar(op, width))
@@ -111,16 +115,20 @@ func (m Model) renderOperation(width, height int) string {
 }
 
 // operationStatus is the row under the title: the elapsed time while the run
-// goes on, then the final state.
-func (m Model) operationStatus(op *Operation) string {
+// goes on, then the final state. A finished run ends with how to close it, and
+// a long error is cut short so that hint stays on the row.
+func (m Model) operationStatus(op *Operation, width int) string {
+	closeHint := style.SubtleText.Render(operationCloseHint)
 	switch op.Status {
 	case opSuccess:
 		return style.InstalledBadge.Render(withIcon(m.icons.OK,
-			"Completed in "+formatElapsed(op.Ended.Sub(op.Started))))
+			"Completed in "+formatElapsed(op.Ended.Sub(op.Started)))) + closeHint
 	case opError:
-		return style.ErrorBadge.Render(withIcon(m.icons.Error, "Failed: "+op.Err.Error()))
+		text := ansi.Truncate(withIcon(m.icons.Error, "Failed: "+op.Err.Error()),
+			max(0, width-lipgloss.Width(closeHint)), "…")
+		return style.ErrorBadge.Render(text) + closeHint
 	case opCancelled:
-		return style.SubtleText.Render("Cancelled")
+		return style.SubtleText.Render("Cancelled") + closeHint
 	default:
 		return style.SubtleText.Render("Running " + formatElapsed(time.Since(op.Started)) + " · Esc to cancel")
 	}

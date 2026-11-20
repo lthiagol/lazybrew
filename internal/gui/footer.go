@@ -26,7 +26,12 @@ func (m Model) footerHints() []keyHint {
 		return []keyHint{{"?/esc", "close"}}
 	}
 	hints := append([]keyHint{}, m.panelKeyHints()...)
-	return append(hints, globalHints...)
+	hints = append(hints, globalHints...)
+	if m.opState != nil && m.opState.Done() {
+		// A finished operation covers the main area, and Esc clears it.
+		return append([]keyHint{{"esc", "close"}}, hints...)
+	}
+	return hints
 }
 
 // panelKeyHints are the active panel's keys. The Services keys follow the
