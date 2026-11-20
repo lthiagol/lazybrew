@@ -266,6 +266,17 @@ func (p *panelData) serviceInfoFor(name string) *brew.ServiceInfo {
 	return nil
 }
 
+// selectServiceNamed moves the cursor to the named service when the list still
+// has it. An empty or unknown name leaves the cursor where it is.
+func (p *panelData) selectServiceNamed(name string) {
+	for i, s := range p.services {
+		if name != "" && s.Name == name {
+			p.selected = i
+			return
+		}
+	}
+}
+
 func emptyPanel(width, height int) string {
 	return lipgloss.NewStyle().Width(width).Height(height).Render(
 		style.SubtleText.Render("No selection"),

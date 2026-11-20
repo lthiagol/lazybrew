@@ -573,35 +573,17 @@ func TestParsePackageInfoInstalledDetection(t *testing.T) {
 // --- Finding 24: documented keys have handlers ----------------------------
 
 func TestServicesRestartKeyHandler(t *testing.T) {
-	var gotArgs [][]string
-	r := brew.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		gotArgs = append(gotArgs, args)
-		return []byte(""), nil
-	}
-	m := New(brew.NewClient(r), config.Default())
-	m.switchPanel(PanelServices)
-	p := m.panels[PanelServices]
-	p.items = []string{"redis  started"}
-	p.selected = 0
-
-	tm, cmd := m.serviceAction("restart")
+	// Restart on a running service confirms first (AC-03.2); the confirm then
+	// runs `brew services restart` through the task manager.
+	m, calls := servicesActionModel(t, []brew.Service{runningService("redis")})
+	tm, _ := m.serviceAction("restart")
 	tmm := tm.(Model)
-	if _, ok := cmd().(TaskStartedMsg); !ok {
-		t.Fatal("expected TaskStartedMsg for restart")
+	if tmm.activeModal == nil {
+		t.Fatal("restart on a running service must open the confirm first")
 	}
-	msg := tmm.tasks.RunNext()()
-	if comp, ok := msg.(TaskCompletedMsg); !ok || comp.Err != nil {
-		t.Fatalf("expected clean completion, got %T (%v)", msg, comp)
-	}
-	found := false
-	for _, args := range gotArgs {
-		if len(args) == 3 && args[0] == "services" && args[1] == "restart" && args[2] == "redis" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatalf("expected `brew services restart redis`, got %v", gotArgs)
+	confirmAndRun(t, &tmm)
+	if !hasCall(*calls, "services", "restart", "redis") {
+		t.Fatalf("expected `brew services restart redis`, got %v", *calls)
 	}
 }
 
@@ -620,38 +602,21 @@ func TestSearchInstallKeyIHasHandler(t *testing.T) {
 }
 
 func TestServicesRestartHintKeyHandled(t *testing.T) {
-	var gotArgs [][]string
-	r := brew.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		gotArgs = append(gotArgs, args)
-		return []byte(""), nil
-	}
-	m := New(brew.NewClient(r), config.Default())
-	m.switchPanel(PanelServices)
-	p := m.panels[PanelServices]
-	p.items = []string{"redis  stopped"}
-	p.selected = 0
+	// r on a running service opens the restart confirm (AC-03.2); a stopped one
+	// is refused with a toast instead (AC-03.1). Confirming runs the restart.
+	m, calls := servicesActionModel(t, []brew.Service{runningService("redis")})
 
 	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'r', Text: "r"})
 	mm := nm.(Model)
-	if cmd == nil {
-		t.Fatal("r on Services must enqueue a restart task (r1 finding 24)")
+	if mm.activeModal == nil {
+		t.Fatal("r on a running Services row must open the restart confirm (AC-03.2)")
 	}
-	if _, ok := cmd().(TaskStartedMsg); !ok {
-		t.Fatal("expected TaskStartedMsg for restart")
+	if cmd != nil {
+		t.Fatal("the confirm must not start a task before it is answered")
 	}
-	msg := mm.tasks.RunNext()()
-	if comp, ok := msg.(TaskCompletedMsg); !ok || comp.Err != nil {
-		t.Fatalf("expected clean completion, got %T (%v)", msg, comp)
-	}
-	found := false
-	for _, args := range gotArgs {
-		if len(args) == 3 && args[0] == "services" && args[1] == "restart" && args[2] == "redis" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatalf("expected `brew services restart redis`, got %v", gotArgs)
+	confirmAndRun(t, &mm)
+	if !hasCall(*calls, "services", "restart", "redis") {
+		t.Fatalf("expected `brew services restart redis`, got %v", *calls)
 	}
 }
 
@@ -664,7 +629,7 @@ func TestServiceActionUnknownResolvesWithError(t *testing.T) {
 	p.items = []string{"redis  started"}
 	p.selected = 0
 
-	tm, cmd := m.serviceAction("bogus")
+	tm, cmd := m.runServiceTask("bogus", "redis")
 	tmm := tm.(Model)
 	if _, ok := cmd().(TaskStartedMsg); !ok {
 		t.Fatal("expected TaskStartedMsg")

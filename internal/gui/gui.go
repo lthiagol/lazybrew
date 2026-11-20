@@ -52,6 +52,7 @@ type Model struct {
 	helpScroll     int
 	tabContent     map[string]string
 	pendingAction  string
+	pendingService string
 	pendingMutType mutationType
 	batchCount     int
 	// batchIDs counts the occurrences of each task ID enqueued by the
@@ -404,10 +405,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(
 				m.setToast(msg.Title+": "+msg.Err.Error(), modal.ToastError),
 				m.tasks.RunNext(),
+				serviceReload(msg.ID),
 			)
 		}
 		if errors.Is(msg.Err, context.Canceled) {
-			return m, m.tasks.RunNext()
+			return m, tea.Batch(m.tasks.RunNext(), serviceReload(msg.ID))
 		}
 		switch msg.ID {
 		case "cleanup-preview":
@@ -520,6 +522,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case DataLoadedMsg:
 		if int(msg.PanelID) < len(m.panels) {
 			p := m.panels[msg.PanelID]
+			// A reload keeps the cursor on the same service by name, not by
+			// index, so a list that changed under it does not move the
+			// selection (AC-03.3).
+			selectedService := ""
+			if s := p.selectedService(); msg.PanelID == PanelServices && s != nil {
+				selectedService = s.Name
+			}
 			p.loading = false
 			p.loaded = true
 			p.err = msg.Err
@@ -533,6 +542,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if msg.PanelID == PanelStatus {
 					m.status = msg.Summary
 				}
+				p.selectServiceNamed(selectedService)
 			}
 			p.normalize()
 		}
