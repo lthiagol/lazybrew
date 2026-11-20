@@ -11,7 +11,7 @@ learn what is done, what is in flight, and where to pick up.
 | lb03-dashboard-outdated-count | 8a7b191, 4ae32bd, 99e54b7, 45fc3f8, 9fd23dd, adb8418, 80065c4, b92ff9d, 93a036b | closed | ok |
 | lb07-bound-remaining-reads | bd6dfd7, b5c1cc5, ea71699, 7b21fc0 | closed | ok |
 | v2-01-charm-v2 | 1861585, 0a89f8e, 0f65ba6, 10aade4, 6eec052, 7f32f2f | closed | ok |
-| v2-02-layout-bugs | — | implemented | awaiting reviewer |
+| v2-02-layout-bugs | 2611e00, a9ccbbe, a56fd8e, 2498d26, 23a031c, 5525dfd, 9046165, 8d9af6b, 690e5dd, 4a649cf | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -157,3 +157,20 @@ returned two findings (CI Go pin, paste untested), both fixed; r2 returned
 **Note for later slices:** on this machine `go env CGO_ENABLED` is 0, so the
 race gate runs as `CGO_ENABLED=1 go test ./... -race -count=1`. Real-terminal
 mouse, keys and paste are left to the human smoke gate (LB-05).
+
+**v2-02-layout-bugs, closed.** Every frame is now exactly the terminal size in
+every state (`TestEveryFrameIsTerminalSize`: 18 states × 140×40, 80×24,
+200×60, plus too-small) — the guard for the rest of the overhaul. Modals and
+toasts are Lip Gloss v2 compositor layers over a full-size base frame (no more
+modal below the screen, no layout shift on a toast); modals draw their content
+on the first frame (the `Loading...` gate is gone). A never-fetched panel says
+`not loaded`, a fetched empty one `(empty)` (explicit `loaded` flag). The Log
+is a sibling box below the main panel. The Formulae Deps tab shows real
+dependencies: brew's `runtime_dependencies` objects carry `full_name`, which
+`flexStrings` now reads (`bash` → `ncurses`, `readline`). Two extra bugs found
+and fixed by the runner: the main list was capped by the sidebar's row count,
+and help overflowed its box at 80×24. Review r1 found the main list still
+scrolled on the sidebar's window (major) and a weak first-frame modal test
+(minor); both fixed, r2 `ok`. Tests 410 → 426. Frames:
+`work/verification/v2-02-layout-bugs/after/`. Questions raised and ruled:
+Q-v2-hints, Q-v2-small (→ v2-03), Q-v2-help, Q-v2-cask-deps (→ v2-05).
