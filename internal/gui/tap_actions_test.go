@@ -100,3 +100,39 @@ func TestTapsFooterLeadsWithTheTapActions(t *testing.T) {
 		t.Fatalf("Taps footer = %v, want it to start with %v", got, want)
 	}
 }
+
+// TestTapTrustTabNamesTheKeysThatAct (v2-10 F-r1-01): the Trust tab, as drawn,
+// names t for the tap and T for its formulae and casks, and only where those
+// keys act. An official tap names neither; an unread one names R.
+func TestTapTrustTabNamesTheKeysThatAct(t *testing.T) {
+	const tapKeys = "Press t to trust or untrust the tap, and T to trust one of its formulae or casks."
+	for _, c := range []struct {
+		name       string
+		tap        brew.Tap
+		trustKnown bool
+		want       string
+		absent     []string
+	}{
+		{"untrusted", brew.Tap{Name: "user/tool"}, true, tapKeys, []string{"Press R"}},
+		{"trusted", brew.Tap{Name: "user/tool", Trusted: true}, true, tapKeys, []string{"Press R"}},
+		{"official", brew.Tap{Name: "homebrew/core", IsOfficial: true}, true, "", []string{"Press t", "Press T", "Press R"}},
+		{"unread", brew.Tap{Name: "user/tool"}, false, "Press R to read the trust state again.", []string{"Press t", "Press T"}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			m := tapsModel([]brew.Tap{c.tap}, c.trustKnown)
+			m = sendKey(m, "]")
+			out := ansi.Strip(m.View().Content)
+			if !strings.Contains(out, "Trust:") {
+				t.Fatalf("the Trust tab is not on screen:\n%s", out)
+			}
+			if c.want != "" && !strings.Contains(strings.Join(strings.Fields(out), " "), c.want) {
+				t.Errorf("Trust tab should say %q:\n%s", c.want, out)
+			}
+			for _, bad := range c.absent {
+				if strings.Contains(out, bad) {
+					t.Errorf("Trust tab should not say %q:\n%s", bad, out)
+				}
+			}
+		})
+	}
+}
