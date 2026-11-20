@@ -249,16 +249,17 @@ func (p *panelData) renderList(width, height int, batch map[int]bool) string {
 		return lipgloss.NewStyle().Width(width).Height(height).Render(style.ErrorBadge.Render("Error: " + p.err.Error()))
 	}
 
-	// The list fills the main panel it is drawn in. visibleCount is the
-	// sidebar box's window and must not cap it: at 80x24 that cap left the
-	// Status dashboard one row tall.
+	// The list fills the main panel it is drawn in, and its window is
+	// derived from the cursor at render time. It must not use p.offset,
+	// which belongs to the sidebar box's window.
 	visible := max(1, height)
-	end := min(p.offset+visible, len(p.items))
-	items := p.items[p.offset:end]
+	start := listWindow(p.selected, len(p.items), visible)
+	end := min(start+visible, len(p.items))
+	items := p.items[start:end]
 
 	lines := make([]string, 0, len(items))
 	for i, item := range items {
-		idx := p.offset + i
+		idx := start + i
 		prefix := "  "
 		if batch != nil && batch[idx] {
 			prefix = "● "
@@ -281,6 +282,21 @@ func (p *panelData) renderList(width, height int, batch map[int]bool) string {
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Top, lines...)
+}
+
+// listWindow returns the first row of a window of height rows over count
+// rows that keeps the cursor inside it. Rows above the cursor stay in view
+// while they fit. It is pure: rendering derives the window, never stores it.
+func listWindow(selected, count, height int) int {
+	if count == 0 {
+		return 0
+	}
+	sel := min(max(selected, 0), count-1)
+	start := 0
+	if sel >= height {
+		start = sel - height + 1
+	}
+	return max(0, min(start, count-height))
 }
 
 func emptyPanel(width, height int) string {
