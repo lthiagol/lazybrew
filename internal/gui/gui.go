@@ -120,6 +120,9 @@ type Model struct {
 	motionOn      bool
 	motionTicking bool
 	motionAt      time.Time
+	// motionPanel is the panel the tab underline last aimed at, so a switch
+	// to another panel snaps the underline rather than sliding it.
+	motionPanel PanelID
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
