@@ -139,24 +139,8 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 	case *modal.ConfirmResult:
 		if r.Confirmed {
 			switch m.pendingAction {
-			case "uninstall":
-				label := "Uninstall"
-				if m.pendingMutType == mutZap {
-					label = "Zap"
-				}
-				return m.doMutation(m.pendingMutType, label)
-			case "mutation":
-				labels := map[mutationType]string{
-					mutInstall:    "Install",
-					mutReinstall:  "Reinstall",
-					mutUpgrade:    "Upgrade",
-					mutUpgradeAll: "Upgrade All",
-				}
-				label := labels[m.pendingMutType]
-				if label == "" {
-					label = "Install"
-				}
-				return m.doMutation(m.pendingMutType, label)
+			case "uninstall", "mutation":
+				return m.doMutation(m.pendingMutType, m.pendingLabel)
 			case "batch-upgrade":
 				return m.batchUpgrade()
 			case "untap":
@@ -1150,14 +1134,15 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("uses", err)}
 				}
-				result := ""
+				var result strings.Builder
 				for _, u := range uses {
-					result += u + "\n"
+					result.WriteString(u + "\n")
 				}
-				if result == "" {
-					result = noDependents
+				content := result.String()
+				if content == "" {
+					content = noDependents
 				}
-				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: result}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: content}
 			case formulaFilesTab:
 				output, err := client.Runner.Execute(ctx, "list", name)
 				if err != nil {
@@ -1250,16 +1235,27 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 		label = "Zap"
 		message = "Zap " + name + "? This will remove ALL associated files and preferences."
 	}
+	// Only formulae have dependents, so a cask's confirm does not ask brew for
+	// them (Q4): brew uses has no answer for a cask.
+	isCask := m.activePanel == PanelCasks
+	client := m.client
 
 	return m, func() tea.Msg {
-		uses, err := boundedRead(brewReadTimeout, "uses", func(ctx context.Context) ([]string, error) {
-			return m.client.Formulae.Uses(ctx, name)
-		})
+		var uses []string
+		var err error
+		if !isCask {
+			uses, err = boundedRead(brewReadTimeout, "uses", func(ctx context.Context) ([]string, error) {
+				return client.Formulae.Uses(ctx, name)
+			})
+		}
+		text := message
 		if len(uses) > 0 {
-			message += "\n\nThe following depend on " + name + ":"
+			var b strings.Builder
+			b.WriteString(text + "\n\nThe following depend on " + name + ":")
 			for _, u := range uses {
-				message += "\n  " + u
+				b.WriteString("\n  " + u)
 			}
+			text = b.String()
 		}
 		// A timed-out dependency check must not look like "nothing depends
 		// on this package": the user still gets the confirm dialog, but it
@@ -1268,14 +1264,14 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 		// complaint.
 		var timeoutErr *brew.TimeoutError
 		if errors.As(err, &timeoutErr) {
-			message += "\n\nDependency check timed out after " + timeoutErr.Timeout.String() +
+			text += "\n\nDependency check timed out after " + timeoutErr.Timeout.String() +
 				" — the list of packages that depend on " + name + " may be incomplete."
 		}
 		return DepCheckMsg{
 			MutType: mutType,
 			Name:    name,
 			Label:   label,
-			Message: message,
+			Message: text,
 			Kind:    mutationKind(mutType),
 			Detail:  removalDetail(name, mutType == mutZap, uses, err),
 		}
@@ -1337,6 +1333,7 @@ func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, t
 
 	m.pendingAction = "mutation"
 	m.pendingMutType = mutType
+	m.pendingLabel = label
 	modal := modal.NewConfirmModal(mutationKind(mutType), actionLabel, message).
 		WithDetail(mutationDetail(mutType, name))
 	m.activeModal = modal

@@ -60,7 +60,9 @@ type Model struct {
 	pendingAction  string
 	pendingService string
 	pendingMutType mutationType
-	batchCount     int
+	// pendingLabel is the verb the confirmed mutation's task is titled with.
+	pendingLabel string
+	batchCount   int
 	// batchIDs counts the occurrences of each task ID enqueued by the
 	// current batch upgrade, so batchCount is only decremented by batch
 	// completions, never by unrelated ones (r1 finding 27). A formula and
@@ -580,59 +582,23 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case MutationResultMsg:
 		if msg.Leaves != nil && m.activePanel == PanelFormulae {
-			p := m.panels[PanelFormulae]
-			if !p.leavesActive {
-				p.unfilteredItems = p.items
-				p.unfilteredFormulae = p.formulae
-				leavesSet := make(map[string]bool, len(msg.Leaves))
-				for _, l := range msg.Leaves {
-					leavesSet[l] = true
-				}
-				filtered := make([]string, 0, len(msg.Leaves))
-				for i, item := range p.items {
-					if leavesSet[p.nameAt(i)] {
-						filtered = append(filtered, item)
-					}
-				}
-				formulae := make([]brew.Formula, 0, len(msg.Leaves))
-				for _, f := range p.formulae {
-					if leavesSet[f.Name] {
-						formulae = append(formulae, f)
-					}
-				}
-				p.items = filtered
-				p.formulae = formulae
-				p.indexInstalled()
-				p.leavesActive = true
-			} else {
-				p.items = p.unfilteredItems
-				p.formulae = p.unfilteredFormulae
-				p.indexInstalled()
-				p.unfilteredItems = nil
-				p.unfilteredFormulae = nil
-				p.leavesActive = false
-			}
-			p.normalize()
+			m.panels[PanelFormulae].toggleLeaves(msg.Leaves)
 		}
 		m.activeModal = nil
-		if msg.Err == nil && msg.Leaves == nil {
-			c := m.setToast(msg.Name+" completed", modal.ToastSuccess)
-			return m, tea.Batch(
-				c,
-				func() tea.Msg { return RefreshMsg{} },
-			)
-		} else if msg.Err != nil {
-			c := m.setToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
-			return m, tea.Batch(
-				c,
-				func() tea.Msg { return RefreshMsg{} },
-			)
+		// A leaves result is not a finished mutation, so it has no toast.
+		var toast tea.Cmd
+		switch {
+		case msg.Err != nil:
+			toast = m.setToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
+		case msg.Leaves == nil:
+			toast = m.setToast(msg.Name+" completed", modal.ToastSuccess)
 		}
-		return m, func() tea.Msg { return RefreshMsg{} }
+		return m, tea.Batch(toast, func() tea.Msg { return RefreshMsg{} })
 
 	case DepCheckMsg:
 		m.pendingAction = "uninstall"
 		m.pendingMutType = msg.MutType
+		m.pendingLabel = msg.Label
 		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Label, msg.Message).WithDetail(msg.Detail)
 		return m, m.activeModal.Init()
 
