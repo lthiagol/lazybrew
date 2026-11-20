@@ -19,7 +19,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-05s-services | e8add34, a4bc483, 421c0ba, 7d8b51c, befbf7e, a97a13a | closed | ok |
 | v2-06-animations | 46736ea, 4f54fc0, 7c79a51, 0ebc253, d5fb165, 16358cf, ee7d782, 789caf6, 7a66ae2, 2a135d8 | closed | ok |
 | v2-07-op-dismiss | 0dfd9ff, ede3959, 21b3b21, 21fb1a1 | closed | ok |
-| v2-08-preload | — | implemented | awaiting reviewer |
+| v2-08-preload | 1471c38, 2237be9, fd55e63, a8a1c38, 253c3ba, e3c4e08, b23a9d8, 3eed39a, f6107b4, 39f34d2 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -300,3 +300,13 @@ after F-r1-01 (see that commit). The first capture, taken while brew was slow, i
 superseded: its Taps frames were degraded, and that text is no longer current. Q-v2-08-b
 stays open: a slow `brew tap-info` still degrades the Taps panel without an error. The
 judgement calls are in `work/verification/v2-08-preload/result.md`.
+
+**v2-08-preload — closed (r4 `ok`).** With `gui.preload` on (default; env
+`LAZYBREW_PRELOAD`), Status loads first, then Formulae → Outdated → Casks →
+Taps → Services in the background, at most 2 reads at once, through the
+existing bounded reads; boxes show a spinner while queued/in flight; the
+dashboard fills in as panels land, and a failed read clears its count. Review:
+r1 an early switch lost its dashboard count, stale STATE text; r2 a failed read
+kept a stale count, harness showed an impossible `Taps 0`; r3 result.md
+misstated harness-caused differences; r4 `ok`. Q-v2-08-b (silent name-only
+Taps list) moved into v2-10 as AC-00.
