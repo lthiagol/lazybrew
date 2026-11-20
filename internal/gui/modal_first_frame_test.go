@@ -19,15 +19,15 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 			open: func(m *Model) *Model {
 				return updateModel(m, DepCheckMsg{MutType: mutUninstall, Name: "bash", Label: "Uninstall", Message: "Uninstall bash? This cannot be undone."})
 			},
-			want: "Uninstall bash",
+			want: "Uninstall bash? This cannot be undone.",
 		},
 		"tap add input": {
 			open: func(m *Model) *Model { return sendKey(sendKey(m, "5"), "a") },
-			want: "Tap repository",
+			want: "Tap repository (user/repo):",
 		},
 		"brewfile menu": {
 			open: func(m *Model) *Model { return sendKey(m, "B") },
-			want: "Export to Brewfile",
+			want: "Export to Brewfile (brew bundle dump)",
 		},
 		"trust menu": {
 			open: func(m *Model) *Model {
@@ -35,7 +35,7 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 				m.panels[PanelTaps].items = []string{"homebrew/foo"}
 				return sendKey(m, "t")
 			},
-			want: "Trust",
+			want: "Trust entire tap: homebrew/foo",
 		},
 	}
 	for name, c := range cases {
@@ -46,9 +46,10 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 				t.Fatal("modal did not open")
 			}
 			// Check the modal's own view: a panel that is still loading
-			// behind it legitimately shows its own spinner.
-			if modalView := m.activeModal.View().Content; strings.Contains(modalView, "Loading...") {
-				t.Fatalf("modal showed Loading... on its first frame: %q", modalView)
+			// behind it legitimately shows its own spinner. The want string
+			// is one only the modal draws, so the modal itself must show it.
+			if modalView := m.activeModal.View().Content; strings.Contains(modalView, "Loading...") || !strings.Contains(modalView, c.want) {
+				t.Fatalf("modal does not show %q on its first frame: %q", c.want, modalView)
 			}
 			if view := m.View().Content; !strings.Contains(view, c.want) {
 				t.Fatalf("first frame does not show the modal content %q", c.want)
