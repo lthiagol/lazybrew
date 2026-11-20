@@ -372,3 +372,13 @@ criterion; the code is as described and the orchestrator can redirect it.
   user expects: `PgUp`/`PgDn` scroll the main content by a page,
   `Home`/`End` (`g`/`G` only if not already bound) to top/bottom. Fix round,
   F-orch-03, with tests; help documents them.
+
+### Q-v2-04-wrap — confirm body: wrap or cut? (from review F-r1-04)
+
+- **Question:** AC-02.5 says every line of a confirm is cut to the inner
+  width; the runner wraps the question and the consequence line instead.
+- **Orchestrator ruling (2026-11-20):** **wrap the prose** (question,
+  consequence, input prompt) — a cut question can hide what is being
+  confirmed; **cut** the single-line parts (chip, key line, menu items) with
+  `…`. The box must still fit the frame at 80×24 (height included). AC-02.5 is
+  read this way from now on. Closed.
