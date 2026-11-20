@@ -38,8 +38,7 @@ wc -l: commands.go 2124 → 712; gui.go 1499 → 675.
 - withIcon → presentation.WithIcon (icons_test, look_test); help and scroll
   tests read helpKeyText() / help; operation_dismiss uses keyClose.
 
-## Seen, not done
-- No questions filed.
+## Seen, not done (no questions filed)
 - extractPackageName is test-only, as before (cr5).
 - render.go Artifacts loop still uses +=; panel.go:347 and
   presentation/detail.go:136 keep raw ansi.Truncate.
