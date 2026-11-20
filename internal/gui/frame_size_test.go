@@ -47,7 +47,7 @@ var frameStates = []frameState{
 		return m
 	}},
 	{"toast", func(m *Model) *Model {
-		m.toast = modal.NewToast("Install completed", modal.ToastSuccess)
+		m.toasts = []*modal.Toast{modal.NewToast("Install completed", modal.ToastSuccess)}
 		return m
 	}},
 	{"operation running", func(m *Model) *Model {

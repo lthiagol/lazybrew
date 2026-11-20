@@ -128,8 +128,8 @@ func TestSetToastArmsTickCmd(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("setToast must arm a tick cmd, otherwise the toast never dismisses")
 	}
-	if m.toast == nil || m.toast.Message != "hello" {
-		t.Fatalf("expected toast to be set, got %+v", m.toast)
+	if m.newestToast() == nil || m.newestToast().Message != "hello" {
+		t.Fatalf("expected toast to be set, got %+v", m.newestToast())
 	}
 }
 
@@ -142,7 +142,7 @@ func TestToastTickChainKeepsRearmingUntilExpired(t *testing.T) {
 	// producer of ToastTickMsg is the chain itself).
 	nm, tickCmd := m.Update(modal.ToastTickMsg{})
 	mm := nm.(Model)
-	if mm.toast == nil {
+	if mm.newestToast() == nil {
 		t.Fatal("unexpired toast must survive the first tick")
 	}
 	if tickCmd == nil {
@@ -199,8 +199,8 @@ func TestEnqueueQueuedOutcomeToastsQueueing(t *testing.T) {
 
 	nm, _ := m.doMutation(mutUpgrade, "Upgrade")
 	mm := nm.(Model)
-	if mm.toast == nil || !strings.Contains(mm.toast.Message, "Queued") {
-		t.Fatalf("expected 'queued' toast, got %+v", mm.toast)
+	if mm.newestToast() == nil || !strings.Contains(mm.newestToast().Message, "Queued") {
+		t.Fatalf("expected 'queued' toast, got %+v", mm.newestToast())
 	}
 }
 
@@ -226,7 +226,7 @@ func TestBrewUpdateEnqueueFailureResetsIsUpdating(t *testing.T) {
 	if nm.isUpdating {
 		t.Fatal("isUpdating must be reset when the brew-update task is dropped")
 	}
-	if nm.toast == nil {
+	if nm.newestToast() == nil {
 		t.Fatal("expected a warning toast when the update cannot be queued")
 	}
 }
@@ -387,8 +387,8 @@ func TestBatchUpgradeQueueFullSurfacesAndAdjustsCount(t *testing.T) {
 		t.Fatalf("expected batchCount to be capped at the queue size (%d), got %d",
 			task.DefaultMaxQueue, rm.batchCount)
 	}
-	if rm.toast == nil || !strings.Contains(rm.toast.Message, "Queue full") {
-		t.Fatalf("expected a queue-full warning toast, got %+v", rm.toast)
+	if rm.newestToast() == nil || !strings.Contains(rm.newestToast().Message, "Queue full") {
+		t.Fatalf("expected a queue-full warning toast, got %+v", rm.newestToast())
 	}
 }
 
@@ -714,7 +714,7 @@ func TestToastTickMsgEventuallyClearsToast(t *testing.T) {
 	// covers the boundary arithmetic itself.
 	deadline := time.After(5 * time.Second)
 	var cur Model = *m
-	for cur.toast != nil {
+	for cur.newestToast() != nil {
 		select {
 		case <-deadline:
 			t.Fatal("toast never dismissed via tick chain")
@@ -722,7 +722,7 @@ func TestToastTickMsgEventuallyClearsToast(t *testing.T) {
 		}
 		nm, cmd := cur.Update(modal.ToastTickMsg{})
 		cur = nm.(Model)
-		if cur.toast != nil && cmd == nil {
+		if cur.newestToast() != nil && cmd == nil {
 			t.Fatal("tick chain broke: no re-arm cmd while toast alive")
 		}
 		time.Sleep(300 * time.Millisecond)

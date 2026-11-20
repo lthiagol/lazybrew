@@ -39,8 +39,12 @@ type Model struct {
 	// in rows, keyed by contentKey. An item starts at the top.
 	contentScroll map[string]int
 
-	activeModal    modal.Modal
-	toast          *modal.Toast
+	activeModal modal.Modal
+	// toasts is the stack, oldest first; the newest is drawn lowest.
+	toasts []*modal.Toast
+	// toastTicking is set while the dismissal tick is in flight, so a stack
+	// has one tick chain, not one per toast.
+	toastTicking   bool
 	batch          *batchState
 	showHelp       bool
 	tabContent     map[string]string
@@ -106,17 +110,6 @@ type Model struct {
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
-
-// setToast shows a toast and arms its auto-dismiss tick. Every toast
-// producer must go through this: the only producer of ToastTickMsg is
-// Toast.Update itself, so without an armed first tick a toast would stay
-// on screen forever (r1 finding 4).
-func (m *Model) setToast(message string, t modal.ToastType) tea.Cmd {
-	m.toast = modal.NewToast(message, t)
-	return tea.Tick(500*time.Millisecond, func(time.Time) tea.Msg {
-		return modal.ToastTickMsg{}
-	})
-}
 
 func New(client *brew.Client, cfg *config.Config) *Model {
 	panels := initPanels()
@@ -229,18 +222,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case modal.ToastTickMsg:
-		if m.toast != nil {
-			updated, tickCmd := m.toast.Update(msg)
-			m.toast = updated
-			if m.toast.Dismissed() {
-				m.toast = nil
-			} else if tickCmd != nil {
-				// Re-arm the dismissal chain — without this the first
-				// tick would be the last and the toast would stick.
-				return m, tickCmd
-			}
+		// Drop the expired toasts; while any are left, re-arm the chain, or
+		// the last one would stick.
+		m.toasts = liveToasts(m.toasts, time.Now())
+		if len(m.toasts) == 0 {
+			m.toastTicking = false
+			return m, nil
 		}
-		return m, nil
+		return m, modal.ToastTick()
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -1041,10 +1030,8 @@ func (m Model) render() string {
 	// a row, so the screen behind them keeps its size and position. While a
 	// modal is open the frame behind it is muted first (dimBackdrop).
 	var overlays []*lipgloss.Layer
-	if m.toast != nil {
-		if toastView := m.toast.View(); toastView != "" {
-			overlays = append(overlays, bottomRight(toastView, m.width, m.height))
-		}
+	if len(m.toasts) > 0 {
+		overlays = append(overlays, m.toastLayer())
 	}
 	if m.activeModal != nil {
 		base = dimBackdrop(base)

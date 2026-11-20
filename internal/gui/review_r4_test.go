@@ -149,8 +149,8 @@ func TestBatchUpgradeZeroValidSelectionSurfacesToast(t *testing.T) {
 
 	nm, cmd := m.batchUpgrade()
 	rm := nm.(Model)
-	if rm.toast == nil || !strings.Contains(rm.toast.Message, "Outdated list") {
-		t.Fatalf("expected a warning toast when no selected package is still in the list, got %+v", rm.toast)
+	if rm.newestToast() == nil || !strings.Contains(rm.newestToast().Message, "Outdated list") {
+		t.Fatalf("expected a warning toast when no selected package is still in the list, got %+v", rm.newestToast())
 	}
 	if rm.batchCount != 0 || rm.batchTotal != 0 || len(rm.batchIDs) != 0 {
 		t.Fatalf("an empty batch must leave no counter state, got count=%d total=%d ids=%v",
@@ -196,8 +196,8 @@ func TestRefreshDuringBatchConfirmStillSurfacesToast(t *testing.T) {
 	// defaults to "No"; "y" is the explicit confirm.)
 	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	rm := asModel(nm)
-	if rm.toast == nil || !strings.Contains(rm.toast.Message, "Outdated list") {
-		t.Fatalf("expected the empty-selection warning toast after confirming, got %+v", rm.toast)
+	if rm.newestToast() == nil || !strings.Contains(rm.newestToast().Message, "Outdated list") {
+		t.Fatalf("expected the empty-selection warning toast after confirming, got %+v", rm.newestToast())
 	}
 	for _, msg := range execCmds(cmd) {
 		if _, ok := msg.(TaskStartedMsg); ok {

@@ -105,8 +105,8 @@ func TestBatchUpgradeQueueFullStillStartsBatch(t *testing.T) {
 	if rm.batchCount != task.DefaultMaxQueue {
 		t.Fatalf("expected batchCount capped at %d, got %d", task.DefaultMaxQueue, rm.batchCount)
 	}
-	if rm.toast == nil || !strings.Contains(rm.toast.Message, "Queue full") {
-		t.Fatalf("expected a queue-full warning toast, got %+v", rm.toast)
+	if rm.newestToast() == nil || !strings.Contains(rm.newestToast().Message, "Queue full") {
+		t.Fatalf("expected a queue-full warning toast, got %+v", rm.newestToast())
 	}
 
 	// NEW-1 (HIGH): the queue-full branch used to return only the toast,
@@ -186,8 +186,8 @@ func TestFailedBatchTaskDecrementsCounter(t *testing.T) {
 	if len(m.batchIDs) != 1 {
 		t.Fatalf("remaining batch task must still be tracked, got %v", m.batchIDs)
 	}
-	if m.toast == nil || !strings.Contains(m.toast.Message, "boom") {
-		t.Fatalf("expected an error toast for the failed task, got %+v", m.toast)
+	if m.newestToast() == nil || !strings.Contains(m.newestToast().Message, "boom") {
+		t.Fatalf("expected an error toast for the failed task, got %+v", m.newestToast())
 	}
 
 	// Mid-batch failure counter behavior: an unrelated completion must
