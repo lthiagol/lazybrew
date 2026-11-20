@@ -1,5 +1,5 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                                     
-╭─ 1 ◉ Status ──────────────────── 16 ─╮╭─ Status › Dashboard ─────────────────────────────────────────────────────────────────────────────╮
+╭─ 1 ◉ Status ─────────────────────────╮╭─ Status › Dashboard ─────────────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew 7.0.15-36-g1f335ae         ││  Dashboard    Config    Doctor                                                                   │
 │  Prefix: /home/linuxbrew/.linuxbrew  ││━━━━━━━━━━━━━                                                                                     │
 │                                      ││▸ Homebrew 7.0.15-36-g1f335ae                                                                     │

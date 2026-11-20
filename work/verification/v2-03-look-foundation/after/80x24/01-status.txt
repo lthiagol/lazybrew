@@ -1,24 +1,24 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                         
-╭─ 1 ◉ Status ──── 16 ─╮╭─ Status › Dashboard ─────────────────────────────────╮
+╭─ 1 ◉ Status ─────────╮╭─ Status › Dashboard ─────────────────────────────────╮
 │▸ Homebrew 7.0.15-3...││  Dashboard    Config    Doctor                       │
 │  Prefix: /home/lin...││━━━━━━━━━━━━━                                         │
 ╰──────────────────────╯│▸ Homebrew 7.0.15-36-g1f335ae                         │
-╭─ 2 ∘ Formulae ─ no… ─╮│  Prefix: /home/linuxbrew/.linuxbrew                  │
+╭─ 2 ∘ Formulae ─── – ─╮│  Prefix: /home/linuxbrew/.linuxbrew                  │
 │                      ││                                                      │
 ╰──────────────────────╯│  Formulae:  125 installed                            │
-╭─ 3 ▣ Casks ─ not l… ─╮│  Casks:     2 installed                              │
+╭─ 3 ▣ Casks ────── – ─╮│  Casks:     2 installed                              │
 │                      ││  Outdated:  — not loaded (press R to load)           │
 ╰──────────────────────╯│                                                      │
-╭─ 4 ↑ Outdated ─ no… ─╮│  Taps:      3 total                                  │
+╭─ 4 ↑ Outdated ─── – ─╮│  Taps:      3 total                                  │
 │                      ││             0 official, 3 third-party                │
 ╰──────────────────────╯│                                                      │
-╭─ 5 ⊕ Taps ─ not lo… ─╮│  Services:  3 total                                  │
+╭─ 5 ⊕ Taps ─────── – ─╮│  Services:  3 total                                  │
 │                      ││             1 running, 2 stopped                     │
 ╰──────────────────────╯│                                                      │
-╭─ 6 ◎ Services ─ no… ─╮│  R to refresh                                        │
+╭─ 6 ◎ Services ─── – ─╮│  R to refresh                                        │
 │                      │╰──────────────────────────────────────────────────────╯
 ╰──────────────────────╯╭─ Log ────────────────────────────────────────────────╮
-╭─ 7 ⌕ Search ─ not … ─╮│No commands executed yet                              │
+╭─ 7 ⌕ Search ───── – ─╮│No commands executed yet                              │
 │                      ││                                                      │
 ╰──────────────────────╯╰──────────────────────────────────────────────────────╯
  R refresh  c cleanup  d doctor  A autoremove  B brewfile  v vulns  ? more      

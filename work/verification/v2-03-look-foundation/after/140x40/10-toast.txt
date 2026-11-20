@@ -1,5 +1,5 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                         125 formulae
-╭─ 1 ◉ Status ──────────────────── 16 ─╮╭─ Formulae › List ────────────────────────────────────────────────────────────────────────────────╮
+╭─ 1 ◉ Status ─────────────────────────╮╭─ Formulae › List ────────────────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew 7.0.15-36-g1f335ae         ││  List    Info    Deps    Used By    Caveats    Files                                             │
 │  Prefix: /home/linuxbrew/.linuxbrew  ││━━━━━━━━                                                                                          │
 │                                      ││Name                                                          Version          Status     Tap     │
@@ -21,7 +21,7 @@
 │                                      ││eza                                                           0.23.5           installed  hb/c    │
 │                                      ││fd                                                            10.5.2           installed  hb/c    │
 ╰──────────────────────────────────────╯│ffmpeg                                                        9.0.2_1          installed  hb/c    │
-╭─ 4 ↑ Outdated ───────────── (empty) ─╮│ffmpegthumbnailer                                             2.4.2            installed  hb/c    │
+╭─ 4 ↑ Outdated ─────────────────── 0 ─╮│ffmpegthumbnailer                                             2.4.2            installed  hb/c    │
 │                                      ││flac                                                          1.5.0            installed  hb/c    │
 │                                      ││frond                                                         0.6.1            installed  lt/tap  │
 ╰──────────────────────────────────────╯│fzf                                                           0.75.0           installed  hb/c    │
