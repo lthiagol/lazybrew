@@ -129,12 +129,7 @@ type screenLayout struct {
 func (m Model) screenLayout() screenLayout {
 	bodyH := max(0, m.height-headerRows-bottomBarRows)
 	sideW := sidebarWidth(m.cfg, m.width)
-	logH := bodyH / 5
-	// The Log box needs a border top and bottom plus one body row; below
-	// three rows it cannot show a body, so it stays hidden.
-	if m.logCollapsed || logH < 3 {
-		logH = 0
-	}
+	logH := m.logHeight(bodyH)
 	mainH := bodyH - logH
 	return screenLayout{
 		bodyH:    bodyH,
@@ -144,6 +139,39 @@ func (m Model) screenLayout() screenLayout {
 		logH:     logH,
 		contentH: max(0, mainH-2-m.tabBarRows()),
 	}
+}
+
+// Log box heights. The box is one body row when idle and empty, at most
+// logIdleRows body rows when idle with lines, and a fifth of the body while a
+// task runs. Each is outer height: border top and bottom included.
+const (
+	logEmptyH = 3
+	logIdleH  = 7
+)
+
+// logHeight is the Log box's outer height in a body bodyH rows tall, 0 when it
+// is collapsed or too small to show a body row. The height changes at once with
+// the state; there is no animation.
+func (m Model) logHeight(bodyH int) int {
+	if m.logCollapsed {
+		return 0
+	}
+	full := bodyH / 5
+	var h int
+	switch {
+	case m.tasks.IsRunning():
+		h = full
+	case len(m.commandLog.Entries()) == 0:
+		h = logEmptyH
+	default:
+		h = min(full, logIdleH)
+	}
+	// The Log box needs a border top and bottom plus one body row; below
+	// three rows it cannot show a body, so it stays hidden.
+	if h < 3 {
+		return 0
+	}
+	return h
 }
 
 // tabBarRows is the height of the tab bar. The active tab draws a thick

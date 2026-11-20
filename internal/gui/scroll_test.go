@@ -12,14 +12,14 @@ import (
 
 var caveatLine = regexp.MustCompile(`line-(\d\d)`)
 
-// scrollFixture is the Formulae Caveats tab with sixty caveat lines, scrolled to
+// scrollFixture is the Formulae Caveats tab with ninety caveat lines, scrolled to
 // the top, so the main content is longer than its area at 140x40.
 func scrollFixture(t *testing.T) *Model {
 	t.Helper()
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m = sendKey(m, "2")
 	var lines []string
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 90; i++ {
 		lines = append(lines, fmt.Sprintf("line-%02d", i))
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"foo  1.0"},

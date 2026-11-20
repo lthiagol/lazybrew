@@ -205,9 +205,10 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 
 	p := m.panels[PanelFormulae]
 	// Make the main window the binding clamp: the sidebar box's window is 20
-	// rows, taller than the 14-row expanded main content. Only the main clamp
-	// can then move the offset: min(20, 14) = 14 rows, so 29 - 14 + 1 = 16.
-	// With the clamp to the sidebar window alone the offset would stay at 14.
+	// rows, taller than the 15-row main content with the log idle and empty.
+	// Only the main clamp can then move the offset: min(20, 15) = 15 rows, so
+	// 29 - 15 + 1 = 15. With the clamp to the sidebar window alone the offset
+	// would stay at 14.
 	p.visibleRows = 20
 	for i := 0; i < 30; i++ {
 		p.items = append(p.items, fmt.Sprintf("pkg%02d  1.0", i))
@@ -222,18 +223,19 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 		t.Fatal("C must expand the command log")
 	}
 	mainH := m.screenLayout().contentH
-	// The header and the one-row footer leave 22 body rows; the expanded Log
-	// takes 8 of them, which leaves 14 for the main content.
-	if mainH != 14 {
-		t.Fatalf("expected main content height 14 with the log expanded, got %d", mainH)
+	// The header and the one-row footer leave 22 body rows. The Log is idle and
+	// empty, so it takes its minimum of 3, which leaves 15 for the main content
+	// (v2-09 AC-04).
+	if mainH != 15 {
+		t.Fatalf("expected main content height 15 with the log expanded and idle, got %d", mainH)
 	}
 	vc := min(p.visibleCount(), mainH)
 	if p.selected < p.offset || p.selected >= p.offset+vc {
 		t.Fatalf("cursor %d must be inside [offset %d, offset+%d) after the C toggle",
 			p.selected, p.offset, vc)
 	}
-	if p.offset != 16 {
-		t.Fatalf("expected offset clamped to the main window: 16, got %d", p.offset)
+	if p.offset != 15 {
+		t.Fatalf("expected offset clamped to the main window: 15, got %d", p.offset)
 	}
 }
 
