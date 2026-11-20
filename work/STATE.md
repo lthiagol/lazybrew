@@ -13,7 +13,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-01-charm-v2 | 1861585, 0a89f8e, 0f65ba6, 10aade4, 6eec052, 7f32f2f | closed | ok |
 | v2-02-layout-bugs | 2611e00, a9ccbbe, a56fd8e, 2498d26, 23a031c, 5525dfd, 9046165, 8d9af6b, 690e5dd, 4a649cf | closed | ok |
 | v2-03-look-foundation | a6f22ab, c569ee0, 85f5e3f, 0d4593e, e56d97c, d58fb96, 4aaa3b0, f6c950a, 02fcbae, 18796ad, b79b0e3, 96a5508, 6736abd, 56e78c0, f4f4abf, 3677383 | closed | ok |
-| v2-03b-sidebar-lists | — | implemented | awaiting reviewer |
+| v2-03b-sidebar-lists | 0fa39ff, 4b16b65, c30158e, 33f6348, 01fb663, 9ba0f80, d68d66f, 3c38d91, 8d2c171, 752583b, 3fefcf8, 9c91b5d, b501d1f, 020011f | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -191,3 +191,20 @@ that no longer guarded R3-4 (blocker), plus four minors, plus orchestrator
 rulings Q-v2-03-a/c/d — all fixed; r2: a 4-digit count vanished at 80 columns
 (major) — fixed; r3 `ok`. Tests 562 → 615 (count by `-v` PASS lines).
 Frames: `work/verification/v2-03-look-foundation/after/` (`.ansi` at 140×40).
+
+**v2-03b-sidebar-lists, closed.** User ruling Q-v2-sidebar (option B,
+lazygit-style) is in: the sidebar holds the lists, built from typed data
+(icon, name, right-aligned version, `1.2 → 1.3` in the warning role, pin
+mark; full-row highlight in the focused box only; 35 % wide, cap 60); the main
+area shows only the selected item's details and tabs — never the list again.
+Formulae lost its `List` tab (Info is the default and shows the tap; tab
+indices are named constants); Outdated `Versions` shows the selected item and
+the batch summary; Taps `Tap Info` the selected tap, `Trust` only its trust
+story; Services `Status` the selected service. The Status data is typed, so
+the header shows formulae/casks counts on first launch. The empty viewport was
+replaced by a per-item scroll offset: wheel follows the pointer, PgUp/PgDn
+page, Home/End (and g/G outside Search) jump. Review r1: three minors plus
+rulings Q-v2-03b-a/c/d (batch marks only on Outdated, Trust tab, page keys);
+r2: `g`/`G` had stolen type-to-search on the Search panel (major) and a plural
+(minor); r3 `ok`. Tests 615 → 633 PASS lines (some table tests removed with
+named replacements). Frames: `work/verification/v2-03b-sidebar-lists/after/`.
