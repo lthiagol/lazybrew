@@ -47,7 +47,7 @@ func TestHelpFlow(t *testing.T) {
 	// which must not count as proof the Help overlay opened.
 	teatest.WaitFor(t, tm.Output(), func(bts []byte) bool {
 		s := string(bts)
-		return strings.Contains(s, "Press ? or Esc to close") ||
+		return strings.Contains(s, "?/esc close") ||
 			(strings.Contains(s, "Help") && strings.Contains(s, "close"))
 	}, teatest.WithDuration(2*time.Second), teatest.WithCheckInterval(50*time.Millisecond))
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEsc})

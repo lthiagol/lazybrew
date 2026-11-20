@@ -17,8 +17,9 @@ func TestHelpKeepsBorderAndHint(t *testing.T) {
 			m = sendKey(m, "?")
 			rows := plainRows(m.View().Content)
 			h := sz[1]
-			if got := string(rows[h-1]); !strings.Contains(got, "Press ? or Esc to close") {
-				t.Fatalf("last row should be the close hint, got %q", got)
+			// The footer shows help's own keys, so the close hint is the last row.
+			if got := string(rows[h-1]); !strings.Contains(got, "?/esc close") {
+				t.Fatalf("last row should be the footer's close hint, got %q", got)
 			}
 			if got := rows[h-2][0]; got != '╰' {
 				t.Fatalf("help box should close on row %d, got %q", h-2, string(rows[h-2]))

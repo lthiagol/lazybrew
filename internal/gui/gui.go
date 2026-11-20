@@ -1000,7 +1000,8 @@ func (m Model) render() string {
 			BorderForeground(style.AccentColor).
 			Render(helpContent)
 
-		helpView += "\n" + style.SubtleText.Render("  Press ? or Esc to close")
+		// The help screen's last row is the footer, showing help's keys.
+		helpView += "\n" + m.renderBottomBar()
 		return fitFrame(helpView, m.width, m.height)
 	}
 

@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -309,5 +310,70 @@ func TestHeaderDropsBadgesNotTheName(t *testing.T) {
 	}
 	if !strings.Contains(plain, "updated 5m ago") {
 		t.Fatalf("the rightmost badge should survive at 80 columns: %q", plain)
+	}
+}
+
+// TestFooterIsOneRowAtEveryWidth: the footer is one row, exactly the frame's
+// width, at 80 and 140 columns for both Formulae and Status.
+func TestFooterIsOneRowAtEveryWidth(t *testing.T) {
+	for _, w := range []int{80, 140} {
+		for _, key := range []string{"2", "1"} {
+			m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: w, Height: 40})
+			m = sendKey(m, key)
+			bar := m.renderBottomBar()
+			if lipgloss.Height(bar) != 1 || lipgloss.Width(bar) != w {
+				t.Fatalf("%d cols, panel %s: footer is %d rows of %d cells, want 1 of %d",
+					w, key, lipgloss.Height(bar), lipgloss.Width(bar), w)
+			}
+		}
+	}
+}
+
+// TestFooterLeadsWithThePanelsKeys: the active panel's keys come first, then
+// the globals, and the row says "? more" when it has cut some.
+func TestFooterLeadsWithThePanelsKeys(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 40})
+	m = sendKey(m, "2")
+	plain := strings.TrimRight(plainLine(m.renderBottomBar()), " ")
+	if !strings.HasPrefix(plain, " j/k navigate") {
+		t.Fatalf("Formulae footer should lead with its own keys, got %q", plain)
+	}
+	if !strings.HasSuffix(plain, "? more") {
+		t.Fatalf("a cut Formulae footer at 80 columns should end with ? more, got %q", plain)
+	}
+
+	m = updateModel(newTestModel(), tea.WindowSizeMsg{Width: 200, Height: 40})
+	plain = strings.TrimRight(plainLine(m.renderBottomBar()), " ")
+	if strings.Contains(plain, "more") {
+		t.Fatalf("a footer that fits must not say ? more, got %q", plain)
+	}
+	if !strings.HasPrefix(plain, " R refresh") {
+		t.Fatalf("Status footer should lead with its own keys, got %q", plain)
+	}
+}
+
+// TestFooterShowsTheOpenModalsKeys: while a modal is open the footer lists
+// the keys that modal answers to.
+func TestFooterShowsTheOpenModalsKeys(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m.activeModal = modal.NewConfirmModal("Uninstall bash", "Remove bash?")
+	if plain := plainLine(m.renderBottomBar()); !strings.HasPrefix(plain, " y yes  n no  esc cancel") {
+		t.Fatalf("confirm footer = %q, want the confirm keys", plain)
+	}
+
+	m.activeModal = modal.NewMenuModal("Trust", []string{"Trust tap", "Cancel"})
+	if plain := plainLine(m.renderBottomBar()); !strings.Contains(plain, "enter choose") {
+		t.Fatalf("menu footer = %q, want the menu keys", plain)
+	}
+}
+
+// TestFooterShowsHelpsKeysWhileHelpIsOpen: the help screen's last row is the
+// footer, carrying help's own close keys.
+func TestFooterShowsHelpsKeysWhileHelpIsOpen(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = sendKey(m, "?")
+	rows := plainRows(m.View().Content)
+	if last := string(rows[len(rows)-1]); !strings.Contains(last, "?/esc close") {
+		t.Fatalf("help's footer should list its close keys, got %q", last)
 	}
 }

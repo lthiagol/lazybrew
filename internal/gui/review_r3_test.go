@@ -193,10 +193,10 @@ func TestBatchOverlayTitleShowsProgress(t *testing.T) {
 // TestCommandLogToggleKeepsCursorVisible locks r3 finding R3-4: expanding
 // the command log shrinks the main list without a resize, which used to
 // leave offset+visible excluding the selected row until the next
-// normalize-triggering event. At height 24 the active sidebar box has one
-// item row (the title is in its border, the header takes a row), which binds
-// the shared offset.
-// The panel is activated through switchPanel, the path that syncs those rows.
+// normalize-triggering event. At height 24 the active sidebar box has two
+// item rows (its title is in the border; the header and footer take one row
+// each), which binds the shared offset. The panel is activated through
+// switchPanel, the path that syncs those rows.
 func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 24})
@@ -217,18 +217,19 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 		t.Fatal("C must expand the command log")
 	}
 	mainH := m.screenLayout().contentH
-	if mainH != 13 {
-		t.Fatalf("expected main content height 13 with the log expanded, got %d", mainH)
+	// The header and the one-row footer leave 22 body rows; the expanded Log
+	// takes 8 of them, which leaves 14 for the main content.
+	if mainH != 14 {
+		t.Fatalf("expected main content height 14 with the log expanded, got %d", mainH)
 	}
 	vc := min(p.visibleCount(), mainH)
 	if p.selected < p.offset || p.selected >= p.offset+vc {
 		t.Fatalf("cursor %d must be inside [offset %d, offset+%d) after the C toggle",
 			p.selected, p.offset, vc)
 	}
-	// Clamped to the one-row window the active box has once the header takes
-	// its row: selected 29 with one visible row.
-	if p.offset != 29 {
-		t.Fatalf("expected offset clamped to 29, got %d", p.offset)
+	// Clamped to the two-row window: selected 29 with two visible rows.
+	if p.offset != 28 {
+		t.Fatalf("expected offset clamped to 28, got %d", p.offset)
 	}
 }
 
