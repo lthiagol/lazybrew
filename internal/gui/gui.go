@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/bubbles/v2/progress"
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -129,6 +130,10 @@ type Model struct {
 	// motionShown is the modal whose entrance was last started, so a new modal
 	// slides in once and an open one does not restart.
 	motionShown modal.Modal
+	// opBar is the batch's progress bar, and opBarOp the operation it belongs
+	// to. Its fill springs to the batch's share when the count changes.
+	opBar   progress.Model
+	opBarOp *Operation
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -161,6 +166,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		contentScroll: make(map[string]int),
 		motion:        anim.NewSet(),
 		motionOn:      animationsOn(cfg),
+		opBar:         newProgressBar(),
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).
@@ -319,6 +325,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.searchInfoContent = msg.Content
 		}
 		return m, nil
+
+	case progress.FrameMsg:
+		// A frame of the progress bar's own spring: the bar asks for the next
+		// one until it is at rest.
+		var cmd tea.Cmd
+		m.opBar, cmd = m.opBar.Update(msg)
+		return m, cmd
 
 	case ProgressLineMsg:
 		if m.opState != nil {
