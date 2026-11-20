@@ -297,8 +297,8 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 	m.activePanel = PanelServices
 	m.panels[PanelServices].items = []string{"redis  started"}
 	m.panels[PanelServices].selected = 0
-	_, cmd = m.serviceAction("restart")
-	check("serviceAction", cmd, "service-restart:")
+	_, cmd = m.runServiceTask("restart", "redis")
+	check("runServiceTask", cmd, "service-restart:")
 
 	m = newTestModel()
 	m.activePanel = PanelTaps

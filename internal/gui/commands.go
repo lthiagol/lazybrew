@@ -173,6 +173,12 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 			case "services-cleanup":
 				m.pendingAction = ""
 				return m.executeServicesCleanup()
+			case "service-stop":
+				m.pendingAction = ""
+				return m.runServiceTask("stop", m.pendingService)
+			case "service-restart":
+				m.pendingAction = ""
+				return m.runServiceTask("restart", m.pendingService)
 			}
 		}
 		m.pendingAction = ""
@@ -812,15 +818,62 @@ func (m *Model) startTrustMenu() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) serviceAction(action string) (tea.Model, tea.Cmd) {
-	panel := m.panels[PanelServices]
-	if panel.selected >= len(panel.items) {
+	s := m.panels[PanelServices].selectedService()
+	if s == nil {
 		return m, nil
 	}
-	name := extractPackageName(panel.items[panel.selected])
-	if name == "" {
-		return m, nil
+	// The state decides: starting a running service, or stopping or restarting
+	// a stopped one, would change nothing, so it says so instead of running.
+	running := serviceRunning(*s)
+	switch action {
+	case "start":
+		if running {
+			toast := m.setToast(s.Name+" is already running", modal.ToastInfo)
+			return m, toast
+		}
+	case "stop", "restart":
+		if !running {
+			toast := m.setToast(s.Name+" is not running", modal.ToastInfo)
+			return m, toast
+		}
+		return m.confirmServiceAction(action, s.Name)
 	}
+	return m.runServiceTask(action, s.Name)
+}
 
+// confirmServiceAction opens the confirm for stop or restart. The service is
+// kept with the pending action, so the confirm acts on the one it was opened
+// for.
+func (m Model) confirmServiceAction(action, name string) (tea.Model, tea.Cmd) {
+	m.pendingAction = "service-" + action
+	m.pendingService = name
+	if action == "stop" {
+		m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Stop", "Stop "+name+"?").
+			WithDetail("The service stops until you start it again.")
+	} else {
+		m.activeModal = modal.NewConfirmModal(modal.ActionUpgrade, "Restart", "Restart "+name+"?").
+			WithDetail("The service stops and starts again.")
+	}
+	return m, m.activeModal.Init()
+}
+
+// isServiceTask is whether a task is a services write, which reloads the
+// Services panel when it ends.
+func isServiceTask(id string) bool {
+	return strings.HasPrefix(id, "service-") || id == "services-cleanup"
+}
+
+// serviceReload asks for the Services list and its info again when a services
+// task ends, whatever its outcome (AC-03.3). It is nil for every other task.
+func serviceReload(id string) tea.Cmd {
+	if !isServiceTask(id) {
+		return nil
+	}
+	return func() tea.Msg { return RefreshMsg{} }
+}
+
+// runServiceTask enqueues a services write for name through the task manager.
+func (m Model) runServiceTask(action, name string) (tea.Model, tea.Cmd) {
 	t := &task.Task{
 		ID:    "service-" + action + ":" + name,
 		Title: action + " " + name,
