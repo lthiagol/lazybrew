@@ -77,8 +77,8 @@ func (m Model) handleMouseWheel(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleMouseClick(x, y int) (tea.Model, tea.Cmd) {
-	// Bottom bar occupies the last 2 rows of the view.
-	if y >= m.height-2 {
+	// Bottom bar occupies the last rows of the view.
+	if y >= m.height-bottomBarRows {
 		return m, nil
 	}
 
@@ -146,23 +146,15 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 	// Inner coordinates inside the border.
 	ix, iy := mx-1, my-1
 
-	mw := m.width - sw - 4
-	mh := m.height - 4
-	if mw < 1 || mh < 1 {
+	l := m.screenLayout()
+	if l.mainW < 3 || l.mainH < 3 {
 		return m, nil
 	}
 
-	// Vertical stack: breadcrumb (1) + tabBar + content + optional log.
-	tabBarH := 0
-	if len(m.tabs) > 0 {
-		tabBarH = 1
-		// Active tab has a thick bottom border → often 2 rows tall.
-		if lipgloss.Height(style.TabActive.Render(" x ")) > 1 {
-			tabBarH = lipgloss.Height(style.TabActive.Render(" x "))
-		}
-	}
+	// Vertical stack inside the border: breadcrumb (1) + tab bar + content.
+	// The Log box sits below the main panel's border, so it has no rows here.
 	breadcrumbH := 1
-	cmdLogH, contentH := m.logLayoutHeights(mh)
+	tabBarH := m.tabBarRows()
 
 	// Tab bar click
 	tabY0 := breadcrumbH
@@ -173,13 +165,12 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 
 	// Content region
 	contentY0 := tabY1
-	contentY1 := contentY0 + contentH
+	contentY1 := contentY0 + l.contentH
 	if iy >= contentY0 && iy < contentY1 {
 		cy := iy - contentY0
-		return m.handleContentClick(ix, cy, mw, contentH)
+		return m.handleContentClick(ix, cy, l.mainW-2, l.contentH)
 	}
 
-	_ = cmdLogH
 	return m, nil
 }
 

@@ -1031,20 +1031,19 @@ func TestLogCollapsedFreesMainHeight(t *testing.T) {
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.commandLog.Append("visible-cmd")
 
-	mh := m.height - 4
-	expLogH, expMainH := m.logLayoutHeights(mh)
-	if expLogH < 2 {
-		t.Fatalf("fixture height too small for expanded log (cmdLogHeight=%d)", expLogH)
+	expanded := m.screenLayout()
+	if expanded.logH < 3 {
+		t.Fatalf("fixture height too small for expanded log (logH=%d)", expanded.logH)
 	}
-	if expMainH+expLogH != mh-4 {
-		t.Fatalf("expanded heights %d+%d should sum to total %d", expMainH, expLogH, mh-4)
+	if expanded.mainH+expanded.logH != expanded.bodyH {
+		t.Fatalf("expanded main %d + log %d should fill body %d", expanded.mainH, expanded.logH, expanded.bodyH)
 	}
 
-	expanded := m.renderMainPanel()
-	if !strings.Contains(expanded, "Log") {
+	expandedView := m.renderMainPanel()
+	if !strings.Contains(expandedView, "Log") {
 		t.Fatal("expanded log should show Log title")
 	}
-	if !strings.Contains(expanded, "visible-cmd") {
+	if !strings.Contains(expandedView, "visible-cmd") {
 		t.Fatal("expanded log should show command entry")
 	}
 
@@ -1052,19 +1051,19 @@ func TestLogCollapsedFreesMainHeight(t *testing.T) {
 	if !m.logCollapsed {
 		t.Fatal("expected collapsed")
 	}
-	colLogH, colMainH := m.logLayoutHeights(mh)
-	if colLogH != 0 {
-		t.Fatalf("collapsed cmdLogHeight = %d, want 0 (AC-05)", colLogH)
+	collapsed := m.screenLayout()
+	if collapsed.logH != 0 {
+		t.Fatalf("collapsed logH = %d, want 0 (AC-05)", collapsed.logH)
 	}
-	if colMainH != mh-4 {
-		t.Fatalf("collapsed mainContentHeight = %d, want full total %d (AC-05)", colMainH, mh-4)
+	if collapsed.mainH != collapsed.bodyH {
+		t.Fatalf("collapsed mainH = %d, want full body %d (AC-05)", collapsed.mainH, collapsed.bodyH)
 	}
-	if colMainH <= expMainH {
-		t.Fatalf("collapsed main %d should exceed expanded main %d (gained log rows)", colMainH, expMainH)
+	if collapsed.contentH <= expanded.contentH {
+		t.Fatalf("collapsed content %d should exceed expanded content %d (gained log rows)", collapsed.contentH, expanded.contentH)
 	}
 
-	collapsed := m.renderMainPanel()
-	if strings.Contains(collapsed, "visible-cmd") {
+	collapsedView := m.renderMainPanel()
+	if strings.Contains(collapsedView, "visible-cmd") {
 		t.Fatal("collapsed log should not render command entries")
 	}
 }

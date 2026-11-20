@@ -58,10 +58,12 @@ func (m Model) renderSidebar() string {
 	return lipgloss.JoinVertical(lipgloss.Top, boxes...)
 }
 
+// renderMainPanel draws the main column: the main panel box with the Log
+// box stacked below it at the same width. The column is exactly
+// l.mainW wide and l.bodyH rows tall.
 func (m Model) renderMainPanel() string {
-	sw := sidebarWidth(m.cfg, m.width)
-	mw := m.width - sw - 4
-	mh := m.height - 4
+	l := m.screenLayout()
+	innerW := l.mainW - 2
 
 	panelName := m.panels[m.activePanel].title
 	tabName := ""
@@ -73,37 +75,75 @@ func (m Model) renderMainPanel() string {
 		breadcrumb += style.SubtleText.Render(" › ") + style.AccentText.Render(tabName)
 	}
 
-	tabBar := m.renderTabBar(mw)
+	tabBar := m.renderTabBar(innerW)
+	content := fitBox(m.renderContent(innerW, l.contentH), innerW, l.contentH)
 
-	cmdLogHeight, mainContentHeight := m.logLayoutHeights(mh)
-
-	content := m.renderContent(mw, mainContentHeight)
-	content = lipgloss.NewStyle().Width(mw).Height(mainContentHeight).Render(content)
-
-	var cmdLog string
-	if cmdLogHeight > 0 {
-		cmdLog = m.renderCommandLogBox(mw, cmdLogHeight)
+	panel := lipgloss.JoinVertical(lipgloss.Top, breadcrumb, tabBar, content)
+	box := style.ActiveBorder.Width(l.mainW).Height(l.mainH).Render(fitBox(panel, innerW, l.mainH-2))
+	if l.logH == 0 {
+		return box
 	}
-
-	panel := lipgloss.JoinVertical(lipgloss.Top, breadcrumb, tabBar, content, cmdLog)
-
-	return lipgloss.NewStyle().
-		Width(mw + 2).
-		Height(mh).
-		Render(style.ActiveBorder.Render(panel))
+	return lipgloss.JoinVertical(lipgloss.Top, box, m.renderCommandLogBox(l.mainW, l.logH))
 }
 
-// logLayoutHeights returns (cmdLogHeight, mainContentHeight) for the main
-// panel interior of height mh. When logCollapsed, cmdLogHeight is 0 and
-// mainContentHeight absorbs the freed rows (AC-05).
-func (m Model) logLayoutHeights(mh int) (cmdLogHeight, mainContentHeight int) {
-	total := mh - 4
-	cmdLogHeight = total / 5
-	if m.logCollapsed || cmdLogHeight < 2 {
-		cmdLogHeight = 0
+// bottomBarRows is the height of the key-hint bar pinned under the body.
+const bottomBarRows = 2
+
+// screenLayout is the one geometry every frame is drawn to. Render, the
+// C toggle and mouse hit-testing all read it, so a click lands on the row
+// the frame drew. The body (sidebar and main column) fills every row above
+// the bottom bar, and the main panel fills every column beside the sidebar.
+type screenLayout struct {
+	bodyH    int // rows above the bottom bar
+	sideW    int // sidebar outer width
+	mainW    int // main panel outer width; the Log box is the same width
+	mainH    int // main panel outer height, borders included
+	logH     int // Log box outer height; 0 when collapsed or too small to show
+	contentH int // main content rows, below the breadcrumb and tab bar
+}
+
+func (m Model) screenLayout() screenLayout {
+	bodyH := max(0, m.height-bottomBarRows)
+	sideW := sidebarWidth(m.cfg, m.width)
+	logH := bodyH / 5
+	// The Log box needs a border top and bottom plus its title row; below
+	// three rows it cannot show a title and a body, so it stays hidden.
+	if m.logCollapsed || logH < 3 {
+		logH = 0
 	}
-	mainContentHeight = total - cmdLogHeight
-	return cmdLogHeight, mainContentHeight
+	mainH := bodyH - logH
+	return screenLayout{
+		bodyH:    bodyH,
+		sideW:    sideW,
+		mainW:    m.width - sideW,
+		mainH:    mainH,
+		logH:     logH,
+		contentH: max(0, mainH-2-m.tabBarRows()-1),
+	}
+}
+
+// tabBarRows is the height of the tab bar. The active tab draws a thick
+// underline, so a tabbed panel uses two rows. A panel without tabs still
+// keeps one blank row, so its content starts on the same row as the others.
+func (m Model) tabBarRows() int {
+	if len(m.tabs) == 0 {
+		return 1
+	}
+	return lipgloss.Height(m.renderTabBar(0))
+}
+
+// fitBox sizes s to exactly w cells by h rows: long lines wrap, short ones
+// pad, and rows past h are dropped. Every box is fitted before its border
+// is added, so an overlong child cannot cut the border off.
+func fitBox(s string, w, h int) string {
+	return lipgloss.NewStyle().Width(w).Height(h).MaxHeight(h).Render(s)
+}
+
+// fitFrame sizes a whole frame to exactly w cells by h rows. Unlike fitBox
+// it cuts lines past w instead of wrapping them, so no row can add another
+// row to the frame.
+func fitFrame(s string, w, h int) string {
+	return fitBox(lipgloss.NewStyle().MaxWidth(w).Render(s), w, h)
 }
 
 // logBusy reports whether the log pane should use the Accent border.
@@ -130,7 +170,7 @@ func (m Model) renderCommandLogBox(width, height int) string {
 	return logBorderStyle(m.logBusy()).
 		Width(width).
 		Height(height).
-		Render(titled)
+		Render(fitBox(titled, innerW, innerH))
 }
 
 func (m Model) renderTabBar(width int) string {
@@ -154,7 +194,7 @@ func (m Model) computeContentHeights() []int {
 	if n == 0 {
 		return nil
 	}
-	sidebarHeight := m.height - 4
+	sidebarHeight := m.screenLayout().bodyH
 	borderOverhead := n * 2
 	availableRows := sidebarHeight - borderOverhead
 	if availableRows < n {
@@ -200,10 +240,10 @@ func (m Model) computeContentHeights() []int {
 	return heights
 }
 
-func (m Model) renderContentInViewport(content string) string {
+func (m Model) renderContentInViewport(content string, width, height int) string {
 	m.viewport.SetContent(content)
-	m.viewport.SetWidth(max(10, m.width-4))
-	m.viewport.SetHeight(max(10, m.height-6))
+	m.viewport.SetWidth(width)
+	m.viewport.SetHeight(height)
 	return m.viewport.View()
 }
 
@@ -241,7 +281,7 @@ func (m Model) renderContent(width, height int) string {
 			}
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
-				return m.renderContentInViewport(content)
+				return m.renderContentInViewport(content, width, height)
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
 		case 4: // Caveats
@@ -270,7 +310,7 @@ func (m Model) renderContent(width, height int) string {
 			for _, d := range c.DependsOn {
 				result += d + "\n"
 			}
-			return m.renderContentInViewport(result)
+			return m.renderContentInViewport(result, width, height)
 		case 2:
 			c := panel.selectedCask()
 			if c == nil {
@@ -283,7 +323,7 @@ func (m Model) renderContent(width, height int) string {
 					result += "  " + a + "\n"
 				}
 			}
-			return m.renderContentInViewport(result)
+			return m.renderContentInViewport(result, width, height)
 		}
 
 	case PanelStatus:
@@ -300,7 +340,7 @@ func (m Model) renderContent(width, height int) string {
 			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
-				return m.renderContentInViewport(content)
+				return m.renderContentInViewport(content, width, height)
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
 		}
@@ -519,7 +559,7 @@ func (m Model) renderBottomBar() string {
 		lipgloss.NewStyle().Width(barWidth).Padding(0, 1).Render(line1),
 		lipgloss.NewStyle().Width(barWidth).Padding(0, 1).Render(line2),
 	)
-	return lipgloss.NewStyle().Width(m.width).Render(combined)
+	return fitBox(combined, m.width, bottomBarRows)
 }
 
 func (m Model) updateStatusText() string {
