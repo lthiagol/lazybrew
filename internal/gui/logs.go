@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"slices"
 	"strings"
 	"time"
 
@@ -164,18 +165,42 @@ func (m *Model) readLogsCmd() tea.Cmd {
 	}
 }
 
+// shiftedBy is how many lines left the top of the window between two reads of
+// one log: the smallest k for which the old lines from k on are the first lines
+// of the new read. Lines are only appended, so the new read starts where the
+// old one now starts, shifted by k. A read that keeps no old line shifts by all
+// of them.
+func shiftedBy(old, next []string) int {
+	for k := range len(old) + 1 {
+		kept := old[k:]
+		if len(kept) <= len(next) && slices.Equal(kept, next[:len(kept)]) {
+			return k
+		}
+	}
+	return len(old)
+}
+
 // applyLogs stores a read's result. The view follows the newest line: when it
-// was at the bottom, it stays there as the lines change; when the user had
-// scrolled up, it does not move. A read of a file that has not changed since
-// the last one (same path, size, modification time and error) keeps the lines
-// as they are and rebuilds nothing.
+// was at the bottom, it stays there as the lines change. When the user had
+// scrolled up, the same line stays at the top: the offset drops by the lines
+// that left the top of the window, and clamps to the top when its own line
+// left. A read of a file that has not changed since the last one (same path,
+// size, modification time and error) keeps the lines as they are and rebuilds
+// nothing.
 func (m *Model) applyLogs(msg logsReadMsg) {
 	if m.logs.loaded && msg.path == m.logs.path && sameError(msg.err, m.logs.err) &&
 		msg.tail.Size == m.logs.size && msg.tail.ModTime.Equal(m.logs.modTime) {
 		return
 	}
 	key := m.contentKey()
-	atBottom := m.contentScroll[key] >= m.contentLast()
+	offset := m.contentScroll[key]
+	atBottom := offset >= m.contentLast()
+	// The lines of the old read are the same log's only when the path matches
+	// and neither read failed; otherwise nothing carried over, so nothing shifts.
+	shift := 0
+	if m.logs.loaded && msg.path == m.logs.path && m.logs.err == nil && msg.err == nil {
+		shift = shiftedBy(m.logs.lines, msg.tail.Lines)
+	}
 	m.logs.loaded = true
 	m.logs.path = msg.path
 	m.logs.lines = msg.tail.Lines
@@ -184,6 +209,8 @@ func (m *Model) applyLogs(msg logsReadMsg) {
 	m.logs.err = msg.err
 	if atBottom {
 		m.contentScroll[key] = m.contentLast()
+	} else {
+		m.contentScroll[key] = max(0, offset-shift)
 	}
 }
 
