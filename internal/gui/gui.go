@@ -125,6 +125,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	ti := textinput.New()
 	ti.Placeholder = "Search packages..."
 	ti.SetWidth(40)
+	ti.SetStyles(searchStyles())
 	m := &Model{
 		client:      client,
 		cfg:         cfg,
@@ -1206,4 +1207,24 @@ func sidebarWidth(cfg *config.Config, totalWidth int) int {
 		w = 40
 	}
 	return w
+}
+
+// searchStyles draws the search input from the theme roles: the prompt and the
+// cursor in the accent, typed text in the text role, the placeholder and
+// suggestion muted. The bubbles defaults are a fixed palette, which the app's
+// own canvas leaves unreadable on a light theme.
+func searchStyles() textinput.Styles {
+	focused := textinput.StyleState{
+		Text:        lipgloss.NewStyle().Foreground(style.TextColor),
+		Placeholder: lipgloss.NewStyle().Foreground(style.MutedColor),
+		Suggestion:  lipgloss.NewStyle().Foreground(style.MutedColor),
+		Prompt:      lipgloss.NewStyle().Foreground(style.AccentColor),
+	}
+	blurred := focused
+	blurred.Text = lipgloss.NewStyle().Foreground(style.SubtleColor)
+	return textinput.Styles{
+		Focused: focused,
+		Blurred: blurred,
+		Cursor:  textinput.CursorStyle{Color: style.AccentColor, Shape: tea.CursorBlock, Blink: true},
+	}
 }
