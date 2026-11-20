@@ -33,9 +33,11 @@ const (
 	tapFormulaeTab
 )
 
-// serviceInfoTab is the one tab of the Services panel: the selected service's
-// Info.
-const serviceInfoTab = 0
+// The tabs of the Services panel: the selected service's Info, and its log.
+const (
+	serviceInfoTab = iota
+	servicesLogsTab
+)
 
 // trustUnknownText is what the Taps panel says when brew did not give the trust
 // state of its taps: the rows, the border label and the Tap Info all use it.

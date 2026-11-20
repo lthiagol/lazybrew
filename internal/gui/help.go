@@ -111,6 +111,7 @@ func buildHelp() []helpPage {
 						{"r", "Restart"},
 						{"f", "Run (foreground)"},
 						{"c", "Cleanup stale services"},
+						{"e", "Logs tab: stdout or stderr"},
 					},
 				},
 			},

@@ -91,7 +91,11 @@ func (m Model) renderMainPanel() string {
 	// The tab bar is cut to the box, not wrapped: a tab that does not fit is
 	// cut, and the bar's trailing padding goes with it.
 	tabBar := fitFrame(m.renderTabBar(cw), cw, m.tabBarRows())
-	content := m.scrolledContent(m.renderContent(cw, l.contentH), cw, l.contentH)
+	h := m.scrollRows(l.contentH)
+	content := m.scrolledContent(m.renderContent(cw, h), cw, h)
+	if head := m.contentHead(cw); head != "" {
+		content = head + "\n" + content
+	}
 	body := fitFrame(lipgloss.NewStyle().PaddingLeft(mainPadX).Render(
 		lipgloss.JoinVertical(lipgloss.Top, tabBar, content)), innerW, m.tabBarRows()+l.contentH)
 
@@ -519,6 +523,9 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelServices:
+		if m.activeTab == servicesLogsTab {
+			return m.renderServiceLogs(width)
+		}
 		return renderServiceInfo(panel, width, m.icons)
 
 	case PanelOutdated:

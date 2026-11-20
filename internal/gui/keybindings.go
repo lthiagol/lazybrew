@@ -58,7 +58,7 @@ func tapsHints(p *panelData) []keyHint {
 // servicesHints is the Services footer: the actions for the selected service
 // lead, then the keys that apply in any state.
 func servicesHints(p *panelData) []keyHint {
-	hints := []keyHint{{"j/k", "navigate"}, {"c", "cleanup"}}
+	hints := []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"c", "cleanup"}}
 	if s := p.selectedService(); s != nil {
 		hints = append(serviceActionHints(*s), hints...)
 	}
@@ -75,7 +75,7 @@ func panelHints(id PanelID) []keyHint {
 	case PanelCasks:
 		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"i", "install"}, {"x", "remove"}, {"X", "zap"}, {"r", "reinstall"}, {"u", "upgrade"}, {"U", "upgrade all"}, {"F", "fetch"}}
 	case PanelServices:
-		return []keyHint{{"j/k", "navigate"}, {"s", "start"}, {"S", "stop"}, {"r", "restart"}, {"f", "run"}, {"c", "cleanup"}}
+		return []keyHint{{"j/k", "navigate"}, {"[ ]", "tabs"}, {"s", "start"}, {"S", "stop"}, {"r", "restart"}, {"f", "run"}, {"c", "cleanup"}}
 	case PanelTaps:
 		return []keyHint{{"j/k", "navigate"}, {"a", "add tap"}, {"x", "untap"}, {"t", "trust"}, {"T", "trust item"}, {"r", "repair"}}
 	case PanelStatus:

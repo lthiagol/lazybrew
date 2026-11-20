@@ -19,6 +19,7 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
+	"github.com/lthiagol/lazybrew/internal/logtail"
 )
 
 const (
@@ -81,6 +82,12 @@ type Model struct {
 	lastUpdate             time.Time
 	isUpdating             bool
 	updateOutput           []string
+
+	// logs is the Services Logs tab's view of its service's log (logs.go).
+	logs logsView
+	// readLog reads the tail of a log file. New sets logtail.Read; a test swaps
+	// it in to count the reads.
+	readLog func(path string, n int) (logtail.Tail, error)
 
 	searchResults     []brew.SearchResult
 	searchInfoContent string
@@ -175,6 +182,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		motion:        anim.NewSet(),
 		motionOn:      animationsOn(cfg),
 		opBar:         newProgressBar(),
+		readLog:       logtail.Read,
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).
@@ -258,6 +266,24 @@ func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	next, cmd := m.animate(msg)
+	return followLogs(next, cmd)
+}
+
+// followLogs brings the Logs view in step with the model once an update is
+// done, and adds the read that step starts to the update's own command.
+func followLogs(next tea.Model, cmd tea.Cmd) (tea.Model, tea.Cmd) {
+	switch nm := next.(type) {
+	case *Model:
+		return nm, tea.Batch(cmd, nm.syncLogs())
+	case Model:
+		return nm, tea.Batch(cmd, nm.syncLogs())
+	}
+	return next, cmd
+}
+
+// animate runs the update with the motion layer around the message switch.
+func (m Model) animate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// With the motion off nothing is animated: the update is the message
 	// switch, with no copy of the animated values and no motion work.
 	if !m.motionOn {
@@ -617,6 +643,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := m.landData(DataLoadedMsg(msg), true)
 		m.absorbLanded(DataLoadedMsg(msg))
 		return m, tea.Batch(cmd, tea.Batch(m.nextPreloadReads()...))
+
+	case logsReadMsg:
+		// A read of a view this model no longer shows is stale.
+		if msg.gen == m.logs.gen {
+			m.applyLogs(msg)
+		}
+		return m, nil
 
 	case servicesReloadMsg:
 		m.invalidatePanelCache(PanelServices)
@@ -1002,6 +1035,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "f":
 			if m.activePanel == PanelServices {
 				return m.serviceAction("run")
+			}
+		case "e":
+			if m.activePanel == PanelServices && m.activeTab == servicesLogsTab {
+				m.toggleLogStream()
+				return m, nil
 			}
 		case "c":
 			if m.activePanel == PanelServices {

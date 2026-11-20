@@ -38,7 +38,11 @@ func (m Model) footerHints() []keyHint {
 // selected service's state.
 func (m Model) panelKeyHints() []keyHint {
 	if m.activePanel == PanelServices {
-		return servicesHints(m.panels[PanelServices])
+		hints := servicesHints(m.panels[PanelServices])
+		if m.activeTab == servicesLogsTab {
+			hints = append(hints, keyHint{"e", "stream"})
+		}
+		return hints
 	}
 	if m.activePanel == PanelTaps {
 		return tapsHints(m.panels[PanelTaps])

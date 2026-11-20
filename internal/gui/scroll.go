@@ -27,18 +27,33 @@ func (m Model) scrolledContent(content string, w, h int) string {
 	return fitBox(strings.Join(rows[off:], "\n"), w, h)
 }
 
+// contentHeadRows is how many rows of the main content stay on screen above
+// the scrolled part: the Logs tab's header. contentHead draws it.
+func (m Model) contentHeadRows() int {
+	if m.onLogsTab() {
+		return 1
+	}
+	return 0
+}
+
+// scrollRows is how many rows of a main content area contentH rows tall scroll.
+func (m Model) scrollRows(contentH int) int {
+	return max(0, contentH-m.contentHeadRows())
+}
+
 // contentLast is the largest scroll offset that still fills the main content
 // area: the offset at which the content's last row is on the area's bottom row.
 func (m Model) contentLast() int {
 	l := m.screenLayout()
 	cw := m.mainContentWidth()
-	rows := wrapContent(m.renderContent(cw, l.contentH), cw)
-	return max(0, len(rows)-l.contentH)
+	h := m.scrollRows(l.contentH)
+	rows := wrapContent(m.renderContent(cw, h), cw)
+	return max(0, len(rows)-h)
 }
 
-// pageRows is how far a page key moves the main content: one content area.
+// pageRows is how far a page key moves the main content: one scrolled area.
 func (m Model) pageRows() int {
-	return max(1, m.screenLayout().contentH)
+	return max(1, m.scrollRows(m.screenLayout().contentH))
 }
 
 // scrollContentTo sets the main content's scroll offset to row, held between the
