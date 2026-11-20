@@ -59,6 +59,11 @@ type RefreshMsg struct {
 	LoadOutdated bool
 }
 
+// servicesReloadMsg reloads the Services panel alone, after a services task
+// fails or is cancelled. Unlike RefreshMsg it shows no "Data refreshed" toast,
+// so the error toast stays the last word (F-r1-02).
+type servicesReloadMsg struct{}
+
 type UpdateTickMsg struct{}
 
 type StartUpdateMsg struct{}

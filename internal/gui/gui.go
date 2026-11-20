@@ -569,6 +569,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case servicesReloadMsg:
+		m.invalidatePanelCache(PanelServices)
+		m.panels[PanelServices].loading = true
+		return m, fetchPanelData(m.client, PanelServices)
+
 	case RefreshMsg:
 		m.clearTabContent()
 		// M12 tiered refresh:
