@@ -1181,8 +1181,8 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 					p.items = statusRows(m.status)
 				}
 			}
-			p.selectServiceNamed(selectedService)
-			p.selectTapNamed(selectedTap)
+			selectNamed(p, p.services, func(s brew.Service) string { return s.Name }, selectedService)
+			selectNamed(p, p.taps, func(t brew.Tap) string { return t.Name }, selectedTap)
 		}
 		p.indexInstalled()
 		p.normalize()

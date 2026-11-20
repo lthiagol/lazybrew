@@ -286,8 +286,8 @@ func batchSummary(selected int) string {
 func renderOutdatedVersions(p *panelData, batch map[int]bool, width int) string {
 	var details string
 	switch {
-	case p.selectedOutdatedFormula() != nil:
-		f := p.selectedOutdatedFormula()
+	case p.selectedFormula() != nil:
+		f := p.selectedFormula()
 		details = presentation.Detail([]presentation.Field{
 			{Label: "Name", Value: f.Name},
 			{Label: "Installed", Value: f.Version},
