@@ -84,25 +84,25 @@ func (s *trustReader) GetTapTrustStatus(ctx context.Context, tapName string) (Tr
 }
 
 func (s *trustWriter) TrustTap(ctx context.Context, tapName string) error {
-	s.cache.InvalidateFor("trust")
+	defer s.cache.InvalidateFor("trust")
 	_, err := s.runner.Execute(ctx, "trust", tapName)
 	return err
 }
 
 func (s *trustWriter) TrustFormula(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("trust")
+	defer s.cache.InvalidateFor("trust")
 	_, err := s.runner.Execute(ctx, "trust", "--formula", fullName)
 	return err
 }
 
 func (s *trustWriter) TrustCask(ctx context.Context, fullName string) error {
-	s.cache.InvalidateFor("trust")
+	defer s.cache.InvalidateFor("trust")
 	_, err := s.runner.Execute(ctx, "trust", "--cask", fullName)
 	return err
 }
 
 func (s *trustWriter) UntrustTap(ctx context.Context, tapName string) error {
-	s.cache.InvalidateFor("untrust")
+	defer s.cache.InvalidateFor("untrust")
 	_, err := s.runner.Execute(ctx, "untrust", tapName)
 	return err
 }

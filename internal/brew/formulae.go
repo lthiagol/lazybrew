@@ -237,37 +237,33 @@ func (s *formulaeReader) Uses(ctx context.Context, name string) ([]string, error
 }
 
 func (s *formulaeWriter) Install(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("install")
-	return s.runner.ExecuteStream(ctx, "install", name)
+	return streamWrite(ctx, s.runner, s.cache, "install", "install", name)
 }
 
 func (s *formulaeWriter) Uninstall(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("uninstall")
-	return s.runner.ExecuteStream(ctx, "uninstall", name)
+	return streamWrite(ctx, s.runner, s.cache, "uninstall", "uninstall", name)
 }
 
 func (s *formulaeWriter) Reinstall(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("reinstall")
-	return s.runner.ExecuteStream(ctx, "reinstall", name)
+	return streamWrite(ctx, s.runner, s.cache, "reinstall", "reinstall", name)
 }
 
 func (s *formulaeWriter) Upgrade(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("upgrade")
 	args := []string{"upgrade"}
 	if name != "" {
 		args = append(args, name)
 	}
-	return s.runner.ExecuteStream(ctx, args...)
+	return streamWrite(ctx, s.runner, s.cache, "upgrade", args...)
 }
 
 func (s *formulaeWriter) Pin(ctx context.Context, name string) error {
-	s.cache.InvalidateFor("pin")
+	defer s.cache.InvalidateFor("pin")
 	_, err := s.runner.Execute(ctx, "pin", name)
 	return err
 }
 
 func (s *formulaeWriter) Unpin(ctx context.Context, name string) error {
-	s.cache.InvalidateFor("unpin")
+	defer s.cache.InvalidateFor("unpin")
 	_, err := s.runner.Execute(ctx, "unpin", name)
 	return err
 }

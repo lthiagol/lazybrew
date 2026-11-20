@@ -1,6 +1,7 @@
 package brew
 
 import (
+	"context"
 	"strconv"
 	"sync"
 	"time"
@@ -21,7 +22,9 @@ const (
 	KeyConfig           CacheKey = "config"
 )
 
-var InvalidateGroups = map[string][]CacheKey{
+// invalidateGroups names the cache keys each write group drops. Every writer
+// calls InvalidateFor with its group, once its command has finished.
+var invalidateGroups = map[string][]CacheKey{
 	"install":    {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
 	"uninstall":  {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
 	"reinstall":  {KeyFormulaeList, KeyCasksList, KeyOutdatedFormulae, KeyOutdatedCasks},
@@ -33,9 +36,9 @@ var InvalidateGroups = map[string][]CacheKey{
 	"untap":      {KeyTapsList},
 	"trust":      {KeyTrustList, KeyTapsList},
 	"untrust":    {KeyTrustList, KeyTapsList},
-	"cleanup":    {},
+	"services":   {KeyServicesList, KeyServicesInfo},
+	"cleanup":    {KeyFormulaeList, KeyCasksList},
 	"autoremove": {KeyFormulaeList, KeyOutdatedFormulae},
-	"doctor":     {KeyDoctorResult},
 }
 
 type cacheEntry struct {
@@ -108,8 +111,8 @@ func (c *Cache) Invalidate(keys ...CacheKey) {
 	}
 }
 
-func (c *Cache) InvalidateFor(operation string) {
-	keys, ok := InvalidateGroups[operation]
+func (c *Cache) InvalidateFor(group string) {
+	keys, ok := invalidateGroups[group]
 	if !ok {
 		return
 	}
@@ -145,6 +148,22 @@ func (c *Cache) setIfCurrent(key CacheKey, data any, ttl time.Duration, gen uint
 		timestamp: c.now(),
 		ttl:       ttl,
 	}
+}
+
+// streamWrite starts a streaming brew write. The group's keys are dropped once
+// the command has finished, whether it succeeded or failed: a read that ran
+// while the command was going may have cached data from before it. The
+// stream's error is forwarded unchanged, after the invalidation.
+func streamWrite(ctx context.Context, runner Runner, cache *Cache, group string, args ...string) (<-chan string, <-chan error) {
+	lines, errs := runner.ExecuteStream(ctx, args...)
+	out := make(chan error, 1)
+	go func() {
+		defer close(out)
+		err := <-errs
+		cache.InvalidateFor(group)
+		out <- err
+	}()
+	return lines, out
 }
 
 // cached is the one read path every brew reader uses. It returns the cached

@@ -215,42 +215,37 @@ func (s *casksReader) SetCacheTTLs(ttls CacheTTLs) {
 }
 
 func (s *casksWriter) Install(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("install")
-	return s.runner.ExecuteStream(ctx, "install", "--cask", name)
+	return streamWrite(ctx, s.runner, s.cache, "install", "install", "--cask", name)
 }
 
 func (s *casksWriter) Uninstall(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("uninstall")
-	return s.runner.ExecuteStream(ctx, "uninstall", "--cask", name)
+	return streamWrite(ctx, s.runner, s.cache, "uninstall", "uninstall", "--cask", name)
 }
 
 func (s *casksWriter) Reinstall(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("reinstall")
-	return s.runner.ExecuteStream(ctx, "reinstall", "--cask", name)
+	return streamWrite(ctx, s.runner, s.cache, "reinstall", "reinstall", "--cask", name)
 }
 
 func (s *casksWriter) Zap(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("uninstall")
-	return s.runner.ExecuteStream(ctx, "uninstall", "--zap", "--cask", name)
+	return streamWrite(ctx, s.runner, s.cache, "uninstall", "uninstall", "--zap", "--cask", name)
 }
 
 func (s *casksWriter) Upgrade(ctx context.Context, name string) (<-chan string, <-chan error) {
-	s.cache.InvalidateFor("upgrade")
 	args := []string{"upgrade", "--cask"}
 	if name != "" {
 		args = append(args, name)
 	}
-	return s.runner.ExecuteStream(ctx, args...)
+	return streamWrite(ctx, s.runner, s.cache, "upgrade", args...)
 }
 
 func (s *casksWriter) Pin(ctx context.Context, name string) error {
-	s.cache.InvalidateFor("pin")
+	defer s.cache.InvalidateFor("pin")
 	_, err := s.runner.Execute(ctx, "pin", name)
 	return err
 }
 
 func (s *casksWriter) Unpin(ctx context.Context, name string) error {
-	s.cache.InvalidateFor("unpin")
+	defer s.cache.InvalidateFor("unpin")
 	_, err := s.runner.Execute(ctx, "unpin", name)
 	return err
 }
