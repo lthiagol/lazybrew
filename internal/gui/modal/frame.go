@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -15,22 +16,50 @@ const (
 	formWidth    = 50
 )
 
+// dialogMaxRows is the tallest a dialog may be. The app draws no frame shorter
+// than 24 rows, and the header and footer take two, so 20 always fits.
+const dialogMaxRows = 20
+
+// innerWidth is the text width of a dialog box: the width less the thick border
+// (2) and the padding of 3 on each side.
+func innerWidth(width int) int {
+	return width - 2 - 6
+}
+
+// wrapProse wraps prose to the text width of a box of the given width, so a
+// long question or consequence runs onto more lines but never past the border.
+func wrapProse(s string, width int) string {
+	return lipgloss.Wrap(s, innerWidth(width), "")
+}
+
+// fitLine cuts a single-line part (a chip, a key line, a menu item) to the text
+// width of a box, ending it with an ellipsis when it does not fit.
+func fitLine(s string, width int) string {
+	return ansi.Truncate(s, innerWidth(width), "…")
+}
+
 // dialog frames a modal the change-gate way: a thick border in accent, the
-// chip (its label) on top, then the body, centred. Width counts the border and
-// padding (v2), so the box is exactly width cells. Body text longer than the
-// box wraps inside it; a wrapped line never runs past the border.
-func dialog(accent color.Color, label string, width int, body ...string) string {
-	inner := width - 2 - 6 // thick border, then padding of 3 on each side
+// action as a chip on top, then the body, then the key line. Width counts the
+// border and padding (v2), so the box is exactly width cells. The body is the
+// modal's prose, already wrapped; it is trimmed to fit dialogMaxRows, its last
+// line becoming an ellipsis when it is.
+func dialog(accent color.Color, label string, width int, body []string, keys string) string {
 	chip := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(style.BgColor).
 		Background(accent).
-		Render(" " + label + " ")
-	parts := []string{chip, ""}
-	for _, b := range body {
-		parts = append(parts, lipgloss.Wrap(b, inner, ""))
+		Render(fitLine(" "+strings.ToUpper(label)+" ", width))
+
+	lines := strings.Split(strings.Join(body, "\n"), "\n")
+	// The chip, two blank rows and the key line take 4 rows; with the border
+	// and padding that is 8 rows of the box that are not body.
+	if maxBody := dialogMaxRows - 8; len(lines) > maxBody {
+		lines = lines[:maxBody]
+		lines[maxBody-1] = "…"
 	}
-	content := lipgloss.JoinVertical(lipgloss.Center, parts...)
+
+	parts := append([]string{chip, ""}, lines...)
+	content := lipgloss.JoinVertical(lipgloss.Center, append(parts, "", keys)...)
 	return lipgloss.NewStyle().
 		Width(width).
 		Align(lipgloss.Center).

@@ -734,7 +734,7 @@ func closedCh() <-chan string {
 
 func (m *Model) startTapAdd() (tea.Model, tea.Cmd) {
 	m.pendingAction = "tap-add"
-	inputModal := modal.NewInputModal("Tap repository (user/repo):")
+	inputModal := modal.NewInputModal("Add tap", "Tap repository (user/repo):")
 	m.activeModal = inputModal
 	return m, inputModal.Init()
 }

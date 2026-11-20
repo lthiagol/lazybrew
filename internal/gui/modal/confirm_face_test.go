@@ -130,16 +130,19 @@ func TestConfirmFaceWidth(t *testing.T) {
 }
 
 // TestInputAndMenuShareTheFrame locks AC-02.6: the input and menu modals are
-// framed the same way, with their title as the chip and their own keys.
+// framed the same way: a thick border, the action as the chip, their keys.
 func TestInputAndMenuShareTheFrame(t *testing.T) {
 	cases := []struct {
 		name  string
 		m     Modal
-		title string
+		chip  string
+		texts []string
 		keys  []string
 	}{
-		{"input", NewInputModal("Tap repository (user/repo):"), "Tap repository (user/repo):", []string{"enter submit", "esc cancel"}},
-		{"menu", NewMenuModal("Trust: homebrew/foo", []string{"Trust tap", "Cancel"}), "Trust: homebrew/foo", []string{"↑↓ move", "enter choose", "esc cancel"}},
+		{"input", NewInputModal("Add tap", "Tap repository (user/repo):"), " ADD TAP ",
+			[]string{"Tap repository (user/repo):"}, []string{"enter submit", "esc cancel"}},
+		{"menu", NewMenuModal("Trust: homebrew/foo", []string{"Trust tap", "Cancel"}), " TRUST: HOMEBREW/FOO ",
+			[]string{"Trust tap"}, []string{"↑↓ move", "enter choose", "esc cancel"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -148,11 +151,67 @@ func TestInputAndMenuShareTheFrame(t *testing.T) {
 				t.Fatalf("border is not thick: %q", lines[0])
 			}
 			joined := strings.Join(lines, "\n")
-			for _, want := range append([]string{" " + tc.title + " "}, tc.keys...) {
+			for _, want := range append(append([]string{tc.chip}, tc.texts...), tc.keys...) {
 				if !strings.Contains(joined, want) {
 					t.Errorf("view lacks %q:\n%s", want, joined)
 				}
 			}
 		})
+	}
+}
+
+// TestConfirmQuestionWrapsAndBoxFits80x24 locks Q-v2-04-wrap: at 80x24 a long
+// question and consequence wrap inside the box, the box stays within 20 rows,
+// a body that is still too long ends in an ellipsis, and the key line stays.
+func TestConfirmQuestionWrapsAndBoxFits80x24(t *testing.T) {
+	question := strings.Repeat("alpha beta gamma ", 20) + "ENDQ"
+	detail := strings.Repeat("a consequence that runs on for a while ", 4) + "ENDD"
+	var deps []string
+	for i := 0; i < 30; i++ {
+		deps = append(deps, "  dependent-package-"+strings.Repeat("x", i%5))
+	}
+	m := NewConfirmModal(ActionDanger, "Uninstall bash", question+"\n"+strings.Join(deps, "\n")).
+		WithDetail(detail)
+	view := m.View().Content
+	lines := plainLines(view)
+	if len(lines) > dialogMaxRows {
+		t.Fatalf("box is %d rows, want at most %d", len(lines), dialogMaxRows)
+	}
+	for i, line := range lines {
+		if w := lipgloss.Width(line); w != confirmWidth {
+			t.Fatalf("row %d is %d cells wide, want %d: %q", i, w, confirmWidth, line)
+		}
+	}
+	joined := strings.Join(strings.Fields(strings.ReplaceAll(strings.Join(lines, "\n"), "┃", " ")), " ")
+	if !strings.Contains(joined, "ENDQ") || !strings.Contains(joined, "ENDD") {
+		t.Fatalf("the question or consequence was cut, not wrapped:\n%s", strings.Join(lines, "\n"))
+	}
+	if !strings.Contains(joined, "…") {
+		t.Fatalf("the over-long body does not end in an ellipsis:\n%s", strings.Join(lines, "\n"))
+	}
+	if !strings.Contains(joined, "[y]es") || !strings.Contains(joined, "esc cancel") {
+		t.Fatalf("the key line was pushed out of the box:\n%s", strings.Join(lines, "\n"))
+	}
+}
+
+// TestLongMenuItemAndChipAreCut locks Q-v2-04-wrap: a menu item and a chip are
+// single lines, so one too long for the box is cut with an ellipsis.
+func TestLongMenuItemAndChipAreCut(t *testing.T) {
+	long := strings.Repeat("a menu item that is far too long for the box ", 3)
+	m := NewMenuModal(strings.Repeat("title ", 20), []string{long, "Cancel"})
+	lines := plainLines(m.View().Content)
+	for i, line := range lines {
+		if w := lipgloss.Width(line); w != formWidth {
+			t.Fatalf("row %d is %d cells wide, want %d: %q", i, w, formWidth, line)
+		}
+	}
+	// Row 0 is the top border, row 1 the padding, row 2 the chip.
+	if chip := lines[2]; !strings.Contains(chip, "…") || !strings.Contains(chip, "TITLE") {
+		t.Fatalf("the chip was not cut to its width: %q", chip)
+	}
+	for _, line := range lines {
+		if strings.Contains(line, "0: ") && !strings.Contains(line, "…") {
+			t.Fatalf("the menu item was not cut to its width: %q", line)
+		}
 	}
 }

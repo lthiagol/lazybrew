@@ -101,21 +101,19 @@ func (m *ConfirmModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View draws the dialog: the first line of the message is the bold question,
 // the detail follows in subtle text, and the rest of the message is body text.
-// The key line shows the Yes/No selection and the keys that answer it.
+// Prose wraps inside the box; the key line is cut to fit it.
 func (m *ConfirmModal) View() tea.View {
 	accent := m.kind.accent()
 	question, body, hasBody := strings.Cut(m.message, "\n")
 
-	parts := []string{lipgloss.NewStyle().Bold(true).Render(question)}
+	lines := []string{lipgloss.NewStyle().Bold(true).Render(wrapProse(question, confirmWidth))}
 	if m.detail != "" {
-		parts = append(parts, style.SubtleText.Render(m.detail))
+		lines = append(lines, style.SubtleText.Render(wrapProse(m.detail, confirmWidth)))
 	}
 	if hasBody {
-		parts = append(parts, "", style.NormalItem.Render(body))
+		lines = append(lines, "", style.NormalItem.Render(wrapProse(body, confirmWidth)))
 	}
-	parts = append(parts, "", m.choices(accent))
-
-	return tea.NewView(dialog(accent, strings.ToUpper(m.action), confirmWidth, parts...))
+	return tea.NewView(dialog(accent, m.action, confirmWidth, lines, fitLine(m.choices(accent), confirmWidth)))
 }
 
 // choices is the key line: [y]es and [n]o, the selected one reversed, then esc.

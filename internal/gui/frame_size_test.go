@@ -39,7 +39,7 @@ var frameStates = []frameState{
 		return m
 	}},
 	{"input modal", func(m *Model) *Model {
-		m.activeModal = modal.NewInputModal("Tap name")
+		m.activeModal = modal.NewInputModal("Add tap", "Tap name")
 		return m
 	}},
 	{"menu modal", func(m *Model) *Model {

@@ -52,7 +52,7 @@ func TestConfirmModalDefaultNo(t *testing.T) {
 }
 
 func TestInputModalSubmit(t *testing.T) {
-	m := NewInputModal("Enter name:")
+	m := NewInputModal("Name", "Enter name:")
 
 	for _, r := range "test-package" {
 		m.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
@@ -69,7 +69,7 @@ func TestInputModalSubmit(t *testing.T) {
 }
 
 func TestInputModalEsc(t *testing.T) {
-	m := NewInputModal("Enter name:")
+	m := NewInputModal("Name", "Enter name:")
 	m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 
 	if !m.Cancelled() {
