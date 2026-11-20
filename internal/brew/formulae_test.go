@@ -162,8 +162,8 @@ func TestFormulaeReaderList(t *testing.T) {
 	if fish.Bottled {
 		t.Error("fish should not be bottled (empty files map)")
 	}
-	if len(fish.Dependencies) != 0 {
-		t.Errorf("uninstalled fish Dependencies = %v, want empty (no installed runtime_dependencies)", fish.Dependencies)
+	if len(fish.Dependencies) != 1 || fish.Dependencies[0] != "pcre2" {
+		t.Errorf("uninstalled fish Dependencies = %v, want [pcre2] (declared dependencies, no installed keg)", fish.Dependencies)
 	}
 	if len(fish.BuildDeps) != 1 || fish.BuildDeps[0] != "cmake" {
 		t.Errorf("fish BuildDeps = %v, want [cmake]", fish.BuildDeps)

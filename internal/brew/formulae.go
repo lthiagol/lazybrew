@@ -311,8 +311,13 @@ func parseFormula(f formulaJSON) Formula {
 		installedOnReq = inst.InstalledOnRequest
 		installedAsDep = inst.InstalledAsDep
 		deps = []string(inst.RuntimeDependencies)
-	} else if f.Versions.Stable != "" {
-		version = f.Versions.Stable
+	} else {
+		if f.Versions.Stable != "" {
+			version = f.Versions.Stable
+		}
+		// Brew records runtime dependencies only for installed kegs, so an
+		// uninstalled formula shows its declared dependencies instead.
+		deps = []string(f.Dependencies)
 	}
 
 	buildDeps := append([]string(nil), f.BuildDependencies...)

@@ -64,6 +64,18 @@ func (f *flexString) UnmarshalJSON(data []byte) error {
 
 type flexStrings []string
 
+// depName returns the name brew gives a dependency object. Brew writes
+// full_name for tap-qualified dependencies (and for installed runtime
+// dependencies, which are objects with full_name, version, ...), so it is
+// preferred; name is the fallback.
+func depName(obj map[string]interface{}) (string, bool) {
+	if name, ok := obj["full_name"].(string); ok {
+		return name, true
+	}
+	name, ok := obj["name"].(string)
+	return name, ok
+}
+
 func (f *flexStrings) UnmarshalJSON(data []byte) error {
 	var a []interface{}
 	if err := json.Unmarshal(data, &a); err == nil {
@@ -72,7 +84,7 @@ func (f *flexStrings) UnmarshalJSON(data []byte) error {
 			case string:
 				*f = append(*f, val)
 			case map[string]interface{}:
-				if name, ok := val["name"].(string); ok {
+				if name, ok := depName(val); ok {
 					*f = append(*f, name)
 				}
 			}
@@ -84,7 +96,7 @@ func (f *flexStrings) UnmarshalJSON(data []byte) error {
 	}
 	var obj map[string]interface{}
 	if err := json.Unmarshal(data, &obj); err == nil {
-		if name, ok := obj["name"].(string); ok {
+		if name, ok := depName(obj); ok {
 			*f = append(*f, name)
 		}
 		if *f == nil {
