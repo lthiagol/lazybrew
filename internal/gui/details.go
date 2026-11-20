@@ -3,6 +3,8 @@ package gui
 import (
 	"fmt"
 	"image/color"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -31,8 +33,9 @@ const (
 	tapFormulaeTab
 )
 
-// serviceStatusTab is the one tab of the Services panel.
-const serviceStatusTab = 0
+// serviceInfoTab is the one tab of the Services panel: the selected service's
+// Info.
+const serviceInfoTab = 0
 
 // tapSummary is the one-line header of the Taps panel's Tap Info tab.
 func tapSummary(taps []brew.Tap) string {
@@ -117,13 +120,25 @@ func renderTapInfo(p *panelData, width int) string {
 	return header + "\n\n" + tapDetails(t, width)
 }
 
-// renderServiceStatus is the Status tab of Services: the selected service's
-// details, from the data the panel already holds.
-func renderServiceStatus(p *panelData, width int, icons style.Icons) string {
+// renderServiceInfo is the Info tab of Services: the selected service's detail
+// from `brew services info`, then the actions that apply to its state. Until
+// that read has loaded, it shows the list's fields, never a blank pane.
+func renderServiceInfo(p *panelData, width int, icons style.Icons) string {
 	s := p.selectedService()
 	if s == nil {
 		return style.SubtleText.Render(emptyMessage(PanelServices))
 	}
+	fields := serviceListDetail(*s, width, icons)
+	if info := p.serviceInfoFor(s.Name); info != nil {
+		fields = serviceInfoDetail(*info, width, icons)
+	}
+	keys := append(serviceActionHints(serviceRunning(*s)), keyHint{"c", "cleanup"})
+	return fields + "\n\n" + footerLine(keys, width)
+}
+
+// serviceListDetail is the Info tab before `brew services info` has loaded: the
+// fields the list already holds.
+func serviceListDetail(s brew.Service, width int, icons style.Icons) string {
 	status, role := serviceStatus(s.Status, icons)
 	return presentation.Detail([]presentation.Field{
 		{Label: "Name", Value: s.Name},
@@ -134,19 +149,83 @@ func renderServiceStatus(p *panelData, width int, icons style.Icons) string {
 	}, width)
 }
 
+// serviceInfoDetail is the Info tab from `brew services info`. A field brew
+// reports as null is omitted.
+func serviceInfoDetail(s brew.ServiceInfo, width int, icons style.Icons) string {
+	status, role := serviceStatus(s.Status, icons)
+	fields := []presentation.Field{
+		{Label: "Name", Value: s.Name},
+		{Label: "Status", Value: status, Role: role},
+		{Label: "PID", Value: optionalInt(s.PID)},
+		{Label: "User", Value: s.User},
+		{Label: "Loaded", Value: boolStr(s.Loaded)},
+		{Label: "Registered", Value: boolStr(s.Registered)},
+		{Label: "Unit file", Value: s.File},
+		{Label: "Command", Value: s.Command},
+		{Label: "Working dir", Value: s.WorkingDir},
+		{Label: "Log", Value: s.LogPath},
+	}
+	if s.ErrorLogPath != s.LogPath {
+		fields = append(fields, presentation.Field{Label: "Error log", Value: s.ErrorLogPath})
+	}
+	fields = append(fields,
+		presentation.Field{Label: "Exit code", Value: optionalInt(s.ExitCode)},
+		presentation.Field{Label: "Interval", Value: intervalString(s.Interval)},
+		presentation.Field{Label: "Cron", Value: cronString(s.Cron)},
+	)
+	return presentation.Detail(fields, width)
+}
+
+// serviceRunning is whether a service runs now. The actions are chosen by it
+// and the guards check it.
+func serviceRunning(s brew.Service) bool {
+	return s.Status == brew.ServiceStarted
+}
+
 // serviceStatus is the Status row of a service: its icon and word, in the role
-// of its state. A service that has never run reads as none.
+// of its state. A state with no word of its own reads as brew names it.
 func serviceStatus(status brew.ServiceStatus, icons style.Icons) (string, color.Color) {
 	switch status {
 	case brew.ServiceStarted:
-		return withIcon(icons.Running, "started"), style.SuccessColor
+		return withIcon(icons.Running, "running"), style.SuccessColor
 	case brew.ServiceStopped:
 		return withIcon(icons.Stopped, "stopped"), style.MutedColor
 	case brew.ServiceError:
 		return withIcon(icons.Error, "error"), style.ErrorColor
-	default:
+	case brew.ServiceScheduled:
+		return withIcon(icons.Scheduled, "scheduled"), style.InfoColor
+	case "":
 		return "none", style.MutedColor
+	default:
+		return string(status), style.MutedColor
 	}
+}
+
+// optionalInt is the number, or empty when brew reports null.
+func optionalInt(n *int) string {
+	if n == nil {
+		return ""
+	}
+	return strconv.Itoa(*n)
+}
+
+// intervalString is a service's run interval in seconds, or empty.
+func intervalString(n *int) string {
+	if n == nil {
+		return ""
+	}
+	return fmt.Sprintf("every %ds", *n)
+}
+
+// cronString is a cron schedule's fields in name order, such as
+// "hour 3, minute 0", or empty.
+func cronString(c map[string]any) string {
+	keys := slices.Sorted(maps.Keys(c))
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%s %v", k, c[k]))
+	}
+	return strings.Join(parts, ", ")
 }
 
 // batchSummary says how many outdated packages are selected and what the

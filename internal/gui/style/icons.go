@@ -6,6 +6,7 @@ package style
 type Icons struct {
 	App, Status, Formula, Cask, Outdated, Tap, Service, Search string
 	Installed, Absent, Upgradable, Pinned, Running, Stopped    string
+	Scheduled                                                  string
 	Error, Warn, OK, Info, Marker, Refresh                     string
 }
 
@@ -27,6 +28,7 @@ var NerdIcons = Icons{
 	Pinned:     "\uf08d", // thumb-tack
 	Running:    "\uf144", // play-circle
 	Stopped:    "\uf28d", // stop-circle
+	Scheduled:  "\uf017", // clock-o
 	Error:      "\uf057", // times-circle
 	Warn:       "\uf071", // exclamation-triangle
 	OK:         "\uf00c", // check
@@ -51,6 +53,7 @@ var UnicodeIcons = Icons{
 	Pinned:     "•",
 	Running:    "▶",
 	Stopped:    "■",
+	Scheduled:  "⏲",
 	Error:      "✗",
 	Warn:       "⚠",
 	OK:         "✓",

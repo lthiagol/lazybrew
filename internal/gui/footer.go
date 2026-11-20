@@ -25,8 +25,17 @@ func (m Model) footerHints() []keyHint {
 	if m.showHelp {
 		return []keyHint{{"?/esc", "close"}}
 	}
-	hints := append([]keyHint{}, panelHints(m.activePanel)...)
+	hints := append([]keyHint{}, m.panelKeyHints()...)
 	return append(hints, globalHints...)
+}
+
+// panelKeyHints are the active panel's keys. The Services keys follow the
+// selected service's state.
+func (m Model) panelKeyHints() []keyHint {
+	if m.activePanel == PanelServices {
+		return servicesHints(m.panels[PanelServices])
+	}
+	return panelHints(m.activePanel)
 }
 
 // modalHints lists the keys a modal answers to, as it handles them.

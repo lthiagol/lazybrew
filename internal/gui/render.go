@@ -420,7 +420,7 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelServices:
-		return renderServiceStatus(panel, width, m.icons)
+		return renderServiceInfo(panel, width, m.icons)
 
 	case PanelOutdated:
 		switch m.activeTab {
