@@ -77,6 +77,7 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 func (m Model) renderMainPanel() string {
 	l := m.screenLayout()
 	innerW := l.mainW - 2
+	cw := m.mainContentWidth()
 
 	// The title is the breadcrumb: the panel, then the tab.
 	title := m.panels[m.activePanel].title
@@ -86,9 +87,10 @@ func (m Model) renderMainPanel() string {
 
 	// The tab bar is cut to the box, not wrapped: a tab that does not fit is
 	// cut, and the bar's trailing padding goes with it.
-	tabBar := fitFrame(m.renderTabBar(innerW), innerW, m.tabBarRows())
-	content := m.scrolledContent(m.renderContent(innerW, l.contentH), innerW, l.contentH)
-	body := lipgloss.JoinVertical(lipgloss.Top, tabBar, content)
+	tabBar := fitFrame(m.renderTabBar(cw), cw, m.tabBarRows())
+	content := m.scrolledContent(m.renderContent(cw, l.contentH), cw, l.contentH)
+	body := fitFrame(lipgloss.NewStyle().PaddingLeft(mainPadX).Render(
+		lipgloss.JoinVertical(lipgloss.Top, tabBar, content)), innerW, m.tabBarRows()+l.contentH)
 
 	box := panel(titled(title), borderLabel{}, body, l.mainW, l.mainH, true)
 	if l.logH == 0 {
@@ -99,6 +101,17 @@ func (m Model) renderMainPanel() string {
 
 // bottomBarRows is the height of the key-hint bar pinned under the body.
 const bottomBarRows = 1
+
+// mainPadX is the blank column either side of the main area's content, inside
+// its border, so text never touches the frame.
+const mainPadX = 1
+
+// mainContentWidth is the width the main content is laid out to: the main box
+// less its border and the padding either side. Every helper that cuts or wraps
+// the main content uses it, so nothing overflows into the padding.
+func (m Model) mainContentWidth() int {
+	return max(1, m.screenLayout().mainW-2-2*mainPadX)
+}
 
 // screenLayout is the one geometry every frame is drawn to. Render, the
 // C toggle and mouse hit-testing all read it, so a click lands on the row
