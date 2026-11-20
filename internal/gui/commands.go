@@ -934,13 +934,58 @@ func serviceReload(id string) tea.Cmd {
 
 // failureText is the error toast of a failed task: its title and the error. A
 // services write that needs sudo says so in its own words, which already name
-// the service and the command to run (AC-04.1).
-func failureText(title string, err error) string {
+// the service and the command to run (AC-04.1). A taps write says brew's first
+// meaningful line (v2-10 AC-03.2).
+func failureText(id, title string, err error) string {
 	var needsRoot *brew.ServiceNeedsRootError
 	if errors.As(err, &needsRoot) {
 		return err.Error()
 	}
+	if isTapTask(id) {
+		return tapFailureText(title, err)
+	}
 	return title + ": " + err.Error()
+}
+
+// isTapTask is whether a task is a taps write or a trust write on a tap, which
+// the Taps panel reloads when it ends.
+func isTapTask(id string) bool {
+	for _, prefix := range []string{"tap-", "untap:", "repair:", "trust:", "untrust:"} {
+		if strings.HasPrefix(id, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// tapFailureText is the error toast of a failed taps write: its title, then the
+// line of brew's stderr that says what went wrong. brew's error is only its
+// exit code, so the stderr line is the message (v2-10 AC-03.2).
+func tapFailureText(title string, err error) string {
+	var exit *brew.BrewExitError
+	if errors.As(err, &exit) {
+		if line := brewMessage(exit.Stderr); line != "" {
+			return title + ": " + line
+		}
+	}
+	return title + ": " + err.Error()
+}
+
+// brewMessage is the line of brew's output that says what went wrong: the first
+// "Error:" line, else the first line that is not blank, without the prefix.
+func brewMessage(stderr string) string {
+	lines := strings.Split(strings.TrimSpace(stderr), "\n")
+	for _, line := range lines {
+		if msg, ok := strings.CutPrefix(strings.TrimSpace(line), "Error: "); ok {
+			return msg
+		}
+	}
+	for _, line := range lines {
+		if line = strings.TrimSpace(line); line != "" {
+			return line
+		}
+	}
+	return ""
 }
 
 // runServiceTask enqueues a services write for name through the task manager.
@@ -1288,10 +1333,41 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 	if isOfficialTap(name) {
 		return m, m.setToast("Cannot untap official taps", modal.ToastWarning)
 	}
+	question := "Untap " + name + "?"
+	// Packages installed from the tap block the untap, and brew says so only
+	// once it is run. The list comes from the Formulae and Casks lists already
+	// loaded, so the confirm makes no brew call (v2-10 AC-03.1).
+	if installed := installedFromTap(m, name); len(installed) > 0 {
+		question += "\nInstalled from this tap; brew will refuse to untap while they are installed:\n  " +
+			strings.Join(installed, "\n  ")
+	}
 	m.pendingAction = "untap"
-	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Untap", "Remove tap "+name+"?").
-		WithDetail("Installed formulae from this tap will become unavailable for updates.")
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Untap", question).
+		WithDetail("The tap's formulae and casks are no longer available.")
 	return m, m.activeModal.Init()
+}
+
+// installedFromTap names the installed formulae and casks whose full name is
+// under the tap: user/repo/<name>. A filtered Formulae list (leaves) is read
+// from the list it was filtered from, so a package the filter hides still counts.
+func installedFromTap(m Model, tap string) []string {
+	prefix := tap + "/"
+	formulae := m.panels[PanelFormulae].formulae
+	if m.panels[PanelFormulae].leavesActive {
+		formulae = m.panels[PanelFormulae].unfilteredFormulae
+	}
+	var names []string
+	for _, f := range formulae {
+		if strings.HasPrefix(f.FullName, prefix) {
+			names = append(names, f.Name)
+		}
+	}
+	for _, c := range m.panels[PanelCasks].casks {
+		if strings.HasPrefix(c.FullName, prefix) {
+			names = append(names, c.Name)
+		}
+	}
+	return names
 }
 
 func isOfficialTap(name string) bool {
