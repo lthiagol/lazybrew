@@ -1,36 +1,44 @@
 package gui
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"strings"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
 )
 
 // sortFormulae orders outdated first, then pinned, then name A–Z (case-insensitive).
-// Two separate ranks — outdated and pinned are not collapsed into one flag.
+// Two separate ranks — outdated and pinned are not collapsed into one flag. Each
+// name is lowercased once, not on every comparison, and equal keys keep their
+// order.
 func sortFormulae(fs []brew.Formula) {
-	sort.SliceStable(fs, func(i, j int) bool {
-		oi, oj := 1, 1
-		if fs[i].Outdated {
-			oi = 0
+	type keyed struct {
+		f    brew.Formula
+		name string
+	}
+	keys := make([]keyed, len(fs))
+	for i, f := range fs {
+		keys[i] = keyed{f: f, name: strings.ToLower(f.Name)}
+	}
+	slices.SortStableFunc(keys, func(a, b keyed) int {
+		if c := cmp.Compare(flagRank(a.f.Outdated), flagRank(b.f.Outdated)); c != 0 {
+			return c
 		}
-		if fs[j].Outdated {
-			oj = 0
+		if c := cmp.Compare(flagRank(a.f.Pinned), flagRank(b.f.Pinned)); c != 0 {
+			return c
 		}
-		if oi != oj {
-			return oi < oj
-		}
-		pi, pj := 1, 1
-		if fs[i].Pinned {
-			pi = 0
-		}
-		if fs[j].Pinned {
-			pj = 0
-		}
-		if pi != pj {
-			return pi < pj
-		}
-		return strings.ToLower(fs[i].Name) < strings.ToLower(fs[j].Name)
+		return strings.Compare(a.name, b.name)
 	})
+	for i := range keys {
+		fs[i] = keys[i].f
+	}
+}
+
+// flagRank puts a set flag first: 0 when set, 1 when not.
+func flagRank(set bool) int {
+	if set {
+		return 0
+	}
+	return 1
 }

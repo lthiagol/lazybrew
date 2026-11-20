@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"math"
 	"os"
 	"slices"
@@ -121,7 +120,7 @@ func (m Model) modalDropAt() int {
 // starts at the right edge (dx), and a toast whose slot moved starts from the
 // slot it left (dy). slot is the row the toast last rested on.
 func toastKey(t *modal.Toast) string {
-	return fmt.Sprintf("toast:%p", t)
+	return "toast:" + strconv.FormatUint(t.ID(), 10)
 }
 
 func toastName(t *modal.Toast, part string) string {

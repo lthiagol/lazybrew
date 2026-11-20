@@ -1421,12 +1421,17 @@ func tabKey(panel PanelID, tab int, itemName string) string {
 	return strconv.Itoa(int(panel)) + ":" + strconv.Itoa(tab) + ":" + itemName
 }
 
+// needsTabFetch is whether a tab's content comes from a brew read, not from the
+// data the panel already holds. It runs on every j, k and data landing, so it
+// builds nothing.
 func needsTabFetch(panelID PanelID, tabIdx int) bool {
-	needsFetch := map[PanelID]map[int]bool{
-		PanelStatus:   {statusConfigTab: true, statusDoctorTab: true},
-		PanelFormulae: {formulaDepsTab: true, formulaUsesTab: true, formulaFilesTab: true},
+	switch panelID {
+	case PanelStatus:
+		return tabIdx == statusConfigTab || tabIdx == statusDoctorTab
+	case PanelFormulae:
+		return tabIdx == formulaDepsTab || tabIdx == formulaUsesTab || tabIdx == formulaFilesTab
 	}
-	return needsFetch[panelID] != nil && needsFetch[panelID][tabIdx]
+	return false
 }
 
 func (m *Model) clearTabContent() {

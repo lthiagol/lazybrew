@@ -53,7 +53,7 @@ func Info(fields []Field, width int) string {
 	}
 	// The left column is as wide as its fields need, but at least two fifths of
 	// the width, and it leaves the right column infoMinRight cells.
-	leftW := min(max(width*2/5, lipgloss.Width(Detail(left, 0))), width-infoGap-infoMinRight)
+	leftW := min(max(width*2/5, naturalWidth(left)), width-infoGap-infoMinRight)
 	rightW := width - leftW - infoGap
 	if !fitsWhole(right, rightW) {
 		return Detail(fields, width)
@@ -145,3 +145,35 @@ func Detail(fields []Field, width int) string {
 	}
 	return strings.Join(rows, "\n")
 }
+
+// naturalWidth is the width Detail(fields, 0) draws, measured without drawing
+// it: the widest row of the unwrapped fields. A value is drawn as one block, its
+// lines padded to the widest and the first one after the label. lipgloss
+// draws a tab as tabStop spaces.
+func naturalWidth(fields []Field) int {
+	var shown []Field
+	labelW := 0
+	for _, f := range fields {
+		if f.Value == "" {
+			continue
+		}
+		shown = append(shown, f)
+		labelW = max(labelW, lipgloss.Width(f.Label+":"))
+	}
+	if len(shown) == 0 {
+		return 0
+	}
+	labelW += 2
+	w := 0
+	for _, f := range shown {
+		block := 0
+		for _, line := range strings.Split(f.Value, "\n") {
+			block = max(block, lipgloss.Width(strings.ReplaceAll(line, "\t", strings.Repeat(" ", tabStop))))
+		}
+		w = max(w, labelW+block)
+	}
+	return w
+}
+
+// tabStop is the width lipgloss draws a tab at.
+const tabStop = 4

@@ -100,3 +100,30 @@ func BenchmarkFormulaePanelView(b *testing.B) {
 		_ = m.View()
 	}
 }
+
+// BenchmarkHelpScreenView is View() with the help open at 140x40, the frame a
+// scroll key draws (cr3 AC-07).
+func BenchmarkHelpScreenView(b *testing.B) {
+	m := sendKey(updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40}), "?")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = m.View()
+	}
+}
+
+// BenchmarkSortFormulae sorts a 1000-formula list, the copy each load makes
+// before the sort (cr3 AC-07).
+func BenchmarkSortFormulae(b *testing.B) {
+	base := make([]brew.Formula, 1000)
+	for i := range base {
+		base[i] = brew.Formula{Name: fmt.Sprintf("Pkg%04d", (i*7919)%1000), Outdated: i%7 == 0, Pinned: i%11 == 0}
+	}
+	fs := make([]brew.Formula, len(base))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		copy(fs, base)
+		sortFormulae(fs)
+	}
+}

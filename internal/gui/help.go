@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -216,9 +217,31 @@ func helpColumns(units [][]string, cols int) [][]string {
 	return columns
 }
 
-// helpRows lays the whole help out at width cells: every page, in one column
-// or two when the width allows, one row per screen row.
+// helpMemo is the last help layout. The help is laid out again only when the
+// width or the theme changes, not on every frame and scroll key (cr3 AC-07).
+var helpMemo struct {
+	mu    sync.Mutex
+	width int
+	theme *style.Theme
+	rows  []string
+}
+
+// helpRows is the whole help laid out at width cells: every page, in one column
+// or two when the width allows, one row per screen row. The rows are shared:
+// a caller reads them and does not change them.
 func helpRows(width int) []string {
+	helpMemo.mu.Lock()
+	defer helpMemo.mu.Unlock()
+	if helpMemo.rows != nil && helpMemo.width == width && helpMemo.theme == style.CurrentTheme {
+		return helpMemo.rows
+	}
+	rows := layoutHelp(width)
+	helpMemo.width, helpMemo.theme, helpMemo.rows = width, style.CurrentTheme, rows
+	return rows
+}
+
+// layoutHelp lays the help out at width: see helpRows.
+func layoutHelp(width int) []string {
 	var units [][]string
 	for _, p := range buildHelp() {
 		units = append(units, helpUnit(p))
