@@ -5,7 +5,7 @@
 ╭─ 2 ∘ Formulae ───── 125 ─╮│Name:        bash                                 │
 │  ✓┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   │
 │▸ ✓┃                                                                      ┃   │
-╰───┃                            UNINSTALL BASH                            ┃   │
+╰───┃                               UNINSTALL                              ┃   │
 ╭─ 3┃                                                                      ┃   │
 │   ┃                Uninstall bash? This cannot be undone.                ┃   │
 ╰───┃                 removes bash; 1 package depends on it                ┃   │
