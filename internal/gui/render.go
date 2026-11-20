@@ -160,6 +160,14 @@ func compose(base string, w, h int, overlays ...*lipgloss.Layer) string {
 	return fitFrame(canvas.Render(), w, h)
 }
 
+// bottomRight places content flush right on the last body row, just above
+// the bottom bar. A toast sits there, so it never moves the layout.
+func bottomRight(content string, w, h int) *lipgloss.Layer {
+	x := max(0, w-lipgloss.Width(content))
+	y := max(0, h-bottomBarRows-1)
+	return lipgloss.NewLayer(content).X(x).Y(y)
+}
+
 // centred places content in the middle of a w x h frame.
 func centred(content string, w, h int) *lipgloss.Layer {
 	x := max(0, (w-lipgloss.Width(content))/2)
