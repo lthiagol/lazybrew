@@ -455,7 +455,7 @@ func TestStatusTabsShowNotLoadedInsteadOfEternalSpinner(t *testing.T) {
 func TestFormulaeTabsShowNoPackageSelectedWithoutItems(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
-	m.activeTab = 2
+	m.activeTab = formulaDepsTab
 	m.panels[PanelFormulae].items = nil
 
 	out := m.renderContent(120, 40)

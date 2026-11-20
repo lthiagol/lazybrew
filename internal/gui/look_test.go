@@ -146,9 +146,12 @@ func TestSidebarTitlesCarryIconOnlyWhenShown(t *testing.T) {
 func TestMainBorderTitleIsBreadcrumb(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m = sendKey(m, "2")
-	m = sendKey(m, "]")
 	if top := plainLine(strings.Split(m.renderMainPanel(), "\n")[0]); !strings.Contains(top, "Formulae › Info") {
 		t.Fatalf("main title should be the breadcrumb Formulae › Info, got %q", top)
+	}
+	m = sendKey(m, "]")
+	if top := plainLine(strings.Split(m.renderMainPanel(), "\n")[0]); !strings.Contains(top, "Formulae › Deps") {
+		t.Fatalf("after ] the breadcrumb should follow the tab to Formulae › Deps, got %q", top)
 	}
 }
 

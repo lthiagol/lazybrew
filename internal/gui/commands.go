@@ -1026,15 +1026,10 @@ func (m Model) runMissing() (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) loadTabContent() tea.Cmd {
-	needsFetch := map[PanelID]map[int]bool{
-		PanelStatus:   {1: true, 2: true},
-		PanelFormulae: {2: true, 3: true, 5: true},
-	}
-
 	panelID := m.activePanel
 	tabIdx := m.activeTab
 
-	if needsFetch[panelID] != nil && needsFetch[panelID][tabIdx] {
+	if needsTabFetch(panelID, tabIdx) {
 		panel := m.panels[panelID]
 		if panel.selected >= len(panel.items) {
 			return nil
@@ -1063,7 +1058,7 @@ func (m *Model) loadTabContent() tea.Cmd {
 // something terminal" from "no fast path" — empty strings still count as
 // a terminal state (e.g. "No dependencies").
 func renderCachedTabContent(panelID PanelID, tabIdx int, panel *panelData) (string, bool) {
-	if panelID == PanelFormulae && tabIdx == 2 {
+	if panelID == PanelFormulae && tabIdx == formulaDepsTab {
 		f := panel.selectedFormula()
 		if f == nil {
 			return "", false
@@ -1136,13 +1131,13 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 			}
 		case PanelFormulae:
 			switch tab {
-			case 2: // Deps (List=0, Info=1)
+			case formulaDepsTab:
 				deps, err := client.Formulae.Deps(ctx, name)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("deps", err)}
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: deps}
-			case 3: // Used By
+			case formulaUsesTab:
 				uses, err := client.Formulae.Uses(ctx, name)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("uses", err)}
@@ -1155,7 +1150,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 					result = "No dependents"
 				}
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: result}
-			case 5: // Files
+			case formulaFilesTab:
 				output, err := client.Runner.Execute(ctx, "list", name)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("list", err)}

@@ -2,6 +2,7 @@ package gui
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -146,5 +147,36 @@ func TestLeavesFilterKeepsFormulaeAligned(t *testing.T) {
 	m = updateModel(m, MutationResultMsg{Name: "leaves", Type: mutInstall, Leaves: []string{"bash", "dep"}})
 	if len(p.items) != 2 || len(p.formulae) != 2 {
 		t.Fatalf("leaves off should restore both lists, got %d and %d", len(p.items), len(p.formulae))
+	}
+}
+
+// TestFormulaeSidebarKeepsSelectedInWindow (replaces
+// TestFormulaeTableKeepsSelectedInWindow): with more formulae than the box
+// shows, the selected one stays on screen and the first ones scroll away.
+func TestFormulaeSidebarKeepsSelectedInWindow(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = sendKey(m, "2")
+	fs := make([]brew.Formula, 30)
+	items := make([]string, 30)
+	for i := range fs {
+		fs[i] = brew.Formula{Name: "pkg" + strconv.Itoa(i), Version: "1.0"}
+		items[i] = fs[i].Name
+	}
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: items, Formulae: fs})
+	for range 25 {
+		m = sendKey(m, "j")
+	}
+	side := sgr.ReplaceAllString(m.renderSidebar(), "")
+	selected := false
+	for _, row := range strings.Split(side, "\n") {
+		if strings.Contains(row, "pkg25 ") {
+			selected = strings.Contains(row, "▸")
+		}
+	}
+	if !selected {
+		t.Fatalf("selected pkg25 should be in the sidebar window with its marker:\n%s", side)
+	}
+	if strings.Contains(side, "pkg0 ") {
+		t.Fatalf("the window should have scrolled past pkg0:\n%s", side)
 	}
 }
