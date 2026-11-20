@@ -3,7 +3,7 @@ verdict: changes-required
 # Review r2 — slice v2-06-animations (wip 4e3bde8..b9fa4d9)
 
 **V1 gate (CGO_ENABLED=1, HEAD b9fa4d9):** build, lint, `go test ./... -race -count=1` (12 pkgs ok), cover-check (brew 76.5, presentation 98.2, gui 84.1, modal 90.1): exit 0.
-**Every fix commit passes:** `go vet` + `go test ./... -count=1` in a worktree at ee7d782, 789caf6, 7a66ae2, a000af9: PERCOMMIT.
+**Every fix commit passes:** `go vet` + `go test ./... -count=1` in a worktree at ee7d782, 789caf6, 7a66ae2, a000af9: all four exit 0, no failing test lines.
 **V2/V4 frames:** harness re-run against real brew: `diff -r` vs `v2-05s-services/after/` empty. Motion dump re-run: `diff -r` vs `motion/` empty (fix changed only the 5 `motion-modal-*.ansi`). 55 frames exactly W×H. moshi-hook MainPID=800, NRestarts=0, ActiveEnter 2026-11-18 11:37:48 before and after. `internal/gui/dump` removed; worktree clean.
 
 ## Earlier findings
