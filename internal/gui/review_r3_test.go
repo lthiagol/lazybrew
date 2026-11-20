@@ -204,6 +204,11 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 	_ = m.switchPanel(PanelFormulae)
 
 	p := m.panels[PanelFormulae]
+	// Make the main window the binding clamp: the sidebar box's window is 20
+	// rows, taller than the 14-row expanded main content. Only the main clamp
+	// can then move the offset: min(20, 14) = 14 rows, so 29 - 14 + 1 = 16.
+	// With the clamp to the sidebar window alone the offset would stay at 14.
+	p.visibleRows = 20
 	for i := 0; i < 30; i++ {
 		p.items = append(p.items, fmt.Sprintf("pkg%02d  1.0", i))
 	}
@@ -227,9 +232,8 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 		t.Fatalf("cursor %d must be inside [offset %d, offset+%d) after the C toggle",
 			p.selected, p.offset, vc)
 	}
-	// Clamped to the two-row window: selected 29 with two visible rows.
-	if p.offset != 28 {
-		t.Fatalf("expected offset clamped to 28, got %d", p.offset)
+	if p.offset != 16 {
+		t.Fatalf("expected offset clamped to the main window: 16, got %d", p.offset)
 	}
 }
 
