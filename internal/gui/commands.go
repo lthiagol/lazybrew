@@ -477,7 +477,7 @@ func (m Model) fetchSelectedSearchInfo() tea.Cmd {
 			return m.client.Runner.Execute(ctx, "info", "--json=v2", r.Name)
 		})
 		if err != nil {
-			return SearchInfoLoadedMsg{Err: err}
+			return SearchInfoLoadedMsg{Err: searchInfoErr(err)}
 		}
 		return SearchInfoLoadedMsg{Content: string(output)}
 	}
@@ -714,6 +714,38 @@ type pkgInfo struct {
 	// Groups are the dependency lists of the package, each under its heading.
 	Groups  []depGroup
 	Caveats string
+}
+
+// searchInfoErr is the error the search pane shows for a failed `brew info`.
+// brew's exit error carries only the exit code, so the error is the "Error:"
+// line of its stderr, as brew printed it.
+func searchInfoErr(err error) error {
+	var exit *brew.BrewExitError
+	if !errors.As(err, &exit) {
+		return err
+	}
+	for _, line := range strings.Split(exit.Stderr, "\n") {
+		if line = strings.TrimSpace(line); strings.HasPrefix(line, "Error:") {
+			return errors.New(line)
+		}
+	}
+	return err
+}
+
+// infoParseError is a search info payload that brew sent and that did not
+// decode. The pane shows it as a parse error; brew's own errors show as brew
+// wrote them.
+type infoParseError struct{ err error }
+
+func (e infoParseError) Error() string { return "Parse error: " + e.err.Error() }
+
+// parseSearchInfo decodes the info payload of a search result.
+func parseSearchInfo(raw string) (*pkgInfo, error) {
+	info, err := parsePackageInfo(raw)
+	if err != nil {
+		return nil, infoParseError{err}
+	}
+	return info, nil
 }
 
 func parsePackageInfo(rawJSON string) (*pkgInfo, error) {

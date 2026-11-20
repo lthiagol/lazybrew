@@ -1,10 +1,13 @@
 package gui
 
 import (
+	"context"
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/lthiagol/lazybrew/internal/brew"
 )
 
 // searchFormulaInstalled is `brew info --json=v2 jq` for an installed formula,
@@ -88,8 +91,7 @@ const searchCaskInstalled = `{
 // searchInfoView is the search info pane for a payload, with ANSI stripped.
 func searchInfoView(t *testing.T, payload string) string {
 	t.Helper()
-	m := newTestModel()
-	m.searchInfoContent = payload
+	m := updateModel(newTestModel(), SearchInfoLoadedMsg{Content: payload})
 	return ansi.Strip(m.renderSearchInfo(100, 40))
 }
 
@@ -163,5 +165,29 @@ func TestSearchInfoCaskInstalledShowsVersionAndStatus(t *testing.T) {
 		if !strings.Contains(view, want) {
 			t.Errorf("search info should show %q:\n%s", want, view)
 		}
+	}
+}
+
+// A failed `brew info` shows brew's own error line in the pane, not a parse
+// error of the message (C11). brew's exit error carries only the exit code;
+// the line that says what went wrong is in its stderr.
+func TestSearchInfoBrewErrorIsShownAsBrewSaysIt(t *testing.T) {
+	runner := brew.NewMockRunner()
+	runner.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return nil, &brew.BrewExitError{Command: "info --json=v2 zz", ExitCode: 1,
+			Stderr: "Error: No available formula with the name \"zz\".\n"}
+	}
+	m := New(brew.NewClient(runner), testConfig())
+	m = updateModel(m, tea.WindowSizeMsg{Width: 100, Height: 40})
+	m = sendKey(m, "7")
+	m = updateModel(m, SearchDoneMsg{Results: []string{"zz"}, Raw: []brew.SearchResult{{Name: "zz"}}})
+	m = updateModel(m, m.fetchSelectedSearchInfo()())
+
+	view := ansi.Strip(m.renderSearchInfo(100, 40))
+	if !strings.Contains(view, `Error: No available formula with the name "zz".`) {
+		t.Fatalf("the pane should show brew's error line, got:\n%s", view)
+	}
+	if strings.Contains(view, "Parse error") {
+		t.Fatalf("a brew error must not read as a parse error:\n%s", view)
 	}
 }

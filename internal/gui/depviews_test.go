@@ -164,8 +164,8 @@ func TestFilesCountAndStyleThePaths(t *testing.T) {
 func TestSearchResultDependenciesCheckInstalled(t *testing.T) {
 	m := formulaWithDeps(t)
 	m = sendKey(m, "7")
-	m.searchInfoContent = `{"formulae":[{"name":"wget","versions":{"stable":"1.25"},` +
-		`"dependencies":["ncurses"],"build_dependencies":["cmake"]}],"casks":[]}`
+	m = updateModel(m, SearchInfoLoadedMsg{Content: `{"formulae":[{"name":"wget","versions":{"stable":"1.25"},` +
+		`"dependencies":["ncurses"],"build_dependencies":["cmake"]}],"casks":[]}`})
 	out := ansi.Strip(m.renderContent(70, 30))
 	for _, want := range []string{"Dependencies:", "Runtime", "Build"} {
 		if !strings.Contains(out, want) {
