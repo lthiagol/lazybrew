@@ -11,6 +11,8 @@
 ```bash
 git clone https://github.com/lthiagol/lazybrew
 cd lazybrew
+make            # list the targets (same as make help)
+make build      # build bin/lazybrew
 make run        # build bin/lazybrew, then launch the TUI
 make test       # unit tests + race detector (sets CGO_ENABLED=1)
 make test-fast  # unit tests without -race; PKG=./internal/gui/... narrows it
