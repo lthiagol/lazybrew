@@ -1,0 +1,40 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
+╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Formulae › Info ───────────────────────────────────────────────────────────────────────╮
+│▸ Homebrew 7.0.15-36-g1f335ae                  ││  Info    Deps    Used By    Caveats    Files                                            │
+│  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━                                                                                 │
+│  Formulae  125                                ││Name:        bash                                                                        │
+╰───────────────────────────────────────────────╯│Version:     5.3.20                                                                      │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│Tap:         homebrew/core                                                               │
+│  ✓ alsa-lib                         1.2.16.1_1││Status:      installed                                                                   │
+│▸ ✓ bash                                 5.3.20││License:     GPL-3.0-or-later                                                            │
+│  ✓ bat                                  0.26.1││Homepage:    https://www.gnu.org/software/bash/                                          │
+│  ✓ brotli                                1.2.1││Bottled:     yes                                                                         │
+│  ✓ btop                                  1.4.8││Description: Bourne-Again SHell, a UNIX command interpreter                              │
+│  ✓ bzip2                                 1.0.8││                                                                                         │
+│  ✓ ca-certificates                  2026-11-05││                                                                                         │
+│  ✓ curl                                 8.23.0││                                                                                         │
+│  ✓ cyrus-sasl                         2.1.28_4││                                                                                         │
+│  ✓ dav1d                                 1.5.5││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 3 ▣ Casks ────────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 4 ↑ Outdated ─────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 5 ⊕ Taps ─────────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 6 ◎ Services ─────────────────── not loaded ─╮╰─────────────────────────────────────────────────────────────────────────────────────────╯
+│                                               │╭─ Log ───────────────────────────────────────────────────────────────────────────────────╮
+│                                               ││No commands executed yet                                                                 │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
+ j/k navigate  [ ] tabs  i install  x remove  r reinstall  u upgrade  U upgrade all  p pin  L leaves  F fetch  Tab next  S-Tab prev  ? more 
