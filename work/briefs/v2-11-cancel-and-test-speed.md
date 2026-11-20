@@ -90,15 +90,15 @@ before the receipt (ruling `Q-v2-builder-speed`).
 
 ## Report protocol
 
-`work/inbox/runner-v2-10-tap-actions.md` (≤ 40 lines), committed once;
+`work/inbox/runner-v2-11-cancel-and-test-speed.md` (≤ 40 lines), committed once;
 worktree clean; reply with exactly one line:
-`done: work/inbox/runner-v2-10-tap-actions.md`. Do not touch other panes.
+`done: work/inbox/runner-v2-11-cancel-and-test-speed.md`. Do not touch other panes.
 
 ## Fix rounds
 
-`work/briefs/fix-v2-10-tap-actions-rN.md` → fix every finding, one commit each
+`work/briefs/fix-v2-11-cancel-and-test-speed-rN.md` → fix every finding, one commit each
 (subject names the id), gate, receipt
-`work/inbox/runner-v2-10-tap-actions-fix-rN.md` (≤ 30 lines, committed once).
+`work/inbox/runner-v2-11-cancel-and-test-speed-fix-rN.md` (≤ 30 lines, committed once).
 
 ## Questions
 
