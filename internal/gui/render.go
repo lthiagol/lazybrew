@@ -381,13 +381,16 @@ func (m Model) renderContent(width, height int) string {
 				// scheduled (r1 finding 28).
 				return style.SubtleText.Render("No package selected")
 			}
+			if f := panel.selectedFormula(); f != nil && m.activeTab == formulaDepsTab {
+				return m.formulaDepsView(f, width)
+			}
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				switch m.activeTab {
 				case formulaUsesTab:
-					return m.renderUses(content)
+					return m.renderUses(content, width)
 				case formulaFilesTab:
-					return renderFiles(content)
+					return renderFiles(content, width)
 				}
 				return content
 			}
@@ -417,7 +420,7 @@ func (m Model) renderContent(width, height int) string {
 				{heading: "Formulae", names: c.DependsOnFormulae, check: depFormula},
 				{heading: "Casks", names: c.DependsOnCasks, check: depCask},
 				{heading: "Requirements", names: c.Requirements, check: depNone},
-			})
+			}, width)
 			if view == "" {
 				return style.SubtleText.Render(noDependencies)
 			}
@@ -479,11 +482,11 @@ func (m Model) renderContent(width, height int) string {
 			if t == nil || len(t.FormulaNames) == 0 {
 				return style.SubtleText.Render("No formulae in this tap")
 			}
-			result := ""
+			rows := make([]tableRow, 0, len(t.FormulaNames))
 			for _, fn := range t.FormulaNames {
-				result += fn + "\n"
+				rows = append(rows, m.pkgRow(fn, depFormula))
 			}
-			return style.NormalItem.Render(result)
+			return renderTable(m.pkgColumns(), rows, width)
 		}
 
 	case PanelServices:
@@ -550,7 +553,7 @@ func (m Model) renderSearchInfo(width, height int) string {
 		{Label: "Description", Value: info.Description, Prose: true},
 	}, width)
 
-	if view := m.renderDepGroups(info.Groups); view != "" {
+	if view := m.renderDepGroups(info.Groups, width); view != "" {
 		result += "\n\n" + style.AccentText.Render("Dependencies:") + "\n" + view
 	}
 	if info.Caveats != "" {

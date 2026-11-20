@@ -1143,11 +1143,10 @@ func (m *Model) loadTabContent() tea.Cmd {
 // a terminal state (e.g. "No dependencies").
 func (m *Model) renderCachedTabContent(panelID PanelID, tabIdx int, panel *panelData) (string, bool) {
 	if panelID == PanelFormulae && tabIdx == formulaDepsTab {
-		f := panel.selectedFormula()
-		if f == nil {
-			return "", false
-		}
-		return m.formulaDepsView(f), true
+		// The Deps tab is drawn from the loaded formula at render time, when its
+		// width is known, so there is nothing to store: the tab is ready
+		// when a formula is selected.
+		return "", panel.selectedFormula() != nil
 	}
 	return "", false
 }
