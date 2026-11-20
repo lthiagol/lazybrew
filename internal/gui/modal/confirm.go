@@ -106,12 +106,13 @@ func (m *ConfirmModal) View() tea.View {
 	accent := m.kind.accent()
 	question, body, hasBody := strings.Cut(m.message, "\n")
 
-	lines := []string{lipgloss.NewStyle().Bold(true).Render(wrapProse(question, confirmWidth))}
+	lines := proseLines(question, lipgloss.NewStyle().Bold(true), confirmWidth)
 	if m.detail != "" {
-		lines = append(lines, style.SubtleText.Render(wrapProse(m.detail, confirmWidth)))
+		lines = append(lines, proseLines(m.detail, style.SubtleText, confirmWidth)...)
 	}
 	if hasBody {
-		lines = append(lines, "", style.NormalItem.Render(wrapProse(body, confirmWidth)))
+		lines = append(lines, "")
+		lines = append(lines, proseLines(body, style.NormalItem, confirmWidth)...)
 	}
 	return tea.NewView(dialog(accent, m.action, confirmWidth, lines, fitLine(m.choices(accent), confirmWidth)))
 }

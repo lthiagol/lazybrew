@@ -2,6 +2,7 @@ package modal
 
 import (
 	"strconv"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -73,7 +74,16 @@ func (m *MenuModal) View() tea.View {
 		keyHint(style.AccentColor, "enter", "choose"),
 		keyHint(style.AccentColor, "esc", "cancel"),
 	), formWidth)
-	list := lipgloss.JoinVertical(lipgloss.Left, lines...)
+	// Every item is padded to the widest, so the list reads as one block, left
+	// aligned, when each row is centred in the box.
+	widest := 0
+	for _, line := range lines {
+		widest = max(widest, lipgloss.Width(line))
+	}
+	for i, line := range lines {
+		lines[i] = lipgloss.NewStyle().Width(widest).Render(line)
+	}
+	list := strings.Join(lines, "\n")
 	return tea.NewView(dialog(style.AccentColor, m.title, formWidth, []string{list}, keys))
 }
 
