@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+╭─ 1 ◉ Status ─────────────╮╭─ Status › Dashboard ─────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Dashboard    Config    Doctor                   │
+│  Prefix    /home/linuxbr…││━━━━━━━━━━━━━                                     │
+╰──────────────────────────╯│╭─ Homebrew ───────────────────────╮              │
+╭─ 2 ∘ Formulae ─────── – ─╮││Version:  7.0.15-36-g1f335ae      │              │
+│                          │││Prefix:   /home/linuxbrew/.linuxb…│              │
+╰──────────────────────────╯│╰──────────────────────────────────╯              │
+╭─ 3 ▣ Casks ─ not loaded ─╮│╭─ Packages ───────────────────────╮              │
+│                          │││Formulae:  125 installed          │              │
+╰──────────────────────────╯││Casks:     2 installed            │              │
+╭─ 4 ↑ Outdated ─────── – ─╮││Outdated:  not loaded — press R   │              │
+│                          ││╰──────────────────────────────────╯              │
+╰──────────────────────────╯│╭─ Taps ───────────────────────────╮              │
+╭─ 5 ⊕ Taps ── not loaded ─╮││Total:        3                   │              │
+│                          │││Official:     0                   │              │
+╰──────────────────────────╯││Third-party:  3                   │              │
+╭─ 6 ◎ Services ─────── – ─╮│╰──────────────────────────────────╯              │
+│                          │╰──────────────────────────────────────────────────╯
+╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ───────── – ─╮│No commands executed yet                          │
+│                          ││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ R refresh  c cleanup  d doctor  A autoremove  B brewfile  v vulns  ? more      
