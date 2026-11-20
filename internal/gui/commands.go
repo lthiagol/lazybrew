@@ -14,7 +14,6 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
-	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
 
 // fetchTabContentTimeout bounds the time a tab-content fetch (brew deps --tree,
@@ -277,21 +276,12 @@ func (m *Model) executeTrustAction(index int) tea.Cmd {
 		verb = "Untrust"
 		trustID = "untrust:" + name
 	}
-	t := &task.Task{
-		ID:    trustID,
-		Title: verb + ": " + name,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			var err error
-			if index == 0 {
-				err = m.client.TrustWrite.TrustTap(ctx, name)
-			} else {
-				err = m.client.TrustWrite.UntrustTap(ctx, name)
-			}
-			errCh := make(chan error, 1)
-			errCh <- err
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask(trustID, verb+": "+name, func(ctx context.Context) error {
+		if index == 0 {
+			return m.client.TrustWrite.TrustTap(ctx, name)
+		}
+		return m.client.TrustWrite.UntrustTap(ctx, name)
+	})
 
 	return m.enqueue(t)
 }
@@ -315,21 +305,12 @@ func (m *Model) executeTrustCaskAction(index int) tea.Cmd {
 }
 
 func (m *Model) trustItemCmd(fullName, itemType string) tea.Cmd {
-	t := &task.Task{
-		ID:    "trust:" + fullName,
-		Title: "Trust: " + fullName,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			var err error
-			if itemType == "formula" {
-				err = m.client.TrustWrite.TrustFormula(ctx, fullName)
-			} else {
-				err = m.client.TrustWrite.TrustCask(ctx, fullName)
-			}
-			errCh := make(chan error, 1)
-			errCh <- err
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask("trust:"+fullName, "Trust: "+fullName, func(ctx context.Context) error {
+		if itemType == "formula" {
+			return m.client.TrustWrite.TrustFormula(ctx, fullName)
+		}
+		return m.client.TrustWrite.TrustCask(ctx, fullName)
+	})
 
 	return m.enqueue(t)
 }
@@ -338,15 +319,9 @@ func (m Model) executeUntap() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
 	name := panel.selectedName()
 
-	t := &task.Task{
-		ID:    "untap:" + name,
-		Title: "Untap " + name,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			errCh := make(chan error, 1)
-			errCh <- m.client.TapsWrite.Untap(ctx, name)
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask("untap:"+name, "Untap "+name, func(ctx context.Context) error {
+		return m.client.TapsWrite.Untap(ctx, name)
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -356,15 +331,9 @@ func (m Model) executeRepair() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
 	name := panel.selectedName()
 
-	t := &task.Task{
-		ID:    "repair:" + name,
-		Title: "Repair " + name,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			errCh := make(chan error, 1)
-			errCh <- m.client.TapsWrite.Repair(ctx, name)
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask("repair:"+name, "Repair "+name, func(ctx context.Context) error {
+		return m.client.TapsWrite.Repair(ctx, name)
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -378,17 +347,9 @@ func (m *Model) executeBrewfileAction(index int) tea.Cmd {
 	action := actions[index]
 	title := "Brewfile " + action
 
-	t := &task.Task{
-		ID:    "brewfile-" + action,
-		Title: title,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			ch, errCh := m.client.Runner.ExecuteStream(ctx, "bundle", action)
-			if ch == nil {
-				ch = closedCh()
-			}
-			return ch, errCh, nil
-		},
-	}
+	t := streamTask("brewfile-"+action, title, func(ctx context.Context) (<-chan string, <-chan error) {
+		return m.client.Runner.ExecuteStream(ctx, "bundle", action)
+	})
 
 	return m.enqueue(t)
 }
@@ -477,57 +438,49 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 	// (r2 finding NEW-3). Prefix every mutation with its op type.
 	taskID := mutationID(mutType, name)
 
-	t := &task.Task{
-		ID:    taskID,
-		Title: title,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			var ch <-chan string
-			var errCh <-chan error
+	t := streamTask(taskID, title, func(ctx context.Context) (<-chan string, <-chan error) {
+		var ch <-chan string
+		var errCh <-chan error
 
-			switch mutType {
-			case mutInstall:
-				// Casks must route to the cask writer whether the install
-				// starts from Search or from the Casks panel itself (r2
-				// finding NEW-4: the "i install" hint on Casks had no
-				// handler, and the handler must not fall back to brew's
-				// formula writer).
-				if searchIsCask || m.activePanel == PanelCasks {
-					ch, errCh = m.client.CasksWrite.Install(ctx, pkgName)
-				} else {
-					ch, errCh = m.client.FormulaeWrite.Install(ctx, pkgName)
-				}
-			case mutUninstall:
-				if m.activePanel == PanelCasks {
-					ch, errCh = m.client.CasksWrite.Uninstall(ctx, pkgName)
-				} else {
-					ch, errCh = m.client.FormulaeWrite.Uninstall(ctx, pkgName)
-				}
-			case mutReinstall:
-				if m.activePanel == PanelCasks {
-					ch, errCh = m.client.CasksWrite.Reinstall(ctx, pkgName)
-				} else {
-					ch, errCh = m.client.FormulaeWrite.Reinstall(ctx, pkgName)
-				}
-			case mutUpgrade:
-				if m.activePanel == PanelCasks {
-					ch, errCh = m.client.CasksWrite.Upgrade(ctx, pkgName)
-				} else {
-					ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, pkgName)
-				}
-			case mutUpgradeAll:
-				ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, "")
-			case mutZap:
-				ch, errCh = m.client.CasksWrite.Zap(ctx, pkgName)
-			case mutFetch:
-				ch, errCh = m.client.Runner.ExecuteStream(ctx, "fetch", pkgName)
+		switch mutType {
+		case mutInstall:
+			// Casks must route to the cask writer whether the install
+			// starts from Search or from the Casks panel itself (r2
+			// finding NEW-4: the "i install" hint on Casks had no
+			// handler, and the handler must not fall back to brew's
+			// formula writer).
+			if searchIsCask || m.activePanel == PanelCasks {
+				ch, errCh = m.client.CasksWrite.Install(ctx, pkgName)
+			} else {
+				ch, errCh = m.client.FormulaeWrite.Install(ctx, pkgName)
 			}
-
-			if ch == nil {
-				ch = closedCh()
+		case mutUninstall:
+			if m.activePanel == PanelCasks {
+				ch, errCh = m.client.CasksWrite.Uninstall(ctx, pkgName)
+			} else {
+				ch, errCh = m.client.FormulaeWrite.Uninstall(ctx, pkgName)
 			}
-			return ch, errCh, nil
-		},
-	}
+		case mutReinstall:
+			if m.activePanel == PanelCasks {
+				ch, errCh = m.client.CasksWrite.Reinstall(ctx, pkgName)
+			} else {
+				ch, errCh = m.client.FormulaeWrite.Reinstall(ctx, pkgName)
+			}
+		case mutUpgrade:
+			if m.activePanel == PanelCasks {
+				ch, errCh = m.client.CasksWrite.Upgrade(ctx, pkgName)
+			} else {
+				ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, pkgName)
+			}
+		case mutUpgradeAll:
+			ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, "")
+		case mutZap:
+			ch, errCh = m.client.CasksWrite.Zap(ctx, pkgName)
+		case mutFetch:
+			ch, errCh = m.client.Runner.ExecuteStream(ctx, "fetch", pkgName)
+		}
+		return ch, errCh
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -591,23 +544,12 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 		name := n.name
 		isCask := n.isCask
 
-		t := &task.Task{
-			ID:    batchPrefix + name,
-			Title: "Upgrade " + name,
-			Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-				var ch <-chan string
-				var errCh <-chan error
-				if isCask {
-					ch, errCh = m.client.CasksWrite.Upgrade(ctx, name)
-				} else {
-					ch, errCh = m.client.FormulaeWrite.Upgrade(ctx, name)
-				}
-				if ch == nil {
-					ch = closedCh()
-				}
-				return ch, errCh, nil
-			},
-		}
+		t := streamTask(batchPrefix+name, "Upgrade "+name, func(ctx context.Context) (<-chan string, <-chan error) {
+			if isCask {
+				return m.client.CasksWrite.Upgrade(ctx, name)
+			}
+			return m.client.FormulaeWrite.Upgrade(ctx, name)
+		})
 
 		if _, err := m.tasks.Enqueue(t); err != nil {
 			queueFull = true
@@ -764,15 +706,9 @@ func (m *Model) startTapAdd() (tea.Model, tea.Cmd) {
 // to be unreachable: the tap-add input result was routed to the search
 // flow instead (r1 finding 2).
 func (m Model) executeTapAdd(name string) (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "tap-" + name,
-		Title: "Tap " + name,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			errCh := make(chan error, 1)
-			errCh <- m.client.TapsWrite.Tap(ctx, name)
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask("tap-"+name, "Tap "+name, func(ctx context.Context) error {
+		return m.client.TapsWrite.Tap(ctx, name)
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -995,28 +931,22 @@ func brewMessage(stderr string) string {
 
 // runServiceTask enqueues a services write for name through the task manager.
 func (m Model) runServiceTask(action, name string) (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "service-" + action + ":" + name,
-		Title: action + " " + name,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			errCh := make(chan error, 1)
-			switch action {
-			case "start":
-				errCh <- m.client.ServicesWrite.Start(ctx, name)
-			case "stop":
-				errCh <- m.client.ServicesWrite.Stop(ctx, name)
-			case "restart":
-				errCh <- m.client.ServicesWrite.Restart(ctx, name)
-			case "run":
-				errCh <- m.client.ServicesWrite.Run(ctx, name)
-			default:
-				// An unrecognized action must still resolve the task: an
-				// empty errCh left the task "running" forever (r1 finding 16).
-				errCh <- fmt.Errorf("unknown service action: %s", action)
-			}
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask("service-"+action+":"+name, action+" "+name, func(ctx context.Context) error {
+		switch action {
+		case "start":
+			return m.client.ServicesWrite.Start(ctx, name)
+		case "stop":
+			return m.client.ServicesWrite.Stop(ctx, name)
+		case "restart":
+			return m.client.ServicesWrite.Restart(ctx, name)
+		case "run":
+			return m.client.ServicesWrite.Run(ctx, name)
+		default:
+			// An unrecognized action must still resolve the task: an
+			// empty errCh left the task "running" forever (r1 finding 16).
+			return fmt.Errorf("unknown service action: %s", action)
+		}
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -1045,21 +975,12 @@ func (m Model) togglePin() (tea.Model, tea.Cmd) {
 		}
 	}
 
-	t := &task.Task{
-		ID:    "pin:" + name,
-		Title: "Toggle pin " + name,
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			var err error
-			if pinned {
-				err = m.client.FormulaeWrite.Unpin(ctx, name)
-			} else {
-				err = m.client.FormulaeWrite.Pin(ctx, name)
-			}
-			errCh := make(chan error, 1)
-			errCh <- err
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask("pin:"+name, "Toggle pin "+name, func(ctx context.Context) error {
+		if pinned {
+			return m.client.FormulaeWrite.Unpin(ctx, name)
+		}
+		return m.client.FormulaeWrite.Pin(ctx, name)
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -1077,15 +998,9 @@ func (m Model) serviceCleanup() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) executeServicesCleanup() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "services-cleanup",
-		Title: "Services cleanup",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			errCh := make(chan error, 1)
-			errCh <- m.client.ServicesWrite.Cleanup(ctx)
-			return closedCh(), errCh, nil
-		},
-	}
+	t := errTask("services-cleanup", "Services cleanup", func(ctx context.Context) error {
+		return m.client.ServicesWrite.Cleanup(ctx)
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -1105,75 +1020,37 @@ func (m Model) brewfileMenu() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) runVulns() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "vulns",
-		Title: "Vulnerability Check",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			out := make(chan string, 1)
-			errCh := make(chan error, 1)
-			go func() {
-				defer close(out)
-				output, err := m.client.Diagnostics.Vulns(ctx)
-				if err != nil {
-					errCh <- err
-					return
-				}
-				if output == "" {
-					output = "No vulnerabilities found"
-				}
-				// Buffered send: the manager may stop consuming (task
-				// error/cancel path) and an unbuffered send would leak
-				// the goroutine (r1 finding 9).
-				out <- output
-				errCh <- nil
-			}()
-			return out, errCh, nil
-		},
-	}
+	t := linesTask("vulns", "Vulnerability Check", func(ctx context.Context) ([]string, error) {
+		output, err := m.client.Diagnostics.Vulns(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if output == "" {
+			output = "No vulnerabilities found"
+		}
+		// The whole report is one line, as brew wrote it.
+		return []string{output}, nil
+	})
 
 	c := m.enqueue(t)
 	return m, c
 }
 
 func (m Model) runMissing() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "missing",
-		Title: "Missing Dependencies",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			out := make(chan string)
-			errCh := make(chan error, 1)
-			go func() {
-				defer close(out)
-				missing, err := m.client.Diagnostics.Missing(ctx)
-				if err != nil {
-					errCh <- err
-					return
-				}
-				// Sends are guarded by ctx.Done(): if the manager stops
-				// consuming (task error/cancel path) the goroutine exits
-				// instead of blocking forever on an unbuffered channel
-				// (r1 finding 9).
-				if len(missing) == 0 {
-					select {
-					case out <- "All dependencies satisfied":
-					case <-ctx.Done():
-						return
-					}
-					errCh <- nil
-					return
-				}
-				for _, d := range missing {
-					select {
-					case out <- d.Formula + ": missing " + d.Missing:
-					case <-ctx.Done():
-						return
-					}
-				}
-				errCh <- nil
-			}()
-			return out, errCh, nil
-		},
-	}
+	t := linesTask("missing", "Missing Dependencies", func(ctx context.Context) ([]string, error) {
+		missing, err := m.client.Diagnostics.Missing(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if len(missing) == 0 {
+			return []string{"All dependencies satisfied"}, nil
+		}
+		lines := make([]string, 0, len(missing))
+		for _, d := range missing {
+			lines = append(lines, d.Formula+": missing "+d.Missing)
+		}
+		return lines, nil
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -1510,49 +1387,23 @@ func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) runDoctor() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "doctor",
-		Title: "Doctor",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			out := make(chan string)
-			errCh := make(chan error, 1)
-			go func() {
-				defer close(out)
-				warnings, err := m.client.Diagnostics.Doctor(ctx)
-				if err != nil {
-					errCh <- err
-					return
-				}
-				// Sends are guarded by ctx.Done() so a manager that stops
-				// consuming cannot leak this goroutine (r1 finding 9).
-				if len(warnings) == 0 {
-					select {
-					case out <- "Your system is ready to brew.":
-					case <-ctx.Done():
-						return
-					}
-					errCh <- nil
-					return
-				}
-				for _, w := range warnings {
-					select {
-					case out <- w.Title:
-					case <-ctx.Done():
-						return
-					}
-					if w.Details != "" {
-						select {
-						case out <- "  " + w.Details:
-						case <-ctx.Done():
-							return
-						}
-					}
-				}
-				errCh <- nil
-			}()
-			return out, errCh, nil
-		},
-	}
+	t := linesTask("doctor", "Doctor", func(ctx context.Context) ([]string, error) {
+		warnings, err := m.client.Diagnostics.Doctor(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if len(warnings) == 0 {
+			return []string{"Your system is ready to brew."}, nil
+		}
+		var lines []string
+		for _, w := range warnings {
+			lines = append(lines, w.Title)
+			if w.Details != "" {
+				lines = append(lines, "  "+w.Details)
+			}
+		}
+		return lines, nil
+	})
 
 	c := m.enqueue(t)
 	return m, c
@@ -1571,68 +1422,36 @@ func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) brewCleanup() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "cleanup-preview",
-		Title: "Cleanup Preview",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			ch, errCh := m.client.DiagnosticsWrite.Cleanup(ctx, true)
-			if ch == nil {
-				ch = closedCh()
-			}
-			return ch, errCh, nil
-		},
-	}
+	t := streamTask("cleanup-preview", "Cleanup Preview", func(ctx context.Context) (<-chan string, <-chan error) {
+		return m.client.DiagnosticsWrite.Cleanup(ctx, true)
+	})
 
 	c := m.enqueue(t)
 	return m, c
 }
 
 func (m Model) runAutoremove() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "autoremove-preview",
-		Title: "Autoremove Preview",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			ch, errCh := m.client.DiagnosticsWrite.Autoremove(ctx, true)
-			if ch == nil {
-				ch = closedCh()
-			}
-			return ch, errCh, nil
-		},
-	}
+	t := streamTask("autoremove-preview", "Autoremove Preview", func(ctx context.Context) (<-chan string, <-chan error) {
+		return m.client.DiagnosticsWrite.Autoremove(ctx, true)
+	})
 
 	c := m.enqueue(t)
 	return m, c
 }
 
 func (m Model) executeCleanup() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "cleanup",
-		Title: "Cleanup",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			ch, errCh := m.client.DiagnosticsWrite.Cleanup(ctx, false)
-			if ch == nil {
-				ch = closedCh()
-			}
-			return ch, errCh, nil
-		},
-	}
+	t := streamTask("cleanup", "Cleanup", func(ctx context.Context) (<-chan string, <-chan error) {
+		return m.client.DiagnosticsWrite.Cleanup(ctx, false)
+	})
 
 	c := m.enqueue(t)
 	return m, c
 }
 
 func (m Model) executeAutoremove() (tea.Model, tea.Cmd) {
-	t := &task.Task{
-		ID:    "autoremove",
-		Title: "Autoremove",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			ch, errCh := m.client.DiagnosticsWrite.Autoremove(ctx, false)
-			if ch == nil {
-				ch = closedCh()
-			}
-			return ch, errCh, nil
-		},
-	}
+	t := streamTask("autoremove", "Autoremove", func(ctx context.Context) (<-chan string, <-chan error) {
+		return m.client.DiagnosticsWrite.Autoremove(ctx, false)
+	})
 
 	c := m.enqueue(t)
 	return m, c

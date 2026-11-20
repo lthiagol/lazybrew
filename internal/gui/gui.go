@@ -1276,17 +1276,9 @@ func (m Model) render() string {
 // finishes. A dropped enqueue resets isUpdating and returns a warning toast.
 func (m *Model) startBrewUpdate() tea.Cmd {
 	client := m.client
-	t := &task.Task{
-		ID:    "brew-update",
-		Title: "brew update",
-		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			ch, errCh := client.DiagnosticsWrite.Update(ctx)
-			if ch == nil {
-				ch = closedCh()
-			}
-			return ch, errCh, nil
-		},
-	}
+	t := streamTask("brew-update", "brew update", func(ctx context.Context) (<-chan string, <-chan error) {
+		return client.DiagnosticsWrite.Update(ctx)
+	})
 	// A dropped enqueue would leave isUpdating stuck true and block every
 	// later R update, so surface the failure and reset the flag (r1 finding 7).
 	c, err := m.tryEnqueue(t)
