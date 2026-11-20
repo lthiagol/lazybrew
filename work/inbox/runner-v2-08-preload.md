@@ -1,7 +1,6 @@
 # Receipt — runner, v2-08-preload
 
 ## Commits (one per AC, in order)
-
 - AC-01  1471c38  feat(gui): a preload scheduler loads the panels after Status
 - AC-02  2237be9  feat(gui): the dashboard fills in as preloaded panels land
 - AC-03  fd55e63  test(gui): queued panels say loading, and the v2-08 frames
@@ -24,7 +23,7 @@
   run, `ok`. Sidebar changed on 16 screens per size, each named in result.md.
   Main area changed on 01 and 15 (Outdated count), and on 06 and 14 (degraded
   Taps read, see below).
-- **AC-03.3** `result.md` written; STATE row `v2-08-preload | — | implemented | awaiting reviewer`.
+- **AC-03.3** `result.md`; STATE row `v2-08-preload | — | implemented | awaiting reviewer`.
 
 ## Gate (final tree, after AC-03)
 
@@ -34,9 +33,8 @@
 
 ## Next session must know
 
-- Brew is slow on this machine now: `brew tap-info` ~87 s (over the 30 s read
-  cap), `brew outdated --formula` ~21 s. The Taps read then falls back to
-  name-only with no error. Lazy mode does the same (checked). Q-v2-08-b.
+- Brew is slow here now: `brew tap-info` ~87 s (over the 30 s cap), so Taps
+  falls back to name-only with no error. Lazy mode does the same. Q-v2-08-b.
 - Q-v2-08-a: a failed preloaded panel retries on switch (existing policy, kept).
 - Search is never preloaded, so it still says `not loaded` (by design).
 - No brew write ran; the harness never confirms a write.
