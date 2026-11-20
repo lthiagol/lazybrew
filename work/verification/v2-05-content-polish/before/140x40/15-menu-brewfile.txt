@@ -1,0 +1,40 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
+╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Status › Dashboard ────────────────────────────────────────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││  Dashboard    Config    Doctor                                                          │
+│  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━━━━━━                                                                            │
+│  Formulae  125                                ││Homebrew 7.0.15-36-g1f335ae                                                              │
+│  Casks     2                                  ││Prefix: /home/linuxbrew/.linuxbrew                                                       │
+│  Taps      3                                  ││                                                                                         │
+│  Services  3                                  ││Formulae:  125 installed                                                                 │
+│                                               ││Casks:     2 installed                                                                   │
+│                                               ││Outdated:  — not loaded (press R to load)                                                │
+│                                               ││                                                                                         │
+│                                               ││Taps:      3 total                                                                       │
+╰───────────────────────────────────────────────╯│           0 official, 3 third-party                                                     │
+╭─ 2 ∘ Formulae ────────────────────────── 12┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                            │
+│  ✓ alsa-lib                         1.2.16.┃                                                ┃                                            │
+│▸ ✓ bash                                 5.3┃                    BREWFILE                    ┃                                            │
+│  ✓ bat                                  0.2┃                                                ┃                                            │
+╰────────────────────────────────────────────┃   0: ▸ Export to Brewfile (brew bundle dump)   ┃                                            │
+╭─ 3 ▣ Casks ────────────────────── not loade┃   1:   Install from Brewfile (brew bundle i…   ┃                                            │
+│                                            ┃   2:   Cleanup (brew bundle cleanup)           ┃                                            │
+│                                            ┃   3:   Check (brew bundle check)               ┃                                            │
+│                                            ┃   4:   List entries (brew bundle list)         ┃                                            │
+╰────────────────────────────────────────────┃                                                ┃                                            │
+╭─ 4 ↑ Outdated ──────────────────────────── ┃      ↑↓ move   enter choose   esc cancel       ┃                                            │
+│                                            ┃                                                ┃                                            │
+│                                            ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                            │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 5 ⊕ Taps ──────────────────────────────── 1 ─╮│                                                                                         │
+│▸ homebrew/cask-versions  official             ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                              ╭──────────────────────────╮
+╭─ 6 ◎ Services ─────────────────── not loaded ─╮╰──────────────────────────────────────────────────────────────│ ✓ Install bash completed │
+│                                               │╭─ Log ────────────────────────────────────────────────────────╰──────────────────────────╯
+│                                               ││No commands executed yet                           ╭─────────────────────────────────────╮
+╰───────────────────────────────────────────────╯│                                                   │ ✗ Upgrade bash: brew upgrade failed │
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮│                                                   ╰─────────────────────────────────────╯
+│                                               ││                                                          ╭──────────────────────────────╮
+│                                               ││                                                          │ ⚠ Cannot untap official taps │
+╰───────────────────────────────────────────────╯╰──────────────────────────────────────────────────────────╰──────────────────────────────╯
+ ↑↓ move  enter choose  esc cancel                                                                                                          
