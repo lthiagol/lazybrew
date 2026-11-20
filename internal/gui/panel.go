@@ -305,9 +305,12 @@ func emptyPanel(width, height int) string {
 	)
 }
 
+// renderSidebarContent is the body of a sidebar box. A pending fetch, a panel
+// that was never loaded and an empty one draw no body: their state is the
+// box's border label (sidebarLabel).
 func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool) string {
 	if p.loading {
-		return lipgloss.NewStyle().Width(width).Render(style.SubtleText.Render("..."))
+		return ""
 	}
 	if p.err != nil {
 		msg := p.err.Error()
@@ -318,10 +321,7 @@ func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool)
 	}
 	count := len(p.items)
 	if count == 0 {
-		if !p.loaded {
-			return style.SubtleText.Render("not loaded")
-		}
-		return style.SubtleText.Render("(empty)")
+		return ""
 	}
 	// Cursor/offset clamping happens in normalize() from the Update loop;
 	// rendering must not mutate model state (r1 finding 29).

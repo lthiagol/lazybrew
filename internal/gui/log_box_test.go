@@ -33,8 +33,9 @@ func TestLogIsSiblingBoxBelowMainPanel(t *testing.T) {
 	if rows[l.mainH-1][col] != '╰' {
 		t.Fatalf("main panel bottom-left corner missing at row %d", l.mainH-1)
 	}
-	if !strings.HasPrefix(string(rows[l.mainH+1][col:]), "│Log") {
-		t.Fatalf("Log title should sit inside the Log box at row %d, got %q", l.mainH+1, string(rows[l.mainH+1][col:]))
+	// The Log title sits in the Log box's top border, on its first row.
+	if !strings.HasPrefix(string(rows[l.mainH][col:]), "╭─ Log ") {
+		t.Fatalf("Log title should sit in the Log box's top border at row %d, got %q", l.mainH, string(rows[l.mainH][col:]))
 	}
 }
 
@@ -73,9 +74,10 @@ func TestMouseHitsWhatIsDrawn(t *testing.T) {
 	p.selected = 0
 
 	l := m.screenLayout()
-	// Inside the main border: breadcrumb, tab bar, then the table header
-	// and separator, so body row k is drawn at y = 1 + 1 + tabBar + 2 + k.
-	bravoY := 1 + 1 + m.tabBarRows() + 2 + 1
+	// Inside the main border: tab bar, then the table header and separator,
+	// so body row k is drawn at y = 1 + tabBar + 2 + k. The breadcrumb is
+	// the border title now and takes no row.
+	bravoY := 1 + m.tabBarRows() + 2 + 1
 	rows := plainRows(m.View().Content)
 	if !strings.HasPrefix(strings.TrimLeft(string(rows[bravoY][l.sideW+1:]), " "), "bravo") {
 		t.Fatalf("fixture: row %d should draw bravo, got %q", bravoY, string(rows[bravoY][l.sideW+1:]))

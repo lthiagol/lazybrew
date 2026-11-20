@@ -1097,7 +1097,7 @@ func (m *Model) prevPanel() tea.Cmd {
 func (m *Model) syncVisibleRows() {
 	heights := m.computeContentHeights()
 	for i := range m.panels {
-		m.panels[i].visibleRows = max(0, heights[i]-1)
+		m.panels[i].visibleRows = heights[i]
 	}
 }
 

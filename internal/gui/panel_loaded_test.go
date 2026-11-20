@@ -14,7 +14,8 @@ func TestNeverLoadedPanelSaysNotLoaded(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	casks := m.panels[PanelCasks]
 
-	if got := casks.renderSidebarContent(30, 5, nil); !strings.Contains(got, "not loaded") {
+	// The state is the box's border label, so a collapsed box still shows it.
+	if got := m.sidebarLabel(casks); !strings.Contains(got, "not loaded") {
 		t.Fatalf("fresh Casks panel should say not loaded, got %q", got)
 	}
 	if side := m.renderSidebar(); !strings.Contains(side, "not loaded") {
@@ -22,7 +23,7 @@ func TestNeverLoadedPanelSaysNotLoaded(t *testing.T) {
 	}
 
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{}})
-	got := m.panels[PanelCasks].renderSidebarContent(30, 5, nil)
+	got := m.sidebarLabel(m.panels[PanelCasks])
 	if !strings.Contains(got, "(empty)") {
 		t.Fatalf("fetched Casks panel with no items should say (empty), got %q", got)
 	}
