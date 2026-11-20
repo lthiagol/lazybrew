@@ -2,6 +2,7 @@ package gui
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -43,7 +44,7 @@ func plainLine(row string) string {
 // title is inside the top border at the left, the label at the right, and
 // the box is exactly w by h.
 func TestPanelTitleAndLabelSitInTheBorder(t *testing.T) {
-	got := panel("2 Formulae", borderLabel{full: "125"}, "row one\nrow two", 24, 4, false)
+	got := panel(titled("2 Formulae"), borderLabel{full: "125", count: true}, "row one\nrow two", 24, 4, false)
 	rows := strings.Split(got, "\n")
 	if len(rows) != 4 {
 		t.Fatalf("panel has %d rows, want 4", len(rows))
@@ -68,12 +69,12 @@ func TestPanelTitleAndLabelSitInTheBorder(t *testing.T) {
 // TestPanelCutsLinesNeverWraps: a long title or body line is cut with an
 // ellipsis, and the box keeps its height.
 func TestPanelCutsLinesNeverWraps(t *testing.T) {
-	title := panel("a title far too long for the box", borderLabel{}, "", 20, 3, true)
+	title := panel(titled("a title far too long for the box"), borderLabel{}, "", 20, 3, true)
 	if top := plainLine(strings.Split(title, "\n")[0]); lipgloss.Width(top) != 20 || !strings.Contains(top, "…") {
 		t.Fatalf("long title should be cut with an ellipsis at 20 cells, got %q", top)
 	}
 
-	body := panel("t", borderLabel{}, "this body line is far too long for the box", 20, 3, false)
+	body := panel(titled("t"), borderLabel{}, "this body line is far too long for the box", 20, 3, false)
 	rows := strings.Split(body, "\n")
 	if len(rows) != 3 {
 		t.Fatalf("a long body line must not add rows: %d rows, want 3", len(rows))
@@ -83,7 +84,7 @@ func TestPanelCutsLinesNeverWraps(t *testing.T) {
 	}
 
 	// Body rows past the height are dropped, not drawn past the bottom border.
-	many := panel("t", borderLabel{}, "a\nb\nc\nd\ne", 20, 4, false)
+	many := panel(titled("t"), borderLabel{}, "a\nb\nc\nd\ne", 20, 4, false)
 	if n := len(strings.Split(many, "\n")); n != 4 {
 		t.Fatalf("five body lines in a 4-row box drew %d rows, want 4", n)
 	}
@@ -92,7 +93,7 @@ func TestPanelCutsLinesNeverWraps(t *testing.T) {
 // TestPanelFocusChangesBorder: focus is a visible difference, not only a
 // title change.
 func TestPanelFocusChangesBorder(t *testing.T) {
-	if panel("t", borderLabel{}, "x", 12, 3, true) == panel("t", borderLabel{}, "x", 12, 3, false) {
+	if panel(titled("t"), borderLabel{}, "x", 12, 3, true) == panel(titled("t"), borderLabel{}, "x", 12, 3, false) {
 		t.Fatal("a focused panel should draw differently from an unfocused one")
 	}
 }
@@ -560,5 +561,47 @@ func TestSidebarLabelsAtEightyColumns(t *testing.T) {
 	}
 	if got := top("7 ⌕ Search"); !strings.HasSuffix(got, " ! ─╮") {
 		t.Errorf("the error mark should stay at 80 columns, got %q", got)
+	}
+}
+
+// TestCountsStayWholeAt80Columns (F-r2-01): a count in a sidebar border always
+// shows whole. At 80 columns the box is 24 cells, so the title yields first its
+// icon and then its name; the row stays exactly the box's width.
+func TestCountsStayWholeAt80Columns(t *testing.T) {
+	for _, n := range []int{1234, 12345} {
+		m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: make([]string, n)})
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: make([]string, n)})
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: make([]string, n)})
+		rows := strings.Split(m.renderSidebar(), "\n")
+		count := strconv.Itoa(n)
+		for _, name := range []string{"Formulae", "Outdated", "Services"} {
+			var row string
+			for _, r := range rows {
+				if strings.Contains(plainLine(r), name) {
+					row = plainLine(r)
+				}
+			}
+			if !strings.HasSuffix(row, " "+count+" ─╮") {
+				t.Errorf("%d items: %s border must end with the whole count, got %q", n, name, row)
+			}
+			if w := lipgloss.Width(row); w != 24 {
+				t.Errorf("%d items: %s border is %d cells, want 24: %q", n, name, w, row)
+			}
+		}
+	}
+}
+
+// TestBorderTitleYieldsToCount: when even the bare name cannot fit beside a
+// count, the name is cut and the count is kept whole.
+func TestBorderTitleYieldsToCount(t *testing.T) {
+	name, tail := borderHead(
+		borderTitle{full: "2 ∘ Formulae", bare: "2 Formulae"},
+		borderLabel{full: "1234567", count: true}, 24)
+	if tail != " 1234567 " {
+		t.Fatalf("the count must be whole, got tail %q", tail)
+	}
+	if !strings.HasSuffix(name, "…") || lipgloss.Width(name) > 24-7-lipgloss.Width(tail) {
+		t.Fatalf("the name should be cut to make room for the count, got %q", name)
 	}
 }

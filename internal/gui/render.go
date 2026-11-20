@@ -20,7 +20,10 @@ func (m Model) renderSidebar() string {
 		// The number is the jump key (1-7); the icon, when shown, is the
 		// panel's own. The state or count sits in the border, so a box
 		// too short for its body still shows it (Q-v2-small).
-		title := strconv.Itoa(i+1) + " " + withIcon(m.panelIcon(p.id), p.title)
+		title := borderTitle{
+			full: strconv.Itoa(i+1) + " " + withIcon(m.panelIcon(p.id), p.title),
+			bare: strconv.Itoa(i+1) + " " + p.title,
+		}
 		// visibleRows is derived in the Update loop (syncVisibleRows);
 		// rendering must not write model state (r1 finding 29, r2
 		// finding NEW-8). Fall back to the layout computation for models
@@ -37,9 +40,9 @@ func (m Model) renderSidebar() string {
 }
 
 // sidebarLabel is the right-hand label of a sidebar box: the state while a
-// fetch is pending or has failed, otherwise the item count (0 when empty). The Status box
-// shows no count: its items are dashboard lines, not things that can be
-// counted.
+// fetch is pending or has failed, otherwise the item count (0 when empty).
+// The Status box shows no count: its items are dashboard lines, not things
+// that can be counted.
 func (m Model) sidebarLabel(p *panelData) borderLabel {
 	switch {
 	case p.loading:
@@ -55,9 +58,9 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 	case p.id == PanelStatus:
 		return borderLabel{}
 	case p.itemCount() == 0:
-		return borderLabel{full: style.SubtleText.Render("0")}
+		return borderLabel{full: style.SubtleText.Render("0"), count: true}
 	default:
-		return borderLabel{full: style.SubtleText.Render(strconv.Itoa(p.itemCount()))}
+		return borderLabel{full: style.SubtleText.Render(strconv.Itoa(p.itemCount())), count: true}
 	}
 }
 
@@ -80,7 +83,7 @@ func (m Model) renderMainPanel() string {
 	content := fitBox(m.renderContent(innerW, l.contentH), innerW, l.contentH)
 	body := lipgloss.JoinVertical(lipgloss.Top, tabBar, content)
 
-	box := panel(title, borderLabel{}, body, l.mainW, l.mainH, true)
+	box := panel(titled(title), borderLabel{}, body, l.mainW, l.mainH, true)
 	if l.logH == 0 {
 		return box
 	}
@@ -193,7 +196,7 @@ func (m Model) renderCommandLogBox(width, height int) string {
 	if m.logBusy() && m.opState != nil {
 		label = style.SubtleText.Render(m.opState.Title)
 	}
-	return panel("Log", borderLabel{full: label}, body, width, height, m.logBusy())
+	return panel(titled("Log"), borderLabel{full: label}, body, width, height, m.logBusy())
 }
 
 func (m Model) renderTabBar(width int) string {
