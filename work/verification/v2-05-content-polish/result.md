@@ -14,7 +14,7 @@ reads that cached result and runs nothing new. Nothing was confirmed.
 
 | screen | 140x40 | 80x24 | what changed |
 |---|---|---|---|
-| 01-status | changed | changed | The Dashboard tab is five cards (Homebrew, Packages, Taps, Services, Health) instead of one text block. At 140 wide the cards sit in pairs (Homebrew + Packages, Taps + Services, then Health). Outdated is `not loaded — press R`, as no `brew outdated` ran. Health shows `✓ ready to brew`. At 80 wide the cards stack; the Services and Health cards sit below the fold and need scrolling (no row is cut sideways). |
+| 01-status | changed | changed | The Dashboard tab is five cards (Homebrew, Health, Packages, Taps, Services) instead of one text block. At 140 wide the cards sit in pairs (Homebrew + Health, Packages + Taps, then Services). Outdated is `not loaded — press R`, as no `brew outdated` ran. Health shows `✓ ready to brew`. At 80 wide the cards stack: Health is on frame rows 9–11 (1-based, the header is row 1), Packages and Taps follow in view, and Services sits below the fold and needs scrolling (no row is cut sideways). |
 | 02-formulae | changed | changed | The Info tab of the selected formula uses the detail rows: one label column (Muted), values in Text, the homepage in Info. Status is `✓ installed` (Success). |
 | 03-formulae-info | changed | changed | Same detail rows for bash. The label column is one width for the view (`Description:` sets it). |
 | 04-formulae-deps | changed | changed | Deps shows `Runtime` (Accent heading, no colon) and each dependency with an installed icon: `✓ readline` (installed). |
@@ -39,8 +39,8 @@ reads that cached result and runs nothing new. Nothing was confirmed.
 - The cask Deps tab for gcloud-cli (`python@3.14`) is covered by tests from the
   real `brew info --json=v2 --cask --installed` fixture; the frame set does
   not open it.
-- At 80×24 the five dashboard cards need scrolling to reach Services and
-  Health. Nothing overflows the width.
+- At 80×24 Services is below the fold and needs scrolling; Health is on rows
+  9–11. Nothing overflows the width.
 
 ## Fix round r1 (F-r1-04)
 
@@ -51,8 +51,9 @@ they exist. Every other frame is byte-identical to the previous capture.
 
 - **01-status** (140x40 and 80x24, `.ansi` at 140x40): the cards are Homebrew,
   then Health, Packages, Taps, Services. At 140 wide the first pair is Homebrew
-  and Health. At 80 wide Health sits under Homebrew, with `✓ ready to brew`
-  on row 5; Packages, Taps and Services follow and still need scrolling.
+  and Health. At 80 wide Health sits under Homebrew: its title is on row 9 and
+  `✓ ready to brew` on row 10 (1-based). Packages and Taps follow in view;
+  Services is below the fold and needs scrolling.
 - **15-menu-brewfile** (140x40, `.ansi`; 80x24 is unchanged): the base frame is
   the same dashboard, so its cards are in the new order. The Brewfile menu is
   unchanged.
