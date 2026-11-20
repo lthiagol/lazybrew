@@ -18,13 +18,14 @@ icon set, and no brew write command. Nothing was confirmed.
 | 04-formulae-deps | identical | identical | none |
 | 05-outdated | identical | identical | none |
 | 06-taps | identical | identical | none |
-| 07-confirm-modal | changed | changed | The uninstall dialog has the new face: thick border in the danger accent (Error red), the chip ` UNINSTALL ` (the action; the name is in the question), the question `Uninstall bash? This cannot be undone.` in bold, the subtle consequence `removes bash; 1 package depends on it`, the dependents list as body text, and the key line `[y]es   [n]o   esc cancel` with the Yes/No selection in reverse video. The old outer border wrap is gone. The base frame is muted in `.ansi` (53 muted runs; `before/` has none). |
+| 07-confirm-modal | changed | changed | The uninstall dialog has the new face: thick border in the danger accent (Error red), the chip ` UNINSTALL ` (the action; the name is in the question), the question `Uninstall bash? This cannot be undone.` in bold, the subtle consequence `removes bash; 1 package depends on it`, the dependents list as one left-aligned block (`The following depend on bash:` with `direnv` indented under it, fix r3), and the key line `[y]es   [n]o   esc cancel` with the Yes/No selection in reverse video. The old outer border wrap is gone. The base frame is muted in `.ansi` (53 muted runs; `before/` has none). |
 | 08-help | identical | identical | none (help has no backdrop) |
 | 09-search | identical | identical | none |
 | 10-toast | changed | changed | The single text toast became a bordered box in the success role with its icon: ` ✓ Install bash completed `. It sits bottom-right on the last body row. At 140x40 its bottom border shares the row of the Log box's bottom border, which the toast's own border covers from its left edge; the Log border still runs left of it. |
 | 11-deps-bash | identical | identical | none |
 | 12-confirm-upgrade | new | new | `u` on Formulae opens the chip ` UPGRADE ` (warning-coloured), the question `Upgrade bash?`, the consequence `Installs the newest version of bash.`, and the key line. The base is muted in `.ansi` (49 muted runs). The `Install bash completed` toast from 10 is still up, because the harness does not drain ticks (as in v2-03b). |
 | 13-toast-stack | new | new | Three toasts stacked bottom-right, oldest first, newest lowest: success `✓ Install bash completed`, error `✗ Upgrade bash: brew upgrade failed`, warning `⚠ Cannot untap official taps`. Only the three boxes cover the frame: every cell beside them is the base frame (fix r1, F-r1-01). The warning needs an official tap, and this machine has none, so the harness injects one Taps entry (`homebrew/cask-versions`) before pressing `x`. Nothing runs: the untap is refused. At 80x24 the stack grows up over the Log box and the main panel and stays off the header and footer. |
+| 15-menu-brewfile | new | new | `B` on Status opens the Brewfile menu as a form frame: thick border in Accent, the chip ` BREWFILE `, five items with the `▸` marker on item 0; item 1 is cut with `…` to fit the 42-cell text width, and the key line `↑↓ move   enter choose   esc cancel`. Opened and closed only: Enter would run a `brew bundle` action, so it is not sent. |
 | 14-input-modal | new | new | `a` on Taps opens the tap-add input as a form frame: thick border in Accent, the chip ` ADD TAP `, the prompt `Tap repository (user/repo):` as body text, the input, and the key line `enter submit   esc cancel`. No tap is added. |
 
 ## Fix round r1
@@ -53,12 +54,23 @@ with `cmp`: identical):
   key line are centred again (F-r2-01).
 - **07-confirm-modal** and **12-confirm-upgrade** (both sizes; `.ansi`): each row
   is now centred on its own, rather than the block being centred. A row with an odd
-  gap sits one cell further left or right than before; the content is unchanged.
-  Muted runs in `.ansi`: 53 and 49, as before.
+  gap sits one cell further left or right than before. For 12 that is the whole
+  change. **Correction (r3):** for 07 the same per-row centring spread the
+  dependents list out, so the r2 note that its content was unchanged was wrong.
+  Fixed in r3 below. Muted runs in `.ansi`: 53 and 49, as before.
+
+## Fix round r3
+
+- **07-confirm-modal** (both sizes; `.ansi`): the body after the question (the
+  dependents heading and list, the timeout note) is one left-aligned block,
+  centred in the box, so `direnv` sits two cells in from `The following depend on
+  bash:`. Chip, question, detail and key line stay centred row by row (F-r3-01).
+- **15-menu-brewfile** (new; both sizes; `.ansi`): the menu frame, added so every
+  dialog kind has a frame here. Muted runs in `.ansi`: 52 in the 140x40 capture.
 
 ## Checks
 
 - Screens 01–06, 08, 09 and 11 match `before/` exactly, in `.txt` and `.ansi` at 140x40 (`cmp`). 10 differs only by the toast box, as described.
-- The muted runs in `.ansi`: 53 in 07, 49 in 12, 50 in 14 (the r2 fix leaves the counts as they were), 0 in 13 (no modal open). Only the base is muted; the box and the footer are not.
+- The muted runs in `.ansi`: 53 in 07, 49 in 12, 50 in 14, 0 in 13 (no modal open). Only the base is muted; the box and the footer are not.
 - The footer in 07, 12 and 14 shows the modal's keys (`y yes  n no  esc cancel`, `enter submit  esc cancel`).
 - `TestEveryFrameIsTerminalSize` and the modal, toast and backdrop tests pass at 140×40, 80×24 and 200×60.
