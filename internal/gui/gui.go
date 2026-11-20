@@ -123,6 +123,9 @@ type Model struct {
 	// motionPanel is the panel the tab underline last aimed at, so a switch
 	// to another panel snaps the underline rather than sliding it.
 	motionPanel PanelID
+	// motionSize is the window size the sidebar last aimed at. A resize snaps
+	// the boxes rather than sliding them.
+	motionSize [2]int
 }
 
 func (m *Model) Cfg() *config.Config { return m.cfg }
@@ -236,6 +239,9 @@ func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Each update works on its own copy of the animated values, so a model
+	// kept from before the update is not moved by it.
+	m.motion = m.motion.Clone()
 	if tick, ok := msg.(anim.TickMsg); ok {
 		return m.stepMotion(tick.At)
 	}

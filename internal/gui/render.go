@@ -273,7 +273,10 @@ func (m Model) renderTabBarSliding(x, w float64) string {
 	return row + "\n" + rule
 }
 
-func (m Model) computeContentHeights() []int {
+// restingContentHeights is the height of each sidebar box's list rows at rest:
+// the active box takes its share, the others split the rest, and every row is
+// used. computeContentHeights is this, mid-animation.
+func (m Model) restingContentHeights() []int {
 	n := len(m.panels)
 	if n == 0 {
 		return nil

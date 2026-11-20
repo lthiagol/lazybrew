@@ -41,6 +41,28 @@ func TestEmptySetIsSettled(t *testing.T) {
 	}
 }
 
+func TestCloneIsIndependent(t *testing.T) {
+	s := NewSet()
+	s.Snap("a", 0)
+	s.Target("a", 40)
+	c := s.Clone()
+	c.Target("a", 5)
+	s.Step(dt)
+	c.Snap("b", 1)
+	if got, _ := s.Get("a"); got == 0 {
+		t.Fatal("the original did not move")
+	}
+	if _, ok := s.Get("b"); ok {
+		t.Fatal("a value added to the clone appeared in the original")
+	}
+	if got, _ := c.Get("a"); got != 5 && got != 0 {
+		t.Fatalf("clone moved to %v; want it to spring from 0 towards 5", got)
+	}
+	if c.Settled() {
+		t.Fatal("the clone's retarget did not take")
+	}
+}
+
 func TestGetUnknownName(t *testing.T) {
 	if got, ok := NewSet().Get("nope"); ok || got != 0 {
 		t.Fatalf("Get(nope) = %v, %v; want 0, false", got, ok)
