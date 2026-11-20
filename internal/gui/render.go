@@ -510,11 +510,7 @@ func (m Model) renderContent(width, height int) string {
 			if t == nil || len(t.FormulaNames) == 0 {
 				return style.SubtleText.Render("No formulae in this tap")
 			}
-			rows := make([]tableRow, 0, len(t.FormulaNames))
-			for _, fn := range t.FormulaNames {
-				rows = append(rows, m.pkgRow(fn, depFormula))
-			}
-			return renderTable(m.pkgColumns(), rows, width)
+			return renderTable(m.pkgColumns(), m.pkgRows(t.FormulaNames, depFormula), width)
 		}
 
 	case PanelServices:

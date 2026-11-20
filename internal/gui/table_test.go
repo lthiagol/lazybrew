@@ -136,7 +136,7 @@ func TestPackageRowsCarryLoadedDataOnly(t *testing.T) {
 		{Name: "ncurses", Version: "6.5", Description: "Terminal handling"},
 	}
 	cells := func(name string) string {
-		return ansi.Strip(strings.Join(m.pkgRow(name, depFormula).cells, "|"))
+		return ansi.Strip(strings.Join(m.pkgRow(name, m.installedList(depFormula)).cells, "|"))
 	}
 	if got := cells("ncurses"); got != "✓|ncurses|6.5|Terminal handling" {
 		t.Fatalf("an installed package should carry its version and description, got %q", got)
@@ -158,8 +158,23 @@ func TestPackageColumnsWithIconsOff(t *testing.T) {
 	if cols := m.pkgColumns(); len(cols) != 3 || cols[0].head != "Name" {
 		t.Fatalf("with icons off the first column is the name, got %+v", cols)
 	}
-	row := m.pkgRow("cmake", depFormula)
+	row := m.pkgRow("cmake", m.installedList(depFormula))
 	if got := ansi.Strip(row.cells[0]); got != "cmake (not installed)" {
 		t.Fatalf("with icons off the state follows the name, got %q", got)
+	}
+}
+
+// TestPkgRowsMatchPkgRow (v2-09 F-r1-03): one table read of the installed list
+// gives each row what a row read on its own gives.
+func TestPkgRowsMatchPkgRow(t *testing.T) {
+	m := formulaWithDeps(t)
+	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "ncurses", Version: "6.5", Description: "Terminal handling"}}
+	names := []string{"ncurses", "cmake", "readline"}
+	rows := m.pkgRows(names, depFormula)
+	list := m.installedList(depFormula)
+	for i, name := range names {
+		if got, want := rows[i].cells, m.pkgRow(name, list).cells; strings.Join(got, "|") != strings.Join(want, "|") {
+			t.Fatalf("row %d (%s) = %q, want %q", i, name, got, want)
+		}
 	}
 }

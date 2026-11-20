@@ -86,9 +86,7 @@ func (m Model) renderDepGroups(groups []depGroup, width int) string {
 		if g.heading != "" {
 			rows = append(rows, tableRow{heading: g.heading})
 		}
-		for _, name := range g.names {
-			rows = append(rows, m.pkgRow(name, g.check))
-		}
+		rows = append(rows, m.pkgRows(g.names, g.check)...)
 	}
 	if len(rows) == 0 {
 		return ""
@@ -113,11 +111,22 @@ func (m Model) iconsOff() bool {
 	return m.icons.Absent == ""
 }
 
-// pkgRow is one package in a package table, its cells in the order pkgColumns
-// gives. The state is an installed or not-installed icon, or the word after the
-// name when icons are off. Version and description are empty when unknown.
-func (m Model) pkgRow(name string, check depCheck) tableRow {
+// pkgRows is one row per package name in a package table. The installed list
+// is read once for the whole table, not once per row (v2-09 F-r1-03).
+func (m Model) pkgRows(names []string, check depCheck) []tableRow {
 	list := m.installedList(check)
+	rows := make([]tableRow, 0, len(names))
+	for _, name := range names {
+		rows = append(rows, m.pkgRow(name, list))
+	}
+	return rows
+}
+
+// pkgRow is one package in a package table, its cells in the order pkgColumns
+// gives. list is the installed list the table reads (nil when it has not
+// loaded). The state is an installed or not-installed icon, or the word after
+// the name when icons are off. Version and description are empty when unknown.
+func (m Model) pkgRow(name string, list map[string]installedPkg) tableRow {
 	pkg, installed := list[name]
 	var cells []string
 	if m.iconsOff() {
