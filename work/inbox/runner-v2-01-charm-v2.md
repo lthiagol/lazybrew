@@ -33,8 +33,7 @@ Gate (real output):
 - `make cover-check` → exit 0 (brew 71.8≥62, presentation 96.2≥91, gui 70.3≥36, modal 46.9≥41). Floors unchanged. Pre-port 207be26 also passes both.
 
 For the next session:
-- CI: .github/workflows/wip-ci.yml and stable-ci.yml pin go 1.24; the v2 modules need go 1.26. Logged in work/questions.md for the orchestrator.
-- go.mod went 1.24.2 → 1.26.0; transitive upgrades (x/sys, colorprofile, go-runewidth, …) came with v2.
+- CI: wip-ci.yml and stable-ci.yml pin go 1.24; v2 needs go 1.26 (go.mod now 1.26.0, plus transitive upgrades). Logged in work/questions.md.
 - Added beyond the brief: a tea.PasteMsg case in gui.go Update. v1 sent paste as a KeyMsg, so without it a paste into search would be lost. No unit test covers it yet.
 - Not verified live: real-terminal mouse, key feel and paste. Mouse and key paths are covered by the ported unit tests; the frame harness covers rendering only.
 - Toast.View stays a string (not a tea.Model); confirm, input and menu return tea.View.
