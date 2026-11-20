@@ -226,7 +226,7 @@ func (m *Model) executeMenuAction(selectedIndex int) tea.Cmd {
 
 func (m *Model) executeTrustMenuAction(index int) tea.Cmd {
 	panel := m.panels[PanelTaps]
-	tapName := extractPackageName(panel.selectedItem())
+	tapName := panel.selectedName()
 	tap := panel.selectedTap()
 
 	// Dispatch on the indices recorded when the menu was built, not on
@@ -264,7 +264,7 @@ func (m *Model) executeTrustMenuAction(index int) tea.Cmd {
 
 func (m *Model) executeTrustAction(index int) tea.Cmd {
 	panel := m.panels[PanelTaps]
-	name := extractPackageName(panel.selectedItem())
+	name := panel.selectedName()
 	if name == "" {
 		return nil
 	}
@@ -351,7 +351,7 @@ func (m *Model) trustItemCmd(fullName, itemType string) tea.Cmd {
 
 func (m Model) executeUntap() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
-	name := extractPackageName(panel.selectedItem())
+	name := panel.selectedName()
 
 	t := &task.Task{
 		ID:    "untap:" + name,
@@ -377,7 +377,7 @@ func (m Model) executeUntap() (tea.Model, tea.Cmd) {
 
 func (m Model) executeRepair() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
-	name := extractPackageName(panel.selectedItem())
+	name := panel.selectedName()
 
 	t := &task.Task{
 		ID:    "repair:" + name,
@@ -490,7 +490,7 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 		return m, nil
 	}
 
-	name := extractPackageName(panel.items[panel.selected])
+	name := panel.selectedName()
 	if name == "" {
 		return m, nil
 	}
@@ -606,7 +606,7 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 		if idx >= len(panel.items) {
 			continue
 		}
-		itemName := extractPackageName(panel.items[idx])
+		itemName := panel.nameAt(idx)
 		if itemName == "" {
 			continue
 		}
@@ -842,7 +842,7 @@ func (m *Model) toggleTrust() (tea.Model, tea.Cmd) {
 // openUntrustConfirm asks before a tap is untrusted. The confirm acts on the
 // tap the cursor is on, as the untap confirm does.
 func (m *Model) openUntrustConfirm() tea.Cmd {
-	name := extractPackageName(m.panels[PanelTaps].selectedItem())
+	name := m.panels[PanelTaps].selectedName()
 	m.pendingAction = "untrust"
 	m.activeModal = modal.NewConfirmModal(modal.ActionUpgrade, "Untrust", "Untrust "+name+"?").
 		WithDetail("Homebrew will refuse to load its formulae and casks until you trust it again.")
@@ -862,7 +862,7 @@ func (m *Model) startTrustMenu() (tea.Model, tea.Cmd) {
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
-	tapName := extractPackageName(panel.items[panel.selected])
+	tapName := panel.selectedName()
 	tap := panel.selectedTap()
 	formulaCount := 0
 	caskCount := 0
@@ -1064,7 +1064,7 @@ func (m Model) togglePin() (tea.Model, tea.Cmd) {
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
-	name := extractPackageName(panel.items[panel.selected])
+	name := panel.selectedName()
 	if name == "" {
 		return m, nil
 	}
@@ -1253,7 +1253,7 @@ func tabItemName(p *panelData) string {
 		}
 		return statusItemName
 	}
-	return extractPackageName(p.selectedItem())
+	return p.selectedName()
 }
 
 func (m *Model) loadTabContent() tea.Cmd {
@@ -1365,7 +1365,7 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
-	name := extractPackageName(panel.items[panel.selected])
+	name := panel.selectedName()
 	if name == "" {
 		return m, nil
 	}
@@ -1419,7 +1419,7 @@ func (m Model) confirmRepair() (tea.Model, tea.Cmd) {
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
-	name := extractPackageName(panel.items[panel.selected])
+	name := panel.selectedName()
 	if name == "" {
 		return m, nil
 	}
@@ -1434,7 +1434,7 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
-	name := extractPackageName(panel.items[panel.selected])
+	name := panel.selectedName()
 	if name == "" {
 		return m, nil
 	}
@@ -1518,7 +1518,7 @@ func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, t
 	if panel.selected >= len(panel.items) {
 		return m, nil
 	}
-	name := extractPackageName(panel.items[panel.selected])
+	name := panel.selectedName()
 	if name == "" {
 		return m, nil
 	}

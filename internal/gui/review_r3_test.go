@@ -246,6 +246,7 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 func TestUntrustTaskTitle(t *testing.T) {
 	m := newTestModel()
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
+	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
 	m.panels[PanelTaps].selected = 0
 
 	cmd := m.executeTrustAction(1)
@@ -263,6 +264,7 @@ func TestUntrustTaskTitle(t *testing.T) {
 	// The trust arm keeps its title.
 	m = newTestModel()
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
+	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
 	m.panels[PanelTaps].selected = 0
 	cmd = m.executeTrustAction(0)
 	ts, ok = firstTaskStarted(execCmds(cmd))

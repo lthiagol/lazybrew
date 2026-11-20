@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/brew"
 )
 
 // TestModalsShowContentOnFirstFrame locks AC-03: a modal opened on a model
@@ -33,6 +34,7 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 			open: func(m *Model) *Model {
 				m = sendKey(m, "5")
 				m.panels[PanelTaps].items = []string{"homebrew/foo"}
+				m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
 				return sendKey(m, "T")
 			},
 			want: "Trust entire tap: homebrew/foo",

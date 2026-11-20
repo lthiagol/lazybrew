@@ -355,6 +355,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.err = msg.Err
 		} else {
 			p.items = msg.Results
+			p.results = msg.Raw
 			m.searchResults = msg.Raw
 		}
 		p.normalize()
@@ -559,9 +560,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					leavesSet[l] = true
 				}
 				filtered := make([]string, 0, len(msg.Leaves))
-				for _, item := range p.items {
-					name := extractPackageName(item)
-					if leavesSet[name] {
+				for i, item := range p.items {
+					if leavesSet[p.nameAt(i)] {
 						filtered = append(filtered, item)
 					}
 				}
@@ -1410,13 +1410,6 @@ func (m *Model) clearPanelTabContent(pid PanelID) {
 			delete(m.tabContent, k)
 		}
 	}
-}
-
-func selectedItemName(p *panelData) string {
-	if p.selected >= len(p.items) {
-		return ""
-	}
-	return extractPackageName(p.items[p.selected])
 }
 
 func extractPackageName(item string) string {

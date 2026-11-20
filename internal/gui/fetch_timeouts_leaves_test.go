@@ -24,6 +24,7 @@ func uninstallModel(client *brew.Client) *Model {
 	m.activePanel = PanelFormulae
 	p := m.panels[PanelFormulae]
 	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{{Name: "ripgrep"}}
 	p.selected = 0
 	return m
 }

@@ -88,6 +88,8 @@ type panelData struct {
 	services           []brew.Service
 	serviceInfo        []brew.ServiceInfo
 	visibleRows        int
+	// results is the Search panel's raw rows, index-aligned with items.
+	results []brew.SearchResult
 	// loaded is set once a fetch result has landed for this panel, error or
 	// not. It tells "never fetched" (not loaded) from "fetched, nothing
 	// there" (empty), which items alone cannot.
@@ -207,6 +209,51 @@ func (p *panelData) selectedItem() string {
 		return p.items[p.selected]
 	}
 	return ""
+}
+
+// nameAt is the real name of the row at index i, read from the typed slice the
+// panel's rows were built from. It never parses the display string, which cuts
+// a name longer than its column. "" when there is no such row.
+func (p *panelData) nameAt(i int) string {
+	if i < 0 {
+		return ""
+	}
+	switch p.id {
+	case PanelFormulae:
+		if i < len(p.formulae) {
+			return p.formulae[i].Name
+		}
+	case PanelCasks:
+		if i < len(p.casks) {
+			return p.casks[i].Name
+		}
+	case PanelOutdated:
+		// Outdated lists the formulae, then the casks.
+		if i < len(p.formulae) {
+			return p.formulae[i].Name
+		}
+		if j := i - len(p.formulae); j < len(p.casks) {
+			return p.casks[j].Name
+		}
+	case PanelTaps:
+		if i < len(p.taps) {
+			return p.taps[i].Name
+		}
+	case PanelServices:
+		if i < len(p.services) {
+			return p.services[i].Name
+		}
+	case PanelSearch:
+		if i < len(p.results) {
+			return p.results[i].Name
+		}
+	}
+	return ""
+}
+
+// selectedName is the real name of the selected row; see nameAt.
+func (p *panelData) selectedName() string {
+	return p.nameAt(p.selected)
 }
 
 func (p *panelData) selectedFormula() *brew.Formula {
