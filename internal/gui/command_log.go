@@ -39,13 +39,28 @@ type CommandLog struct {
 	next    int
 	count   int
 	seq     int
+	icons   style.Icons
 }
 
 func NewCommandLog(max int) *CommandLog {
 	return &CommandLog{
 		entries: make([]LogEntry, max),
 		max:     max,
+		icons:   style.UnicodeIcons,
 	}
+}
+
+// SetIcons sets the glyph set the status marks are drawn with.
+func (cl *CommandLog) SetIcons(icons style.Icons) {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
+	cl.icons = icons
+}
+
+func (cl *CommandLog) currentIcons() style.Icons {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
+	return cl.icons
 }
 
 // Append records a new running entry and returns its unique id. Callers
@@ -109,21 +124,22 @@ func (cl *CommandLog) View(width, height int) string {
 	if len(entries) > height {
 		start = len(entries) - height
 	}
+	icons := cl.currentIcons()
 	for _, e := range entries[start:] {
-		prefix := "⟳"
+		glyph := icons.Refresh
 		cmdStyle := style.SubtleText
 		switch e.Status {
 		case CommandRunning:
-			prefix = "⟳"
+			glyph = icons.Refresh
 			cmdStyle = style.AccentText
 		case CommandSuccess:
-			prefix = "✓"
+			glyph = icons.OK
 			cmdStyle = style.NormalItem
 		case CommandError:
-			prefix = "✗"
+			glyph = icons.Error
 			cmdStyle = style.ErrorBadge
 		}
-		line := prefix + " brew " + e.Command
+		line := withIcon(glyph, "brew "+e.Command)
 		lines = append(lines, cmdStyle.Render(line))
 	}
 

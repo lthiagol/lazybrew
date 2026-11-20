@@ -507,7 +507,7 @@ func (m Model) renderOperation(width, height int) string {
 		return ""
 	}
 
-	title := style.AccentText.Render("⟳ " + op.Title)
+	title := style.AccentText.Render(withIcon(m.icons.Refresh, op.Title))
 	statusLine := ""
 	switch op.Status {
 	case opRunning:
