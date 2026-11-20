@@ -1,0 +1,24 @@
+╭─ Help ────────────────────────────────────────────────────────── 1–21 of 79 ─╮
+│  Global                                                                      │
+│                                                                              │
+│  Navigation                                                                  │
+│  Tab        Next panel                                                       │
+│  Shift+Tab  Previous panel                                                   │
+│  1-7        Jump to panel                                                    │
+│  j/k        Scroll list                                                      │
+│  PgUp/PgDn  Scroll content by a page                                         │
+│  Home/End   Top/bottom (g/G outside Search)                                  │
+│  [/]        Switch tabs                                                      │
+│                                                                              │
+│  Actions                                                                     │
+│  R  Refresh all data                                                         │
+│  /  Search packages                                                          │
+│  C  Toggle command log                                                       │
+│  q  Quit lazybrew                                                            │
+│  ?  This help                                                                │
+│                                                                              │
+│  Formulae                                                                    │
+│                                                                              │
+│  i  Install selected                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ ?/esc close                                                                    

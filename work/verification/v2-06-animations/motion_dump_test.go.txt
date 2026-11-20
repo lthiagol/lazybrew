@@ -1,0 +1,90 @@
+package dump
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui"
+	"github.com/lthiagol/lazybrew/internal/gui/anim"
+)
+
+// settleMotion runs the animation's frame ticks by hand, 60 a second, the way
+// the program delivers them: each tick goes through Update, and the command it
+// returns is not run. The first n frames are dumped into dir as prefix-NN.txt
+// and .ansi, each checked to be exactly 140x40. It stops when a frame returns
+// no command, that is, when nothing moves. It returns the model and the time
+// of the last frame, which the next run continues from.
+func settleMotion(t *testing.T, m tea.Model, base time.Time, dir, prefix string, n int) (tea.Model, time.Time) {
+	t.Helper()
+	at := base
+	for i := 1; ; i++ {
+		at = at.Add(anim.FrameInterval)
+		nm, cmd := m.Update(anim.TickMsg{At: at})
+		m = nm
+		if i <= n && dir != "" {
+			v := m.View().Content
+			if w, h := lipgloss.Width(v), lipgloss.Height(v); w != 140 || h != 40 {
+				t.Fatalf("%s frame %d is %dx%d; want 140x40", prefix, i, w, h)
+			}
+			name := fmt.Sprintf("%s-%02d", prefix, i)
+			os.WriteFile(filepath.Join(dir, name+".ansi"), []byte(v), 0o644)
+			os.WriteFile(filepath.Join(dir, name+".txt"), []byte(ansi.Strip(v)), 0o644)
+		}
+		if cmd == nil {
+			return m, at
+		}
+		if i > 300 {
+			t.Fatalf("%s did not settle within 300 frames", prefix)
+		}
+	}
+}
+
+// TestMotionDump dumps the first frames of three motions at 140x40: a tab
+// switch, a focus change and a modal opening, each run from the resting frame
+// before it. Animations are on for this run; the frames are the motion, and
+// the frame each run settles on is the resting frame.
+func TestMotionDump(t *testing.T) {
+	os.Setenv(config.IconsEnv, config.IconsUnicode)
+	os.Setenv(config.AnimationsEnv, "1")
+	dir := os.Getenv("DUMP_DIR") + "/motion"
+	os.MkdirAll(dir, 0o755)
+	r, err := brew.NewDefaultRunner()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var m tea.Model = gui.New(brew.NewClient(r), config.Default())
+	m = drain(m, m.Init(), 0)
+	nm, c := m.Update(tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = drain(nm, c, 0)
+
+	// Load the two panels the motions use, so no command is pending for them.
+	m = key(m, runes("2"))
+	base := time.Date(2026, 11, 20, 9, 0, 0, 0, time.UTC)
+	m, base = settleMotion(t, m, base, "", "", 0)
+	m = key(m, runes("5"))
+	m, base = settleMotion(t, m, base, "", "", 0)
+
+	// The tab switch: Taps' Tap Info to Trust, the underline slides.
+	nm, _ = m.Update(runes("]"))
+	m, base = settleMotion(t, nm, base, dir, "motion-tab", 5)
+
+	// The focus change: Taps to Formulae, the boxes spring.
+	nm, _ = m.Update(runes("2"))
+	m, base = settleMotion(t, nm, base, dir, "motion-focus", 5)
+
+	// The modal: Add tap opens and springs down onto its place.
+	nm, _ = m.Update(runes("5"))
+	m, base = settleMotion(t, nm, base, "", "", 0)
+	nm, _ = m.Update(runes("a"))
+	m, _ = settleMotion(t, nm, base, dir, "motion-modal", 5)
+	fmt.Println("ok")
+}
