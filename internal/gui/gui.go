@@ -645,11 +645,29 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, tea.Batch(m.nextPreloadReads()...))
 
 	case logsReadMsg:
-		// A read of a view this model no longer shows is stale.
-		if msg.gen == m.logs.gen {
-			m.applyLogs(msg)
+		// A read for a view this model no longer has is stale, and it ends
+		// the loop: nothing is applied and no next read is scheduled.
+		if msg.gen != m.logs.gen {
+			return m, nil
 		}
-		return m, nil
+		if !m.logsShown() {
+			m.logs.started = false
+			return m, nil
+		}
+		m.applyLogs(msg)
+		return m, logsTick(msg.gen)
+
+	case logsTickMsg:
+		// The loop runs only while its view is on screen. A stale tick is
+		// dropped: a newer view has its own loop.
+		if msg.gen != m.logs.gen {
+			return m, nil
+		}
+		if !m.logsShown() {
+			m.logs.started = false
+			return m, nil
+		}
+		return m, m.readLogsCmd()
 
 	case servicesReloadMsg:
 		m.invalidatePanelCache(PanelServices)
