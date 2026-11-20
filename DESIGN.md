@@ -4,7 +4,7 @@
 
 lazybrew is a terminal UI for managing Homebrew packages. It wraps `brew` CLI commands, caches outputs, and presents them in a Bubble Tea TUI with panels for formulae, casks, taps, services, search, and diagnostics.
 
-**Stack:** Go + [Bubble Tea](https://github.com/charmbracelet/bubbletea) + [Lip Gloss](https://github.com/charmbracelet/lipgloss) + [Bubbles](https://github.com/charmbracelet/bubbles)  
+**Stack:** Go + [Bubble Tea v2](https://github.com/charmbracelet/bubbletea) (`charm.land/bubbletea/v2`) + [Lip Gloss v2](https://github.com/charmbracelet/lipgloss) (`charm.land/lipgloss/v2`) + [Bubbles v2](https://github.com/charmbracelet/bubbles) (`charm.land/bubbles/v2`)  
 **Platforms:** macOS + Linux  
 **Target Homebrew:** 6.0.0+
 
@@ -90,7 +90,7 @@ See the config ADR topic (configuration schema decisions).
 | `gui.theme` | Wired | `dark` or `light` |
 | `gui.sidebar_width` | Wired | Integer |
 | `gui.show_icons` | Deferred P2 | No-op until M17 |
-| `gui.mouse` | Wired | `tea.WithMouseCellMotion` |
+| `gui.mouse` | Wired | `View().MouseMode = tea.MouseModeCellMotion` |
 | `gui.auto_refresh_seconds` | Planned | Tick in M20.8 |
 | `brew.path` | Planned | Custom runner path in M20.8 |
 | `brew.update_on_start` | Wired | Non-blocking update on launch |
@@ -118,3 +118,4 @@ See the config ADR topic (configuration schema decisions).
 | 2026-06-13 | M17 deferred until M19–M22 done | Visual polish after correctness |
 | 2026-08-01 | Manual `stable-ci.yml` tap-update path is canonical; `.goreleaser.yml` removed | M07. Goreleaser was considered but rejected: the manual path (sed + tap PR) was just used successfully for v1.0.0-rc1, release cadence is low (rc1 then occasional bugfixes), and goreleaser-brews would have replaced the working flow with a more complex secret+formula integration. If release cadence grows, revisit. |
 | 2026-10-31 | Detached the mp/master-plan planning workflow; planning now runs through the herdr lane flow in work/ (briefs, inbox, state row). master-plan/ is kept locally as a frozen archive and is no longer tracked by git. | Slice detach-master-plan |
+| 2026-11-19 | Moved to the Charm v2 stack (charm.land bubbletea/lipgloss/bubbles v2) — prerequisite for overlay compositing and animation in the visual overhaul. | Slice v2-01-charm-v2 |

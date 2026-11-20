@@ -10,6 +10,7 @@ learn what is done, what is in flight, and where to pick up.
 | lb02-fetch-timeouts | 0027596, f7bc287, 00f73f2, 16c24f4, 8647165, 0cfb213 | closed | ok |
 | lb03-dashboard-outdated-count | 8a7b191, 4ae32bd, 99e54b7, 45fc3f8, 9fd23dd, adb8418, 80065c4, b92ff9d, 93a036b | closed | ok |
 | lb07-bound-remaining-reads | bd6dfd7, b5c1cc5, ea71699, 7b21fc0 | closed | ok |
+| v2-01-charm-v2 | — | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
