@@ -10,7 +10,7 @@ learn what is done, what is in flight, and where to pick up.
 | lb02-fetch-timeouts | 0027596, f7bc287, 00f73f2, 16c24f4, 8647165, 0cfb213 | closed | ok |
 | lb03-dashboard-outdated-count | 8a7b191, 4ae32bd, 99e54b7, 45fc3f8, 9fd23dd, adb8418, 80065c4, b92ff9d, 93a036b | closed | ok |
 | lb07-bound-remaining-reads | bd6dfd7, b5c1cc5, ea71699, 7b21fc0 | closed | ok |
-| v2-01-charm-v2 | — | implemented | awaiting reviewer |
+| v2-01-charm-v2 | 1861585, 0a89f8e, 0f65ba6, 10aade4, 6eec052, 7f32f2f | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -135,3 +135,24 @@ brief, check `git log`, and redo only the criteria without a commit. Do not
 re-derive the plan from anywhere else — the brief is the contract, and
 `master-plan/` is a frozen, untracked, local-only archive that is not an input to
 any decision.
+
+**v2-01-charm-v2, closed.** lazybrew now runs on the Charm v2 stack
+(`charm.land/bubbletea/v2 v2.1.2`, `lipgloss/v2 v2.1.1`, `bubbles/v2 v2.2.1`,
+`x/exp/teatest/v2`); no v1 module remains. The user sees **no change**: the
+18 ANSI-stripped frames in `work/verification/v2-01-charm-v2/baseline/` (nine
+screens × 140×40 and 80×24, real Homebrew) are byte-identical after the port,
+reproduced by the reviewer in both rounds. Lip Gloss v2 counts borders inside
+`Width`/`Height`, so box, help, log and modal sizes were adjusted in code, not
+in the baseline. Terminal setup (alt screen, `WindowTitle: "lazybrew"`, mouse
+mode from `gui.mouse`) moved into `View()`. A `tea.PasteMsg` case keeps v1
+paste behaviour, pinned by three tests. CI reads its Go version from `go.mod`
+(v2 needs Go 1.26). Tests 406 → 410, none removed or weakened. Review r1
+returned two findings (CI Go pin, paste untested), both fixed; r2 returned
+`ok`. Receipts: `work/inbox/runner-v2-01-charm-v2.md`,
+`work/inbox/reviewer-v2-01-charm-v2-r1.md`,
+`work/inbox/runner-v2-01-charm-v2-fix-r1.md`,
+`work/inbox/reviewer-v2-01-charm-v2-r2.md`.
+
+**Note for later slices:** on this machine `go env CGO_ENABLED` is 0, so the
+race gate runs as `CGO_ENABLED=1 go test ./... -race -count=1`. Real-terminal
+mouse, keys and paste are left to the human smoke gate (LB-05).

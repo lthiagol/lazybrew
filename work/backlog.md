@@ -16,7 +16,7 @@ decision). The source is provenance, not a spec.
 | LB-05 | Full interactive human smoke before the stable tag — **human gate**, not an agent task | B-05 | medium | active |
 | LB-06 | The M13 independent review itself — closed by verification together with LB-01; all 7 findings were already fixed, so the review is not left silently dropped | M13 | medium | closed-by-LB-01 |
 | LB-07 | Apply context timeouts to the two brew reads still unbounded: the uninstall dependency pre-check (`internal/gui/commands.go:1034`, `Formulae.Uses`) and `toggleLeaves` (`internal/gui/commands.go:1128`, `Formulae.Leaves`) | found by lb02-fetch-timeouts | low | closed |
-| LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slice 1 is `v2-01-charm-v2`, the move to the Charm v2 stack | orchestrator review 2026-11-19 | medium | active |
+| LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slice 1 `v2-01-charm-v2` (move to the Charm v2 stack) is closed; next is `v2-02` | orchestrator review 2026-11-19 | medium | active |
 | LB-DROP-01 | Dead header fix in the `master-plan-bkp` directory | B-01 | n/a | dropped |
 
 **LB-DROP-01 reason:** the target directory does not exist on this machine —
