@@ -1,0 +1,538 @@
+package gui
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
+)
+
+func (m *Model) executeSearch(query string) tea.Cmd {
+	m.panels[PanelSearch].loading = true
+	m.panels[PanelSearch].err = nil
+	// Reset the cursor: a new search with fewer results used to leave a
+	// stale out-of-range selection behind (r1 finding 30).
+	m.panels[PanelSearch].selected = 0
+
+	return func() tea.Msg {
+		results, err := boundedRead(brewSearchTimeout, "search", func(ctx context.Context) ([]brew.SearchResult, error) {
+			return m.client.Search.Search(ctx, query)
+		})
+		if err != nil {
+			return SearchDoneMsg{Err: err}
+		}
+
+		items := make([]string, len(results))
+		for i, r := range results {
+			typ := ""
+			switch {
+			case r.IsFormula:
+				typ = "formula"
+			case r.IsCask:
+				typ = "cask"
+			default:
+				// Headerless/odd search output: type unknown (r1 finding 21).
+				typ = "unknown"
+			}
+			installed := ""
+			if r.Installed {
+				installed = "installed"
+			}
+			items[i] = r.Name + "  " + typ + "  " + installed + "  " + r.Description
+		}
+		return SearchDoneMsg{Results: items, Raw: results}
+	}
+}
+
+func (m Model) fetchSelectedSearchInfo() tea.Cmd {
+	if m.activePanel != PanelSearch || m.panels[PanelSearch].selected >= len(m.searchResults) {
+		return nil
+	}
+	r := m.searchResults[m.panels[PanelSearch].selected]
+	return func() tea.Msg {
+		output, err := boundedRead(brewSearchTimeout, "info", func(ctx context.Context) ([]byte, error) {
+			return m.client.Runner.Execute(ctx, "info", "--json=v2", r.Name)
+		})
+		if err != nil {
+			return SearchInfoLoadedMsg{Err: searchInfoErr(err)}
+		}
+		return SearchInfoLoadedMsg{Content: string(output)}
+	}
+}
+
+// packageWriter is the write side brew has for one kind of package. Formulae
+// and casks both have it, so a mutation picks its writer once.
+type packageWriter interface {
+	Install(ctx context.Context, name string) (<-chan string, <-chan error)
+	Uninstall(ctx context.Context, name string) (<-chan string, <-chan error)
+	Reinstall(ctx context.Context, name string) (<-chan string, <-chan error)
+	Upgrade(ctx context.Context, name string) (<-chan string, <-chan error)
+}
+
+func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {
+	panel := m.panels[m.activePanel]
+	name := panel.selectedName()
+	if name == "" {
+		return m, nil
+	}
+
+	// Search results can be casks: installing from Search used to route
+	// every result through FormulaeWrite.Install, ignoring the result's
+	// type flag (r1 finding 12).
+	searchIsCask := false
+	if m.activePanel == PanelSearch && panel.selected < len(m.searchResults) {
+		searchIsCask = m.searchResults[panel.selected].IsCask
+	}
+
+	title := label + " " + name
+	pkgName := name
+	if mutType == mutUpgradeAll {
+		title = "Upgrading all packages"
+		pkgName = ""
+	}
+
+	// Task IDs must be unique: the batch counter keys on them, and two
+	// concurrent tasks sharing a bare package name would cross-talk
+	// (r2 finding NEW-3). Prefix every mutation with its op type.
+	taskID := mutationID(mutType, name)
+
+	// Casks must route to the cask writer whether the install starts from
+	// Search or from the Casks panel itself (r2 finding NEW-4: the "i install"
+	// hint on Casks had no handler, and the handler must not fall back to
+	// brew's formula writer). The other mutations follow the panel alone.
+	isCask := m.activePanel == PanelCasks || (mutType == mutInstall && searchIsCask)
+	var writer packageWriter = m.client.FormulaeWrite
+	if isCask {
+		writer = m.client.CasksWrite
+	}
+	client := m.client
+
+	t := streamTask(taskID, title, func(ctx context.Context) (<-chan string, <-chan error) {
+		var ch <-chan string
+		var errCh <-chan error
+
+		switch mutType {
+		case mutInstall:
+			ch, errCh = writer.Install(ctx, pkgName)
+		case mutUninstall:
+			ch, errCh = writer.Uninstall(ctx, pkgName)
+		case mutReinstall:
+			ch, errCh = writer.Reinstall(ctx, pkgName)
+		case mutUpgrade:
+			ch, errCh = writer.Upgrade(ctx, pkgName)
+		case mutUpgradeAll:
+			ch, errCh = client.FormulaeWrite.Upgrade(ctx, "")
+		case mutZap:
+			ch, errCh = client.CasksWrite.Zap(ctx, pkgName)
+		case mutFetch:
+			ch, errCh = client.Runner.ExecuteStream(ctx, "fetch", pkgName)
+		}
+		return ch, errCh
+	})
+
+	c := m.enqueue(t)
+	return m, c
+}
+
+func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
+	panel := m.panels[PanelOutdated]
+	if len(m.batch.selected) == 0 {
+		// The selection can drain while the confirm modal is open: a
+		// refresh delivered in between clears it (r4 finding R4-2), and
+		// confirming then used to end in a silent dead-end after the
+		// modal promised N upgrades (r5 finding R5-1).
+		c := m.setToast("No selected packages are still in the Outdated list", modal.ToastWarning)
+		return m, c
+	}
+
+	names := make([]struct {
+		name   string
+		isCask bool
+	}, 0, len(m.batch.selected))
+
+	// The map only ever holds true entries (toggle deletes on deselect),
+	// but check the value anyway so a stale false entry can never sneak a
+	// package into the batch (r1 finding 1).
+	for idx := range m.batch.selected {
+		if !m.batch.selected[idx] {
+			continue
+		}
+		if idx >= len(panel.items) {
+			continue
+		}
+		itemName := panel.nameAt(idx)
+		if itemName == "" {
+			continue
+		}
+		isCask := false
+		if idx >= len(panel.formulae) && idx-len(panel.formulae) < len(panel.casks) {
+			isCask = true
+		}
+		names = append(names, struct {
+			name   string
+			isCask bool
+		}{itemName, isCask})
+	}
+
+	m.batch.selected = make(map[int]bool)
+	m.batchIDs = make(map[string]int, len(names))
+
+	// Batch task IDs carry a per-batch sequence number: a task queued
+	// from a superseded batch used to share "batch-upgrade:<name>" with
+	// the new batch and decrement its counter early (r4 finding R4-4).
+	m.batchSeq++
+	batchPrefix := fmt.Sprintf("batch-upgrade:%d:", m.batchSeq)
+
+	// Enqueue errors must surface: silently dropping tasks while still
+	// counting them made the progress counter lie about the batch
+	// (r1 finding 14).
+	enqueued := 0
+	queueFull := false
+	client := m.client
+	for _, n := range names {
+		name := n.name
+		isCask := n.isCask
+
+		t := streamTask(batchPrefix+name, "Upgrade "+name, func(ctx context.Context) (<-chan string, <-chan error) {
+			if isCask {
+				return client.CasksWrite.Upgrade(ctx, name)
+			}
+			return client.FormulaeWrite.Upgrade(ctx, name)
+		})
+
+		if _, err := m.tasks.Enqueue(t); err != nil {
+			queueFull = true
+			break
+		}
+		enqueued++
+		// Track the batch by the task's (prefixed) ID, counting
+		// occurrences: a formula and a cask can share a name, and a bool
+		// set collapsed them into one entry, stranding the counter above
+		// zero when the second duplicate completed (r3 finding R3-2).
+		m.batchIDs[batchPrefix+name]++
+	}
+	m.batchCount = enqueued
+	m.batchTotal = enqueued
+
+	if enqueued == 0 {
+		if queueFull {
+			// The very first enqueue hit a full queue: without a toast
+			// the batch silently did nothing — no feedback, no RunNext
+			// (r3 finding R3-1).
+			c := m.setToast("Queue full: no batch tasks could be enqueued", modal.ToastWarning)
+			return m, c
+		}
+		// Every selected index fell out of range (a refresh rewrote the
+		// Outdated list between selection and confirm): the modal
+		// promised N upgrades, so silence would be a dead-end
+		// (r4 finding R4-2).
+		c := m.setToast("No selected packages are still in the Outdated list", modal.ToastWarning)
+		return m, c
+	}
+	if queueFull {
+		// The queued batch tasks are parked waiting for a RunNext: without
+		// it the whole batch silently stalls until the user triggers some
+		// other mutation (r2 finding NEW-1).
+		c := m.setToast(
+			fmt.Sprintf("Queue full: batch limited to %d of %d packages", enqueued, len(names)),
+			modal.ToastWarning,
+		)
+		return m, tea.Batch(
+			c,
+			m.tasks.RunNext(),
+		)
+	}
+
+	return m, m.tasks.RunNext()
+}
+
+type pkgInfo struct {
+	Name        string
+	Version     string
+	Type        string
+	Bottled     bool
+	Installed   bool
+	InstallPath string
+	License     string
+	Description string
+	Homepage    string
+	// Groups are the dependency lists of the package, each under its heading.
+	Groups  []depGroup
+	Caveats string
+}
+
+// searchInfoErr is the error the search pane shows for a failed `brew info`.
+// brew's exit error carries only the exit code, so the error is the "Error:"
+// line of its stderr, as brew printed it.
+func searchInfoErr(err error) error {
+	var exit *brew.BrewExitError
+	if !errors.As(err, &exit) {
+		return err
+	}
+	for _, line := range strings.Split(exit.Stderr, "\n") {
+		if line = strings.TrimSpace(line); strings.HasPrefix(line, "Error:") {
+			return errors.New(line)
+		}
+	}
+	return err
+}
+
+// infoParseError is a search info payload that brew sent and that did not
+// decode. The pane shows it as a parse error; brew's own errors show as brew
+// wrote them.
+type infoParseError struct{ err error }
+
+func (e infoParseError) Error() string { return "Parse error: " + e.err.Error() }
+
+// parseSearchInfo decodes the info payload of a search result.
+func parseSearchInfo(raw string) (*pkgInfo, error) {
+	info, err := parsePackageInfo(raw)
+	if err != nil {
+		return nil, infoParseError{err}
+	}
+	return info, nil
+}
+
+func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
+	formulae, casks, err := brew.ParseInfo([]byte(rawJSON))
+	if err != nil {
+		return nil, err
+	}
+	if len(formulae) > 0 {
+		f := formulae[0]
+		return &pkgInfo{
+			Name:    f.Name,
+			Version: f.Version,
+			Type:    "formula",
+			Bottled: f.Bottled,
+			// parseFormula sets InstalledOn only from an installed entry, so a
+			// set time means installed even when neither install flag is.
+			Installed:   !f.InstalledOn.IsZero(),
+			InstallPath: f.InstallPath,
+			License:     f.License,
+			Description: f.Description,
+			Homepage:    f.Homepage,
+			Groups: []depGroup{
+				{heading: "Runtime", names: f.Dependencies, check: depFormula},
+				{heading: "Build", names: f.BuildDeps, check: depFormula},
+			},
+			Caveats: f.Caveats,
+		}, nil
+	}
+	if len(casks) > 0 {
+		c := casks[0]
+		return &pkgInfo{
+			Name:        c.Name,
+			Version:     c.Version,
+			Type:        "cask",
+			Installed:   len(c.Installed) > 0,
+			Description: c.Description,
+			Homepage:    c.Homepage,
+			Groups: []depGroup{
+				{heading: "Formulae", names: c.DependsOnFormulae, check: depFormula},
+				{heading: "Casks", names: c.DependsOnCasks, check: depCask},
+				{heading: "Requirements", names: c.Requirements, check: depNone},
+			},
+		}, nil
+	}
+	return nil, fmt.Errorf("no package info found")
+}
+
+// togglePin pins/unpins the selected formula. The pinned state is looked
+// up by NAME, not by index: the leaves filter changes panel.items without
+// touching panel.formulae, so raw indices desync and the decision could
+// target the wrong package (r1 finding 13). Casks are not offered pinning
+// — `brew pin` is formula-only.
+func (m Model) togglePin() (tea.Model, tea.Cmd) {
+	panel := m.panels[PanelFormulae]
+	name := panel.selectedName()
+	if name == "" {
+		return m, nil
+	}
+
+	pinned := false
+	for _, f := range panel.formulae {
+		if f.Name == name {
+			pinned = f.Pinned
+			break
+		}
+	}
+
+	client := m.client
+	t := errTask("pin:"+name, "Toggle pin "+name, func(ctx context.Context) error {
+		if pinned {
+			return client.FormulaeWrite.Unpin(ctx, name)
+		}
+		return client.FormulaeWrite.Pin(ctx, name)
+	})
+
+	c := m.enqueue(t)
+	return m, c
+}
+
+func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
+	panel := m.panels[m.activePanel]
+	name := panel.selectedName()
+	if name == "" {
+		return m, nil
+	}
+
+	label := "Uninstall"
+	message := "Uninstall " + name + "? This cannot be undone."
+	if mutType == mutZap {
+		label = "Zap"
+		message = "Zap " + name + "? This will remove ALL associated files and preferences."
+	}
+	// Only formulae have dependents, so a cask's confirm does not ask brew for
+	// them (Q4): brew uses has no answer for a cask.
+	isCask := m.activePanel == PanelCasks
+	client := m.client
+
+	return m, func() tea.Msg {
+		var uses []string
+		var err error
+		if !isCask {
+			uses, err = boundedRead(brewReadTimeout, "uses", func(ctx context.Context) ([]string, error) {
+				return client.Formulae.Uses(ctx, name)
+			})
+		}
+		text := message
+		if len(uses) > 0 {
+			var b strings.Builder
+			b.WriteString(text + "\n\nThe following depend on " + name + ":")
+			for _, u := range uses {
+				b.WriteString("\n  " + u)
+			}
+			text = b.String()
+		}
+		// A timed-out dependency check must not look like "nothing depends
+		// on this package": the user still gets the confirm dialog, but it
+		// says the check did not complete and the list may be incomplete.
+		// Any other error keeps today's behaviour — no dependents, no
+		// complaint.
+		var timeoutErr *brew.TimeoutError
+		if errors.As(err, &timeoutErr) {
+			text += "\n\nDependency check timed out after " + timeoutErr.Timeout.String() +
+				" — the list of packages that depend on " + name + " may be incomplete."
+		}
+		return DepCheckMsg{
+			MutType: mutType,
+			Name:    name,
+			Label:   label,
+			Message: text,
+			Kind:    mutationKind(mutType),
+			Detail:  removalDetail(name, mutType == mutZap, uses, err),
+		}
+	}
+}
+
+// removalDetail is the subtle line under an uninstall or zap question: what
+// goes, and how many installed packages depend on it. A timed-out check says
+// the count is unknown rather than zero.
+func removalDetail(name string, zap bool, uses []string, err error) string {
+	what := "removes " + name
+	if zap {
+		what = "removes " + name + " and all its files and preferences"
+	}
+	var timeoutErr *brew.TimeoutError
+	switch {
+	case errors.As(err, &timeoutErr):
+		return what + "; dependents unknown (check timed out)"
+	case len(uses) == 1:
+		return what + "; 1 package depends on it"
+	case len(uses) > 1:
+		return fmt.Sprintf("%s; %d packages depend on it", what, len(uses))
+	}
+	return what
+}
+
+// mutationDetail is the consequence line under a package mutation's question.
+func mutationDetail(mutType mutationType, name string) string {
+	switch mutType {
+	case mutInstall:
+		return "Installs " + name + " from Homebrew."
+	case mutReinstall:
+		return "Installs " + name + " again at its current version."
+	case mutUpgrade:
+		return "Installs the newest version of " + name + "."
+	case mutUpgradeAll:
+		return "Installs the newest version of every outdated package."
+	default:
+		return ""
+	}
+}
+
+func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {
+	panel := m.panels[m.activePanel]
+	name := panel.selectedName()
+	if name == "" {
+		return m, nil
+	}
+
+	actionLabel := label
+	confirmLabel := label + " " + name
+	message := confirmLabel + "?"
+	if mutType == mutUpgradeAll {
+		actionLabel = "Upgrade All"
+		message = "Upgrade all packages?"
+	} else if mutType == mutReinstall {
+		message = "Reinstall " + name + "?"
+	}
+
+	m.pendingAction = "mutation"
+	m.pendingMutType = mutType
+	m.pendingLabel = label
+	modal := modal.NewConfirmModal(mutationKind(mutType), actionLabel, message).
+		WithDetail(mutationDetail(mutType, name))
+	m.activeModal = modal
+	return m, m.activeModal.Init()
+}
+
+// mutationKind is the action kind of a package mutation's confirm dialog.
+func mutationKind(mutType mutationType) modal.ActionKind {
+	switch mutType {
+	case mutUninstall, mutZap:
+		return modal.ActionDanger
+	case mutInstall:
+		return modal.ActionInstall
+	case mutUpgrade, mutUpgradeAll, mutReinstall:
+		return modal.ActionUpgrade
+	default:
+		return modal.ActionNeutral
+	}
+}
+
+func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
+	// Count only actually-selected entries: deselection removes the key,
+	// but stay defensive against stale false entries (r1 finding 1).
+	n := 0
+	for _, sel := range m.batch.selected {
+		if sel {
+			n++
+		}
+	}
+	message := "Upgrade " + strconv.Itoa(n) + " selected packages?"
+
+	m.pendingAction = "batch-upgrade"
+	modal := modal.NewConfirmModal(modal.ActionUpgrade, "Batch Upgrade", message).
+		WithDetail("Installs the newest version of each selected package.")
+	m.activeModal = modal
+	return m, m.activeModal.Init()
+}
+
+func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
+	return m, func() tea.Msg {
+		leaves, err := boundedRead(brewReadTimeout, "leaves", func(ctx context.Context) ([]string, error) {
+			return m.client.Formulae.Leaves(ctx)
+		})
+		if err != nil {
+			return MutationResultMsg{Name: "leaves", Type: mutInstall, Err: err}
+		}
+		return MutationResultMsg{Name: "leaves", Type: mutInstall, Leaves: leaves}
+	}
+}
