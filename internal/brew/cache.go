@@ -58,7 +58,9 @@ type cacheEntry struct {
 type Cache struct {
 	mu         sync.RWMutex
 	entries    map[CacheKey]cacheEntry
-	gen        uint64 // bumped by every invalidation; see cached
+	seq        uint64              // the last invalidation's stamp; see generationLocked
+	keyGen     map[CacheKey]uint64 // the stamp of the last invalidation that dropped each key
+	allGen     uint64              // the stamp of the last InvalidateAll
 	defaultTTL time.Duration
 	now        func() time.Time // time.Now; a test swaps in a clock it moves by hand
 	sf         *singleflight    // coalesces concurrent fetches of one key
@@ -67,6 +69,7 @@ type Cache struct {
 func NewCache(ttl time.Duration) *Cache {
 	return &Cache{
 		entries:    make(map[CacheKey]cacheEntry),
+		keyGen:     make(map[CacheKey]uint64),
 		defaultTTL: ttl,
 		now:        time.Now,
 		sf:         newSingleflight(),
@@ -113,9 +116,10 @@ func (c *Cache) SetWithTTL(key CacheKey, data any, ttl time.Duration) {
 func (c *Cache) Invalidate(keys ...CacheKey) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.gen++
+	c.seq++
 	for _, key := range keys {
 		delete(c.entries, key)
+		c.keyGen[key] = c.seq
 	}
 }
 
@@ -130,25 +134,32 @@ func (c *Cache) InvalidateFor(group string) {
 func (c *Cache) InvalidateAll() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.gen++
+	c.seq++
+	c.allGen = c.seq
 	c.entries = make(map[CacheKey]cacheEntry)
 }
 
-// generation is the invalidation count. A read notes it before it fetches, and
-// its result is stored only if no invalidation came in between.
-func (c *Cache) generation() uint64 {
+// generation is the stamp of the last invalidation that dropped key. A read
+// notes it before it fetches, and its result is stored only if it has not moved
+// since. Every stamp comes from seq, so a change always yields a new value.
+func (c *Cache) generation(key CacheKey) uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.gen
+	return c.generationLocked(key)
 }
 
-// setIfCurrent stores data only when gen is still the current generation. A
-// read that started before a write finished must not put its pre-write result
-// back after the write invalidated the key.
+// generationLocked is generation for a caller that already holds c.mu.
+func (c *Cache) generationLocked(key CacheKey) uint64 {
+	return max(c.keyGen[key], c.allGen)
+}
+
+// setIfCurrent stores data only when key's generation is still gen. A read that
+// started before a write finished must not put its pre-write result back after
+// the write invalidated the key.
 func (c *Cache) setIfCurrent(key CacheKey, data any, ttl time.Duration, gen uint64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.gen != gen {
+	if c.generationLocked(key) != gen {
 		return
 	}
 	c.entries[key] = cacheEntry{
@@ -184,9 +195,9 @@ func cached[T any](c *Cache, key CacheKey, ttl time.Duration, fetch func() (T, b
 		return val, nil
 	}
 
-	// The flight key carries the generation, so a caller that starts after a
-	// write finished never joins a fetch that began before it.
-	gen := c.generation()
+	// The flight key carries the key's generation, so a caller that starts after
+	// a write to this key finished never joins a fetch that began before it.
+	gen := c.generation(key)
 	flightKey := string(key) + "@" + strconv.FormatUint(gen, 10)
 	val, err := c.sf.Do(flightKey, func() (any, error) {
 		// A flight that finished just before this caller started has already
