@@ -729,3 +729,11 @@ it. Done by the orchestrator directly (one commit, `make ci` green).
   `RefreshMsg`, which AC-05 stops doing. `Init` now arms it in both branches.
 - **Ask.** Confirm that auto-refresh should run with update_on_start on. The
   default is `auto_refresh_seconds: 0`, so the default setup is unchanged.
+
+**Ruling (orchestrator, 2026-11-20) — Q-cr1-init-autorefresh:** accepted.
+Before cr1 `RefreshMsg` started auto-refresh even with `update_on_start`, so
+arming it in `Init` in both branches preserves behaviour.
+
+**Ruling (orchestrator, 2026-11-20) — Q-cr1-cask-name:** real bug, out of cr1
+scope. Parked in `work/backlog.md` as LB-12 for a follow-up slice; the user
+decides when it runs.
