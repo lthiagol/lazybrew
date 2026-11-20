@@ -87,7 +87,9 @@ func TestMovingValueTicksUntilItSettles(t *testing.T) {
 		}
 		nm, cmd = nm.Update(frameAt(start, frames+1))
 	}
-	if got, _ := m.motion.Get("probe"); got != 10 {
+	// Each update returns its own copy of the animated values, so the settled
+	// value is read from the model the last update returned.
+	if got, _ := nm.(Model).motion.Get("probe"); got != 10 {
 		t.Fatalf("settled at %v; want exactly 10", got)
 	}
 	if took := time.Duration(frames) * anim.FrameInterval; took > 300*time.Millisecond {
