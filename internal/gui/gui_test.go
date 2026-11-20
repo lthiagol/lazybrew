@@ -1070,17 +1070,14 @@ func TestLogCollapsedFreesMainHeight(t *testing.T) {
 
 func TestLogBorderBusyVsIdle(t *testing.T) {
 	style.ApplyTheme(style.DarkTheme())
-	idle := logBorderStyle(false)
-	busy := logBorderStyle(true)
-	if idle.GetBorderTopForeground() == busy.GetBorderTopForeground() {
-		// Fall back: render a one-line box and ensure styles differ by string.
-		a := idle.Render("x")
-		b := busy.Render("x")
-		if a == b {
-			t.Fatal("busy log border style should differ from idle")
-		}
-	}
 	m := newTestModel()
+	idle := m.renderCommandLogBox(40, 6)
+	m.opState = &Operation{Title: "install foo", Status: opRunning}
+	busy := m.renderCommandLogBox(40, 6)
+	if idle == busy {
+		t.Fatal("busy log border should differ from idle")
+	}
+	m = newTestModel()
 	if m.logBusy() {
 		t.Fatal("idle model should not be logBusy")
 	}

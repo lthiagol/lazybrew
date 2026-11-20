@@ -100,24 +100,24 @@ func (m Model) handleSidebarClick(x, y, sw int) (tea.Model, tea.Cmd) {
 			yCursor += boxH
 			continue
 		}
-		// Inside panel i (including borders).
+		// Inside panel i (including borders). The title sits in the top
+		// border, so innerY 0 is the first item row.
 		pid := PanelID(i)
-		innerY := y - yCursor - 1 // 0 = title row inside content
+		innerY := y - yCursor - 1
 		var cmd tea.Cmd
 		if pid != m.activePanel {
 			cmd = m.switchPanel(pid)
 		}
 		p := m.panels[pid]
-		// Title row or empty: just activate panel.
-		if innerY <= 0 || p == nil || len(p.items) == 0 {
+		// Top border or empty: just activate panel.
+		if innerY < 0 || p == nil || len(p.items) == 0 {
 			return m, cmd
 		}
-		// Item rows start after the title line.
-		rowInWindow := innerY - 1
-		if rowInWindow < 0 || rowInWindow >= max(0, h-1) {
+		// Bottom border, below the body.
+		if innerY >= h {
 			return m, cmd
 		}
-		idx := p.offset + rowInWindow
+		idx := p.offset + innerY
 		if idx >= 0 && idx < len(p.items) {
 			p.selectIndex(idx)
 			if needsTabFetch(m.activePanel, m.activeTab) {
@@ -137,7 +137,7 @@ func (m Model) handleSidebarClick(x, y, sw int) (tea.Model, tea.Cmd) {
 
 func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 	// Main panel sits to the right of the sidebar. Its ActiveBorder (1 cell)
-	// wraps breadcrumb + tabs + content; the Log box is a separate box below.
+	// wraps tabs + content; the Log box is a separate box below.
 	mx := x - sw
 	my := y
 	if mx < 1 || my < 1 {
@@ -151,13 +151,13 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Vertical stack inside the border: breadcrumb (1) + tab bar + content.
-	// The Log box sits below the main panel's border, so it has no rows here.
-	breadcrumbH := 1
+	// Vertical stack inside the border: tab bar + content. The breadcrumb
+	// is the border title now. The Log box sits below the main panel's
+	// border, so it has no rows here.
 	tabBarH := m.tabBarRows()
 
 	// Tab bar click
-	tabY0 := breadcrumbH
+	tabY0 := 0
 	tabY1 := tabY0 + tabBarH
 	if len(m.tabs) > 0 && iy >= tabY0 && iy < tabY1 {
 		return m.handleTabBarClick(ix)

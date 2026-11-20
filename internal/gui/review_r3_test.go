@@ -29,7 +29,7 @@ func TestPanelCycleSyncsVisibleRows(t *testing.T) {
 		t.Helper()
 		heights := m.computeContentHeights()
 		for i := range m.panels {
-			want := max(0, heights[i]-1)
+			want := heights[i]
 			if m.panels[i].visibleRows != want {
 				t.Errorf("%s: panel %d: visibleRows = %d, want %d", stage, i, m.panels[i].visibleRows, want)
 			}
@@ -193,14 +193,14 @@ func TestBatchOverlayTitleShowsProgress(t *testing.T) {
 // TestCommandLogToggleKeepsCursorVisible locks r3 finding R3-4: expanding
 // the command log shrinks the main list without a resize, which used to
 // leave offset+visible excluding the selected row until the next
-// normalize-triggering event. At height 24 the sidebar is in the cramped
-// branch (visibleRows falls back), so the main list height is the binding
-// window: 17 rows collapsed, 13 expanded.
+// normalize-triggering event. At height 24 the active sidebar box has two
+// item rows (the title is in its border), which binds the shared offset.
+// The panel is activated through switchPanel, the path that syncs those rows.
 func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 24})
 	m.logCollapsed = true
-	m.activePanel = PanelFormulae
+	_ = m.switchPanel(PanelFormulae)
 
 	p := m.panels[PanelFormulae]
 	for i := 0; i < 30; i++ {
@@ -210,22 +210,23 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 	p.selected = 29
 	p.offset = 14
 
-	m = sendKey(m, "C") // expand the log: the main window shrinks to 13
+	m = sendKey(m, "C") // expand the log: the main window shrinks to 14
 
 	if m.logCollapsed {
 		t.Fatal("C must expand the command log")
 	}
 	mainH := m.screenLayout().contentH
-	if mainH != 13 {
-		t.Fatalf("expected main content height 13 with the log expanded, got %d", mainH)
+	if mainH != 14 {
+		t.Fatalf("expected main content height 14 with the log expanded, got %d", mainH)
 	}
 	vc := min(p.visibleCount(), mainH)
 	if p.selected < p.offset || p.selected >= p.offset+vc {
 		t.Fatalf("cursor %d must be inside [offset %d, offset+%d) after the C toggle",
 			p.selected, p.offset, vc)
 	}
-	if p.offset != 17 {
-		t.Fatalf("expected offset clamped to 17, got %d", p.offset)
+	// Clamped to the two-row window: selected 29 with two visible rows.
+	if p.offset != 28 {
+		t.Fatalf("expected offset clamped to 28, got %d", p.offset)
 	}
 }
 

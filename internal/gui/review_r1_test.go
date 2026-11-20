@@ -508,7 +508,7 @@ func TestWindowSizeSyncsVisibleRows(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	for i := range m.panels {
-		want := max(0, m.computeContentHeights()[i]-1)
+		want := m.computeContentHeights()[i]
 		if m.panels[i].visibleRows != want {
 			t.Errorf("panel %d: visibleRows = %d, want %d", i, m.panels[i].visibleRows, want)
 		}
@@ -519,7 +519,7 @@ func TestWindowSizeSyncsVisibleRows(t *testing.T) {
 	m = updateModel(m, tea.KeyPressMsg{Code: '2', Text: "2"})
 	heights := m.computeContentHeights()
 	for i := range m.panels {
-		want := max(0, heights[i]-1)
+		want := heights[i]
 		if m.panels[i].visibleRows != want {
 			t.Errorf("after switch, panel %d: visibleRows = %d, want %d", i, m.panels[i].visibleRows, want)
 		}

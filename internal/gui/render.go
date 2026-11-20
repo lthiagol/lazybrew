@@ -13,49 +13,45 @@ import (
 
 func (m Model) renderSidebar() string {
 	sw := sidebarWidth(m.cfg, m.width)
-	contentWidth := sw - 2
 	heights := m.computeContentHeights()
 
 	var boxes []string
 	for i, p := range m.panels {
 		active := i == int(m.activePanel)
-		// Style the label alone, then append spinner/count so title styles
-		// cannot override the spinner's Accent foreground (M15). Active row
-		// bg is applied via Place whitespace, not Width.Render, so nested
-		// spinner ANSI is not re-styled.
-		label := strconv.Itoa(i+1) + " " + p.title
-		var titleLine string
-		if active {
-			titleLine = style.PanelTitleActive.Render(label)
-		} else {
-			titleLine = style.PanelTitle.Render(label)
-		}
-		if p.loading {
-			titleLine += "  " + m.spinner.View()
-		} else if count := p.itemCount(); count > 0 {
-			titleLine += style.SubtleText.Render("  " + strconv.Itoa(count))
-		}
-		if active {
-			titleLine = lipgloss.Place(contentWidth, 1, lipgloss.Left, lipgloss.Top, titleLine,
-				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(style.ActivePanelBg.GetBackground())),
-			)
-		}
-		itemsMaxRows := max(0, heights[i]-1)
+		// The number is the jump key (1-7); the icon, when shown, is the
+		// panel's own. The state or count sits in the border, so a box
+		// too short for its body still shows it (Q-v2-small).
+		title := strconv.Itoa(i+1) + " " + withIcon(m.panelIcon(p.id), p.title)
 		// visibleRows is derived in the Update loop (syncVisibleRows);
 		// rendering must not write model state (r1 finding 29, r2
 		// finding NEW-8). Fall back to the layout computation for models
 		// that have not seen a WindowSizeMsg yet, without assigning back.
 		rows := p.visibleRows
 		if rows <= 0 {
-			rows = itemsMaxRows
+			rows = heights[i]
 		}
-		itemsContent := p.renderSidebarContent(contentWidth, rows, m.batch.selected)
-		fullContent := lipgloss.JoinVertical(lipgloss.Top, titleLine, itemsContent)
-		box := renderBox(fullContent, contentWidth, heights[i], active)
-		boxes = append(boxes, box)
+		body := p.renderSidebarContent(sw-2, rows, m.batch.selected)
+		boxes = append(boxes, panel(title, m.sidebarLabel(p), body, sw, heights[i]+2, active))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Top, boxes...)
+}
+
+// sidebarLabel is the right-hand label of a sidebar box: the state while a
+// fetch is pending or has failed, otherwise the item count.
+func (m Model) sidebarLabel(p *panelData) string {
+	switch {
+	case p.loading:
+		return m.spinner.View()
+	case p.err != nil:
+		return style.ErrorBadge.Render("!")
+	case !p.loaded:
+		return style.SubtleText.Render("not loaded")
+	case p.itemCount() == 0:
+		return style.SubtleText.Render("(empty)")
+	default:
+		return style.SubtleText.Render(strconv.Itoa(p.itemCount()))
+	}
 }
 
 // renderMainPanel draws the main column: the main panel box with the Log
@@ -65,21 +61,19 @@ func (m Model) renderMainPanel() string {
 	l := m.screenLayout()
 	innerW := l.mainW - 2
 
-	panelName := m.panels[m.activePanel].title
-	tabName := ""
+	// The title is the breadcrumb: the panel, then the tab.
+	title := m.panels[m.activePanel].title
 	if len(m.tabs) > 0 && m.activeTab < len(m.tabs) {
-		tabName = m.tabs[m.activeTab].name
-	}
-	breadcrumb := style.PanelTitle.Render(panelName)
-	if tabName != "" {
-		breadcrumb += style.SubtleText.Render(" › ") + style.AccentText.Render(tabName)
+		title += " › " + m.tabs[m.activeTab].name
 	}
 
-	tabBar := m.renderTabBar(innerW)
+	// The tab bar is cut to the box, not wrapped: a tab that does not fit is
+	// cut, and the bar's trailing padding goes with it.
+	tabBar := fitFrame(m.renderTabBar(innerW), innerW, m.tabBarRows())
 	content := fitBox(m.renderContent(innerW, l.contentH), innerW, l.contentH)
+	body := lipgloss.JoinVertical(lipgloss.Top, tabBar, content)
 
-	panel := lipgloss.JoinVertical(lipgloss.Top, breadcrumb, tabBar, content)
-	box := style.ActiveBorder.Width(l.mainW).Height(l.mainH).Render(fitBox(panel, innerW, l.mainH-2))
+	box := panel(title, "", body, l.mainW, l.mainH, true)
 	if l.logH == 0 {
 		return box
 	}
@@ -99,15 +93,15 @@ type screenLayout struct {
 	mainW    int // main panel outer width; the Log box is the same width
 	mainH    int // main panel outer height, borders included
 	logH     int // Log box outer height; 0 when collapsed or too small to show
-	contentH int // main content rows, below the breadcrumb and tab bar
+	contentH int // main content rows, below the tab bar
 }
 
 func (m Model) screenLayout() screenLayout {
 	bodyH := max(0, m.height-bottomBarRows)
 	sideW := sidebarWidth(m.cfg, m.width)
 	logH := bodyH / 5
-	// The Log box needs a border top and bottom plus its title row; below
-	// three rows it cannot show a title and a body, so it stays hidden.
+	// The Log box needs a border top and bottom plus one body row; below
+	// three rows it cannot show a body, so it stays hidden.
 	if m.logCollapsed || logH < 3 {
 		logH = 0
 	}
@@ -118,7 +112,7 @@ func (m Model) screenLayout() screenLayout {
 		mainW:    m.width - sideW,
 		mainH:    mainH,
 		logH:     logH,
-		contentH: max(0, mainH-2-m.tabBarRows()-1),
+		contentH: max(0, mainH-2-m.tabBarRows()),
 	}
 }
 
@@ -180,26 +174,19 @@ func (m Model) logBusy() bool {
 	return m.tasks.IsRunning() || m.opState != nil
 }
 
-func logBorderStyle(busy bool) lipgloss.Style {
-	if busy {
-		return style.LogBorder.BorderForeground(style.AccentColor)
-	}
-	return style.LogBorder
-}
-
+// renderCommandLogBox draws the Log box. Its title is fixed; while a task
+// runs, the label names the task.
 func (m Model) renderCommandLogBox(width, height int) string {
-	// height is the full vertical budget for the log section. Lip Gloss v2
-	// Width/Height include the border, so the box is exactly width x height
-	// and its content is 2 smaller on each axis.
-	innerH := max(1, height-2)
-	innerW := max(1, width-2)
-	bodyH := max(0, innerH-1) // one row for the "Log" title
-	body := m.commandLog.View(innerW, bodyH)
-	titled := lipgloss.JoinVertical(lipgloss.Top, style.PanelTitle.Render("Log"), body)
-	return logBorderStyle(m.logBusy()).
-		Width(width).
-		Height(height).
-		Render(fitBox(titled, innerW, innerH))
+	// height is the full vertical budget for the log section, border
+	// included, so the body is two rows shorter than the box.
+	bodyH := max(0, height-2)
+	bodyW := max(1, width-2)
+	body := m.commandLog.View(bodyW, bodyH)
+	label := ""
+	if m.logBusy() && m.opState != nil {
+		label = style.SubtleText.Render(m.opState.Title)
+	}
+	return panel("Log", label, body, width, height, m.logBusy())
 }
 
 func (m Model) renderTabBar(width int) string {

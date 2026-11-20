@@ -34,3 +34,25 @@ func withIcon(icon, text string) string {
 	}
 	return icon + " " + text
 }
+
+// panelIcon is the glyph a panel's sidebar title carries.
+func (m Model) panelIcon(id PanelID) string {
+	switch id {
+	case PanelStatus:
+		return m.icons.Status
+	case PanelFormulae:
+		return m.icons.Formula
+	case PanelCasks:
+		return m.icons.Cask
+	case PanelOutdated:
+		return m.icons.Outdated
+	case PanelTaps:
+		return m.icons.Tap
+	case PanelServices:
+		return m.icons.Service
+	case PanelSearch:
+		return m.icons.Search
+	default:
+		return ""
+	}
+}
