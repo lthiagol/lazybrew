@@ -448,3 +448,18 @@ Rulings, all answered with the orchestrator's recommendation:
 - **Tap actions:** same standard as services — state-aware actions in Tap Info
   and the footer, `t` toggles trust (untrust confirmed), untap confirm states
   the consequence, selection kept by name after an action.
+
+## Q-v2-07-pid — AC-04.1 cannot be a literal `diff -r` against v2-06 (runner lane)
+
+- **Contradiction:** AC-04.1 says `v2-07-op-dismiss/after/` must equal
+  `v2-06-animations/after/` with `diff -r` empty. The harness reads the live
+  `moshi-hook` PID through `brew services info`: `1332457` now, `800` when v2-06
+  was captured. The service was restarted at 2026-11-20 07:01:42 (before this
+  slice), so frames 19 and 20 (six files, 140×40 and 80×24) differ on that PID
+  row and its padding. The other 54 frames are byte-identical.
+- **What the runner did:** kept the frames as captured, did not edit them or the
+  harness, and reported the difference in
+  `work/verification/v2-07-op-dismiss/result.md`.
+- **Decision needed:** accept "identical except the live PID row" as the AC-04.1
+  evidence, or pin the services frames to a fixed PID in the harness so the
+  diff is empty.

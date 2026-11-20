@@ -1,0 +1,53 @@
+package dump
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"testing"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui"
+)
+
+// TestOpDump (v2-07 AC-04.1): the finished Operation view at 140×40, for a
+// successful, a failed and a cancelled run. The runs are fed to the Model as
+// task messages over a mock runner: no brew command runs. The lines are a
+// transcript written to brew's `==> ` step lines, not a captured brew run.
+// The frames are taken at once after the run ends, before the 2 s close.
+func TestOpDump(t *testing.T) {
+	os.Setenv(config.IconsEnv, config.IconsUnicode)
+	os.Setenv(config.AnimationsEnv, "0")
+	steps := []string{
+		"==> Stopping `moshi-hook`... (might take a while)",
+		"==> Successfully stopped `moshi-hook` (label: homebrew.mxcl.moshi-hook)",
+	}
+	runs := []struct {
+		name string
+		id   string
+		err  error
+	}{
+		{"success", "service-stop:moshi-hook", nil},
+		{"error", "service-stop:moshi-hook", errors.New("brew services stop moshi-hook: exit status 1")},
+		{"cancelled", "service-stop:moshi-hook", context.Canceled},
+	}
+	out := fmt.Sprintf("%s/op", os.Getenv("DUMP_DIR"))
+	os.MkdirAll(out, 0o755)
+	for _, run := range runs {
+		var m tea.Model = gui.New(brew.NewClient(brew.NewMockRunner()), config.Default())
+		nm, _ := m.Update(tea.WindowSizeMsg{Width: 140, Height: 40})
+		nm, _ = nm.Update(gui.TaskStartedMsg{ID: run.id, Title: "stop moshi-hook"})
+		for _, line := range steps {
+			nm, _ = nm.Update(gui.TaskOutputMsg{ID: run.id, Line: line})
+		}
+		nm, _ = nm.Update(gui.TaskCompletedMsg{ID: run.id, Title: "stop moshi-hook", Err: run.err})
+		v := nm.View().Content
+		os.WriteFile(out+"/"+run.name+".ansi", []byte(v), 0o644)
+		os.WriteFile(out+"/"+run.name+".txt", []byte(ansi.Strip(v)), 0o644)
+	}
+	fmt.Println("ok")
+}
