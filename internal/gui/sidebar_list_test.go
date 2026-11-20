@@ -163,7 +163,7 @@ func TestTapTrustTabShowsTheTrustStory(t *testing.T) {
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Items: []string{"aa/one", "bb/two"},
 		Taps: []brew.Tap{
 			{Name: "aa/one", FormulaCount: 2, CaskCount: 1},
-			{Name: "bb/two", FormulaCount: 4, CaskCount: 0, Trusted: true},
+			{Name: "bb/two", FormulaCount: 4, CaskCount: 0, Trusted: true, Remote: "https://example.test/bb/homebrew-two"},
 		}})
 	m = sendKey(m, "]")
 	out := sgr.ReplaceAllString(m.renderContent(70, 20), "")
@@ -198,7 +198,7 @@ func TestTrustStoryPluralises(t *testing.T) {
 		{brew.Tap{Name: "a/none", FormulaCount: 0, CaskCount: 0}, "Its 0 formulae and 0 casks follow"},
 	}
 	for _, c := range cases {
-		if got := tapTrustStory(&c.tap); !strings.Contains(got, c.want) {
+		if got := tapTrustStory(&c.tap, 60); !strings.Contains(got, c.want) {
 			t.Errorf("%s: want %q in:\n%s", c.tap.Name, c.want, got)
 		}
 	}

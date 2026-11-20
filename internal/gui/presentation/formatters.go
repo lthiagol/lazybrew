@@ -2,9 +2,11 @@ package presentation
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 func FormatFormula(f brew.Formula, width int) string {
@@ -137,76 +139,82 @@ func FormatStatusDashboard(
 	return lines
 }
 
-func FormatFormulaInfo(f brew.Formula, width int) string {
-	var b strings.Builder
+// FormatFormulaInfo is the Info tab of a formula: its identity, status and
+// links, as detail rows.
+func FormatFormulaInfo(f brew.Formula, width int, icons style.Icons) string {
+	status, role := formulaStatus(f, icons)
+	return Detail([]Field{
+		{Label: "Name", Value: f.Name},
+		{Label: "Version", Value: versionDisplay(f)},
+		{Label: "Tap", Value: f.Tap},
+		{Label: "Status", Value: status, Role: role},
+		{Label: "License", Value: f.License},
+		{Label: "Homepage", Value: f.Homepage, Role: style.InfoColor},
+		{Label: "Bottled", Value: yesNo(f.Bottled)},
+		{Label: "Description", Value: f.Description, Prose: true},
+	}, width)
+}
 
-	b.WriteString(label("Name", f.Name))
-	b.WriteString(label("Version", versionDisplay(f)))
-	b.WriteString(label("Tap", f.Tap))
+// FormatCaskInfo is the Info tab of a cask, as detail rows.
+func FormatCaskInfo(c brew.Cask, width int, icons style.Icons) string {
+	status, role := caskStatus(c, icons)
+	return Detail([]Field{
+		{Label: "Name", Value: c.Name},
+		{Label: "Version", Value: c.Version},
+		{Label: "Tap", Value: c.Tap},
+		{Label: "Status", Value: status, Role: role},
+		{Label: "Homepage", Value: c.Homepage, Role: style.InfoColor},
+		{Label: "Description", Value: c.Description, Prose: true},
+	}, width)
+}
 
-	status := "installed"
+// formulaStatus is the Status row of a formula: its icon and word, in the
+// role that says how it stands. Keg-only is noted after the status.
+func formulaStatus(f brew.Formula, icons style.Icons) (string, color.Color) {
+	status, role := installedStatus(icons, f.Pinned, f.Outdated && f.NewVersion != "", f.Version, f.NewVersion)
 	if f.KegOnly {
-		status = "keg-only"
+		status += " · keg-only"
 	}
-	if f.Pinned {
-		status = "pinned"
-	}
-	if f.Outdated && f.NewVersion != "" {
-		status = fmt.Sprintf("outdated (%s → %s)", f.Version, f.NewVersion)
-	}
-	b.WriteString(label("Status", status))
-
-	if f.License != "" {
-		b.WriteString(label("License", f.License))
-	}
-	if f.Homepage != "" {
-		b.WriteString(label("Homepage", truncate(f.Homepage, width-12)))
-	}
-
-	c := "no"
-	if f.Bottled {
-		c = "yes"
-	}
-	b.WriteString(label("Bottled", c))
-
-	if f.Description != "" {
-		b.WriteString(label("Description", truncate(f.Description, width-14)))
-	}
-
-	return strings.TrimRight(b.String(), "\n")
+	return status, role
 }
 
-func FormatCaskInfo(c brew.Cask, width int) string {
-	var b strings.Builder
-
-	b.WriteString(label("Name", c.Name))
-	b.WriteString(label("Version", c.Version))
-	b.WriteString(label("Tap", c.Tap))
-
-	status := "installed"
-	if c.Pinned {
-		status = "pinned"
-	}
-	if c.Outdated && c.NewVersion != "" {
-		status = fmt.Sprintf("outdated (%s → %s)", c.Version, c.NewVersion)
-	}
+// caskStatus is the Status row of a cask: as formulaStatus, with auto-update
+// noted after the status.
+func caskStatus(c brew.Cask, icons style.Icons) (string, color.Color) {
+	status, role := installedStatus(icons, c.Pinned, c.Outdated && c.NewVersion != "", c.Version, c.NewVersion)
 	if c.AutoUpdates {
-		status += " (auto-update)"
+		status += " · auto-update"
 	}
-	b.WriteString(label("Status", status))
-
-	if c.Homepage != "" {
-		b.WriteString(label("Homepage", truncate(c.Homepage, width-12)))
-	}
-	if c.Description != "" {
-		b.WriteString(label("Description", truncate(c.Description, width-14)))
-	}
-
-	return strings.TrimRight(b.String(), "\n")
+	return status, role
 }
 
-func label(key, value string) string {
-	return fmt.Sprintf("%-12s %s\n", key+":", value)
+// installedStatus is the icon, word and role shared by formulae and casks.
+// Pinned outranks outdated, as it did before the detail rows.
+func installedStatus(icons style.Icons, pinned, outdated bool, version, newVersion string) (string, color.Color) {
+	switch {
+	case pinned:
+		return withIcon(icons.Pinned, "pinned"), style.SecondaryColor
+	case outdated:
+		return withIcon(icons.Outdated, fmt.Sprintf("outdated %s → %s", version, newVersion)), style.WarningColor
+	default:
+		return withIcon(icons.Installed, "installed"), style.SuccessColor
+	}
+}
+
+// withIcon prefixes text with its glyph and a space; an empty glyph leaves the
+// text alone, as the icon set does when icons are off.
+func withIcon(icon, text string) string {
+	if icon == "" {
+		return text
+	}
+	return icon + " " + text
+}
+
+func yesNo(b bool) string {
+	if b {
+		return "yes"
+	}
+	return "no"
 }
 
 func versionDisplay(f brew.Formula) string {

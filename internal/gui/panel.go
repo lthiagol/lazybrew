@@ -294,17 +294,6 @@ func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool,
 	return lipgloss.JoinVertical(lipgloss.Top, lines...)
 }
 
-func truncateWithEllipsis(s string, maxWidth int) string {
-	runes := []rune(s)
-	if len(runes) <= maxWidth {
-		return s
-	}
-	if maxWidth <= 3 {
-		return string(runes[:maxWidth])
-	}
-	return string(runes[:maxWidth-3]) + "..."
-}
-
 func emptyMessage(id PanelID) string {
 	switch id {
 	case PanelFormulae:

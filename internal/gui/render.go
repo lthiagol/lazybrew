@@ -1,7 +1,7 @@
 package gui
 
 import (
-	"fmt"
+	"image/color"
 	"strconv"
 	"strings"
 
@@ -305,8 +305,7 @@ func (m Model) renderContent(width, height int) string {
 			if f == nil {
 				return emptyPanel(width, height)
 			}
-			info := presentation.FormatFormulaInfo(*f, width)
-			return style.NormalItem.Render(info)
+			return presentation.FormatFormulaInfo(*f, width, m.icons)
 		case formulaDepsTab, formulaUsesTab, formulaFilesTab:
 			itemName := selectedItemName(panel)
 			if itemName == "" {
@@ -335,8 +334,7 @@ func (m Model) renderContent(width, height int) string {
 			if c == nil {
 				return emptyPanel(width, height)
 			}
-			info := presentation.FormatCaskInfo(*c, width)
-			return style.NormalItem.Render(info)
+			return presentation.FormatCaskInfo(*c, width, m.icons)
 		case 1:
 			c := panel.selectedCask()
 			if c == nil || len(c.DependsOn) == 0 {
@@ -376,6 +374,11 @@ func (m Model) renderContent(width, height int) string {
 			}
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
+				if m.activeTab == statusConfigTab {
+					// The config rows are built uncut (formatConfig), so they
+					// are cut to the main width here, with …
+					return cutLines(content, width)
+				}
 				return content
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
@@ -384,13 +387,13 @@ func (m Model) renderContent(width, height int) string {
 	case PanelTaps:
 		switch m.activeTab {
 		case tapInfoTab:
-			return renderTapInfo(panel)
+			return renderTapInfo(panel, width)
 		case tapTrustTab:
 			t := panel.selectedTap()
 			if t == nil {
 				return style.SubtleText.Render("No tap selected")
 			}
-			return style.NormalItem.Render(tapTrustStory(t))
+			return tapTrustStory(t, width)
 		case tapFormulaeTab:
 			t := panel.selectedTap()
 			if t == nil || len(t.FormulaNames) == 0 {
@@ -404,7 +407,7 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelServices:
-		return renderServiceStatus(panel)
+		return renderServiceStatus(panel, width, m.icons)
 
 	case PanelOutdated:
 		switch m.activeTab {
@@ -415,16 +418,14 @@ func (m Model) renderContent(width, height int) string {
 			// with the raw combined index showed the WRONG cask (r1
 			// finding 11).
 			if f := panel.selectedOutdatedFormula(); f != nil {
-				info := presentation.FormatFormulaInfo(*f, width)
-				return style.NormalItem.Render(info)
+				return presentation.FormatFormulaInfo(*f, width, m.icons)
 			}
 			if c := panel.selectedOutdatedCask(); c != nil {
-				info := presentation.FormatCaskInfo(*c, width)
-				return style.NormalItem.Render(info)
+				return presentation.FormatCaskInfo(*c, width, m.icons)
 			}
 			return emptyPanel(width, height)
 		case outdatedVersionsTab:
-			return renderOutdatedVersions(panel, m.batch.selected)
+			return renderOutdatedVersions(panel, m.batch.selected, width)
 		}
 
 	case PanelSearch:
@@ -454,35 +455,21 @@ func (m Model) renderSearchInfo(width, height int) string {
 		return style.ErrorBadge.Render("Parse error: " + err.Error())
 	}
 
-	var lines []string
-	lines = append(lines, fmt.Sprintf("Name:     %s", info.Name))
-
 	ver := info.Version
 	if info.Bottled {
 		ver += " (bottled)"
 	}
-	lines = append(lines, fmt.Sprintf("Version:  %s", ver))
-	lines = append(lines, fmt.Sprintf("Type:     %s", info.Type))
+	status, role := searchStatus(info, m.icons)
+	result := presentation.Detail([]presentation.Field{
+		{Label: "Name", Value: info.Name},
+		{Label: "Version", Value: ver},
+		{Label: "Type", Value: info.Type},
+		{Label: "Status", Value: status, Role: role},
+		{Label: "License", Value: info.License},
+		{Label: "Homepage", Value: info.Homepage, Role: style.InfoColor},
+		{Label: "Description", Value: info.Description, Prose: true},
+	}, width)
 
-	status := "not installed"
-	if info.Installed {
-		status = fmt.Sprintf("installed (%s)", info.InstallPath)
-	}
-	lines = append(lines, fmt.Sprintf("Status:   %s", status))
-	if info.License != "" {
-		lines = append(lines, fmt.Sprintf("License:  %s", info.License))
-	}
-	if info.Homepage != "" {
-		lines = append(lines, fmt.Sprintf("Homepage: %s", truncateWithEllipsis(info.Homepage, width-12)))
-	}
-
-	all := lipgloss.JoinVertical(lipgloss.Top, lines...)
-	result := all
-
-	if info.Description != "" {
-		desc := "\n\n" + style.AccentText.Render("Description:") + "\n" + info.Description
-		result += desc
-	}
 	if len(info.Dependencies) > 0 {
 		deps := "\n\n" + style.AccentText.Render("Dependencies:") + "\n"
 		for _, d := range info.Dependencies {
@@ -491,11 +478,24 @@ func (m Model) renderSearchInfo(width, height int) string {
 		result += deps
 	}
 	if info.Caveats != "" {
-		cav := "\n\n" + style.AccentText.Render("Caveats:") + "\n" + info.Caveats
-		result += cav
+		result += "\n\n" + presentation.Detail([]presentation.Field{
+			{Label: "Caveats", Value: info.Caveats, Prose: true},
+		}, width)
 	}
+	return result
+}
 
-	return style.NormalItem.Render(result)
+// searchStatus is the Status row of a search result: installed with its
+// install path, or not installed.
+func searchStatus(info *pkgInfo, icons style.Icons) (string, color.Color) {
+	if !info.Installed {
+		return "not installed", style.MutedColor
+	}
+	status := "installed"
+	if info.InstallPath != "" {
+		status += " (" + info.InstallPath + ")"
+	}
+	return withIcon(icons.Installed, status), style.SuccessColor
 }
 
 func (m Model) renderOperation(width, height int) string {
