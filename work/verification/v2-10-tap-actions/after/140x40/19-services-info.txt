@@ -1,0 +1,40 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                    125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Services › Info ───────────────────────────────────────────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││   Info                                                                                  │
+│  Prefix    /home/linuxbrew/.linuxbrew         ││ ━━━━━━━━                                                                                │
+│  Formulae  125                                ││ Name:         moshi-hook                                                                │
+╰───────────────────────────────────────────────╯│ Status:       ▶ running                                                                 │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ PID:          1332457                                                                   │
+│  ✓ alsa-lib                         1.2.16.1_1││ User:         agent                                                                     │
+│▸ ✓ bash                                 5.3.20││ Loaded:       yes                                                                       │
+│  ✓ bat                                  0.26.1││ Registered:   yes                                                                       │
+╰───────────────────────────────────────────────╯│ Unit file:    /home/agent/.config/systemd/user/sh.brew.moshi-hook.service               │
+╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│ Command:      /home/linuxbrew/.linuxbrew/opt/moshi-hook/bin/moshi-hook serve            │
+│▸ ✓ Claude Code                         2.1.311││ Working dir:  /home/linuxbrew/.linuxbrew/var                                            │
+│  ✓ Google Cloud CLI                    594.0.0││ Log:          /home/linuxbrew/.linuxbrew/var/log/moshi-hook.log                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│  S stop  r restart  c cleanup                                                           │
+╭─ 4 ↑ Outdated ──────────────────────────── 1 ─╮│                                                                                         │
+│▸ ↑ git-delta                   0.21.1 → 0.21.2││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 5 ⊕ Taps ──────────────────────────────── 3 ─╮│                                                                                         │
+│▸ ⚠ danielfoehrkn/switch              untrusted││                                                                                         │
+│  ✓ lthiagol/tap                        trusted││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 6 ◎ Services ──────────────────────────── 3 ─╮│                                                                                         │
+│  dbus                                     none││                                                                                         │
+│▸ ▶ moshi-hook                          started││                                                                                         │
+│  pulseaudio                               none││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮╰─────────────────────────────────────────────────────────────────────────────────────────╯
+│                                               │╭─ Log ───────────────────────────────────────────────────────────────────────────────────╮
+│                                               ││ No commands executed yet                                                                │
+╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
+ S stop  r restart  j/k navigate  c cleanup  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  q quit  PgUp/Dn scroll     

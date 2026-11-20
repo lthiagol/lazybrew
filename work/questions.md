@@ -619,3 +619,26 @@ terminal (still its own process group, so the cancel kills the group as now).
 the failed task's toast says plainly that the step needs sudo and to run the
 command in a terminal — like the services needs-sudo text. lazybrew never runs
 sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
+
+## Questions raised — slice `v2-10-tap-actions` (runner lane)
+
+### Q-v2-10-a — the key line offers `x untap` on an official tap, and x is refused
+
+- **Question:** AC-01.1 says an official tap's key line is `x untap  r repair`.
+  The existing untap guard still refuses an official tap ("Cannot untap official
+  taps", a warning toast). So the key line names an action that the next key
+  press refuses. Keep `x untap` on official taps as the brief says, or drop `x`
+  from the official key line (and footer) so the line only offers what works?
+- **Runner's decision:** kept the brief's literal line and the existing refusal.
+  The change is one line in `tapActionHints` (internal/gui/keybindings.go).
+- **Raised by:** runner lane (slice `v2-10-tap-actions`).
+
+### Q-v2-10-b — the trust menu's "Untrust tap" entry, and T in the footer
+
+- **Question:** AC-02 makes untrust confirmed on `t`. The T menu also has an
+  "Untrust tap" entry, which would be a second, unconfirmed untrust. The runner
+  routed that entry through the same untrust confirm. Is that right? And the
+  footer keeps the brief's exact set, so `T` (formula/cask trust) is in the help
+  and the panel's key list, not in the footer. Should the footer list it too?
+- **Runner's decision:** menu untrust confirms; footer unchanged (exact set).
+- **Raised by:** runner lane (slice `v2-10-tap-actions`).

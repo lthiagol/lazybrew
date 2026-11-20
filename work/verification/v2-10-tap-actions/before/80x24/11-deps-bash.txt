@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Deps ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││   Info    Deps    Used By    Caveats    Files    │
+╰──────────────────────────╯│         ━━━━━━━━                                 │
+╭─ 2 ∘ Formulae ───── 125 ─╮│    Name      Version  Description                │
+│  ✓ alsa-lib    1.2.16.1_1││ Runtime                                          │
+│▸ ✓ bash            5.3.20││ ✓  ncurses   6.6      Text-based UI library      │
+╰──────────────────────────╯│ ✓  readline  8.3.6    Library for command-line … │
+╭─ 3 ▣ Casks ────────── 2 ─╮│                                                  │
+│▸ ✓ Claude Code    2.1.311││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│                                                  │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 5 ⊕ Taps ─────────── 3 ─╮│                                                  │
+│▸ ⚠ danielfoehr… untrusted││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 6 ◎ Services ─────── 3 ─╮│                                                  │
+│▸ dbus                none││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
+│                          ││ No commands executed yet                         │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ j/k navigate  [ ] tabs  i install  x remove  r reinstall  u upgrade  ? more    

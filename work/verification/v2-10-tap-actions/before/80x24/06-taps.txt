@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Taps › Tap Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││   Tap Info    Trust    Formulae                  │
+╰──────────────────────────╯│ ━━━━━━━━━━━━                                     │
+╭─ 2 ∘ Formulae ───── 125 ─╮│ 3 taps · 0 official · 2 trusted · 1 untrusted    │
+│  ✓ alsa-lib    1.2.16.1_1││                                                  │
+╰──────────────────────────╯│ Tap:       danielfoehrkn/switch                  │
+╭─ 3 ▣ Casks ────────── 2 ─╮│ Trusted:   untrusted                             │
+│▸ ✓ Claude Code    2.1.311││ Official:  no                                    │
+╰──────────────────────────╯│ Remote:    https://github.com/danielfoehrkn/hom… │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│ Formulae:  0                                     │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││ Casks:     0                                     │
+╰──────────────────────────╯│                                                  │
+╭─ 5 ⊕ Taps ─────────── 3 ─╮│                                                  │
+│▸ ⚠ danielfoehr… untrusted││                                                  │
+│  ✓ lthiagol/tap   trusted││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 6 ◎ Services ─────── 3 ─╮│                                                  │
+│▸ dbus                none││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
+│                          ││ No commands executed yet                         │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ j/k navigate  a add  x remove  t trust  r repair  Tab next  S-Tab prev  ? more 
