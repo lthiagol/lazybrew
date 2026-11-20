@@ -16,7 +16,7 @@ decision). The source is provenance, not a spec.
 | LB-05 | Full interactive human smoke before the stable tag — **human gate**, not an agent task | B-05 | medium | active |
 | LB-06 | The M13 independent review itself — closed by verification together with LB-01; all 7 findings were already fixed, so the review is not left silently dropped | M13 | medium | closed-by-LB-01 |
 | LB-07 | Apply context timeouts to the two brew reads still unbounded: the uninstall dependency pre-check (`internal/gui/commands.go:1034`, `Formulae.Uses`) and `toggleLeaves` (`internal/gui/commands.go:1128`, `Formulae.Leaves`) | found by lb02-fetch-timeouts | low | closed |
-| LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slices v2-01..v2-06 + v2-05s closed 2026-11-20; awaiting the user checkpoint | orchestrator review 2026-11-19 | medium | active |
+| LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slices v2-01..v2-06 + v2-05s closed 2026-11-20; checkpoint passed 2026-11-20; follow-up slices v2-07..v2-10 (Q-v2-next) | orchestrator review 2026-11-19 | medium | active |
 | LB-09 | Services Logs tab: tail a service's stdout/stderr log files from lazybrew | user, 2026-11-19 | low | parked |
 | LB-10 | Confirm dialog: when a long dependents list is cut, the closing `…` row is centred instead of placed in the list column (`dialogMaxRows` cut in `modal/frame.go`, > ~12 body rows) | reviewer v2-04 r4 | low | parked |
 | LB-DROP-01 | Dead header fix in the `master-plan-bkp` directory | B-01 | n/a | dropped |
