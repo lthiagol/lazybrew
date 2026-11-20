@@ -18,7 +18,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-05-content-polish | 1192a40, ca14a11, c1b4b07, dfb79fb, 158e76e, f818b81, 0a03277, 7f8d584, 730c6ce, 0831cd8, da7d80e | closed | ok |
 | v2-05s-services | e8add34, a4bc483, 421c0ba, 7d8b51c, befbf7e, a97a13a | closed | ok |
 | v2-06-animations | 46736ea, 4f54fc0, 7c79a51, 0ebc253, d5fb165, 16358cf, ee7d782, 789caf6, 7a66ae2, 2a135d8 | closed | ok |
-| v2-07-op-dismiss | — | implemented | awaiting reviewer |
+| v2-07-op-dismiss | 0dfd9ff, ede3959, 21b3b21, 21fb1a1 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -280,3 +280,9 @@ Next: the user checkpoint, then LB-05 (human smoke gate) and the `wip` →
 `stable` PR. Not verified anywhere in the overhaul: real-terminal feel (mouse,
 keys, paste, motion), a live brew write (install/upgrade/services), a real
 needs-sudo refusal.
+
+**v2-07-op-dismiss — closed (r1 `ok`).** A successful operation closes
+itself after 2 s (a tick that names its operation; never mid-batch); failed
+and cancelled runs stay with ` · Esc to close`; the footer leads with
+`esc close`; switching panel closes a finished operation. Resting frames equal
+v2-06 except moshi-hook's live PID (ruling Q-v2-07-pid).
