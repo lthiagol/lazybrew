@@ -35,7 +35,9 @@ jobs:
         run: go vet ./...
 
       - name: go test
-        run: go test ./... -count=1
+        env:
+          CGO_ENABLED: "1"
+        run: go test ./... -race -count=1
 
       - name: go build
         run: go build -o /dev/null ./cmd/lazybrew
