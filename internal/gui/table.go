@@ -62,9 +62,10 @@ func renderTable(cols []tableCol, rows []tableRow, w int) string {
 }
 
 // tableWidths is the width of each column for a table w cells wide. A dropped
-// column is 0. The columns keep their natural width; when that is too wide, the
-// highest-drop columns go, and the wide non-last columns are cut to make room.
-// The last kept column then takes what is left.
+// column is 0. The columns keep their natural width. When that is too wide, the
+// highest-drop columns go while the rest cannot keep their floors; then the wide
+// non-last columns are cut down to their floors, so the last column is never
+// narrower than its own floor. The last kept column takes what is left.
 func tableWidths(cols []tableCol, rows []tableRow, w int) []int {
 	nat := make([]int, len(cols))
 	kept := make([]bool, len(cols))
@@ -103,22 +104,43 @@ func tableWidths(cols []tableCol, rows []tableRow, w int) []int {
 		return widths
 	}
 
-	// Everything but the last column must leave it one cell, so cut the widest
-	// of the others until it does, never below tableMinW.
-	for others(widths, kept, last)+gaps(kept) > w-1 {
+	// Every kept column keeps at least its floor, min(natural, tableMinUseful).
+	// Cut the widest of the others down to their floors until the last column
+	// has its own floor; a drop above has already made that possible.
+	floor := make([]int, len(cols))
+	for i := range cols {
+		if kept[i] {
+			floor[i] = min(nat[i], tableMinUseful)
+		}
+	}
+	cutOthers(widths, kept, last, w-floor[last], floor)
+	// The floors cannot all be met (no column left to drop): cut the others
+	// further, to tableMinW, rather than let the last column go below its floor.
+	lowest := make([]int, len(cols))
+	for i := range lowest {
+		lowest[i] = tableMinW
+	}
+	cutOthers(widths, kept, last, w-floor[last], lowest)
+	widths[last] = max(1, w-others(widths, kept, last)-gaps(kept))
+	return widths
+}
+
+// cutOthers cuts the widest kept column other than last by one cell at a time,
+// until the others and their gaps fit in room. A column is not cut below its
+// entry in low.
+func cutOthers(widths []int, kept []bool, last, room int, low []int) {
+	for others(widths, kept, last)+gaps(kept) > room {
 		widest := -1
 		for i := range widths {
-			if kept[i] && i != last && widths[i] > tableMinW && (widest < 0 || widths[i] > widths[widest]) {
+			if kept[i] && i != last && widths[i] > low[i] && (widest < 0 || widths[i] > widths[widest]) {
 				widest = i
 			}
 		}
 		if widest < 0 {
-			break
+			return
 		}
 		widths[widest]--
 	}
-	widths[last] = max(1, w-others(widths, kept, last)-gaps(kept))
-	return widths
 }
 
 // minimal is the width of the kept columns, each at the least it may be kept at
