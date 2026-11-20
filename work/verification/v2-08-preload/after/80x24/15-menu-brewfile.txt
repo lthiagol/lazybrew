@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+╭─ 1 ◉ Status ─────────────╮╭─ Status › Dashboard ─────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Dashboard    Config    Doctor                   │
+│  Prefix    /home/linuxbr…││━━━━━━━━━━━━━                                     │
+╰──────────────────────────╯│╭─ Homebrew ───────────────────────╮              │
+╭─ 2 ∘ Formulae┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓              │
+│  ✓ alsa-lib  ┃                                                ┃              │
+╰──────────────┃                    BREWFILE                    ┃              │
+╭─ 3 ▣ Casks ──┃                                                ┃              │
+│▸ ✓ Claude Cod┃   0: ▸ Export to Brewfile (brew bundle dump)   ┃              │
+╰──────────────┃   1:   Install from Brewfile (brew bundle i…   ┃              │
+╭─ 4 ↑ Outdated┃   2:   Cleanup (brew bundle cleanup)           ┃              │
+│              ┃   3:   Check (brew bundle check)               ┃              │
+╰──────────────┃   4:   List entries (brew bundle list)         ┃              │
+╭─ 5 ⊕ Taps ───┃                                                ┃──────────────╮
+│▸ homebrew/cas┃      ↑↓ move   enter choose   esc cancel       ┃ash completed │
+╰──────────────┃                                                ┃──────────────╯
+╭─ 6 ◎ Services┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛──────────────╮
+│▸ dbus                none│╰────────────│ ✗ Upgrade bash: brew upgrade failed │
+╰──────────────────────────╯╭─ Log ──────╰─────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮│No commands execute╭──────────────────────────────╮
+│                          ││                   │ ⚠ Cannot untap official taps │
+╰──────────────────────────╯╰───────────────────╰──────────────────────────────╯
+ ↑↓ move  enter choose  esc cancel                                              

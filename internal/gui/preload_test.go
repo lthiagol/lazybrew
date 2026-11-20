@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -463,6 +464,47 @@ func TestPreloadOffDashboardSaysPressR(t *testing.T) {
 	if !strings.Contains(dash, "not loaded — press R") {
 		t.Errorf("with the preload off the Outdated count should say press R, got:\n%s", dash)
 	}
+}
+
+// TestPreloadSidebarSaysLoadingNotNotLoaded covers AC-03.1: a box whose read is
+// queued or in flight shows its loading state in the border, not not loaded. The
+// loading state is the spinner, which the sidebar draws for any panel loading.
+func TestPreloadSidebarSaysLoadingNotNotLoaded(t *testing.T) {
+	var calls []string
+	m, pending := preloadScreen(t, preloadConfig(), &calls, "")
+
+	sidebar := ansi.Strip(m.renderSidebar())
+	for _, title := range []string{"Formulae", "Outdated", "Casks", "Taps", "Services"} {
+		line := sidebarTitleLine(sidebar, title)
+		if line == "" {
+			t.Fatalf("no sidebar box titled %s:\n%s", title, sidebar)
+		}
+		if strings.Contains(line, "not loaded") {
+			t.Errorf("%s is queued or in flight but its border says not loaded: %q", title, line)
+		}
+	}
+	if m.sidebarLabel(m.panels[PanelCasks]).full == "" {
+		t.Error("the queued Casks box has no border label")
+	}
+
+	m, _ = landPreloadFrom(t, m, pending)
+	sidebar = ansi.Strip(m.renderSidebar())
+	if line := sidebarTitleLine(sidebar, "Casks"); strings.Contains(line, "loading") {
+		t.Errorf("Casks has loaded but its border still reads loading: %q", line)
+	}
+}
+
+// sidebarTitleLine is the sidebar's border line for the panel: the line that
+// starts with the box's number and carries its title, or "". A row of a box's
+// body, or the main panel's title, does not match.
+func sidebarTitleLine(sidebar, title string) string {
+	border := regexp.MustCompile(`^╭─ [1-7] .*` + regexp.QuoteMeta(title))
+	for _, line := range strings.Split(sidebar, "\n") {
+		if border.MatchString(line) {
+			return line
+		}
+	}
+	return ""
 }
 
 // TestProductionDefaultPreloads pins the production default: the background

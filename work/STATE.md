@@ -19,6 +19,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-05s-services | e8add34, a4bc483, 421c0ba, 7d8b51c, befbf7e, a97a13a | closed | ok |
 | v2-06-animations | 46736ea, 4f54fc0, 7c79a51, 0ebc253, d5fb165, 16358cf, ee7d782, 789caf6, 7a66ae2, 2a135d8 | closed | ok |
 | v2-07-op-dismiss | 0dfd9ff, ede3959, 21b3b21, 21fb1a1 | closed | ok |
+| v2-08-preload | — | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -286,3 +287,12 @@ itself after 2 s (a tick that names its operation; never mid-batch); failed
 and cancelled runs stay with ` · Esc to close`; the footer leads with
 `esc close`; switching panel closes a finished operation. Resting frames equal
 v2-06 except moshi-hook's live PID (ruling Q-v2-07-pid).
+
+**v2-08-preload — implemented, awaiting reviewer.** `gui.preload` (default on;
+`LAZYBREW_PRELOAD` overrides) loads every panel but Search in the background after
+the Status dashboard, two reads at a time, through the scheduler in
+`internal/gui/preload.go`. The dashboard counts fill in as panels land; the sidebar
+shows the spinner, not `not loaded`, while a read is queued or in flight. Frames and
+the judgement calls are in `work/verification/v2-08-preload/result.md`. Brew is slow
+on this machine today: `brew tap-info` takes ~87 s, past the 30 s read cap, so the
+Taps frames (06, 14) show the degraded read the lazy path shows too.
