@@ -670,3 +670,19 @@ sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
 - **Streams:** one Logs tab; a toggle key switches stdout (`log_path`) and
   stderr (`error_log_path`); the title names the stream; a missing/unset path
   says there is no log file.
+
+## Questions raised — slice `lb09-service-logs` (runner lane)
+
+### Q-lb09-slide — the 200-line window slides under a view scrolled up
+
+- **Question:** once the log holds more than 200 lines, each new line pushes one
+  line out of the top of the window. A view scrolled up keeps its scroll offset
+  (AC-03.3: the view does not move), so the lines under it shift by the lines
+  that left the top. Keep that, or re-anchor the offset by the number of lines
+  that left, so the same line stays at the top?
+- **Runner's decision:** the offset rule is built as the brief reads it. Not
+  changed. The test that proves it covers a file under 200 lines, where nothing
+  slides.
+- **Raised by:** runner lane (slice `lb09-service-logs`). Evidence:
+  `work/verification/lb09-service-logs/result.md`, note 1.
+- **Owner:** the orchestrator.
