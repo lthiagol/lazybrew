@@ -1,0 +1,40 @@
+◆ lazybrew                                                                                                                                  
+╭─ 1 ◉ Status ───────────────────── not loaded ─╮╭─ Services › Logs ───────────────────────────────────────────────────────────────────────╮
+│                                               ││   Info    Logs                                                                          │
+│                                               ││         ━━━━━━━━                                                                        │
+│                                               ││ stdout · /home/linuxbrew/.linuxbrew/var/log/moshi-hook.log                              │
+╰───────────────────────────────────────────────╯│ time=2026-11-20T08:18:31.349-03:00 level=WARN msg="usage fetcher: repeated poll failur… │
+╭─ 2 ∘ Formulae ─────────────────── not loaded ─╮│ time=2026-11-20T08:19:30.715-03:00 level=INFO msg="usage sync: server pull" enabled=fa… │
+│                                               ││ time=2026-11-20T08:19:30.715-03:00 level=WARN msg="ws bridge dropped" err="failed to g… │
+│                                               ││ time=2026-11-20T08:19:53.479-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+│                                               ││ time=2026-11-20T08:20:15.421-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+╰───────────────────────────────────────────────╯│ time=2026-11-20T08:20:31.673-03:00 level=INFO msg="usage fetcher: polling recovered" a… │
+╭─ 3 ▣ Casks ────────────────────── not loaded ─╮│ time=2026-11-20T08:20:40.065-03:00 level=WARN msg="claude interrupt watcher: publish f… │
+│                                               ││ time=2026-11-20T08:20:40.065-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+│                                               ││ time=2026-11-20T08:21:05.657-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+│                                               ││ time=2026-11-20T08:21:41.822-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+╰───────────────────────────────────────────────╯│ time=2026-11-20T08:22:04.571-03:00 level=WARN msg="usage poller: send failed" err="Pos… │
+╭─ 4 ↑ Outdated ─────────────────── not loaded ─╮│ time=2026-11-20T08:22:30.669-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+│                                               ││ time=2026-11-20T08:23:08.060-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+│                                               ││ time=2026-11-20T08:23:53.539-03:00 level=WARN msg="usage poller: send failed" err="Pos… │
+╰───────────────────────────────────────────────╯│ time=2026-11-20T08:23:53.545-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+╭─ 5 ⊕ Taps ─────────────────────── not loaded ─╮│ time=2026-11-20T08:24:38.618-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+│                                               ││ time=2026-11-20T08:25:16.501-03:00 level=WARN msg="ws bridge dropped" err="ws dial: fa… │
+│                                               ││ time=2026-11-20T08:26:00.902-03:00 level=INFO msg="usage sync: server pull" enabled=tr… │
+╰───────────────────────────────────────────────╯│ time=2026-11-20T08:26:00.902-03:00 level=INFO msg="ws bridge connected" hostId=host_<redacted>… │
+╭─ 6 ◎ Services ──────────────────────────── 3 ─╮│ time=2026-11-20T08:31:46.675-03:00 level=INFO msg="usage poller: synced" count=1 premi… │
+│  dbus                                     none││ time=2026-11-20T09:01:46.022-03:00 level=INFO msg="usage poller: synced" count=1 premi… │
+│▸ ▶ moshi-hook                          started││ time=2026-11-20T09:38:02.912-03:00 level=INFO msg="usage poller: synced" count=1 premi… │
+│  backup                                   none││ time=2026-11-20T10:11:46.032-03:00 level=INFO msg="usage poller: synced" count=1 premi… │
+│                                               ││ time=2026-11-20T10:41:46.088-03:00 level=INFO msg="usage poller: synced" count=1 premi… │
+│                                               ││ time=2026-11-20T11:11:46.041-03:00 level=INFO msg="usage poller: synced" count=1 premi… │
+│                                               ││ time=2026-11-20T11:31:41.594-03:00 level=INFO msg="usage sync: server pull" enabled=fa… │
+│                                               ││ time=2026-11-20T11:31:41.594-03:00 level=WARN msg="ws bridge dropped" err="failed to g… │
+│                                               ││ time=2026-11-20T11:31:46.276-03:00 level=INFO msg="usage sync: server pull" enabled=tr… │
+│                                               ││ time=2026-11-20T11:31:46.276-03:00 level=INFO msg="ws bridge connected" hostId=host_<redacted>… │
+╰───────────────────────────────────────────────╯│ time=2026-11-20T12:01:00.030-03:00 level=INFO msg="usage poller: synced" count=1 premi… │
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮╰─────────────────────────────────────────────────────────────────────────────────────────╯
+│                                               │╭─ Log ───────────────────────────────────────────────────────────────────────────────────╮
+│                                               ││ No commands executed yet                                                                │
+╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
+ S stop  r restart  j/k navigate  [ ] tabs  c cleanup  e stream  Tab next  S-Tab prev  1-7 jump  / search  ? help  R refresh  C log  ? more 

@@ -1,0 +1,81 @@
+package gui
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+)
+
+// lb09Redact hides the identifiers in the real moshi-hook log before a frame
+// of it is written into the repository: host and session ids, UUIDs and
+// IPv4 addresses.
+var lb09Redact = []struct {
+	re   *regexp.Regexp
+	with string
+}{
+	{regexp.MustCompile(`host_[0-9a-f]+`), "host_<redacted>"},
+	{regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`), "<uuid>"},
+	{regexp.MustCompile(`\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b`), "<ip>"},
+}
+
+// lb09Save writes one frame of the Logs tab as plain text. It fails when the
+// frame is not exactly w by h cells, so a bad frame cannot be saved as evidence.
+func lb09Save(t *testing.T, dir, name string, view string, w, h int, redact bool) {
+	t.Helper()
+	rows := strings.Split(view, "\n")
+	if len(rows) != h {
+		t.Fatalf("%s: %d rows, want %d", name, len(rows), h)
+	}
+	for i, row := range rows {
+		if got := lipgloss.Width(row); got != w {
+			t.Fatalf("%s: row %d is %d cells, want %d", name, i, got, w)
+		}
+	}
+	out := ansi.Strip(view)
+	if redact {
+		for _, r := range lb09Redact {
+			out = r.re.ReplaceAllString(out, r.with)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(dir, name+".txt"), []byte(out+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestLB09CaptureFrames writes the Logs tab's frames under LB09_DIR. The
+// temp-log frames use a file the test writes; the moshi-hook frames read
+// LB09_REAL_LOG (read-only) when it is set. The test is not part of the suite:
+// copy it into internal/gui, run it with LB09_DIR set, then remove the copy.
+func TestLB09CaptureFrames(t *testing.T) {
+	dir := os.Getenv("LB09_DIR")
+	if dir == "" {
+		t.Skip("set LB09_DIR to capture the frames")
+	}
+	tempOut := writeLog(t, "moshi-hook.log", numberedLines(250)...)
+	tempErr := writeLog(t, "moshi-hook.err", "temp stderr line")
+	real := os.Getenv("LB09_REAL_LOG")
+
+	for _, sz := range [][2]int{{80, 24}, {140, 40}} {
+		w, h := sz[0], sz[1]
+		size := fmt.Sprintf("%dx%d", w, h)
+
+		m := logsModel(t, w, h, tempOut, tempErr)
+		lb09Save(t, dir, "temp-stdout-"+size, m.View().Content, w, h, false)
+		m = pressKey(m, "e")
+		lb09Save(t, dir, "temp-stderr-"+size, m.View().Content, w, h, false)
+
+		if real != "" {
+			// brew points both streams at one file, so stderr carries the note.
+			m = logsModel(t, w, h, real, real)
+			lb09Save(t, dir, "moshi-hook-stdout-"+size, m.View().Content, w, h, true)
+			m = pressKey(m, "e")
+			lb09Save(t, dir, "moshi-hook-stderr-"+size, m.View().Content, w, h, true)
+		}
+	}
+}
