@@ -456,13 +456,13 @@ func (m Model) renderContent(width, height int) string {
 
 	case PanelCasks:
 		switch m.activeTab {
-		case 0:
+		case caskInfoTab:
 			c := panel.selectedCask()
 			if c == nil {
 				return emptyPanel(width, height)
 			}
 			return presentation.FormatCaskInfo(*c, width, m.icons)
-		case 1:
+		case caskDepsTab:
 			c := panel.selectedCask()
 			if c == nil {
 				return style.SubtleText.Render(noDependencies)
@@ -476,7 +476,7 @@ func (m Model) renderContent(width, height int) string {
 				return style.SubtleText.Render(noDependencies)
 			}
 			return view
-		case 2:
+		case caskCaveatsTab:
 			c := panel.selectedCask()
 			if c == nil {
 				return style.SubtleText.Render("No cask selected")
