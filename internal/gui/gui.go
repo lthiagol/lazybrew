@@ -738,9 +738,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.autoRefreshPaused = false
 		if m.activeModal != nil {
 			updated, cmd := m.activeModal.Update(msg)
-			if modal, ok := updated.(modal.Modal); ok {
-				m.activeModal = modal
+			next, ok := updated.(modal.Modal)
+			if !ok {
+				m.activeModal = nil
+				return m, cmd
 			}
+			m.activeModal = next
 			return m, cmd
 		}
 		if m.activePanel == PanelSearch && !m.searchInput.Focused() {
@@ -761,13 +764,15 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.autoRefreshPaused = false
 		if m.activeModal != nil {
 			updated, cmd := m.activeModal.Update(msg)
-			if modal, ok := updated.(modal.Modal); ok {
-				m.activeModal = modal
-			} else {
+			next, ok := updated.(modal.Modal)
+			if !ok {
+				// Not a modal any more, so there is no result to act on.
 				m.activeModal = nil
+				return m, cmd
 			}
-			if m.activeModal.Done() || m.activeModal.Cancelled() {
-				result := m.activeModal.Result()
+			m.activeModal = next
+			if next.Done() || next.Cancelled() {
+				result := next.Result()
 				m.activeModal = nil
 				return m.handleModalResult(result, cmd)
 			}
