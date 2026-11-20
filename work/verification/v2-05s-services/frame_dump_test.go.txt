@@ -13,6 +13,7 @@ import (
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
 // drain runs cmds synchronously, skipping anything that takes > 3s (ticks).
@@ -156,6 +157,13 @@ func TestDump(t *testing.T) {
 		m = key(m, runes("]"))
 		m = key(m, runes("]"))
 		shot("18-doctor")
+		// The toasts of frames 10 and 13 are still up, and the error one lives
+		// 6 s. Wait past that, then send the tick that drops the expired toasts
+		// through the normal path, so frames 19 and 20 show the Services screen
+		// and not those toasts over it (F-r1-03).
+		time.Sleep(7 * time.Second)
+		nm, c = m.Update(modal.ToastTickMsg{})
+		m = drain(nm, c, 0)
 		// New in v2-05s. Services, then j to the second row: moshi-hook, which
 		// is running. The Info tab shows its detail and the key line the
 		// actions that apply to a running service.
