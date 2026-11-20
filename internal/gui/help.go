@@ -35,7 +35,7 @@ func buildHelp() []helpPage {
 						{"1-7", "Jump to panel"},
 						{"j/k", "Scroll list"},
 						{"PgUp/PgDn", "Scroll content by a page"},
-						{"Home/End (g/G outside Search)", "Top/bottom of content"},
+						{"Home/End", "Top/bottom (g/G outside Search)"},
 						{"[/]", "Switch tabs"},
 					},
 				},

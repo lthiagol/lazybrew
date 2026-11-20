@@ -133,7 +133,7 @@ func TestScrollKeysAreInTheHelpAndFooter(t *testing.T) {
 			}
 		}
 	}
-	for _, want := range []string{"PgUp/PgDn", "Home/End (g/G outside Search)"} {
+	for _, want := range []string{"PgUp/PgDn", "Home/End", "Top/bottom (g/G outside Search)"} {
 		if !strings.Contains(help.String(), want) {
 			t.Errorf("the help should document %q", want)
 		}
