@@ -298,10 +298,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			op.BatchDone = m.batchTotal - m.batchCount
 			op.BatchTotal = m.batchTotal
 		}
-		// Upgrade all is one brew run: its progress is the outdated count
-		// the dashboard holds, and the packages brew has begun upgrading.
-		if msg.ID == "upgrade-all" && m.status.Outdated.Known {
-			op.BatchTotal = m.status.Outdated.N
+		// Upgrade all is one brew run: its progress is the packages brew
+		// has begun upgrading, out of the total in brew's own header.
+		if msg.ID == "upgrade-all" {
 			op.Upgrades = true
 		}
 		op.Title = title

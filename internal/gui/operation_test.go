@@ -169,23 +169,71 @@ func TestBatchBarShowsNOfTotal(t *testing.T) {
 	}
 }
 
-// TestUpgradeAllCountsPackagesBegun (v2-05 AC-05.2): an upgrade of everything
-// counts the packages brew has begun upgrading, less the one in progress.
+// TestUpgradeAllCountsPackagesBegun (v2-05 AC-05.2, fix F-r1-01): the total is
+// the N in brew's header, which skips pinned packages, and a package is done
+// once its own step has run. The header is not a package.
 func TestUpgradeAllCountsPackagesBegun(t *testing.T) {
-	m := newTestModel()
-	m.opState = &Operation{Title: "Upgrade All", Status: opRunning, Started: time.Now(),
-		BatchTotal: 5, Upgrades: true, Lines: []string{
+	cases := []struct {
+		name        string
+		status      opStatus
+		lines       []string
+		done, total int
+	}{
+		{"no header yet", opRunning, []string{"==> Fetching bash"}, 0, 0},
+		{"one package, running", opRunning, []string{
+			"==> Upgrading 1 outdated package:",
+			"bash 5.2 -> 5.3",
+			"==> Upgrading bash 5.2 -> 5.3",
+			"==> Pouring bash",
+		}, 0, 1},
+		{"one package, finished", opSuccess, []string{
+			"==> Upgrading 1 outdated package:",
+			"bash 5.2 -> 5.3",
+			"==> Upgrading bash 5.2 -> 5.3",
+			"==> Pouring bash",
+		}, 1, 1},
+		// Four outdated, one pinned: brew's header says three.
+		{"three of three, mid-run", opRunning, []string{
+			"==> Upgrading 3 outdated packages:",
 			"==> Upgrading bash 5.2 -> 5.3",
 			"==> Pouring bash",
 			"==> Upgrading curl 8.1 -> 8.2",
 			"==> Pouring curl",
 			"==> Upgrading git 2.1 -> 2.2",
-		}}
-	if got := m.operationDone(m.opState); got != 2 {
-		t.Fatalf("3 begun with one in progress should be 2 done, got %d", got)
+		}, 2, 3},
+		{"three of three, failed on the second", opError, []string{
+			"==> Upgrading 3 outdated packages:",
+			"==> Upgrading bash 5.2 -> 5.3",
+			"==> Upgrading curl 8.1 -> 8.2",
+		}, 1, 3},
+		{"three of three, finished", opSuccess, []string{
+			"==> Upgrading 3 outdated packages:",
+			"==> Upgrading bash 5.2 -> 5.3",
+			"==> Upgrading curl 8.1 -> 8.2",
+			"==> Upgrading git 2.1 -> 2.2",
+		}, 3, 3},
 	}
-	m.opState.Status = opSuccess
-	if got := m.operationDone(m.opState); got != 3 {
-		t.Fatalf("a finished run has every begun package done, got %d", got)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			op := &Operation{Title: "Upgrade All", Status: c.status, Upgrades: true, Lines: c.lines}
+			done, total := operationProgress(op)
+			if done != c.done || total != c.total {
+				t.Fatalf("progress = %d/%d, want %d/%d", done, total, c.done, c.total)
+			}
+		})
+	}
+}
+
+// TestUpgradeAllBarShowsOnlyOnceTheTotalIsKnown: no bar before brew's header.
+func TestUpgradeAllBarShowsOnlyOnceTheTotalIsKnown(t *testing.T) {
+	m := newTestModel()
+	m.opState = &Operation{Title: "Upgrade All", Status: opRunning, Started: time.Now(),
+		Upgrades: true, Lines: []string{"==> Fetching brew"}}
+	if out := ansi.Strip(m.renderOperation(60, 12)); strings.Contains(out, "/") {
+		t.Fatalf("no bar before the header, got:\n%s", out)
+	}
+	m.opState.Lines = append(m.opState.Lines, "==> Upgrading 1 outdated package:", "==> Upgrading bash 5.2 -> 5.3")
+	if out := ansi.Strip(m.renderOperation(60, 12)); !strings.Contains(out, "0/1") {
+		t.Fatalf("the bar should read 0/1 mid-run, got:\n%s", out)
 	}
 }
