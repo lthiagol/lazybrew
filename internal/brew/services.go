@@ -42,69 +42,57 @@ func NewServicesWriter(runner Runner, cache *Cache) ServicesWriter {
 }
 
 func (s *servicesReader) List(ctx context.Context) ([]Service, error) {
-	if cached, ok := s.cache.Get(KeyServicesList); ok {
-		if services, ok := cached.([]Service); ok {
-			return services, nil
+	return cached(s.cache, KeyServicesList, s.servicesTTL, func() ([]Service, bool, error) {
+		output, err := s.runner.Execute(ctx, "services", "list", "--json")
+		if err != nil {
+			return nil, false, err
 		}
-	}
 
-	output, err := s.runner.Execute(ctx, "services", "list", "--json")
-	if err != nil {
-		return nil, err
-	}
-
-	var rawJSON []json.RawMessage
-	if err := json.Unmarshal(output, &rawJSON); err != nil {
-		return nil, err
-	}
-
-	services := make([]Service, 0, len(rawJSON))
-	for _, raw := range rawJSON {
-		var srv Service
-		if err := json.Unmarshal(raw, &srv); err != nil {
-			continue
+		var rawJSON []json.RawMessage
+		if err := json.Unmarshal(output, &rawJSON); err != nil {
+			return nil, false, err
 		}
-		if srv.Name != "" {
-			services = append(services, srv)
-		}
-	}
 
-	s.cache.SetWithTTL(KeyServicesList, services, s.servicesTTL)
-	return services, nil
+		services := make([]Service, 0, len(rawJSON))
+		for _, raw := range rawJSON {
+			var srv Service
+			if err := json.Unmarshal(raw, &srv); err != nil {
+				continue
+			}
+			if srv.Name != "" {
+				services = append(services, srv)
+			}
+		}
+		return services, true, nil
+	})
 }
 
 // Info is `brew services info --all --json`: the detail of every service in one
 // call. An entry that does not parse is skipped, as List skips one.
 func (s *servicesReader) Info(ctx context.Context) ([]ServiceInfo, error) {
-	if cached, ok := s.cache.Get(KeyServicesInfo); ok {
-		if info, ok := cached.([]ServiceInfo); ok {
-			return info, nil
+	return cached(s.cache, KeyServicesInfo, s.servicesTTL, func() ([]ServiceInfo, bool, error) {
+		output, err := s.runner.Execute(ctx, "services", "info", "--all", "--json")
+		if err != nil {
+			return nil, false, err
 		}
-	}
 
-	output, err := s.runner.Execute(ctx, "services", "info", "--all", "--json")
-	if err != nil {
-		return nil, err
-	}
-
-	var rawJSON []json.RawMessage
-	if err := json.Unmarshal(output, &rawJSON); err != nil {
-		return nil, err
-	}
-
-	info := make([]ServiceInfo, 0, len(rawJSON))
-	for _, raw := range rawJSON {
-		var entry ServiceInfo
-		if err := json.Unmarshal(raw, &entry); err != nil {
-			continue
+		var rawJSON []json.RawMessage
+		if err := json.Unmarshal(output, &rawJSON); err != nil {
+			return nil, false, err
 		}
-		if entry.Name != "" {
-			info = append(info, entry)
-		}
-	}
 
-	s.cache.SetWithTTL(KeyServicesInfo, info, s.servicesTTL)
-	return info, nil
+		info := make([]ServiceInfo, 0, len(rawJSON))
+		for _, raw := range rawJSON {
+			var entry ServiceInfo
+			if err := json.Unmarshal(raw, &entry); err != nil {
+				continue
+			}
+			if entry.Name != "" {
+				info = append(info, entry)
+			}
+		}
+		return info, true, nil
+	})
 }
 
 // SetCacheTTLs configures the cache TTL for `brew services list` results.

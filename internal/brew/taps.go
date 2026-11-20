@@ -65,58 +65,52 @@ type tapInfoJSON struct {
 }
 
 func (s *tapsReader) List(ctx context.Context) (TapList, error) {
-	if cached, ok := s.cache.Get(KeyTapsList); ok {
-		if taps, ok := cached.([]Tap); ok {
-			return TapList{Taps: taps}, nil
-		}
-	}
-
-	tapNamesOutput, err := s.runner.Execute(ctx, "tap")
-	if err != nil {
-		return TapList{}, err
-	}
-
-	names := strings.Fields(string(tapNamesOutput))
-	taps := make([]Tap, 0, len(names))
-
-	// M11: build the full list from names alone. We populate rich detail
-	// (formula/cask names, counts, trust) in a single batch tap-info call
-	// below instead of one shell invocation per tap.
-	for _, name := range names {
-		taps = append(taps, Tap{
-			Name:       name,
-			IsOfficial: strings.HasPrefix(name, "homebrew/"),
-			Installed:  true,
-		})
-	}
-
-	if len(names) > 0 {
-		infos, err := s.fetchTapInfoBatch(ctx, names)
+	return cached(s.cache, KeyTapsList, s.tapsTTL, func() (TapList, bool, error) {
+		tapNamesOutput, err := s.runner.Execute(ctx, "tap")
 		if err != nil {
-			// Keep name-only list for this call so the GUI still renders
-			// taps, flagged TrustUnknown so it does not show them as
-			// untrusted, and do NOT cache — a transient batch failure must
-			// not poison KeyTapsList and block retries for the whole TTL.
-			return TapList{Taps: taps, TrustUnknown: true}, nil
+			return TapList{}, false, err
 		}
-		byName := make(map[string]tapInfoJSON, len(infos))
-		for _, info := range infos {
-			byName[info.Name] = info
-		}
-		for i, tap := range taps {
-			info, ok := byName[tap.Name]
-			if !ok {
-				continue
-			}
-			// Reuse infoToTap so List and Get stay field-aligned.
-			enriched := infoToTap(&info)
-			enriched.IsOfficial = tap.IsOfficial
-			taps[i] = *enriched
-		}
-	}
 
-	s.cache.SetWithTTL(KeyTapsList, taps, s.tapsTTL)
-	return TapList{Taps: taps}, nil
+		names := strings.Fields(string(tapNamesOutput))
+		taps := make([]Tap, 0, len(names))
+
+		// M11: build the full list from names alone. We populate rich detail
+		// (formula/cask names, counts, trust) in a single batch tap-info call
+		// below instead of one shell invocation per tap.
+		for _, name := range names {
+			taps = append(taps, Tap{
+				Name:       name,
+				IsOfficial: strings.HasPrefix(name, "homebrew/"),
+				Installed:  true,
+			})
+		}
+
+		if len(names) > 0 {
+			infos, err := s.fetchTapInfoBatch(ctx, names)
+			if err != nil {
+				// Keep name-only list for this call so the GUI still renders
+				// taps, flagged TrustUnknown so it does not show them as
+				// untrusted, and do NOT cache — a transient batch failure must
+				// not poison KeyTapsList and block retries for the whole TTL.
+				return TapList{Taps: taps, TrustUnknown: true}, false, nil
+			}
+			byName := make(map[string]tapInfoJSON, len(infos))
+			for _, info := range infos {
+				byName[info.Name] = info
+			}
+			for i, tap := range taps {
+				info, ok := byName[tap.Name]
+				if !ok {
+					continue
+				}
+				// Reuse infoToTap so List and Get stay field-aligned.
+				enriched := infoToTap(&info)
+				enriched.IsOfficial = tap.IsOfficial
+				taps[i] = *enriched
+			}
+		}
+		return TapList{Taps: taps}, true, nil
+	})
 }
 
 func (s *tapsReader) Get(ctx context.Context, name string) (*Tap, error) {

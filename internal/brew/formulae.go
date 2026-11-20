@@ -31,7 +31,6 @@ type formulaeReader struct {
 	cache       *Cache
 	formulaeTTL time.Duration
 	outdatedTTL time.Duration
-	sf          *singleflight
 }
 
 type formulaeWriter struct {
@@ -40,7 +39,7 @@ type formulaeWriter struct {
 }
 
 func NewFormulaeReader(runner Runner, cache *Cache) FormulaeReader {
-	return &formulaeReader{runner: runner, cache: cache, sf: newSingleflight()}
+	return &formulaeReader{runner: runner, cache: cache}
 }
 
 func NewFormulaeWriter(runner Runner, cache *Cache) FormulaeWriter {
@@ -116,25 +115,19 @@ type outdatedFormulaJSON struct {
 }
 
 func (s *formulaeReader) List(ctx context.Context) ([]Formula, error) {
-	if cached, ok := s.cache.Get(KeyFormulaeList); ok {
-		if formulae, ok := cached.([]Formula); ok {
-			return formulae, nil
+	return cached(s.cache, KeyFormulaeList, s.formulaeTTL, func() ([]Formula, bool, error) {
+		var data formulaeJSON
+		if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", "--installed"); err != nil {
+			return nil, false, err
 		}
-	}
 
-	var data formulaeJSON
-	if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", "--installed"); err != nil {
-		return nil, err
-	}
-
-	formulae := make([]Formula, 0, len(data.Formulae))
-	for _, f := range data.Formulae {
-		formula := parseFormula(f)
-		formulae = append(formulae, formula)
-	}
-
-	s.cache.SetWithTTL(KeyFormulaeList, formulae, s.formulaeTTL)
-	return formulae, nil
+		formulae := make([]Formula, 0, len(data.Formulae))
+		for _, f := range data.Formulae {
+			formula := parseFormula(f)
+			formulae = append(formulae, formula)
+		}
+		return formulae, true, nil
+	})
 }
 
 func (s *formulaeReader) Get(ctx context.Context, name string) (*Formula, error) {
@@ -152,40 +145,23 @@ func (s *formulaeReader) Get(ctx context.Context, name string) (*Formula, error)
 }
 
 func (s *formulaeReader) Outdated(ctx context.Context) ([]Formula, error) {
-	if cached, ok := s.cache.Get(KeyOutdatedFormulae); ok {
-		if formulae, ok := cached.([]Formula); ok {
-			return formulae, nil
-		}
-	}
-
-	val, err := s.sf.Do("outdated:formulae", func() (any, error) {
-		if cached, ok := s.cache.Get(KeyOutdatedFormulae); ok {
-			if formulae, ok := cached.([]Formula); ok {
-				return formulae, nil
-			}
-		}
+	return cached(s.cache, KeyOutdatedFormulae, s.outdatedTTL, func() ([]Formula, bool, error) {
 		return s.fetchOutdated(ctx)
 	})
-	if err != nil {
-		return nil, err
-	}
-	return val.([]Formula), nil
 }
 
-func (s *formulaeReader) fetchOutdated(ctx context.Context) (any, error) {
+func (s *formulaeReader) fetchOutdated(ctx context.Context) ([]Formula, bool, error) {
 	output, err := s.runner.Execute(ctx, "outdated", "--json=v2", "--formula")
 	if err != nil {
 		if IsExitCode(err, 1) {
-			empty := []Formula{}
-			s.cache.SetWithTTL(KeyOutdatedFormulae, empty, s.outdatedTTL)
-			return empty, nil
+			return []Formula{}, true, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
 
 	var data outdatedJSON
 	if err := json.Unmarshal(output, &data); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	outdated := make([]Formula, 0, len(data.Formulae))
@@ -202,9 +178,7 @@ func (s *formulaeReader) fetchOutdated(ctx context.Context) (any, error) {
 		}
 		outdated = append(outdated, formula)
 	}
-
-	s.cache.SetWithTTL(KeyOutdatedFormulae, outdated, s.outdatedTTL)
-	return outdated, nil
+	return outdated, true, nil
 }
 
 // SetCacheTTLs configures how long `brew list` and `brew outdated` results

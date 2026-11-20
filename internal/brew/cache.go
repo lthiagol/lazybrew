@@ -1,6 +1,7 @@
 package brew
 
 import (
+	"strconv"
 	"sync"
 	"time"
 )
@@ -46,8 +47,10 @@ type cacheEntry struct {
 type Cache struct {
 	mu         sync.RWMutex
 	entries    map[CacheKey]cacheEntry
+	gen        uint64 // bumped by every invalidation; see cached
 	defaultTTL time.Duration
 	now        func() time.Time // time.Now; a test swaps in a clock it moves by hand
+	sf         *singleflight    // coalesces concurrent fetches of one key
 }
 
 func NewCache(ttl time.Duration) *Cache {
@@ -55,6 +58,7 @@ func NewCache(ttl time.Duration) *Cache {
 		entries:    make(map[CacheKey]cacheEntry),
 		defaultTTL: ttl,
 		now:        time.Now,
+		sf:         newSingleflight(),
 	}
 }
 
@@ -98,6 +102,7 @@ func (c *Cache) SetWithTTL(key CacheKey, data any, ttl time.Duration) {
 func (c *Cache) Invalidate(keys ...CacheKey) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.gen++
 	for _, key := range keys {
 		delete(c.entries, key)
 	}
@@ -114,33 +119,76 @@ func (c *Cache) InvalidateFor(operation string) {
 func (c *Cache) InvalidateAll() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.gen++
 	c.entries = make(map[CacheKey]cacheEntry)
 }
 
-type TypedCache[T any] struct {
-	cache *Cache
-	key   CacheKey
+// generation is the invalidation count. A read notes it before it fetches, and
+// its result is stored only if no invalidation came in between.
+func (c *Cache) generation() uint64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.gen
 }
 
-func NewTypedCache[T any](cache *Cache, key CacheKey) *TypedCache[T] {
-	return &TypedCache[T]{cache: cache, key: key}
+// setIfCurrent stores data only when gen is still the current generation. A
+// read that started before a write finished must not put its pre-write result
+// back after the write invalidated the key.
+func (c *Cache) setIfCurrent(key CacheKey, data any, ttl time.Duration, gen uint64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.gen != gen {
+		return
+	}
+	c.entries[key] = cacheEntry{
+		data:      data,
+		timestamp: c.now(),
+		ttl:       ttl,
+	}
 }
 
-func (tc *TypedCache[T]) Get() (T, bool) {
-	val, ok := tc.cache.Get(tc.key)
-	if !ok {
+// cached is the one read path every brew reader uses. It returns the cached
+// value of type T for key when there is one. Otherwise it runs fetch, once for
+// all concurrent callers, and stores the result for ttl (0 = the cache
+// default). fetch reports whether its result may be stored; a result it marks
+// as not storable (a partial tap list) is returned but not cached.
+func cached[T any](c *Cache, key CacheKey, ttl time.Duration, fetch func() (T, bool, error)) (T, error) {
+	if val, ok := cachedValue[T](c, key); ok {
+		return val, nil
+	}
+
+	// The flight key carries the generation, so a caller that starts after a
+	// write finished never joins a fetch that began before it.
+	gen := c.generation()
+	flightKey := string(key) + "@" + strconv.FormatUint(gen, 10)
+	val, err := c.sf.Do(flightKey, func() (any, error) {
+		// A flight that finished just before this caller started has already
+		// stored its result.
+		if val, ok := cachedValue[T](c, key); ok {
+			return val, nil
+		}
+		val, store, err := fetch()
+		if err != nil {
+			return nil, err
+		}
+		if store {
+			c.setIfCurrent(key, val, ttl, gen)
+		}
+		return val, nil
+	})
+	if err != nil {
 		var zero T
+		return zero, err
+	}
+	return val.(T), nil
+}
+
+func cachedValue[T any](c *Cache, key CacheKey) (T, bool) {
+	var zero T
+	val, ok := c.Get(key)
+	if !ok {
 		return zero, false
 	}
 	typed, ok := val.(T)
-	if !ok {
-		tc.cache.Invalidate(tc.key)
-		var zero T
-		return zero, false
-	}
-	return typed, true
-}
-
-func (tc *TypedCache[T]) Set(val T) {
-	tc.cache.Set(tc.key, val)
+	return typed, ok
 }
