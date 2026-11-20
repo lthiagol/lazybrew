@@ -8,6 +8,7 @@ import (
 
 	"charm.land/bubbles/v2/progress"
 	"charm.land/lipgloss/v2"
+	"github.com/lthiagol/lazybrew/internal/gui/anim"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -107,17 +108,29 @@ func (m Model) operationStatus(op *Operation) string {
 	}
 }
 
-// operationBar is the batch's progress: a bar, then n/total.
-func (m Model) operationBar(op *Operation, width int) string {
-	done, total := operationProgress(op)
-	bar := progress.New(
+// newProgressBar is the batch's progress bar with no width or position yet.
+// The Model keeps one, so its fill can spring from where it was.
+func newProgressBar() progress.Model {
+	return progress.New(
 		progress.WithColors(style.AccentColor),
 		progress.WithFillCharacters('━', '╌'),
 		progress.WithoutPercentage(),
-		progress.WithWidth(max(10, min(operationBarWidth, width-12))),
+		progress.WithSpringOptions(anim.Frequency, anim.Damping),
 	)
-	return bar.ViewAs(float64(done)/float64(total)) + " " +
-		style.SubtleText.Render(fmt.Sprintf("%d/%d", done, total))
+}
+
+// operationBar is the batch's progress: a bar, then n/total. The bar draws
+// the fill it is at: while it is moving that is its spring's position, and
+// otherwise the batch's share, exactly. The count is always exact.
+func (m Model) operationBar(op *Operation, width int) string {
+	done, total := operationProgress(op)
+	bar := m.opBar
+	bar.SetWidth(max(10, min(operationBarWidth, width-12)))
+	view := bar.ViewAs(float64(done) / float64(total))
+	if m.motionOn && m.opBarOp == op && bar.IsAnimating() {
+		view = bar.View()
+	}
+	return view + " " + style.SubtleText.Render(fmt.Sprintf("%d/%d", done, total))
 }
 
 // operationProgress is how many of a batch's packages are done, and how many

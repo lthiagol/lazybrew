@@ -41,7 +41,7 @@ func (m *Model) setMotionTarget(name string, to float64) {
 // produced, and starts the frame tick when something has to move. It runs at
 // the end of every Update, so no caller has to remember to schedule motion.
 func (m Model) settleMotion(cmd tea.Cmd) (Model, tea.Cmd) {
-	m.motionTargets()
+	cmd = tea.Batch(cmd, m.motionTargets())
 	if m.motionOn && !m.motionTicking && !m.motion.Settled() {
 		m.motionTicking = true
 		m.motionAt = time.Time{}
@@ -57,14 +57,14 @@ func (m Model) stepMotion(at time.Time) (Model, tea.Cmd) {
 	m.motionTicking = false
 	m.motion.Step(m.motionStep(at).Seconds())
 	m.motionAt = at
-	m.motionTargets()
+	cmd := m.motionTargets()
 	m.followSidebar()
 	if m.motion.Settled() {
 		m.motionAt = time.Time{}
-		return m, nil
+		return m, cmd
 	}
 	m.motionTicking = true
-	return m, anim.Tick()
+	return m, tea.Batch(cmd, anim.Tick())
 }
 
 // The names of the animated modal values: how far above its resting row the
@@ -187,14 +187,39 @@ func (m Model) motionStep(at time.Time) time.Duration {
 }
 
 // motionTargets sets where every animated value is going, from the model's
-// state. Each animated feature adds its targets here.
-func (m *Model) motionTargets() {
+// state. Each animated feature adds its targets here. The command it returns
+// is the progress bar's own frame, when the bar has started to move.
+func (m *Model) motionTargets() tea.Cmd {
 	resized := m.motionSize != [2]int{m.width, m.height}
 	m.motionSize = [2]int{m.width, m.height}
 	m.motionTabs()
 	m.motionSidebar(resized)
 	m.motionModal()
 	m.motionToasts(resized)
+	return m.motionProgress()
+}
+
+// motionProgress aims the batch's progress bar at the share of the batch that
+// is done. A new operation gets a fresh bar, so its fill starts from empty and
+// does not slide down from the last batch's. With animations off the bar is
+// never aimed: it is drawn at its share at once.
+func (m *Model) motionProgress() tea.Cmd {
+	if !m.motionOn || m.opState == nil {
+		return nil
+	}
+	if m.opState != m.opBarOp {
+		m.opBar = newProgressBar()
+		m.opBarOp = m.opState
+	}
+	done, total := operationProgress(m.opState)
+	if total <= 0 {
+		return nil
+	}
+	share := float64(done) / float64(total)
+	if share == m.opBar.Percent() {
+		return nil
+	}
+	return m.opBar.SetPercent(share)
 }
 
 // The names of the animated sidebar boxes: one value per panel, by index.
