@@ -63,9 +63,9 @@ func TestClickOnLogBoxDoesNothing(t *testing.T) {
 	}
 }
 
-// TestMouseHitsWhatIsDrawn locks AC-06.4: a click on a Formulae row, a tab
-// and a sidebar row lands on the element the frame drew at that position,
-// at the current geometry.
+// TestMouseHitsWhatIsDrawn locks AC-06.4: a click on a sidebar row lands on the
+// row the frame drew at that position, at the current geometry. The Formulae
+// list is in the sidebar now (v2-03b AC-02), so the row is found on the screen.
 func TestMouseHitsWhatIsDrawn(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m.cfg.GUI.Mouse = true
@@ -77,15 +77,17 @@ func TestMouseHitsWhatIsDrawn(t *testing.T) {
 	p.selected = 0
 
 	l := m.screenLayout()
-	// Inside the main border: tab bar, then the table header and separator,
-	// so body row k is drawn at y = headerRows + 1 + tabBar + 2 + k. The
-	// breadcrumb is the border title now and takes no row.
-	bravoY := headerRows + 1 + m.tabBarRows() + 2 + 1
-	rows := plainRows(m.View().Content)
-	if !strings.HasPrefix(strings.TrimLeft(string(rows[bravoY][l.sideW+1:]), " "), "bravo") {
-		t.Fatalf("fixture: row %d should draw bravo, got %q", bravoY, string(rows[bravoY][l.sideW+1:]))
+	bravoY := -1
+	for y, row := range plainRows(m.View().Content) {
+		if y >= headerRows && strings.Contains(string(row[:min(len(row), l.sideW)]), "bravo") {
+			bravoY = y
+			break
+		}
 	}
-	nm, _ := m.Update(tea.MouseClickMsg{X: l.sideW + 5, Y: bravoY, Button: tea.MouseLeft})
+	if bravoY < 0 {
+		t.Fatal("fixture: the sidebar should draw the bravo row")
+	}
+	nm, _ := m.Update(tea.MouseClickMsg{X: 5, Y: bravoY, Button: tea.MouseLeft})
 	if got := nm.(Model).panels[PanelFormulae].selected; got != 1 {
 		t.Fatalf("click on the bravo row selected %d, want 1", got)
 	}

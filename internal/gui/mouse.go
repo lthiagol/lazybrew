@@ -166,14 +166,7 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 		return m.handleTabBarClick(ix)
 	}
 
-	// Content region
-	contentY0 := tabY1
-	contentY1 := contentY0 + l.contentH
-	if iy >= contentY0 && iy < contentY1 {
-		cy := iy - contentY0
-		return m.handleContentClick(ix, cy, l.mainW-2, l.contentH)
-	}
-
+	// A click on the content selects nothing: the sidebar is the list.
 	return m, nil
 }
 
@@ -196,58 +189,5 @@ func (m Model) handleTabBarClick(ix int) (tea.Model, tea.Cmd) {
 		}
 		x += w
 	}
-	return m, nil
-}
-
-func (m Model) handleContentClick(ix, cy, contentW, contentH int) (tea.Model, tea.Cmd) {
-	// Formulae List table: sticky header + separator, then body rows.
-	if m.activePanel == PanelFormulae && m.activeTab == 0 {
-		p := m.panels[PanelFormulae]
-		if p == nil || len(p.formulae) == 0 {
-			return m, nil
-		}
-		// header + sep = 2 rows
-		if cy < 2 {
-			return m, nil
-		}
-		bodyH := contentH - 2
-		if bodyH < 1 {
-			bodyH = 1
-		}
-		sel := p.selected
-		if sel < 0 {
-			sel = 0
-		}
-		if sel >= len(p.formulae) {
-			sel = len(p.formulae) - 1
-		}
-		offset := 0
-		if sel >= bodyH {
-			offset = sel - bodyH + 1
-		}
-		maxOff := len(p.formulae) - bodyH
-		if maxOff < 0 {
-			maxOff = 0
-		}
-		if offset > maxOff {
-			offset = maxOff
-		}
-		row := offset + (cy - 2)
-		if row < 0 || row >= len(p.formulae) {
-			return m, nil
-		}
-		// Keep items/formulae selection in sync.
-		if len(p.items) == len(p.formulae) {
-			p.selectIndex(row)
-		} else {
-			p.selected = row
-		}
-		return m, nil
-	}
-
-	// Other list-backed panels: clicking main content does not change
-	// selection (sidebar is the list). No-op.
-	_ = ix
-	_ = contentW
 	return m, nil
 }

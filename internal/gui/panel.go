@@ -44,9 +44,20 @@ type tabInfo struct {
 	id   int
 }
 
+// The Formulae tab indices, in the order panelTabs lists them. Code names a
+// tab by these, never by a bare number, so a reordered bar changes one list.
+// The Info tab is first, so a panel's default tab is its details.
+const (
+	formulaInfoTab = iota
+	formulaDepsTab
+	formulaUsesTab
+	formulaCaveatsTab
+	formulaFilesTab
+)
+
 var panelTabs = map[PanelID][]tabInfo{
 	PanelStatus:   {{"Dashboard", 0}, {"Config", 1}, {"Doctor", 2}},
-	PanelFormulae: {{"List", 0}, {"Info", 1}, {"Deps", 2}, {"Used By", 3}, {"Caveats", 4}, {"Files", 5}},
+	PanelFormulae: {{"Info", formulaInfoTab}, {"Deps", formulaDepsTab}, {"Used By", formulaUsesTab}, {"Caveats", formulaCaveatsTab}, {"Files", formulaFilesTab}},
 	PanelCasks:    {{"Info", 0}, {"Deps", 1}, {"Caveats", 2}},
 	PanelOutdated: {{"Info", 0}, {"Versions", 1}},
 	PanelTaps:     {{"Tap Info", 0}, {"Trust", 1}, {"Formulae", 2}},

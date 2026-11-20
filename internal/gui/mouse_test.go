@@ -108,80 +108,53 @@ func TestMouseClickTabBar(t *testing.T) {
 
 	sw := sidebarWidth(m.cfg, m.width)
 	// Main content: past sidebar, inside border, on tab bar row (y=2 ≈ breadcrumb+border)
-	// tab 0 is List, tab 1 is Info — click near the right of first tabs
+	// tab 0 is Info, tab 1 is Deps — click near the right of first tabs
 	// Use handleTabBarClick directly for stability.
-	nm, cmd := m.handleTabBarClick(0) // first tab = List (already active)
+	nm, cmd := m.handleTabBarClick(0) // first tab = Info (already active)
 	_ = cmd
-	if nm.(Model).activeTab != 0 {
-		t.Fatalf("click List: tab=%d", nm.(Model).activeTab)
+	if nm.(Model).activeTab != formulaInfoTab {
+		t.Fatalf("click Info: tab=%d", nm.(Model).activeTab)
 	}
-	// Width of " List " active tab
-	m2 := nm.(Model)
-	// Click far enough to hit Info (second tab)
-	// Accumulate: measure via repeated clicks advancing
-	x := 0
-	for i, tab := range m2.tabs {
-		label := " " + tab.name + " "
-		// approximate using inactive width for all after first
-		w := len(label) + 2 // padding fudge; handleTabBarClick uses lipgloss
-		_ = w
-		if i == 1 {
-			nm, _ = m2.handleTabBarClick(x + 1)
-			break
-		}
-		// use real widths through a dry run of handleTabBarClick logic
-		break
-	}
-	// Simpler: call handleTabBarClick with x past first tab using lipgloss in test
-	m3 := m
-	m3.activeTab = 0
-	// Brute-force find Info tab x
+	// Brute-force find the Deps tab's x on the tab bar
 	found := false
 	for x := 0; x < 80; x++ {
-		mm := m3
-		mm.activeTab = 0
+		mm := m
+		mm.activeTab = formulaInfoTab
 		out, _ := mm.handleTabBarClick(x)
-		if out.(Model).activeTab == 1 {
+		if out.(Model).activeTab == formulaDepsTab {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Fatal("expected to hit Info tab somewhere on the tab bar")
+		t.Fatal("expected to hit Deps tab somewhere on the tab bar")
 	}
 	_ = sw
 }
 
-func TestMouseClickFormulaeTableRow(t *testing.T) {
+// TestMouseClickFormulaeContentSelectsNothing (replaces
+// TestMouseClickFormulaeTableRow, v2-03b AC-02): the List table is gone, so a
+// click on the main content selects no row. The sidebar list is where a row is
+// picked.
+func TestMouseClickFormulaeContentSelectsNothing(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.cfg.GUI.Mouse = true
-	m.activePanel = PanelFormulae
-	m.activeTab = 0
-	m.tabs = panelTabs[PanelFormulae]
-	p := m.panels[PanelFormulae]
-	p.loading = false
-	p.items = []string{"a", "b", "c"}
-	p.formulae = []brew.Formula{{Name: "a"}, {Name: "b"}, {Name: "c"}}
-	p.selected = 0
-	p.offset = 0
+	m = sendKey(m, "2")
+	m = updateModel(m, DataLoadedMsg{
+		PanelID:  PanelFormulae,
+		Items:    []string{"a", "b", "c"},
+		Formulae: []brew.Formula{{Name: "a"}, {Name: "b"}, {Name: "c"}},
+	})
+	m.panels[PanelFormulae].selected = 0
 
 	sw := sidebarWidth(m.cfg, m.width)
-	// content starts roughly: border(1)+breadcrumb(1)+tabBar(~2) = 4 from top of main
-	// header+sep = 2 → first body row at contentY+2
-	// Use handleContentClick directly
-	nm, _ := m.handleContentClick(5, 2, 50, 12) // cy=2 → first body row
-	got := nm.(Model)
-	if got.panels[PanelFormulae].selected != 0 {
-		// first body row is index 0
-		t.Fatalf("cy=2 selected=%d want 0", got.panels[PanelFormulae].selected)
+	// Absolute row inside the main content: header, border, tab bar, then one more.
+	y := headerRows + 1 + m.tabBarRows() + 1
+	nm, _ := m.handleMouseClick(sw+5, y)
+	if got := nm.(Model).panels[PanelFormulae].selected; got != 0 {
+		t.Fatalf("a click on the content selected row %d, want 0", got)
 	}
-	nm, _ = m.handleContentClick(5, 3, 50, 12) // second body row
-	got = nm.(Model)
-	if got.panels[PanelFormulae].selected != 1 {
-		t.Fatalf("cy=3 selected=%d want 1", got.panels[PanelFormulae].selected)
-	}
-	_ = sw
 }
 
 func TestSelectIndexClampsAndScrolls(t *testing.T) {

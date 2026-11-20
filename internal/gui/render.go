@@ -288,16 +288,14 @@ func (m Model) renderContent(width, height int) string {
 	switch m.activePanel {
 	case PanelFormulae:
 		switch m.activeTab {
-		case 0: // List
-			return m.renderFormulaeTable(width, height)
-		case 1: // Info
+		case formulaInfoTab:
 			f := panel.selectedFormula()
 			if f == nil {
 				return emptyPanel(width, height)
 			}
 			info := presentation.FormatFormulaInfo(*f, width)
 			return style.NormalItem.Render(info)
-		case 2, 3, 5: // Deps, Used By, Files
+		case formulaDepsTab, formulaUsesTab, formulaFilesTab:
 			itemName := selectedItemName(panel)
 			if itemName == "" {
 				// No item to fetch for: without this explicit state the
@@ -310,7 +308,7 @@ func (m Model) renderContent(width, height int) string {
 				return m.renderContentInViewport(content, width, height)
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
-		case 4: // Caveats
+		case formulaCaveatsTab:
 			f := panel.selectedFormula()
 			if f == nil || f.Caveats == "" {
 				return style.SubtleText.Render("No caveats")

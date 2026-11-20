@@ -1169,7 +1169,7 @@ func tabKey(panel PanelID, tab int, itemName string) string {
 func needsTabFetch(panelID PanelID, tabIdx int) bool {
 	needsFetch := map[PanelID]map[int]bool{
 		PanelStatus:   {1: true, 2: true},
-		PanelFormulae: {2: true, 3: true, 5: true},
+		PanelFormulae: {formulaDepsTab: true, formulaUsesTab: true, formulaFilesTab: true},
 	}
 	return needsFetch[panelID] != nil && needsFetch[panelID][tabIdx]
 }

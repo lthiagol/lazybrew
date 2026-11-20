@@ -459,7 +459,7 @@ func TestMutationTypeValues(t *testing.T) {
 }
 
 func TestTabKey(t *testing.T) {
-	key := tabKey(PanelFormulae, 2, "test")
+	key := tabKey(PanelFormulae, formulaDepsTab, "test")
 	if key == "" {
 		t.Error("tabKey should not be empty")
 	}
@@ -467,7 +467,7 @@ func TestTabKey(t *testing.T) {
 	if key == key2 {
 		t.Error("different panel/tab combos should produce different keys")
 	}
-	if tabKey(PanelFormulae, 2, "a") == tabKey(PanelFormulae, 2, "b") {
+	if tabKey(PanelFormulae, formulaDepsTab, "a") == tabKey(PanelFormulae, formulaDepsTab, "b") {
 		t.Error("different item names should produce different keys")
 	}
 }
@@ -1189,13 +1189,13 @@ func TestDepsTabContentSavedOnSuccess(t *testing.T) {
 	m := newTestModel()
 	msg := TabContentMsg{
 		PanelID:  PanelFormulae,
-		TabIndex: 2,
+		TabIndex: formulaDepsTab,
 		ItemName: "formula-a",
 		Content:  "formula-a depends on: openssl",
 	}
 	m = updateModel(m, msg)
 
-	key := tabKey(PanelFormulae, 2, "formula-a")
+	key := tabKey(PanelFormulae, formulaDepsTab, "formula-a")
 	if m.tabContent[key] != "formula-a depends on: openssl" {
 		t.Fatalf("expected tab content, got %q", m.tabContent[key])
 	}
@@ -1205,13 +1205,13 @@ func TestDepsTabErrorShowsErrorMessage(t *testing.T) {
 	m := newTestModel()
 	msg := TabContentMsg{
 		PanelID:  PanelFormulae,
-		TabIndex: 2,
+		TabIndex: formulaDepsTab,
 		ItemName: "formula-a",
 		Err:      errors.New("brew deps failed"),
 	}
 	m = updateModel(m, msg)
 
-	key := tabKey(PanelFormulae, 2, "formula-a")
+	key := tabKey(PanelFormulae, formulaDepsTab, "formula-a")
 	if !strings.Contains(m.tabContent[key], "Error") {
 		t.Fatalf("expected error message, got %q", m.tabContent[key])
 	}
@@ -1221,13 +1221,13 @@ func TestDepsTabShowsNoDataOnEmptyResult(t *testing.T) {
 	m := newTestModel()
 	msg := TabContentMsg{
 		PanelID:  PanelFormulae,
-		TabIndex: 2,
+		TabIndex: formulaDepsTab,
 		ItemName: "formula-a",
 		Content:  "",
 	}
 	m = updateModel(m, msg)
 
-	key := tabKey(PanelFormulae, 2, "formula-a")
+	key := tabKey(PanelFormulae, formulaDepsTab, "formula-a")
 	if m.tabContent[key] != "No data" {
 		t.Fatalf("expected 'No data', got %q", m.tabContent[key])
 	}
@@ -1236,7 +1236,7 @@ func TestDepsTabShowsNoDataOnEmptyResult(t *testing.T) {
 func TestDepsTabPopulatedAfterDataLoaded(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
-	m.activeTab = 2
+	m.activeTab = formulaDepsTab
 	p := m.panels[PanelFormulae]
 	p.items = []string{"ripgrep  14.1.1  bottled"}
 	p.formulae = []brew.Formula{
@@ -1250,7 +1250,7 @@ func TestDepsTabPopulatedAfterDataLoaded(t *testing.T) {
 		Formulae: []brew.Formula{{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}}},
 	})
 
-	key := tabKey(PanelFormulae, 2, "ripgrep")
+	key := tabKey(PanelFormulae, formulaDepsTab, "ripgrep")
 	if cmd == nil {
 		content, ok := m.tabContent[key]
 		if !ok || !strings.Contains(content, "pcre2") {
@@ -1263,7 +1263,7 @@ func TestDepsTabPopulatedAfterDataLoaded(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected TabContentMsg from re-issued fetch, got %T", msg)
 	}
-	if tMsg.PanelID != PanelFormulae || tMsg.TabIndex != 2 || tMsg.ItemName != "ripgrep" {
+	if tMsg.PanelID != PanelFormulae || tMsg.TabIndex != formulaDepsTab || tMsg.ItemName != "ripgrep" {
 		t.Errorf("re-fetch meta = (%v, %d, %q), want (PanelFormulae, 2, ripgrep)",
 			tMsg.PanelID, tMsg.TabIndex, tMsg.ItemName)
 	}
@@ -1272,7 +1272,7 @@ func TestDepsTabPopulatedAfterDataLoaded(t *testing.T) {
 func TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
-	m.activeTab = 3
+	m.activeTab = formulaUsesTab
 	p := m.panels[PanelFormulae]
 	p.items = []string{"ripgrep  14.1.1  bottled"}
 	p.formulae = []brew.Formula{
@@ -1294,8 +1294,8 @@ func TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected TabContentMsg, got %T", msg)
 	}
-	if tMsg.TabIndex != 3 {
-		t.Errorf("expected Used By tab 3, got %d", tMsg.TabIndex)
+	if tMsg.TabIndex != formulaUsesTab {
+		t.Errorf("expected Used By tab %d, got %d", formulaUsesTab, tMsg.TabIndex)
 	}
 }
 
@@ -1355,7 +1355,7 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchTabContentCmd(client, PanelFormulae, 2, "ripgrep")
+	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep")
 	if cmd == nil {
 		t.Fatal("fetchTabContentCmd returned nil cmd")
 	}
@@ -1391,7 +1391,7 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 func TestDepsFastPathRendersCachedDependencies(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
-	m.activeTab = 2
+	m.activeTab = formulaDepsTab
 	p := m.panels[PanelFormulae]
 	p.items = []string{"ripgrep  14.1.1  bottled"}
 	p.formulae = []brew.Formula{
@@ -1406,7 +1406,7 @@ func TestDepsFastPathRendersCachedDependencies(t *testing.T) {
 		t.Fatal("expected nil cmd from fast path (Dependencies already on model)")
 	}
 
-	key := tabKey(PanelFormulae, 2, "ripgrep")
+	key := tabKey(PanelFormulae, formulaDepsTab, "ripgrep")
 	content, ok := m.tabContent[key]
 	if !ok {
 		t.Fatal("expected tabContent populated synchronously by fast path")
@@ -1421,7 +1421,7 @@ func TestDepsFastPathRendersCachedDependencies(t *testing.T) {
 func TestDepsFastPathNoDependenciesShowsExplicitMessage(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
-	m.activeTab = 2
+	m.activeTab = formulaDepsTab
 	p := m.panels[PanelFormulae]
 	p.items = []string{"zlib  1.3.1  bottled"}
 	p.formulae = []brew.Formula{
@@ -1434,7 +1434,7 @@ func TestDepsFastPathNoDependenciesShowsExplicitMessage(t *testing.T) {
 		t.Fatal("expected nil cmd from fast path (no deps means no shell call)")
 	}
 
-	key := tabKey(PanelFormulae, 2, "zlib")
+	key := tabKey(PanelFormulae, formulaDepsTab, "zlib")
 	content, ok := m.tabContent[key]
 	if !ok {
 		t.Fatal("expected tabContent populated by fast path even when deps are empty")
@@ -1448,7 +1448,7 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.activePanel = PanelFormulae
-	m.activeTab = 2
+	m.activeTab = formulaDepsTab
 	m.tabs = panelTabs[PanelFormulae]
 	p := m.panels[PanelFormulae]
 	p.loading = false
@@ -1465,7 +1465,7 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 	if cmd := m.loadTabContent(); cmd != nil {
 		t.Fatal("expected fast-path nil cmd for ripgrep")
 	}
-	keyA := tabKey(PanelFormulae, 2, "ripgrep")
+	keyA := tabKey(PanelFormulae, formulaDepsTab, "ripgrep")
 	if c := m.tabContent[keyA]; !strings.Contains(c, "pcre2") {
 		t.Fatalf("expected ripgrep deps pcre2, got %q", c)
 	}
@@ -1474,7 +1474,7 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 	if p.selected != 1 {
 		t.Fatalf("expected selected=1 after j, got %d", p.selected)
 	}
-	keyB := tabKey(PanelFormulae, 2, "zlib")
+	keyB := tabKey(PanelFormulae, formulaDepsTab, "zlib")
 	contentB, ok := m.tabContent[keyB]
 	if !ok || !strings.Contains(contentB, "none-dep-marker") {
 		t.Fatalf("expected zlib deps after j, ok=%v content=%q", ok, contentB)
@@ -1496,7 +1496,7 @@ func TestDepsTabViewLeavesLoadingAfterFastPath(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.activePanel = PanelFormulae
-	m.activeTab = 2
+	m.activeTab = formulaDepsTab
 	m.tabs = panelTabs[PanelFormulae]
 	p := m.panels[PanelFormulae]
 	p.loading = false
@@ -1556,9 +1556,8 @@ func TestDepsTabLoads(t *testing.T) {
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: items, Formulae: formulae})
 	m = sendKey(m, "2")
 	m = sendKey(m, "]")
-	m = sendKey(m, "]")
 
-	if m.activePanel != PanelFormulae || m.activeTab != 2 {
+	if m.activePanel != PanelFormulae || m.activeTab != formulaDepsTab {
 		t.Fatalf("expected Formulae/Deps, got panel=%v tab=%d", m.activePanel, m.activeTab)
 	}
 	view := m.View().Content
@@ -1583,7 +1582,7 @@ func TestFetchDepsTabReturnsContent(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchTabContentCmd(client, PanelFormulae, 2, "ripgrep")
+	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep")
 	if cmd == nil {
 		t.Fatal("fetchTabContentCmd returned nil cmd")
 	}
