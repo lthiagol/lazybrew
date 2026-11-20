@@ -786,6 +786,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "pgup":
+			return m.scrollContent(-m.pageRows()), nil
+		case "pgdown":
+			return m.scrollContent(m.pageRows()), nil
+		case "home", "g":
+			return m.scrollContentTo(0), nil
+		case "end", "G":
+			return m.scrollContentTo(m.contentLast()), nil
+
 		case "[":
 			return m, m.prevTab()
 		case "]":

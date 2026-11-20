@@ -19,22 +19,37 @@ func wrapContent(content string, w int) []string {
 	return strings.Split(lipgloss.NewStyle().Width(w).Render(content), "\n")
 }
 
-// scrolledContent is the main content cut to the window the wheel has scrolled
-// it to: h rows of w cells. The window never runs past the last row.
+// scrolledContent is the main content cut to the window the scroll offset
+// selects: h rows of w cells. The window never runs past the last row.
 func (m Model) scrolledContent(content string, w, h int) string {
 	rows := wrapContent(content, w)
 	off := min(m.contentScroll[m.contentKey()], max(0, len(rows)-h))
 	return fitBox(strings.Join(rows[off:], "\n"), w, h)
 }
 
-// scrollContent moves the main content by delta rows. The offset stops at the
-// first row and at the last row that fills the content area.
-func (m Model) scrollContent(delta int) Model {
+// contentLast is the largest scroll offset that still fills the main content
+// area: the offset at which the content's last row is on the area's bottom row.
+func (m Model) contentLast() int {
 	l := m.screenLayout()
 	innerW := max(1, l.mainW-2)
 	rows := wrapContent(m.renderContent(innerW, l.contentH), innerW)
-	last := max(0, len(rows)-l.contentH)
+	return max(0, len(rows)-l.contentH)
+}
+
+// pageRows is how far a page key moves the main content: one content area.
+func (m Model) pageRows() int {
+	return max(1, m.screenLayout().contentH)
+}
+
+// scrollContentTo sets the main content's scroll offset to row, held between the
+// first row and the last one that fills the content area.
+func (m Model) scrollContentTo(row int) Model {
 	key := m.contentKey()
-	m.contentScroll[key] = min(max(0, m.contentScroll[key]+delta), last)
+	m.contentScroll[key] = min(max(0, row), m.contentLast())
 	return m
+}
+
+// scrollContent moves the main content by delta rows, within its own length.
+func (m Model) scrollContent(delta int) Model {
+	return m.scrollContentTo(m.contentScroll[m.contentKey()] + delta)
 }
