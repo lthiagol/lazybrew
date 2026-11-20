@@ -14,6 +14,7 @@ import (
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
 
@@ -1065,7 +1066,7 @@ func (m *Model) loadTabContent() tea.Cmd {
 			m.tabContent[key] = content
 			return nil
 		}
-		return fetchTabContentCmd(m.client, panelID, tabIdx, name)
+		return fetchTabContentCmd(m.client, panelID, tabIdx, name, m.icons)
 	}
 	return nil
 }
@@ -1087,7 +1088,7 @@ func (m *Model) renderCachedTabContent(panelID PanelID, tabIdx int, panel *panel
 	return "", false
 }
 
-func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string) tea.Cmd {
+func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string, icons style.Icons) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), fetchTabContentTimeout)
 		defer cancel()
@@ -1112,15 +1113,8 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("doctor", err)}
 				}
-				if len(warnings) == 0 {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
-						Content: "Your system is ready to brew."}
-				}
-				content := ""
-				for _, w := range warnings {
-					content += w.Title + "\n" + w.Details + "\n\n"
-				}
-				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: content}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
+					Content: doctorView(warnings, icons)}
 			}
 		case PanelFormulae:
 			switch tab {
@@ -1749,6 +1743,7 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, statusSu
 	}
 
 	summary := statusSummary{
+		Doctor:   knownCount{N: len(warnings), Known: docErr == nil},
 		Formulae: knownCount{N: len(formulae), Known: fErr == nil},
 		Casks:    knownCount{N: len(casks), Known: cErr == nil},
 		Taps:     knownCount{N: len(taps), Known: tErr == nil},
@@ -1776,6 +1771,8 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, statusSu
 			servicesStarted++
 		}
 	}
+	summary.OfficialTaps = officialTaps
+	summary.ServicesStarted = servicesStarted
 
 	items := presentation.FormatStatusDashboard(
 		len(formulae), len(casks),
@@ -1790,7 +1787,9 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, statusSu
 
 	errs := make([]error, 0, len(sources))
 	for _, s := range sources {
-		items = append(items, "⚠ "+s.label+": "+s.err.Error())
+		problem := "⚠ " + s.label + ": " + s.err.Error()
+		items = append(items, problem)
+		summary.Problems = append(summary.Problems, problem)
 		errs = append(errs, s.err)
 	}
 

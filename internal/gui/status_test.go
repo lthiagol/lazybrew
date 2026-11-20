@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 var (
@@ -80,16 +81,18 @@ func TestStatusRowsAreCompactSummary(t *testing.T) {
 	}
 }
 
-// TestStatusDashboardTabShowsTheFullDashboard (AC-03.1): the Dashboard tab is
-// the dashboard text, drawn in full and not as a list.
+// TestStatusDashboardTabShowsTheFullDashboard (AC-03.1): the Dashboard tab
+// draws its five cards from the typed summary, not as a list. (v2-05 AC-03:
+// the expectation moved from the old text block's lines to the cards.)
 func TestStatusDashboardTabShowsTheFullDashboard(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Summary: dashboardSummary(),
 		Items:     statusRows(dashboardSummary()),
 		Dashboard: []string{"Homebrew 4.5.2", "Formulae:  125 installed", "R to refresh"}})
 
-	out := m.renderContent(60, 20)
-	for _, line := range []string{"Formulae:  125 installed", "R to refresh"} {
+	out := ansi.Strip(m.renderContent(140, 30))
+	for _, line := range []string{"Homebrew", "Packages", "Taps", "Services", "Health",
+		"Formulae:  125 installed", "not loaded — press R", "press d to run doctor"} {
 		if !strings.Contains(out, line) {
 			t.Fatalf("the Dashboard tab should draw %q, got:\n%s", line, out)
 		}

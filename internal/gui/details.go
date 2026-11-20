@@ -34,18 +34,6 @@ const (
 // serviceStatusTab is the one tab of the Services panel.
 const serviceStatusTab = 0
 
-// dashboardText is the Dashboard tab of Status: the whole dashboard, as text.
-// It is not a list, so no row is selected in it.
-func dashboardText(p *panelData) string {
-	if !p.loaded {
-		return style.SubtleText.Render("Status dashboard not loaded yet — press R to refresh")
-	}
-	if len(p.dashboard) == 0 {
-		return style.SubtleText.Render(emptyMessage(PanelStatus))
-	}
-	return style.NormalItem.Render(strings.Join(p.dashboard, "\n"))
-}
-
 // tapSummary is the one-line header of the Taps panel's Tap Info tab.
 func tapSummary(taps []brew.Tap) string {
 	official, trusted := 0, 0

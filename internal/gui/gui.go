@@ -520,7 +520,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.services = msg.Services
 				if msg.PanelID == PanelStatus {
 					m.status = msg.Summary
-					p.dashboard = msg.Dashboard
 				}
 			}
 			p.normalize()

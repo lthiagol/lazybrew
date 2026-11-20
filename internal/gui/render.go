@@ -373,7 +373,10 @@ func (m Model) renderContent(width, height int) string {
 	case PanelStatus:
 		switch m.activeTab {
 		case statusDashboardTab:
-			return dashboardText(panel)
+			if !panel.loaded {
+				return style.SubtleText.Render("Status dashboard not loaded yet — press R to refresh")
+			}
+			return m.renderDashboard(width)
 		case statusConfigTab, statusDoctorTab:
 			// Config/Doctor fetch from the loaded dashboard; before the
 			// dashboard has loaded there is nothing to fetch, and the old

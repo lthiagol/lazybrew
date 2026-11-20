@@ -13,6 +13,14 @@ type statusSummary struct {
 	Outdated knownCount
 	Taps     knownCount
 	Services knownCount
+	// OfficialTaps and ServicesStarted split the Taps and Services counts.
+	OfficialTaps    int
+	ServicesStarted int
+	// Doctor counts the warnings of the last brew doctor run; it is unknown
+	// until that run has answered.
+	Doctor knownCount
+	// Problems are the sources that failed or timed out, as ⚠ lines.
+	Problems []string
 }
 
 // knownCount is a count and whether its source answered. An unknown count is
