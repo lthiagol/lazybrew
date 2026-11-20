@@ -46,8 +46,9 @@ Re-captured on `f4f4abf` (the last code commit), same harness, same icon set.
 frames, 24 or 40 rows, one width each). Frames changed as follows.
 
 - **Status border, every frame (F-orch-01):** the Status box no longer shows the
-  dashboard's line count (`16`) in its border. Two cells change in each 140x40
-  frame, 14 in each 80x24 frame of the sidebar.
+  dashboard's line count (`16`) in its border. Per frame, the changed rows are
+  counted by diff: 2 in 140x40 frames 01-04, 4 in the others; 4 to 14 in 80x24
+  frames, the difference being the labels in the next bullets.
 - **01-status, 02-formulae, 03-formulae-info, 04-formulae-deps, 11-deps-bash:**
   the Status count is gone (F-orch-01). At 80x24, unloaded Casks, Outdated and
   Services show `–` for `not loaded` (F-orch-02).
