@@ -7,12 +7,12 @@
 │▸ ✓ bash            5.3.20││Tap:         homebrew/core                        │
 ╰───┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   │
 ╭─ 3┃                                                                      ┃   │
-│   ┃                                UPGRADE                               ┃   │
+│   ┃                               UPGRADE                                ┃   │
 ╰───┃                                                                      ┃   │
-╭─ 4┃                             Upgrade bash?                            ┃ … │
+╭─ 4┃                            Upgrade bash?                             ┃ … │
 │   ┃                 Installs the newest version of bash.                 ┃   │
 ╰───┃                                                                      ┃   │
-╭─ 5┃                       [y]es   [n]o   esc cancel                      ┃   │
+╭─ 5┃                      [y]es   [n]o   esc cancel                       ┃   │
 │▸ ⚠┃                                                                      ┃   │
 ╰───┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛   │
 ╭─ 6 ◎ Services ─────── – ─╮│                                                  │

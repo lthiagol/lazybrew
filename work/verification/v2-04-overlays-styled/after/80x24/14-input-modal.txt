@@ -6,13 +6,13 @@
 │  ✓ alsa-lib    1.2.16.1_1││                                                  │
 ╰──────────────┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓              │
 ╭─ 3 ▣ Casks ─ ┃                                                ┃              │
-│              ┃                             ADD TAP            ┃              │
+│              ┃                    ADD TAP                     ┃              │
 ╰──────────────┃                                                ┃              │
-╭─ 4 ↑ Outdated┃              Tap repository (user/repo):       ┃ebrew-switch  │
+╭─ 4 ↑ Outdated┃          Tap repository (user/repo):           ┃ebrew-switch  │
 │              ┃                                                ┃              │
-╰──────────────┃                 > type here...                 ┃              │
+╰──────────────┃       > type here...                           ┃              │
 ╭─ 5 ⊕ Taps ───┃                                                ┃              │
-│▸ ⚠ danielfoeh┃                enter submit   esc cancel       ┃              │
+│▸ ⚠ danielfoeh┃           enter submit   esc cancel            ┃              │
 │  ✓ lthiagol/t┃                                                ┃              │
 ╰──────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛              │
 ╭─ 6 ◎ Services ─────── – ─╮│                                                  │

@@ -43,9 +43,22 @@ with `cmp`: identical, so they are not listed again):
 - **14-input-modal** (both sizes; `.ansi`): chip `ADD TAP` (the action); the prompt
   is body text, not the chip (F-r1-03, Q-v2-04-wrap).
 
+## Fix round r2
+
+Frames changed by the r2 fix (the other screens were re-captured and compared
+with `cmp`: identical):
+
+- **14-input-modal** (both sizes; `.ansi`): the field is a fixed 33 cells (prompt,
+  30 of text, cursor), where it drew 43 and sat off-centre. The chip, prompt and
+  key line are centred again (F-r2-01).
+- **07-confirm-modal** and **12-confirm-upgrade** (both sizes; `.ansi`): each row
+  is now centred on its own, rather than the block being centred. A row with an odd
+  gap sits one cell further left or right than before; the content is unchanged.
+  Muted runs in `.ansi`: 53 and 49, as before.
+
 ## Checks
 
 - Screens 01–06, 08, 09 and 11 match `before/` exactly, in `.txt` and `.ansi` at 140x40 (`cmp`). 10 differs only by the toast box, as described.
-- The muted runs in `.ansi`: 53 in 07, 49 in 12, 50 in 14, 0 in 13 (no modal open). Only the base is muted; the box and the footer are not.
+- The muted runs in `.ansi`: 53 in 07, 49 in 12, 50 in 14 (the r2 fix leaves the counts as they were), 0 in 13 (no modal open). Only the base is muted; the box and the footer are not.
 - The footer in 07, 12 and 14 shows the modal's keys (`y yes  n no  esc cancel`, `enter submit  esc cancel`).
 - `TestEveryFrameIsTerminalSize` and the modal, toast and backdrop tests pass at 140×40, 80×24 and 200×60.
