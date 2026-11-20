@@ -101,7 +101,7 @@ func TestStatusRefreshKeepsOutdatedCache(t *testing.T) {
 			continue
 		}
 		found = true
-		joined := strings.Join(dMsg.Items, "\n")
+		joined := strings.Join(dMsg.Dashboard, "\n")
 		if !strings.Contains(joined, "Outdated:  1 packages") {
 			t.Errorf("the dashboard must still render the cached count, got:\n%s", joined)
 		}

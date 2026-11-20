@@ -19,9 +19,12 @@ type DataLoadedMsg struct {
 	Casks    []brew.Cask
 	Taps     []brew.Tap
 	Services []brew.Service
-	// BrewVersion is set by the status dashboard load only.
-	BrewVersion string
-	Err         error
+	// Dashboard and Summary are set by the status dashboard load only: the
+	// dashboard lines for the Dashboard tab, and the typed facts the sidebar
+	// rows and the header counts are built from.
+	Dashboard []string
+	Summary   statusSummary
+	Err       error
 }
 
 type TabContentMsg struct {

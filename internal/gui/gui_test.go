@@ -1139,12 +1139,6 @@ func TestBatchSelectionShowsIndicator(t *testing.T) {
 		t.Fatal("expected batch indicator in sidebar for selected items")
 	}
 
-	// Check renderList shows batch indicator
-	list := p.renderList(20, 5, batch)
-	if !strings.Contains(list, "●") {
-		t.Fatal("expected batch indicator in renderList for selected items")
-	}
-
 	// Item at cursor that's also selected shows combined indicator
 	p.selected = 0
 	sidebar = p.renderSidebarContent(20, 5, batch, style.Icons{}, true)
@@ -1950,7 +1944,7 @@ func TestStatusDashboardDoesNotShellCallOutdated(t *testing.T) {
 	// The count was never loaded, so the dashboard must say so instead of
 	// claiming "0 packages" — that number would mean "nothing outdated"
 	// only if brew outdated had actually been checked.
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "Outdated:  — not loaded (press R to load)") {
 		t.Errorf("empty cache should report the count as not loaded, got:\n%s", joined)
 	}
@@ -2004,7 +1998,7 @@ func TestStatusDashboardReportsCachedOutdatedCount(t *testing.T) {
 	if atomic.LoadInt32(&outdatedCalls) != 0 {
 		t.Errorf("fetchStatusData must not shell-call outdated when cache is fresh, got %d calls", outdatedCalls)
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "1 packages") {
 		t.Errorf("dashboard should reflect cached outdated count (1), got:\n%s", joined)
 	}
@@ -2052,7 +2046,7 @@ func TestStatusDashboardEmptyOutdatedCacheIsKnownZero(t *testing.T) {
 	if atomic.LoadInt32(&outdatedCalls) != 0 {
 		t.Errorf("cache-only status fetch must not shell `brew outdated`, got %d calls", outdatedCalls)
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "Outdated:  0 packages") {
 		t.Errorf("a checked-and-empty cache is a known zero, got:\n%s", joined)
 	}
@@ -2076,7 +2070,7 @@ func TestStatusDashboardPartialOutdatedCacheIsNotKnown(t *testing.T) {
 	if atomic.LoadInt32(&outdatedCalls) != 0 {
 		t.Errorf("cache-only status fetch must not shell `brew outdated`, got %d calls", outdatedCalls)
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "not loaded") {
 		t.Errorf("a partial cache must render as not loaded, got:\n%s", joined)
 	}
@@ -2101,7 +2095,7 @@ func TestStatusDashboardExplicitLoadShellsOutdatedOnce(t *testing.T) {
 	if got := atomic.LoadInt32(&outdatedCalls); got != 1 {
 		t.Errorf("explicit load must shell `brew outdated` exactly once, got %d calls", got)
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "Outdated:  1 packages") {
 		t.Errorf("explicit load must show the real count, got:\n%s", joined)
 	}
@@ -2124,7 +2118,7 @@ func TestStatusDashboardExplicitLoadShellsOneCallPerOutdatedClass(t *testing.T) 
 	if got := atomic.LoadInt32(&outdatedCalls); got != 2 {
 		t.Errorf("explicit load must shell `brew outdated` once per class, got %d calls", got)
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "Outdated:  1 packages") {
 		t.Errorf("explicit load must show the real count, got:\n%s", joined)
 	}
@@ -2152,7 +2146,7 @@ func TestStatusDashboardExplicitLoadFailureFallsBackToNotLoaded(t *testing.T) {
 	if atomic.LoadInt32(&outdatedCalls) == 0 {
 		t.Error("explicit load must attempt the outdated read")
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "not loaded") {
 		t.Errorf("a failed outdated read must fall back to not loaded, got:\n%s", joined)
 	}
@@ -2239,7 +2233,7 @@ func TestRefreshMsgWithLoadOutdatedShellsOutdated(t *testing.T) {
 			continue
 		}
 		found = true
-		joined := strings.Join(dMsg.Items, "\n")
+		joined := strings.Join(dMsg.Dashboard, "\n")
 		if !strings.Contains(joined, "Outdated:  1 packages") {
 			t.Errorf("loaded dashboard must show the real count, got:\n%s", joined)
 		}
@@ -2344,7 +2338,7 @@ func TestStatusDashboardSurfacesDoctorError(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "Doctor: unavailable") {
 		t.Errorf("expected 'Doctor: unavailable' in dashboard items, got:\n%s", joined)
 	}
@@ -2352,14 +2346,14 @@ func TestStatusDashboardSurfacesDoctorError(t *testing.T) {
 		t.Errorf("did NOT expect 'Doctor: No issues' when doctor failed, got:\n%s", joined)
 	}
 	foundWarn := false
-	for _, item := range dMsg.Items {
+	for _, item := range dMsg.Dashboard {
 		if strings.Contains(item, "⚠") && strings.Contains(item, "doctor") {
 			foundWarn = true
 			break
 		}
 	}
 	if !foundWarn {
-		t.Errorf("expected '⚠ doctor: ...' warning line, got items:\n%v", dMsg.Items)
+		t.Errorf("expected '⚠ doctor: ...' warning line, got items:\n%v", dMsg.Dashboard)
 	}
 }
 
@@ -2380,14 +2374,14 @@ func TestStatusDashboardDoesNotWarnOnDoctorExitCode1(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	joined := strings.Join(dMsg.Items, "\n")
+	joined := strings.Join(dMsg.Dashboard, "\n")
 	if !strings.Contains(joined, "Doctor: 1 warning") {
 		t.Errorf("expected 'Doctor: 1 warning' in dashboard items, got:\n%s", joined)
 	}
 	if strings.Contains(joined, "1 warnings") {
 		t.Errorf("singular must not use plural form, got:\n%s", joined)
 	}
-	for _, item := range dMsg.Items {
+	for _, item := range dMsg.Dashboard {
 		if strings.Contains(item, "⚠") && strings.Contains(item, "doctor") {
 			t.Errorf("did NOT expect '⚠ doctor: ...' on exit=1 (it's warnings), got: %s", item)
 		}

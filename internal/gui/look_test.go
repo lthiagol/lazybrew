@@ -214,7 +214,7 @@ func TestHeaderIsOneFullWidthRow(t *testing.T) {
 // only when there are some, and the version when the dashboard has it.
 func TestHeaderShowsKnownCountsAndBadges(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Items: []string{"Homebrew 4.5.2"}, BrewVersion: "4.5.2"})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Items: []string{"Homebrew 4.5.2"}, Summary: statusSummary{Version: "4.5.2"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: []brew.Formula{{Name: "a"}, {Name: "b"}}, Items: []string{"a", "b"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: []brew.Cask{{Name: "c"}}, Items: []string{"c"}})
 
@@ -232,8 +232,8 @@ func TestHeaderShowsKnownCountsAndBadges(t *testing.T) {
 	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "2 outdated") {
 		t.Fatalf("header should show the outdated count once known: %q", plain)
 	}
-	if m.brewVersion != "4.5.2" {
-		t.Fatalf("the dashboard's version should reach the model, got %q", m.brewVersion)
+	if m.status.Version != "4.5.2" {
+		t.Fatalf("the dashboard's version should reach the model, got %q", m.status.Version)
 	}
 }
 
@@ -291,7 +291,7 @@ func TestHeaderOperationInTheMiddle(t *testing.T) {
 func TestHeaderDropsBadgesNotTheName(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
 	m.cfg.Brew.UpdateOnStart = true
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, BrewVersion: "4.5.2-123-gabcdef"})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Summary: statusSummary{Version: "4.5.2-123-gabcdef"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 12345), Items: make([]string, 12345)})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"a", "b", "c"}})
@@ -452,7 +452,7 @@ func TestHeaderKeepsAGapBeforeBadges(t *testing.T) {
 	for w := 40; w <= 140; w++ {
 		m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 		m.width = w
-		m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, BrewVersion: "4.5.2"})
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Summary: statusSummary{Version: "4.5.2"}})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 125), Items: make([]string, 125)})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"a", "b"}})
@@ -477,7 +477,7 @@ func TestHeaderKeepsAGapBeforeBadges(t *testing.T) {
 func TestHeaderOperationOutranksBadges(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
 	m.cfg.Brew.UpdateOnStart = true
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, BrewVersion: "4.5.2"})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Summary: statusSummary{Version: "4.5.2"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 125), Items: make([]string, 125)})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"a", "b"}})

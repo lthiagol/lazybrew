@@ -1025,16 +1025,26 @@ func (m Model) runMissing() (tea.Model, tea.Cmd) {
 	return m, m.tasks.RunNext()
 }
 
+// tabItemName is the name a tab's content is keyed by, or "" when the tab has
+// nothing to fetch for yet. The Status tabs read the whole dashboard, so they
+// key by its name whatever row is selected.
+func tabItemName(p *panelData) string {
+	if p.id == PanelStatus {
+		if !p.loaded {
+			return ""
+		}
+		return statusItemName
+	}
+	return extractPackageName(p.selectedItem())
+}
+
 func (m *Model) loadTabContent() tea.Cmd {
 	panelID := m.activePanel
 	tabIdx := m.activeTab
 
 	if needsTabFetch(panelID, tabIdx) {
 		panel := m.panels[panelID]
-		if panel.selected >= len(panel.items) {
-			return nil
-		}
-		name := extractPackageName(panel.selectedItem())
+		name := tabItemName(panel)
 		if name == "" {
 			return nil
 		}
@@ -1106,7 +1116,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 		}
 		switch panel {
 		case PanelStatus:
-			if tab == 1 {
+			if tab == statusConfigTab {
 				cfg, err := client.Diagnostics.Config(ctx)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("config", err)}
@@ -1114,7 +1124,7 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
 					Content: formatConfig(cfg)}
 			}
-			if tab == 2 {
+			if tab == statusDoctorTab {
 				warnings, err := client.Diagnostics.Doctor(ctx)
 				if err != nil {
 					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("doctor", err)}
@@ -1542,8 +1552,8 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 // key) passes true.
 func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 	return func() tea.Msg {
-		items, version, _ := statusDashboard(client, loadOutdated)
-		return DataLoadedMsg{PanelID: PanelStatus, Items: items, BrewVersion: version, Err: nil}
+		lines, summary, _ := statusDashboard(client, loadOutdated)
+		return DataLoadedMsg{PanelID: PanelStatus, Items: statusRows(summary), Dashboard: lines, Summary: summary, Err: nil}
 	}
 }
 
@@ -1574,7 +1584,7 @@ func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 // count becomes known. A failed or timed-out outdated read joins the ⚠
 // lines like any other source and the count falls back to "not known", never
 // to a misleading 0.
-func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, string, []error) {
+func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, statusSummary, []error) {
 	totalCtx, cancelTotal := context.WithTimeout(context.Background(), brewStatusTotalTimeout)
 	defer cancelTotal()
 
@@ -1691,11 +1701,16 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, string, 
 		sources = append(sources, sourceErr{"outdated", outdatedCErr})
 	}
 
-	brewVersion := ""
-	prefix := ""
+	summary := statusSummary{
+		Formulae: knownCount{N: len(formulae), Known: fErr == nil},
+		Casks:    knownCount{N: len(casks), Known: cErr == nil},
+		Taps:     knownCount{N: len(taps), Known: tErr == nil},
+		Services: knownCount{N: len(services), Known: sErr == nil},
+		Outdated: knownCount{N: len(outdatedFormulae) + len(outdatedCasks), Known: outdatedKnown},
+	}
 	if cfg != nil {
-		brewVersion = cfg.HomebrewVersion
-		prefix = cfg.Prefix
+		summary.Version = cfg.HomebrewVersion
+		summary.Prefix = cfg.Prefix
 	}
 
 	officialTaps := 0
@@ -1715,13 +1730,12 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, string, 
 		}
 	}
 
-	outdatedCount := len(outdatedFormulae) + len(outdatedCasks)
 	items := presentation.FormatStatusDashboard(
 		len(formulae), len(casks),
-		presentation.OutdatedInfo{Count: outdatedCount, Known: outdatedKnown},
+		presentation.OutdatedInfo{Count: summary.Outdated.N, Known: outdatedKnown},
 		len(taps), officialTaps, thirdPartyTaps,
 		len(services), servicesStarted,
-		brewVersion, prefix,
+		summary.Version, summary.Prefix,
 	)
 
 	items = append(items, "")
@@ -1733,7 +1747,7 @@ func statusDashboard(client *brew.Client, loadOutdated bool) ([]string, string, 
 		errs = append(errs, s.err)
 	}
 
-	return items, brewVersion, errs
+	return items, summary, errs
 }
 
 func parseUpdateSummary(lines []string) string {
