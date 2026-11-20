@@ -872,6 +872,17 @@ func serviceReload(id string) tea.Cmd {
 	return func() tea.Msg { return RefreshMsg{} }
 }
 
+// failureText is the error toast of a failed task: its title and the error. A
+// services write that needs sudo says so in its own words, which already name
+// the service and the command to run (AC-04.1).
+func failureText(title string, err error) string {
+	var needsRoot *brew.ServiceNeedsRootError
+	if errors.As(err, &needsRoot) {
+		return err.Error()
+	}
+	return title + ": " + err.Error()
+}
+
 // runServiceTask enqueues a services write for name through the task manager.
 func (m Model) runServiceTask(action, name string) (tea.Model, tea.Cmd) {
 	t := &task.Task{

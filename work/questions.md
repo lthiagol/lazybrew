@@ -382,3 +382,19 @@ criterion; the code is as described and the orchestrator can redirect it.
   confirmed; **cut** the single-line parts (chip, key line, menu items) with
   `…`. The box must still fit the frame at 80×24 (height included). AC-02.5 is
   read this way from now on. Closed.
+
+## Q-v2-services-toast — a needs-sudo toast is wider than a toast's cut
+
+- **Question:** AC-04.1 wants the error toast to read
+  `<name>: needs sudo — run "sudo brew services <action> <name>" in a terminal`,
+  about 82 cells for moshi-hook. A toast message is cut at 60 cells
+  (`toastMessageWidth`: half the frame, at most 60), so the command was cut
+  mid-way at every terminal width.
+- **Runner's decision:** a toast message now wraps to at most three rows at the
+  same width cap (`ansi.Wrap` in `modal/toast.go`); only past three rows is the
+  last row cut with `…`. This extends Q-v2-04-wrap's rule (prose wraps, one-line
+  chrome is cut) to toast messages, because a cut message can hide what happened.
+  A message that fits keeps its one-row draw, so the short-toast frames are
+  unchanged (checked in v2-05s-services frames). The orchestrator can redirect:
+  cut the toast again and let only the needs-sudo text wrap, or cut it as before.
+- **Raised by:** runner lane (slice `v2-05s-services`).
