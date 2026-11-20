@@ -673,22 +673,22 @@ func TestCommandLogConcurrentAppendSetStatus(t *testing.T) {
 func TestToastTickMsgEventuallyClearsToast(t *testing.T) {
 	m := newTestModel()
 	m.setToast("hello", modal.ToastInfo)
-	// Simulate the expiry path at the gui level by ticking until the
-	// toast ages out — bounded by a real ~3s wait; the modal-level test
+	// A fresh toast survives its first tick and the chain re-arms.
+	nm, cmd := m.Update(modal.ToastTickMsg{})
+	cur := nm.(Model)
+	if cur.newestToast() == nil {
+		t.Fatal("a fresh toast must survive its first tick")
+	}
+	if cmd == nil {
+		t.Fatal("tick chain broke: no re-arm cmd while toast alive")
+	}
+	// Age the toast past its lifetime instead of waiting the 3s out on the
+	// wall clock; the next tick must then dismiss it. The modal-level test
 	// covers the boundary arithmetic itself.
-	deadline := time.After(5 * time.Second)
-	var cur Model = *m
-	for cur.newestToast() != nil {
-		select {
-		case <-deadline:
-			t.Fatal("toast never dismissed via tick chain")
-		default:
-		}
-		nm, cmd := cur.Update(modal.ToastTickMsg{})
-		cur = nm.(Model)
-		if cur.newestToast() != nil && cmd == nil {
-			t.Fatal("tick chain broke: no re-arm cmd while toast alive")
-		}
-		time.Sleep(300 * time.Millisecond)
+	cur.toasts = []*modal.Toast{modal.NewToastAt("hello", modal.ToastInfo, time.Now().Add(-time.Minute))}
+	nm, _ = cur.Update(modal.ToastTickMsg{})
+	cur = nm.(Model)
+	if cur.newestToast() != nil {
+		t.Fatal("toast never dismissed via tick chain")
 	}
 }

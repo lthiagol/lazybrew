@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -207,10 +208,11 @@ func TestServiceFailureReloadsWithoutRefreshToast(t *testing.T) {
 	m, _ := servicesActionModel(t, []brew.Service{runningService("moshi-hook")})
 
 	nm, cmd := m.Update(TaskCompletedMsg{ID: "service-stop:moshi-hook", Title: "stop moshi-hook", Err: errors.New("boom")})
-	if !batchHas(cmd, func(msg tea.Msg) bool { _, ok := msg.(servicesReloadMsg); return ok }) {
+	msgs := batchMsgs(cmd)
+	if !slices.ContainsFunc(msgs, func(msg tea.Msg) bool { _, ok := msg.(servicesReloadMsg); return ok }) {
 		t.Error("a failed services task did not ask for a reload")
 	}
-	if batchHas(cmd, func(msg tea.Msg) bool { _, ok := msg.(RefreshMsg); return ok }) {
+	if slices.ContainsFunc(msgs, func(msg tea.Msg) bool { _, ok := msg.(RefreshMsg); return ok }) {
 		t.Error("a failed services task sent RefreshMsg, which ends in \"Data refreshed\"")
 	}
 	failed := nm.(Model)
@@ -297,19 +299,21 @@ func hasCall(calls [][]string, args ...string) bool {
 	return false
 }
 
-// batchHas runs the commands of a batch that finish at once and reports whether
-// one of their messages satisfies want. A toast's timer is not waited for.
-func batchHas(cmd tea.Cmd, want func(tea.Msg) bool) bool {
+// batchMsgs runs the commands of a batch that finish at once and returns their
+// messages. A toast's timer is not waited for. A command runs once: a tea.Tick
+// is armed when it is built, so a second run would wait for a timer already spent.
+func batchMsgs(cmd tea.Cmd) []tea.Msg {
 	if cmd == nil {
-		return false
+		return nil
 	}
-	// tea.Batch returns a lone command unwrapped, so a single message is checked
+	// tea.Batch returns a lone command unwrapped, so a single message is returned
 	// as it is.
 	msg := cmd()
 	batch, ok := msg.(tea.BatchMsg)
 	if !ok {
-		return want(msg)
+		return []tea.Msg{msg}
 	}
+	var out []tea.Msg
 	for _, c := range batch {
 		if c == nil {
 			continue
@@ -318,11 +322,14 @@ func batchHas(cmd tea.Cmd, want func(tea.Msg) bool) bool {
 		go func() { done <- c() }()
 		select {
 		case msg := <-done:
-			if want(msg) {
-				return true
-			}
+			out = append(out, msg)
 		case <-time.After(200 * time.Millisecond):
 		}
 	}
-	return false
+	return out
+}
+
+// batchHas reports whether one of the messages of a batch satisfies want.
+func batchHas(cmd tea.Cmd, want func(tea.Msg) bool) bool {
+	return slices.ContainsFunc(batchMsgs(cmd), want)
 }

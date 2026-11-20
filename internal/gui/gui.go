@@ -295,7 +295,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.toastTicking = false
 			return m, nil
 		}
-		return m, modal.ToastTick()
+		return m, modal.ToastTick(toastTickInterval)
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd

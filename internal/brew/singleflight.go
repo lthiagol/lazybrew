@@ -18,9 +18,10 @@ type singleflight struct {
 }
 
 type sfCall struct {
-	wg  sync.WaitGroup
-	val any
-	err error
+	wg      sync.WaitGroup
+	waiters int // callers queued behind this call; read under sf.mu
+	val     any
+	err     error
 }
 
 func newSingleflight() *singleflight {
@@ -33,6 +34,7 @@ func newSingleflight() *singleflight {
 func (sf *singleflight) Do(key string, fn func() (any, error)) (any, error) {
 	sf.mu.Lock()
 	if call, ok := sf.inflight[key]; ok {
+		call.waiters++
 		sf.mu.Unlock()
 		call.wg.Wait()
 		return call.val, call.err

@@ -47,12 +47,14 @@ type Cache struct {
 	mu         sync.RWMutex
 	entries    map[CacheKey]cacheEntry
 	defaultTTL time.Duration
+	now        func() time.Time // time.Now; a test swaps in a clock it moves by hand
 }
 
 func NewCache(ttl time.Duration) *Cache {
 	return &Cache{
 		entries:    make(map[CacheKey]cacheEntry),
 		defaultTTL: ttl,
+		now:        time.Now,
 	}
 }
 
@@ -67,7 +69,7 @@ func (c *Cache) Get(key CacheKey) (any, bool) {
 	if ttl <= 0 {
 		ttl = c.defaultTTL
 	}
-	if time.Since(entry.timestamp) > ttl {
+	if c.now().Sub(entry.timestamp) > ttl {
 		c.mu.RUnlock()
 		c.mu.Lock()
 		delete(c.entries, key)
@@ -91,7 +93,7 @@ func (c *Cache) SetWithTTL(key CacheKey, data any, ttl time.Duration) {
 	defer c.mu.Unlock()
 	c.entries[key] = cacheEntry{
 		data:      data,
-		timestamp: time.Now(),
+		timestamp: c.now(),
 		ttl:       ttl,
 	}
 }

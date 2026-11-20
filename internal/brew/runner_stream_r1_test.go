@@ -7,6 +7,7 @@ package brew
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,6 +26,22 @@ func writeFakeBrew(t *testing.T, body string) *DefaultRunner {
 		t.Fatal(err)
 	}
 	return r
+}
+
+// waitForFile polls until path exists, so a test waits for its fake brew to
+// reach a known point rather than for a fixed time.
+func waitForFile(t *testing.T, path string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if _, err := os.Stat(path); err == nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%s never appeared", path)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
 }
 
 // TestExecuteStreamSingleErrorThenClose locks r1 finding 8: the stream
@@ -98,13 +115,14 @@ func TestExecuteStreamNoSpuriousReadError(t *testing.T) {
 // process on cancel must report context.Canceled (which the GUI maps to
 // the "Cancelled" operation state), not "signal: killed".
 func TestExecuteStreamCancelReportsCanceled(t *testing.T) {
-	r := writeFakeBrew(t, "sleep 30\n")
+	started := filepath.Join(t.TempDir(), "started")
+	r := writeFakeBrew(t, fmt.Sprintf("touch %s\nsleep 30\n", started))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	out, errCh := r.ExecuteStream(ctx, "whatever")
 
-	// Let the process start, then cancel.
-	time.Sleep(100 * time.Millisecond)
+	// Cancel once the process has started.
+	waitForFile(t, started)
 	cancel()
 
 	// Drain stdout until close so the channels resolve.

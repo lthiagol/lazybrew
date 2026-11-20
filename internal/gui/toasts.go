@@ -12,6 +12,10 @@ import (
 // maxToasts is how many toasts the stack shows; a newer one pushes the oldest out.
 const maxToasts = 3
 
+// toastTickInterval is how often the dismissal tick re-checks the stack. The
+// tests set it to a millisecond, so no test waits on it.
+var toastTickInterval = 500 * time.Millisecond
+
 // setToast pushes a toast onto the stack and arms the dismissal tick if none
 // is running. Every toast producer must go through this: the tick is the only
 // thing that removes a toast, so a toast with no running tick would stay on
@@ -26,7 +30,7 @@ func (m *Model) setToast(message string, t modal.ToastType) tea.Cmd {
 		return nil
 	}
 	m.toastTicking = true
-	return modal.ToastTick()
+	return modal.ToastTick(toastTickInterval)
 }
 
 // liveToasts keeps the toasts not yet past their lifetime at now.

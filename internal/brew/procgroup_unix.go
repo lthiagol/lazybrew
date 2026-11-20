@@ -10,8 +10,8 @@ import (
 
 // killGroupDelay bounds how long Wait keeps waiting for a child that exited
 // but left its stdout or stderr open (a stray holder of the pipe). Past it,
-// Wait closes the pipes and returns, so the stream always ends.
-const killGroupDelay = 2 * time.Second
+// Wait closes the pipes and returns, so the stream always ends. Tests shorten it.
+var killGroupDelay = 2 * time.Second
 
 // setProcessGroup starts brew in its own process group and makes a cancelled
 // context kill the whole group, so children brew started (curl, git, ruby
