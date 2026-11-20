@@ -2,13 +2,10 @@ verdict: ok
 
 # Review lb09-service-logs — round r2
 
-Scope: everything after `65662ee`; new since r1: fix brief `02af339`,
-F-r1-01 `b9a586d`, F-r1-02 `608f031`, receipt `db79fbe`/`7ec0d40`/`96d8b88`.
-
+Scope: after `65662ee`; new since r1: `02af339`, `b9a586d`, `608f031`, receipts.
 ## Gate (run by the reviewer, tree `96d8b88`)
 
-- `make ci`: exit 0. gofmt, vet, `go test ./... -race -count=1` ok, floors met
-  (gui 85.6% >= 36%), build ok. `GOOS=darwin go build ./...`: ok.
+- `make ci`: exit 0 (gofmt, vet, -race, floors, build). `GOOS=darwin go build ./...`: ok.
 
 ## Earlier findings
 
@@ -50,7 +47,7 @@ statements 3339 → 3399 (+60, one per rewritten site: the extra `c :=`), covere
 sites are on paths no test reaches (mostly the queue-full and queued-behind toast
 branches), and each one's uncovered statements doubled. The percentage fell
 (2880/3339 = 86.25% → 2909/3399 = 85.58%), but covered statements went up by
-29 and none went down. No test was lost, and the floor (36%) is unchanged.
+29 (exactly the covered splits, so no covered line was lost). No test was lost, and the floor (36%) is unchanged.
 
 ## New problems
 
@@ -58,8 +55,5 @@ None found. The fix commits touch only the three files named and one test file;
 no test was deleted or weakened, and the AC table from r1 still holds
 (re-ran `TestLogs*`: ok).
 
-## Findings
-
-None.
-
+Findings: none.
 Safety: no brew write command run; moshi-hook not touched.
