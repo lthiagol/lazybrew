@@ -185,15 +185,16 @@ func TestServiceStartAndRunDoNotConfirm(t *testing.T) {
 	}
 }
 
-// The reload after a services task ends is asked for by the task's ID, whatever
-// its outcome; other tasks do not reload the Services panel.
+// A failed or cancelled services task reloads the Services panel alone, and
+// only a successful one goes through RefreshMsg (F-r1-02). Other tasks do not
+// reload the Services panel.
 func TestServiceTasksAskForReload(t *testing.T) {
 	for _, id := range []string{"service-stop:moshi-hook", "service-restart:moshi-hook", "services-cleanup"} {
 		if !isServiceTask(id) {
 			t.Errorf("%q is a services task", id)
 		}
-		if msg, ok := serviceReload(id)().(RefreshMsg); !ok {
-			t.Errorf("serviceReload(%q) = %T, want RefreshMsg", id, msg)
+		if msg, ok := serviceReload(id)().(servicesReloadMsg); !ok {
+			t.Errorf("serviceReload(%q) = %T, want servicesReloadMsg", id, msg)
 		}
 	}
 	if isServiceTask("install:bash") || serviceReload("install:bash") != nil {
@@ -201,14 +202,61 @@ func TestServiceTasksAskForReload(t *testing.T) {
 	}
 }
 
-// A failed services task still reloads the panel, so the list shows what is
-// running now.
-func TestServiceFailureStillReloads(t *testing.T) {
+// A failed services task reloads the panel, so the list shows what is running
+// now, and does not show "Data refreshed" over the error (F-r1-02).
+func TestServiceFailureReloadsWithoutRefreshToast(t *testing.T) {
 	m, _ := servicesActionModel(t, []brew.Service{runningService("moshi-hook")})
 
-	_, cmd := m.Update(TaskCompletedMsg{ID: "service-stop:moshi-hook", Title: "stop moshi-hook", Err: errors.New("boom")})
-	if !batchHasRefresh(cmd) {
+	nm, cmd := m.Update(TaskCompletedMsg{ID: "service-stop:moshi-hook", Title: "stop moshi-hook", Err: errors.New("boom")})
+	if !batchHas(cmd, func(msg tea.Msg) bool { _, ok := msg.(servicesReloadMsg); return ok }) {
 		t.Error("a failed services task did not ask for a reload")
+	}
+	if batchHas(cmd, func(msg tea.Msg) bool { _, ok := msg.(RefreshMsg); return ok }) {
+		t.Error("a failed services task sent RefreshMsg, which ends in \"Data refreshed\"")
+	}
+	failed := nm.(Model)
+	if got := lastToast(&failed); got != "stop moshi-hook: boom" {
+		t.Errorf("error toast = %q", got)
+	}
+}
+
+// A cancelled services task reloads the same way, with no success toast.
+func TestServiceCancelReloadsWithoutRefreshToast(t *testing.T) {
+	m, _ := servicesActionModel(t, []brew.Service{runningService("moshi-hook")})
+
+	_, cmd := m.Update(TaskCompletedMsg{ID: "service-restart:moshi-hook", Title: "restart moshi-hook", Err: context.Canceled})
+	if !batchHas(cmd, func(msg tea.Msg) bool { _, ok := msg.(servicesReloadMsg); return ok }) {
+		t.Error("a cancelled services task did not ask for a reload")
+	}
+	if batchHas(cmd, func(msg tea.Msg) bool { _, ok := msg.(RefreshMsg); return ok }) {
+		t.Error("a cancelled services task sent RefreshMsg")
+	}
+}
+
+// A successful services task keeps today's behaviour: RefreshMsg, which
+// reloads and then says the data was refreshed.
+func TestServiceSuccessStillRefreshes(t *testing.T) {
+	m, _ := servicesActionModel(t, []brew.Service{runningService("moshi-hook")})
+
+	_, cmd := m.Update(TaskCompletedMsg{ID: "service-stop:moshi-hook", Title: "stop moshi-hook"})
+	if !batchHas(cmd, func(msg tea.Msg) bool { _, ok := msg.(RefreshMsg); return ok }) {
+		t.Error("a successful services task did not send RefreshMsg")
+	}
+}
+
+// The services reload leaves the error toast as the last word: it reloads the
+// panel and adds no toast.
+func TestServicesReloadAddsNoToast(t *testing.T) {
+	m, _ := servicesActionModel(t, []brew.Service{runningService("moshi-hook")})
+	m = updateModel(m, TaskCompletedMsg{ID: "service-stop:moshi-hook", Title: "stop moshi-hook", Err: errors.New("boom")})
+	before := len(m.toasts)
+
+	m = updateModel(m, servicesReloadMsg{})
+	if len(m.toasts) != before || lastToast(m) != "stop moshi-hook: boom" {
+		t.Errorf("reload changed the toasts: %d -> %d, last %q", before, len(m.toasts), lastToast(m))
+	}
+	if m.refreshing != 0 {
+		t.Errorf("reload set refreshing = %d, which ends in \"Data refreshed\"", m.refreshing)
 	}
 }
 
@@ -250,15 +298,18 @@ func hasCall(calls [][]string, args ...string) bool {
 	return false
 }
 
-// batchHasRefresh runs the commands of a batch that finish at once and reports
-// whether one of them is a RefreshMsg. A toast's timer is not waited for.
-func batchHasRefresh(cmd tea.Cmd) bool {
+// batchHas runs the commands of a batch that finish at once and reports whether
+// one of their messages satisfies want. A toast's timer is not waited for.
+func batchHas(cmd tea.Cmd, want func(tea.Msg) bool) bool {
 	if cmd == nil {
 		return false
 	}
-	batch, ok := cmd().(tea.BatchMsg)
+	// tea.Batch returns a lone command unwrapped, so a single message is checked
+	// as it is.
+	msg := cmd()
+	batch, ok := msg.(tea.BatchMsg)
 	if !ok {
-		return false
+		return want(msg)
 	}
 	for _, c := range batch {
 		if c == nil {
@@ -268,7 +319,7 @@ func batchHasRefresh(cmd tea.Cmd) bool {
 		go func() { done <- c() }()
 		select {
 		case msg := <-done:
-			if _, ok := msg.(RefreshMsg); ok {
+			if want(msg) {
 				return true
 			}
 		case <-time.After(200 * time.Millisecond):

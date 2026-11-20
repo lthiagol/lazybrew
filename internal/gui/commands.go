@@ -863,12 +863,13 @@ func isServiceTask(id string) bool {
 }
 
 // serviceReload asks for the Services list and its info again when a services
-// task ends, whatever its outcome (AC-03.3). It is nil for every other task.
+// task fails or is cancelled (AC-03.3). It is nil for every other task. A
+// successful task reloads through RefreshMsg, as every task does.
 func serviceReload(id string) tea.Cmd {
 	if !isServiceTask(id) {
 		return nil
 	}
-	return func() tea.Msg { return RefreshMsg{} }
+	return func() tea.Msg { return servicesReloadMsg{} }
 }
 
 // failureText is the error toast of a failed task: its title and the error. A
