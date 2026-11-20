@@ -567,3 +567,6 @@ main box, for a consistent right column.
 Per-commit runs drop `-race`: each commit builds and passes plain
 `go test -count=1` for the packages it touches. `-race` stays in the full gate
 (once, before the receipt) and in CI on every push.
+- Correction (orchestrator): CI did **not** run `-race` (`wip-ci.yml`,
+  `stable-ci.yml` run plain `go test`). User ruling: add `-race` to both CI
+  test steps in `v2-11` (AC-02b).

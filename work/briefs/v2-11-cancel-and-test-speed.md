@@ -59,6 +59,14 @@ before the receipt (ruling `Q-v2-builder-speed`).
 2. Production durations unchanged (inject through a field/variable that tests
    override, as `brewReadTimeout` already is).
 
+### AC-02b — CI runs the race detector
+
+1. `.github/workflows/wip-ci.yml` and `stable-ci.yml`: the `go test` step runs
+   `go test ./... -race -count=1` with `CGO_ENABLED: "1"` (ruling
+   `Q-v2-builder-speed` amendment). Nothing else in the workflows changes.
+2. After the push of this slice, the `wip-ci` run must be green — the
+   orchestrator checks it; say in the receipt that it is to be checked.
+
 ### AC-03 — evidence and bookkeeping
 
 1. `result.md` in `work/verification/v2-11-cancel-and-test-speed/`: the gate
@@ -69,7 +77,7 @@ before the receipt (ruling `Q-v2-builder-speed`).
 
 ## Invariants
 
-- No GUI behaviour or frame change. No production timing change except the
+- No GUI behaviour or frame change. Workflow change limited to AC-02b. No production timing change except the
   cancel path.
 - Every frame exactly the terminal size. No test deleted, skipped or
   weakened; changed expectations named. Coverage floors unchanged. No new
