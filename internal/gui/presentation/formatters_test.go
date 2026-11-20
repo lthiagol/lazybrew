@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 func TestFormatFormula(t *testing.T) {
@@ -179,7 +180,7 @@ func TestFormatFormulaInfoSnapshot(t *testing.T) {
 		License:     "MIT",
 		Bottled:     true,
 	}
-	got := FormatFormulaInfo(f, 60)
+	got := FormatFormulaInfo(f, 60, style.UnicodeIcons)
 	if !strings.Contains(got, "Name:") {
 		t.Error("expected Name label")
 	}
@@ -203,7 +204,7 @@ func TestFormatFormulaInfoOutdated(t *testing.T) {
 		KegOnly:    false,
 		Bottled:    true,
 	}
-	got := FormatFormulaInfo(f, 60)
+	got := FormatFormulaInfo(f, 60, style.UnicodeIcons)
 	if !strings.Contains(got, "outdated") {
 		t.Error("expected outdated status")
 	}
@@ -221,7 +222,7 @@ func TestFormatFormulaInfoPinned(t *testing.T) {
 		Version: "3.12.8",
 		Pinned:  true,
 	}
-	got := FormatFormulaInfo(f, 60)
+	got := FormatFormulaInfo(f, 60, style.UnicodeIcons)
 	if !strings.Contains(got, "pinned") {
 		t.Error("expected pinned status")
 	}
@@ -235,7 +236,7 @@ func TestFormatCaskInfoSnapshot(t *testing.T) {
 		Description: "Mozilla Firefox web browser",
 		Homepage:    "https://www.mozilla.org/firefox/",
 	}
-	got := FormatCaskInfo(c, 60)
+	got := FormatCaskInfo(c, 60, style.UnicodeIcons)
 	if !strings.Contains(got, "Name:") {
 		t.Error("expected Name label")
 	}
@@ -254,7 +255,7 @@ func TestFormatCaskInfoOutdated(t *testing.T) {
 		Outdated:   true,
 		NewVersion: "133.0",
 	}
-	got := FormatCaskInfo(c, 60)
+	got := FormatCaskInfo(c, 60, style.UnicodeIcons)
 	if !strings.Contains(got, "outdated") {
 		t.Error("expected outdated status")
 	}

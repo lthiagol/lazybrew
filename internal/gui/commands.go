@@ -1521,12 +1521,15 @@ func formatConfig(cfg *brew.BrewConfig) string {
 	if cfg == nil {
 		return "No config available"
 	}
-	return "Homebrew: " + cfg.HomebrewVersion + "\n" +
-		"Prefix: " + cfg.Prefix + "\n" +
-		"Cellar: " + cfg.Cellar + "\n" +
-		"Repository: " + cfg.Repository + "\n" +
-		"Core Tap: " + cfg.CoreTap + "\n" +
-		"OS: " + cfg.OS + "\n"
+	// Built uncut: the Config tab cuts each row to the main width when drawn.
+	return presentation.Detail([]presentation.Field{
+		{Label: "Homebrew", Value: cfg.HomebrewVersion},
+		{Label: "Prefix", Value: cfg.Prefix},
+		{Label: "Cellar", Value: cfg.Cellar},
+		{Label: "Repository", Value: cfg.Repository},
+		{Label: "Core Tap", Value: cfg.CoreTap},
+		{Label: "OS", Value: cfg.OS},
+	}, 0)
 }
 
 func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
