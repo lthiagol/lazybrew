@@ -48,6 +48,10 @@ func TestFlexStringsReadsDependencyObjects(t *testing.T) {
 		{"mixed", `["a", {"full_name":"b"}, {"name":"c"}]`, []string{"a", "b", "c"}},
 		{"single object", `{"full_name":"solo"}`, []string{"solo"}},
 		{"cask depends_on object", `{"formula":["x"],"cask":["y"]}`, []string{}},
+		{"null element skipped", `[null, "a", 3]`, []string{"a"}},
+		{"empty array", `[]`, []string{}},
+		{"null reads as none", `null`, []string{}},
+		{"object with no name", `[{"version":"1"}]`, []string{}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

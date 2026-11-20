@@ -94,12 +94,10 @@ type bottleJSON struct {
 	Stable stableBottleJSON `json:"stable"`
 }
 
+// stableBottleJSON's files are read only for their count: the platform names
+// are the keys, and each value is left undecoded.
 type stableBottleJSON struct {
-	Files map[string]bottleFileJSON `json:"files"`
-}
-
-type bottleFileJSON struct {
-	URL string `json:"url"`
+	Files map[string]json.RawMessage `json:"files"`
 }
 
 type outdatedJSON struct {
