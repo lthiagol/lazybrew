@@ -1289,11 +1289,11 @@ func (m *Model) startBrewUpdate() tea.Cmd {
 	}
 	// A dropped enqueue would leave isUpdating stuck true and block every
 	// later R update, so surface the failure and reset the flag (r1 finding 7).
-	if _, err := m.tasks.Enqueue(t); err != nil {
+	c, err := m.tryEnqueue(t)
+	if err != nil {
 		m.isUpdating = false
-		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
 	}
-	return m.tasks.RunNext()
+	return c
 }
 
 // panelCacheGroups names the brew cache group each panel reads. The groups are

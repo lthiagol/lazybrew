@@ -293,14 +293,7 @@ func (m *Model) executeTrustAction(index int) tea.Cmd {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-	}
-	if res == task.EnqueueQueued {
-		return m.setToast("Queued behind running task", modal.ToastInfo)
-	}
-	return m.tasks.RunNext()
+	return m.enqueue(t)
 }
 
 func (m *Model) executeTrustFormulaAction(index int) tea.Cmd {
@@ -338,14 +331,7 @@ func (m *Model) trustItemCmd(fullName, itemType string) tea.Cmd {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-	}
-	if res == task.EnqueueQueued {
-		return m.setToast("Queued behind running task", modal.ToastInfo)
-	}
-	return m.tasks.RunNext()
+	return m.enqueue(t)
 }
 
 func (m Model) executeUntap() (tea.Model, tea.Cmd) {
@@ -362,16 +348,8 @@ func (m Model) executeUntap() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) executeRepair() (tea.Model, tea.Cmd) {
@@ -388,16 +366,8 @@ func (m Model) executeRepair() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m *Model) executeBrewfileAction(index int) tea.Cmd {
@@ -420,14 +390,7 @@ func (m *Model) executeBrewfileAction(index int) tea.Cmd {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		return m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-	}
-	if res == task.EnqueueQueued {
-		return m.setToast("Queued behind running task", modal.ToastInfo)
-	}
-	return m.tasks.RunNext()
+	return m.enqueue(t)
 }
 
 func (m *Model) executeSearch(query string) tea.Cmd {
@@ -566,17 +529,8 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
@@ -820,16 +774,8 @@ func (m Model) executeTapAdd(name string) (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 // trustStateMissingToast is what t and T say while the taps were read without
@@ -1072,16 +1018,8 @@ func (m Model) runServiceTask(action, name string) (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 // togglePin pins/unpins the selected formula. The pinned state is looked
@@ -1123,16 +1061,8 @@ func (m Model) togglePin() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 // serviceCleanup opens the confirm dialog; the actual cleanup runs through
@@ -1157,16 +1087,8 @@ func (m Model) executeServicesCleanup() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) brewfileMenu() (tea.Model, tea.Cmd) {
@@ -1209,16 +1131,8 @@ func (m Model) runVulns() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) runMissing() (tea.Model, tea.Cmd) {
@@ -1261,16 +1175,8 @@ func (m Model) runMissing() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 // tabItemName is the name a tab's content is keyed by, or "" when the tab has
@@ -1648,16 +1554,8 @@ func (m Model) runDoctor() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
@@ -1685,16 +1583,8 @@ func (m Model) brewCleanup() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) runAutoremove() (tea.Model, tea.Cmd) {
@@ -1710,16 +1600,8 @@ func (m Model) runAutoremove() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) executeCleanup() (tea.Model, tea.Cmd) {
@@ -1735,16 +1617,8 @@ func (m Model) executeCleanup() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func (m Model) executeAutoremove() (tea.Model, tea.Cmd) {
@@ -1760,16 +1634,8 @@ func (m Model) executeAutoremove() (tea.Model, tea.Cmd) {
 		},
 	}
 
-	res, err := m.tasks.Enqueue(t)
-	if err != nil {
-		c := m.setToast("Queue full: "+err.Error(), modal.ToastWarning)
-		return m, c
-	}
-	if res == task.EnqueueQueued {
-		c := m.setToast("Queued behind running task", modal.ToastInfo)
-		return m, c
-	}
-	return m, m.tasks.RunNext()
+	c := m.enqueue(t)
+	return m, c
 }
 
 func formatConfig(cfg *brew.BrewConfig) string {
