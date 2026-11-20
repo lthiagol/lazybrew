@@ -104,7 +104,7 @@ func TestSpinnerLoadingLabelPreserved(t *testing.T) {
 	// Search path: empty results + loading → " Searching..."
 	m.activePanel = PanelSearch
 	m.searchResults = nil
-	m.searchInfoContent = ""
+	m.searchInfo, m.searchInfoErr = nil, nil
 	m.panels[PanelSearch].loading = true
 	search := m.renderContent(40, 10)
 	if !strings.Contains(search, " Searching...") {

@@ -553,13 +553,13 @@ func (m Model) renderContent(width, height int) string {
 		help := style.SubtleText.Render("  Enter to search  |  Esc to clear")
 		top := lipgloss.JoinVertical(lipgloss.Top, searchBox, help, "")
 
-		if len(m.searchResults) == 0 && m.searchInfoContent == "" {
+		if len(m.searchResults) == 0 && !m.hasSearchInfo() {
 			if !m.panels[PanelSearch].loading {
 				return top + "\n" + style.SubtleText.Render("Search for Homebrew packages...")
 			}
 			return top + "\n" + m.spinner.View() + style.SubtleText.Render(" Searching...")
 		}
-		if m.searchInfoContent != "" {
+		if m.hasSearchInfo() {
 			return top + "\n" + m.renderSearchInfo(width, height-3)
 		}
 		return top + "\n" + style.SubtleText.Render("Select a result to see details")
@@ -568,11 +568,17 @@ func (m Model) renderContent(width, height int) string {
 	return emptyPanel(width, height)
 }
 
+// hasSearchInfo is whether the search pane has an info result to show: the
+// parsed info, or the error that replaced it.
+func (m Model) hasSearchInfo() bool {
+	return m.searchInfo != nil || m.searchInfoErr != nil
+}
+
 func (m Model) renderSearchInfo(width, height int) string {
-	info, err := parsePackageInfo(m.searchInfoContent)
-	if err != nil {
-		return style.ErrorBadge.Render("Parse error: " + err.Error())
+	if m.searchInfoErr != nil {
+		return style.ErrorBadge.Render(m.searchInfoErr.Error())
 	}
+	info := m.searchInfo
 
 	ver := info.Version
 	if info.Bottled {

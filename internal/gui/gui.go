@@ -89,9 +89,12 @@ type Model struct {
 	// it in to count the reads.
 	readLog func(path string, n int) (logtail.Tail, error)
 
-	searchResults     []brew.SearchResult
-	searchInfoContent string
-	searchInput       textinput.Model
+	searchResults []brew.SearchResult
+	// searchInfo is the info of the selected search result, parsed once when
+	// it lands. searchInfoErr is why there is none instead (cr3 AC-01).
+	searchInfo    *pkgInfo
+	searchInfoErr error
+	searchInput   textinput.Model
 
 	tasks      *task.Manager
 	commandLog *CommandLog
@@ -397,10 +400,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case SearchInfoLoadedMsg:
-		if msg.Err != nil {
-			m.searchInfoContent = "Error: " + msg.Err.Error()
-		} else {
-			m.searchInfoContent = msg.Content
+		m.searchInfo, m.searchInfoErr = nil, msg.Err
+		if msg.Err == nil && msg.Content != "" {
+			m.searchInfo, m.searchInfoErr = parseSearchInfo(msg.Content)
 		}
 		return m, nil
 
