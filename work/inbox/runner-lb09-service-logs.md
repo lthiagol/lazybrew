@@ -1,6 +1,4 @@
-# lb09-service-logs — runner receipt
-
-Brief: `work/briefs/lb09-service-logs.md`.
+# lb09-service-logs — runner receipt (brief `work/briefs/lb09-service-logs.md`)
 
 ## Commits, in order
 
@@ -32,12 +30,11 @@ Brief: `work/briefs/lb09-service-logs.md`.
 ## Changed expectations (named)
 
 - `TestServicesFooterAndInfoAgreeOnActions` skips `[ ]`, as it skips `j/k` and `c`.
-- Services footer gains `[ ] tabs`; `e stream` on Logs only. Help gains `e`.
+- Services footer gains `[ ] tabs`; `e stream` on Logs only; help gains `e`.
 
 ## For the next session
 
-- Open question `Q-lb09-slide`: past 200 lines the window slides under a
-  scrolled-up view. Needs a ruling before review, or accept.
+- Open question `Q-lb09-slide`: the window slides past 200 lines; rule before review.
 - One AC-02 `make test-fast` call was mistyped; re-run correctly, exit 0.
-- No brew write command run; no service started, stopped or restarted.
+- No brew write command run; no service touched.
 - The unredacted real moshi-hook log is not in the repo.
