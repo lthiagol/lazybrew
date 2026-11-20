@@ -19,6 +19,6 @@
 │▸ dbus                none││                                                  │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
 ╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
-│                          ││No commands executed yet                          │
+│                          ││ No commands executed yet                         │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
  j/k navigate  u upgrade  U upgrade all  Space select  a select all  ? more     
