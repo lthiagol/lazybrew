@@ -299,3 +299,20 @@ redirect it.
 - **Runner's decision:** the error is returned from `Load`, so `app.go` fails at
   startup with the message, as it does for a YAML error.
 - **Raised by:** runner lane (slice `v2-03-look-foundation`).
+
+### Orchestrator rulings on Q-v2-03-a..e (2026-11-19)
+
+- **Q-v2-03-a:** Status shows **no** count in its border label (dashboard line
+  count means nothing to the user). Fix in the v2-03 fix round (F-orch-01).
+- **Q-v2-03-b:** yes — the header should know the counts on first launch.
+  Done in `v2-03b-sidebar-lists`, which already reshapes the Status data into a
+  compact summary (carry typed counts from the dashboard load into the model).
+  Not a v2-03 finding.
+- **Q-v2-03-c:** when the full label does not fit, use a short form instead of
+  cutting a word: `not loaded` → `–` (muted), loading → `…`, error → `!`;
+  counts are always shown in full. Fix in the v2-03 fix round (F-orch-02).
+- **Q-v2-03-d:** a **running operation outranks the badges**: when space is
+  short, badges drop first, then the operation is cut with `…`; the app name
+  always stays. Fix in the v2-03 fix round (F-orch-03).
+- **Q-v2-03-e:** accepted — validating at `Load` and failing at startup is the
+  precedent. Other fields are not validated in this overhaul.
