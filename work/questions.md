@@ -686,3 +686,13 @@ sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
 - **Raised by:** runner lane (slice `lb09-service-logs`). Evidence:
   `work/verification/lb09-service-logs/result.md`, note 1.
 - **Owner:** the orchestrator.
+
+### Orchestrator ruling on Q-lb09-slide (2026-11-20)
+
+- **Re-anchor.** AC-03.3's intent is that new lines never move what a
+  scrolled-up reader is looking at. When the window slides, lower the scroll
+  offset by the number of lines that left the top, so the same line stays at
+  the top; if that line itself left the window, clamp to the top (offset 0).
+  A view pinned to the bottom is unaffected. Fix before review: one commit
+  with a test where the log already holds > 200 lines and new lines arrive
+  while scrolled up (the top line is unchanged; and the clamp case).
