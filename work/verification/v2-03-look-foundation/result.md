@@ -38,3 +38,30 @@ Every row below is explained by AC-01..AC-05. Nothing unexplained was found.
   shows; it is not a count of anything the user recognises.
 - **80×24 narrow labels.** The sidebar is 24 cells at 80 columns, so
   `not loaded` is cut to `no…` in the border; the name is always whole.
+
+## Fix round r1
+
+Re-captured on `f4f4abf` (the last code commit), same harness, same icon set.
+`after/` now holds these frames. Every frame is exactly its W×H (checked: 22
+frames, 24 or 40 rows, one width each). Frames changed as follows.
+
+- **Status border, every frame (F-orch-01):** the Status box no longer shows the
+  dashboard's line count (`16`) in its border. Two cells change in each 140x40
+  frame, 14 in each 80x24 frame of the sidebar.
+- **01-status, 02-formulae, 03-formulae-info, 04-formulae-deps, 11-deps-bash:**
+  the Status count is gone (F-orch-01). At 80x24, unloaded Casks, Outdated and
+  Services show `–` for `not loaded` (F-orch-02).
+- **05-outdated:** a loaded empty Outdated shows `0` where it showed `(empty)`
+  (F-r1-05), and the Status count is gone. At 80x24 `(empty)` was cut to `(e…`.
+- **06-taps:** the Status count is gone; at 80x24 the Taps count `3` shows whole.
+- **07-confirm-modal:** the Status count is gone; the modal and its footer
+  (`y yes  n no  esc cancel`) are unchanged.
+- **08-help:** unchanged (no sidebar label or footer change was visible).
+- **09-search:** the Status count is gone. In `.ansi` at 140x40 the search
+  prompt `>` changes from white (`ESC[37m`) to the accent (`ESC[38;2;203;166;247m`,
+  F-r1-02); the plain text is unchanged.
+- **10-toast:** the Status count is gone; the toast is in the same place as before.
+- **Not shown in any frame:** the operation overlay title and Log marks use the
+  Unicode set in this harness, which is byte-identical to before (F-r1-03);
+  header badges and the operation priority (F-r1-04, F-orch-03) are covered by
+  tests, since no frame has a running operation or loaded counts.

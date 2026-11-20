@@ -1,5 +1,5 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                         125 formulae
-╭─ 1 ◉ Status ──────────────────── 16 ─╮╭─ Formulae › Info ────────────────────────────────────────────────────────────────────────────────╮
+╭─ 1 ◉ Status ─────────────────────────╮╭─ Formulae › Info ────────────────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew 7.0.15-36-g1f335ae         ││  List    Info    Deps    Used By    Caveats    Files                                             │
 │  Prefix: /home/linuxbrew/.linuxbrew  ││        ━━━━━━━━                                                                                  │
 │                                      ││Name:        bash                                                                                 │
