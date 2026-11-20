@@ -506,3 +506,20 @@ func TestHeaderOperationOutranksBadges(t *testing.T) {
 		t.Fatalf("a long operation should be cut once the badges are gone: %q", plain)
 	}
 }
+
+// TestStatusBoxLabelShowsNoCount (F-orch-01): the Status box's border label
+// names no count once loaded; the loading, error and not-loaded states still
+// show.
+func TestStatusBoxLabelShowsNoCount(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	if got := plainLine(m.sidebarLabel(m.panels[PanelStatus])); got != "not loaded" {
+		t.Fatalf("unloaded Status label = %q, want not loaded", got)
+	}
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Items: []string{"Homebrew 4.5.2", "Prefix: /opt", "Formulae: 125 installed"}})
+	if got := m.sidebarLabel(m.panels[PanelStatus]); got != "" {
+		t.Fatalf("loaded Status label = %q, want no count", got)
+	}
+	if top := plainLine(strings.Split(m.renderSidebar(), "\n")[0]); strings.Contains(top, "3") {
+		t.Fatalf("Status border must not show the dashboard's line count: %q", top)
+	}
+}
