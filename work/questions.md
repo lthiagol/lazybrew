@@ -696,3 +696,12 @@ sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
   A view pinned to the bottom is unaffected. Fix before review: one commit
   with a test where the log already holds > 200 lines and new lines arrive
   while scrolled up (the top line is unchanged; and the clamp case).
+
+## Q-cover-floors — the coverage floors had gone stale (user, 2026-11-20)
+
+`scripts/check-coverage.sh` checked four packages with floors far under the
+measured coverage (gui 36 vs 85.6, modal 41 vs 90.2, brew 62 vs 80.0) and six
+tested packages not at all (logtail, task, style, anim, config, app).
+**Ruling:** every package with tests gets a floor = measured rounded down,
+less 2 points of headroom; a new package gets its floor in the slice that adds
+it. Done by the orchestrator directly (one commit, `make ci` green).
