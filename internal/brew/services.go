@@ -3,6 +3,8 @@ package brew
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"time"
 )
 
@@ -116,19 +118,19 @@ func (s *servicesReader) SetCacheTTLs(ttls CacheTTLs) {
 func (s *servicesWriter) Start(ctx context.Context, name string) error {
 	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
 	_, err := s.runner.Execute(ctx, "services", "start", name)
-	return err
+	return serviceWriteError("start", name, err)
 }
 
 func (s *servicesWriter) Stop(ctx context.Context, name string) error {
 	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
 	_, err := s.runner.Execute(ctx, "services", "stop", name)
-	return err
+	return serviceWriteError("stop", name, err)
 }
 
 func (s *servicesWriter) Restart(ctx context.Context, name string) error {
 	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
 	_, err := s.runner.Execute(ctx, "services", "restart", name)
-	return err
+	return serviceWriteError("restart", name, err)
 }
 
 func (s *servicesWriter) Run(ctx context.Context, name string) error {
@@ -136,11 +138,42 @@ func (s *servicesWriter) Run(ctx context.Context, name string) error {
 	// service state just as start/stop do (r1 finding 19).
 	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
 	_, err := s.runner.Execute(ctx, "services", "run", name)
-	return err
+	return serviceWriteError("run", name, err)
 }
 
 func (s *servicesWriter) Cleanup(ctx context.Context) error {
 	s.cache.Invalidate(KeyServicesList, KeyServicesInfo)
 	_, err := s.runner.Execute(ctx, "services", "cleanup")
 	return err
+}
+
+// rootMarkers are the words of brew's refusal for want of root: its own sudo
+// hint, or the system's permission error.
+var rootMarkers = []string{"sudo", "requires root", "permission denied"}
+
+// serviceWriteError says that a services write brew refused for want of root
+// needs sudo, naming the command to run (AC-04.1). Any other error passes
+// through unchanged.
+func serviceWriteError(action, name string, err error) error {
+	if err == nil || !refusedForRoot(err) {
+		return err
+	}
+	return &ServiceNeedsRootError{Action: action, Name: name}
+}
+
+// refusedForRoot reads brew's words for a root refusal: the error text and the
+// stderr brew prints its hint to.
+func refusedForRoot(err error) bool {
+	text := err.Error()
+	var exit *BrewExitError
+	if errors.As(err, &exit) {
+		text += "\n" + exit.Stderr
+	}
+	text = strings.ToLower(text)
+	for _, marker := range rootMarkers {
+		if strings.Contains(text, marker) {
+			return true
+		}
+	}
+	return false
 }

@@ -48,6 +48,18 @@ func (e *TimeoutError) Error() string {
 	return fmt.Sprintf("brew %s timed out after %s", e.Command, e.Timeout)
 }
 
+// ServiceNeedsRootError is a services write brew refused for want of root: the
+// service is a system one, and needs sudo. lazybrew never runs sudo; the error
+// names the command for the user to run in a terminal.
+type ServiceNeedsRootError struct {
+	Action string
+	Name   string
+}
+
+func (e *ServiceNeedsRootError) Error() string {
+	return fmt.Sprintf("%s: needs sudo — run \"sudo brew services %s %s\" in a terminal", e.Name, e.Action, e.Name)
+}
+
 func IsExitCode(err error, code int) bool {
 	var e *BrewExitError
 	if errors.As(err, &e) {

@@ -2,6 +2,8 @@ package brew
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -272,5 +274,65 @@ func TestServicesWritesInvalidateServicesInfo(t *testing.T) {
 				t.Error("expected KeyServicesList to be invalidated")
 			}
 		})
+	}
+}
+
+// A services write that brew refuses for want of root names the sudo command
+// instead of brew's raw failure (AC-04.1). The refusal is brew's own: its sudo
+// hint on stderr, or the system's permission error.
+func TestServicesWriteNeedsSudoIsNamed(t *testing.T) {
+	const want = `moshi-hook: needs sudo — run "sudo brew services %s moshi-hook" in a terminal`
+	refusals := map[string]string{
+		"sudo hint":         "Error: Service `moshi-hook` is started as `root`. Try:\n  sudo brew services stop moshi-hook",
+		"requires root":     "Error: moshi-hook requires root",
+		"permission denied": "Error: Permission denied @ rb_sysopen",
+	}
+	writes := map[string]func(w ServicesWriter) error{
+		"start":   func(w ServicesWriter) error { return w.Start(context.Background(), "moshi-hook") },
+		"stop":    func(w ServicesWriter) error { return w.Stop(context.Background(), "moshi-hook") },
+		"restart": func(w ServicesWriter) error { return w.Restart(context.Background(), "moshi-hook") },
+		"run":     func(w ServicesWriter) error { return w.Run(context.Background(), "moshi-hook") },
+	}
+	for refusal, stderr := range refusals {
+		for action, write := range writes {
+			t.Run(refusal+"/"+action, func(t *testing.T) {
+				r := NewMockRunner()
+				r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+					return nil, &BrewExitError{Command: "services " + action, ExitCode: 1, Stderr: stderr}
+				}
+				err := write(NewServicesWriter(r, NewCache(time.Minute)))
+
+				var needsRoot *ServiceNeedsRootError
+				if !errors.As(err, &needsRoot) {
+					t.Fatalf("err = %T %v, want *ServiceNeedsRootError", err, err)
+				}
+				if needsRoot.Action != action || needsRoot.Name != "moshi-hook" {
+					t.Errorf("action %q name %q, want %q and moshi-hook", needsRoot.Action, needsRoot.Name, action)
+				}
+				if got := err.Error(); got != fmt.Sprintf(want, action) {
+					t.Errorf("Error() = %q, want %q", got, fmt.Sprintf(want, action))
+				}
+			})
+		}
+	}
+}
+
+// Any other failure keeps brew's own error, unchanged (AC-04.2).
+func TestServicesWriteOtherErrorsUnchanged(t *testing.T) {
+	brewErr := &BrewExitError{Command: "services stop", ExitCode: 1, Stderr: "Error: Failed to stop moshi-hook: timed out"}
+	for _, cause := range []error{brewErr, errors.New("boom")} {
+		r := NewMockRunner()
+		r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+			return nil, cause
+		}
+		err := NewServicesWriter(r, NewCache(time.Minute)).Stop(context.Background(), "moshi-hook")
+
+		var needsRoot *ServiceNeedsRootError
+		if errors.As(err, &needsRoot) {
+			t.Errorf("%v became a needs-sudo error", cause)
+		}
+		if err != cause {
+			t.Errorf("err = %v, want the runner's error %v unchanged", err, cause)
+		}
 	}
 }
