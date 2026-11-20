@@ -125,3 +125,7 @@ resolved.
   would diverge from the Outdated panel's own path, which already makes two
   calls. The brief's AC-05.5 has been corrected to state the per-class
   wording; the contract is unchanged in every other respect. Q-04 is closed.
+
+- **Question:** The Charm v2 modules require Go 1.26 (`go 1.26.0` now in `go.mod`), but `.github/workflows/wip-ci.yml` and `.github/workflows/stable-ci.yml` pin `go-version: '1.24'`. CI will not build the v2 port until the workflows are bumped. The brief does not name the CI files, so the slice leaves them unchanged. Which Go version should CI pin, and should the bump land with v2-01-charm-v2 or as its own change?
+- **Raised by:** runner lane (slice `v2-01-charm-v2`).
+- **Owner:** the orchestrator.
