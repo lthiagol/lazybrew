@@ -192,6 +192,19 @@ func TestTabWidthMatchesTheRender(t *testing.T) {
 	}
 }
 
+// TestActiveTabWidthMatchesTheRender holds tabWidth to the active tab too:
+// handleTabBarClick measures every tab with it, not only the inactive ones.
+func TestActiveTabWidthMatchesTheRender(t *testing.T) {
+	for _, tabs := range panelTabs {
+		for _, tab := range tabs {
+			want := lipgloss.Width(style.TabActive.Render(" " + tab.name + " "))
+			if got := tabWidth(tab.name); got != want {
+				t.Errorf("tabWidth(%q) = %d; the active tab is %d wide", tab.name, got, want)
+			}
+		}
+	}
+}
+
 // TestTabBarRowsMatchTheRender holds the tab bar's height, without a render, to
 // the height of the bar the render draws, on every panel.
 func TestTabBarRowsMatchTheRender(t *testing.T) {

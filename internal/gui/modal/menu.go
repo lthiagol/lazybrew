@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 type MenuModal struct {
@@ -66,24 +66,17 @@ func (m *MenuModal) View() tea.View {
 			itemStyle = style.SelectedItem
 		}
 		shortcut := style.SubtleText.Render(strconv.Itoa(i) + ": ")
-		lines = append(lines, fitLine(itemStyle.Render(shortcut+prefix+item), formWidth))
+		lines = append(lines, textutil.Clip(itemStyle.Render(shortcut+prefix+item), innerWidth(formWidth)))
 	}
 
-	keys := fitLine(keyLine(
+	keys := textutil.Clip(keyLine(
 		keyHint(style.AccentColor, "↑↓", "move"),
 		keyHint(style.AccentColor, "enter", "choose"),
 		keyHint(style.AccentColor, "esc", "cancel"),
-	), formWidth)
+	), innerWidth(formWidth))
 	// Every item is padded to the widest, so the list reads as one block, left
 	// aligned, when each row is centred in the box.
-	widest := 0
-	for _, line := range lines {
-		widest = max(widest, lipgloss.Width(line))
-	}
-	for i, line := range lines {
-		lines[i] = lipgloss.NewStyle().Width(widest).Render(line)
-	}
-	list := strings.Join(lines, "\n")
+	list := strings.Join(leftBlock(lines), "\n")
 	return tea.NewView(dialog(style.AccentColor, m.title, formWidth, []string{list}, keys))
 }
 

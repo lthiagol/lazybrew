@@ -12,6 +12,7 @@ import (
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
+	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -431,13 +432,13 @@ func TestOperationAndLogGlyphsFollowIcons(t *testing.T) {
 
 			m.opState = &Operation{Title: "upgrading curl", Status: opRunning}
 			title := strings.Split(m.renderOperation(60, 10), "\n")[0]
-			if got, want := strings.TrimRight(plainLine(title), " "), withIcon(tc.want.Refresh, "upgrading curl"); got != want {
+			if got, want := strings.TrimRight(plainLine(title), " "), presentation.WithIcon(tc.want.Refresh, "upgrading curl"); got != want {
 				t.Errorf("operation title = %q, want %q", got, want)
 			}
 
 			id := m.commandLog.Append("install bash")
 			m.commandLog.SetStatus(id, CommandSuccess)
-			if got, want := plainLine(m.commandLog.View(40, 4)), withIcon(tc.want.OK, "brew install bash"); !strings.HasPrefix(got, want) {
+			if got, want := plainLine(m.commandLog.View(40, 4)), presentation.WithIcon(tc.want.OK, "brew install bash"); !strings.HasPrefix(got, want) {
 				t.Errorf("log line = %q, want it to start %q", got, want)
 			}
 		})

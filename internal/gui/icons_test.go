@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -88,10 +89,10 @@ func TestIconSelectionMatrix(t *testing.T) {
 }
 
 func TestWithIconLeavesNoStraySpace(t *testing.T) {
-	if got := withIcon("", "bash"); got != "bash" {
+	if got := presentation.WithIcon("", "bash"); got != "bash" {
 		t.Errorf("withIcon with no glyph = %q, want %q", got, "bash")
 	}
-	if got := withIcon("◆", "bash"); got != "◆ bash" {
+	if got := presentation.WithIcon("◆", "bash"); got != "◆ bash" {
 		t.Errorf("withIcon = %q, want %q", got, "◆ bash")
 	}
 }

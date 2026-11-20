@@ -10,9 +10,10 @@ import (
 	"charm.land/bubbles/v2/progress"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/anim"
+	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 // operationTailLines is how many output lines a step shows under its title.
@@ -115,7 +116,7 @@ func (m Model) renderOperation(width, height int) string {
 		icon = m.icons.Refresh
 	}
 	head := []string{
-		style.AccentText.Render(withIcon(icon, op.Title)),
+		style.AccentText.Render(presentation.WithIcon(icon, op.Title)),
 		m.operationStatus(op, width),
 	}
 	if _, total := operationProgress(op); total > 0 {
@@ -138,11 +139,11 @@ func (m Model) operationStatus(op *Operation, width int) string {
 	closeHint := style.SubtleText.Render(operationCloseHint)
 	switch op.Status {
 	case opSuccess:
-		return style.InstalledBadge.Render(withIcon(m.icons.OK,
+		return style.InstalledBadge.Render(presentation.WithIcon(m.icons.OK,
 			"Completed in "+formatElapsed(op.Ended.Sub(op.Started)))) + closeHint
 	case opError:
-		text := ansi.Truncate(withIcon(m.icons.Error, "Failed: "+op.Err.Error()),
-			max(0, width-lipgloss.Width(closeHint)), "…")
+		text := textutil.Clip(presentation.WithIcon(m.icons.Error, "Failed: "+op.Err.Error()),
+			max(0, width-lipgloss.Width(closeHint)))
 		return style.ErrorBadge.Render(text) + closeHint
 	case opCancelled:
 		return style.SubtleText.Render("Cancelled") + closeHint

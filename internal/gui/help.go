@@ -7,6 +7,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 type helpPage struct {
@@ -264,7 +265,7 @@ func layoutHelp(width int) []string {
 			if i < len(col) {
 				cell = col[i]
 			}
-			cells = append(cells, fitLine(cell, colW))
+			cells = append(cells, textutil.Fit(cell, colW))
 		}
 		rows[i] = strings.Join(cells, strings.Repeat(" ", helpColumnGap))
 	}

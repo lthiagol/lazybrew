@@ -6,6 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 // minSidebarName is the least room a name keeps before its right-hand text
@@ -94,7 +95,7 @@ func layoutSidebarRow(c sidebarCells, r sidebarRowRoles, w int, hl bool) string 
 		room = w - fixed
 	}
 	room = max(0, room)
-	name := clipLine(c.name, room)
+	name := textutil.Clip(c.name, room)
 	name += strings.Repeat(" ", max(0, room-lipgloss.Width(name)))
 
 	line := cell(r.marker, r.markerRole)
@@ -108,7 +109,7 @@ func layoutSidebarRow(c sidebarCells, r sidebarRowRoles, w int, hl bool) string 
 	if tail != "" {
 		line += sep + cell(c.tail, c.tailRole)
 	}
-	return fitLine(line, w)
+	return textutil.Fit(line, w)
 }
 
 // typedRow is row idx of the panel's list, built from the panel's typed data.

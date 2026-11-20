@@ -4,6 +4,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 type InputModal struct {
@@ -55,10 +56,10 @@ func (m *InputModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *InputModal) View() tea.View {
-	keys := fitLine(keyLine(
+	keys := textutil.Clip(keyLine(
 		keyHint(style.AccentColor, "enter", "submit"),
 		keyHint(style.AccentColor, "esc", "cancel"),
-	), formWidth)
+	), innerWidth(formWidth))
 	prompt := proseLines(m.prompt, style.NormalItem, formWidth)
 	return tea.NewView(dialog(style.AccentColor, m.action, formWidth, append(prompt, "", m.input.View()), keys))
 }

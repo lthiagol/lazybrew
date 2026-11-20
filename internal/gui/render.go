@@ -23,7 +23,7 @@ func (m Model) renderSidebar() string {
 		// panel's own. The state or count sits in the border, so a box
 		// too short for its body still shows it (Q-v2-small).
 		title := borderTitle{
-			full: strconv.Itoa(i+1) + " " + withIcon(m.panelIcon(p.id), p.title),
+			full: strconv.Itoa(i+1) + " " + presentation.WithIcon(m.panelIcon(p.id), p.title),
 			bare: strconv.Itoa(i+1) + " " + p.title,
 		}
 		// visibleRows is derived in the Update loop (syncVisibleRows);
@@ -630,12 +630,5 @@ func searchStatus(info *pkgInfo, icons style.Icons) (string, color.Color) {
 	if info.InstallPath != "" {
 		status += " (" + info.InstallPath + ")"
 	}
-	return withIcon(icons.Installed, status), style.SuccessColor
-}
-
-func boolStr(b bool) string {
-	if b {
-		return "yes"
-	}
-	return "no"
+	return presentation.WithIcon(icons.Installed, status), style.SuccessColor
 }

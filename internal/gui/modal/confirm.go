@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 // ActionKind is what a confirm dialog is about. It picks the theme role the
@@ -116,7 +117,7 @@ func (m *ConfirmModal) View() tea.View {
 		lines = append(lines, "")
 		lines = append(lines, leftBlock(proseLines(body, style.NormalItem, confirmWidth))...)
 	}
-	return tea.NewView(dialog(accent, m.action, confirmWidth, lines, fitLine(m.choices(accent), confirmWidth)))
+	return tea.NewView(dialog(accent, m.action, confirmWidth, lines, textutil.Clip(m.choices(accent), innerWidth(confirmWidth))))
 }
 
 // choices is the key line: [y]es and [n]o, the selected one reversed, then esc.
