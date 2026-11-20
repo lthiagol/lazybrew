@@ -1,7 +1,6 @@
 package modal
 
 import (
-	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -14,8 +13,6 @@ type ConfirmModal struct {
 	done      bool
 	cancelled bool
 	result    bool
-	viewport  viewport.Model
-	ready     bool
 }
 
 func NewConfirmModal(title, message string) *ConfirmModal {
@@ -32,11 +29,6 @@ func (m *ConfirmModal) Init() tea.Cmd {
 
 func (m *ConfirmModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		if !m.ready {
-			m.viewport = viewport.New(viewport.WithWidth(msg.Width-8), viewport.WithHeight(8))
-			m.ready = true
-		}
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
@@ -60,10 +52,6 @@ func (m *ConfirmModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *ConfirmModal) View() tea.View {
-	if !m.ready {
-		return tea.NewView("Loading...")
-	}
-
 	width := 50
 	title := style.AccentText.Render(m.title)
 	message := style.NormalItem.Render(m.message)
