@@ -85,10 +85,14 @@ type panelData struct {
 	err                error
 	formulae           []brew.Formula
 	casks              []brew.Cask
-	taps               []brew.Tap
-	services           []brew.Service
-	serviceInfo        []brew.ServiceInfo
-	visibleRows        int
+	// installed is the installed list the package tables read, built by
+	// indexInstalled when the panel's data lands. installedGen counts its builds.
+	installed    map[string]installedPkg
+	installedGen int
+	taps         []brew.Tap
+	services     []brew.Service
+	serviceInfo  []brew.ServiceInfo
+	visibleRows  int
 	// results is the Search panel's raw rows, index-aligned with items.
 	results []brew.SearchResult
 	// loaded is set once a fetch result has landed for this panel, error or

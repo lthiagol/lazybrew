@@ -43,32 +43,44 @@ type installedPkg struct {
 	version, desc string
 }
 
-// installedList is the installed packages a check reads, by name. It returns
-// nil when that list has not loaded, so no row claims an icon it cannot back up.
+// installedList is the installed packages a check reads, by name: the list the
+// panel built when its data landed. It returns nil when that list has not
+// loaded, so no row claims an icon it cannot back up.
 func (m Model) installedList(c depCheck) map[string]installedPkg {
+	var p *panelData
 	switch c {
 	case depFormula:
-		p := m.panels[PanelFormulae]
-		if !p.loaded {
-			return nil
-		}
-		list := make(map[string]installedPkg, len(p.formulae))
-		for _, f := range p.formulae {
-			list[f.Name] = installedPkg{version: f.Version, desc: f.Description}
-		}
-		return list
+		p = m.panels[PanelFormulae]
 	case depCask:
-		p := m.panels[PanelCasks]
-		if !p.loaded {
-			return nil
-		}
-		list := make(map[string]installedPkg, len(p.casks))
-		for _, c := range p.casks {
-			list[c.Name] = installedPkg{version: c.Version, desc: c.Description}
-		}
-		return list
+		p = m.panels[PanelCasks]
+	default:
+		return nil
 	}
-	return nil
+	if !p.loaded {
+		return nil
+	}
+	return p.installed
+}
+
+// indexInstalled builds the installed list of a formulae or casks panel from its
+// packages. It runs when the panel's data lands, and when the leaves filter
+// narrows the formulae, so a render reads the list rather than building it.
+func (p *panelData) indexInstalled() {
+	switch p.id {
+	case PanelFormulae:
+		p.installed = make(map[string]installedPkg, len(p.formulae))
+		for _, f := range p.formulae {
+			p.installed[f.Name] = installedPkg{version: f.Version, desc: f.Description}
+		}
+	case PanelCasks:
+		p.installed = make(map[string]installedPkg, len(p.casks))
+		for _, c := range p.casks {
+			p.installed[c.Name] = installedPkg{version: c.Version, desc: c.Description}
+		}
+	default:
+		return
+	}
+	p.installedGen++
 }
 
 // renderDepGroups draws the groups as one table at most width cells wide: a

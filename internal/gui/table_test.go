@@ -132,9 +132,8 @@ func TestTableHeadingSpansTheTable(t *testing.T) {
 // package is not installed or the list has not loaded.
 func TestPackageRowsCarryLoadedDataOnly(t *testing.T) {
 	m := formulaWithDeps(t)
-	m.panels[PanelFormulae].formulae = []brew.Formula{
-		{Name: "ncurses", Version: "6.5", Description: "Terminal handling"},
-	}
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"ncurses"},
+		Formulae: []brew.Formula{{Name: "ncurses", Version: "6.5", Description: "Terminal handling"}}})
 	cells := func(name string) string {
 		return ansi.Strip(strings.Join(m.pkgRow(name, m.installedList(depFormula)).cells, "|"))
 	}
@@ -168,7 +167,8 @@ func TestPackageColumnsWithIconsOff(t *testing.T) {
 // gives each row what a row read on its own gives.
 func TestPkgRowsMatchPkgRow(t *testing.T) {
 	m := formulaWithDeps(t)
-	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "ncurses", Version: "6.5", Description: "Terminal handling"}}
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"ncurses"},
+		Formulae: []brew.Formula{{Name: "ncurses", Version: "6.5", Description: "Terminal handling"}}})
 	names := []string{"ncurses", "cmake", "readline"}
 	rows := m.pkgRows(names, depFormula)
 	list := m.installedList(depFormula)
