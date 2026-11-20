@@ -73,6 +73,14 @@ passes the tests; `TestEveryFrameIsTerminalSize` passes at every commit.
    computed in the Update loop or purely at render time — never written at
    render time).
 
+4. Status data is typed (orchestrator ruling Q-v2-03-b): the dashboard load
+   carries typed counts (formulae, casks, taps, services, outdated when known)
+   into the model, not only text lines. The Status sidebar summary and the
+   header badges use them, so the header shows `N formulae` / `N casks` on
+   first launch, before the Formulae/Casks panels are opened. Unknown values
+   are still omitted, never `0`. Test: fresh model after the dashboard load →
+   header contains the counts.
+
 ### AC-04 — mouse, keys and help follow the new layout
 
 1. Click a sidebar row → focuses that panel and selects the row (as today for
