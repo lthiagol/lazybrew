@@ -64,6 +64,9 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 		}
 	case p.id == PanelStatus:
 		return borderLabel{}
+	case p.id == PanelTaps && p.trustUnknown:
+		// The count gives way to the warning: the rows carry no trust word.
+		return borderLabel{full: style.OutdatedBadge.Render(trustUnknownText), short: style.OutdatedBadge.Render("?")}
 	case p.itemCount() == 0:
 		return borderLabel{full: style.SubtleText.Render("0"), count: true}
 	default:
@@ -506,7 +509,7 @@ func (m Model) renderContent(width, height int) string {
 			if t == nil {
 				return style.SubtleText.Render("No tap selected")
 			}
-			return tapTrustStory(t, width)
+			return tapTrustStory(t, !panel.trustUnknown, width)
 		case tapFormulaeTab:
 			t := panel.selectedTap()
 			if t == nil || len(t.FormulaNames) == 0 {

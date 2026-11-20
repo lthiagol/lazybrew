@@ -92,6 +92,9 @@ type panelData struct {
 	// not. It tells "never fetched" (not loaded) from "fetched, nothing
 	// there" (empty), which items alone cannot.
 	loaded bool
+	// trustUnknown is set when the taps were read without tap-info: the rows
+	// and the Tap Info say so, and t and T refuse until a full read lands.
+	trustUnknown bool
 }
 
 func (p *panelData) itemCount() int {

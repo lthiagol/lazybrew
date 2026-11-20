@@ -1072,6 +1072,7 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 			p.formulae = msg.Formulae
 			p.casks = msg.Casks
 			p.taps = msg.Taps
+			p.trustUnknown = msg.TrustUnknown
 			p.services = msg.Services
 			p.serviceInfo = msg.ServiceInfo
 			if msg.PanelID == PanelStatus {

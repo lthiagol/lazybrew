@@ -7,8 +7,18 @@ import (
 )
 
 type TapsReader interface {
-	List(ctx context.Context) ([]Tap, error)
+	List(ctx context.Context) (TapList, error)
 	Get(ctx context.Context, name string) (*Tap, error)
+}
+
+// TapList is the Taps list. TrustUnknown is set when `brew tap-info` failed or
+// timed out: Taps then holds the tap names only, so each tap's Trusted and its
+// formula and cask names were not read. That is not the same as untrusted, and
+// the GUI must not show it as such. A list with TrustUnknown set is never
+// cached, so the next read tries tap-info again.
+type TapList struct {
+	Taps         []Tap
+	TrustUnknown bool
 }
 
 type TapsWriter interface {
@@ -54,16 +64,16 @@ type tapInfoJSON struct {
 	CaskNames    []string `json:"cask_names,omitempty"`
 }
 
-func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
+func (s *tapsReader) List(ctx context.Context) (TapList, error) {
 	if cached, ok := s.cache.Get(KeyTapsList); ok {
 		if taps, ok := cached.([]Tap); ok {
-			return taps, nil
+			return TapList{Taps: taps}, nil
 		}
 	}
 
 	tapNamesOutput, err := s.runner.Execute(ctx, "tap")
 	if err != nil {
-		return nil, err
+		return TapList{}, err
 	}
 
 	names := strings.Fields(string(tapNamesOutput))
@@ -84,9 +94,10 @@ func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
 		infos, err := s.fetchTapInfoBatch(ctx, names)
 		if err != nil {
 			// Keep name-only list for this call so the GUI still renders
-			// taps, but do NOT cache — a transient batch failure must not
-			// poison KeyTapsList and block retries for the whole TTL.
-			return taps, nil
+			// taps, flagged TrustUnknown so it does not show them as
+			// untrusted, and do NOT cache — a transient batch failure must
+			// not poison KeyTapsList and block retries for the whole TTL.
+			return TapList{Taps: taps, TrustUnknown: true}, nil
 		}
 		byName := make(map[string]tapInfoJSON, len(infos))
 		for _, info := range infos {
@@ -105,7 +116,7 @@ func (s *tapsReader) List(ctx context.Context) ([]Tap, error) {
 	}
 
 	s.cache.SetWithTTL(KeyTapsList, taps, s.tapsTTL)
-	return taps, nil
+	return TapList{Taps: taps}, nil
 }
 
 func (s *tapsReader) Get(ctx context.Context, name string) (*Tap, error) {

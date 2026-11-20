@@ -37,8 +37,13 @@ const (
 // Info.
 const serviceInfoTab = 0
 
-// tapSummary is the one-line header of the Taps panel's Tap Info tab.
-func tapSummary(taps []brew.Tap) string {
+// trustUnknownText is what the Taps panel says when brew did not give the trust
+// state of its taps: the rows, the border label and the Tap Info all use it.
+const trustUnknownText = "trust unknown — press R"
+
+// tapSummary is the one-line header of the Taps panel's Tap Info tab. With the
+// trust state unread it counts the official taps and no trusted or untrusted.
+func tapSummary(taps []brew.Tap, trustKnown bool) string {
 	official, trusted := 0, 0
 	for _, t := range taps {
 		if t.IsOfficial {
@@ -48,19 +53,26 @@ func tapSummary(taps []brew.Tap) string {
 			trusted++
 		}
 	}
+	if !trustKnown {
+		return fmt.Sprintf("%d taps · %d official · %s", len(taps), official, trustUnknownText)
+	}
 	return fmt.Sprintf("%d taps · %d official · %d trusted · %d untrusted",
 		len(taps), official, trusted, len(taps)-trusted)
 }
 
 // tapDetails is the block describing one tap.
-func tapDetails(t *brew.Tap, width int) string {
+func tapDetails(t *brew.Tap, trustKnown bool, width int) string {
 	trusted := "untrusted"
 	if t.Trusted || t.IsOfficial {
 		trusted = "trusted"
 	}
+	trustField := presentation.Field{Label: "Trusted", Value: trusted}
+	if !trustKnown && !t.IsOfficial {
+		trustField = presentation.Field{Label: "Trusted", Value: trustUnknownText, Role: style.WarningColor}
+	}
 	return presentation.Info([]presentation.Field{
 		{Label: "Tap", Value: t.Name},
-		{Label: "Trusted", Value: trusted},
+		trustField,
 		{Label: "Official", Value: boolStr(t.IsOfficial)},
 		{Label: "Remote", Value: t.Remote, Role: style.InfoColor, Right: true},
 		{Label: "Formulae", Value: strconv.Itoa(t.FormulaCount), Right: true},
@@ -79,12 +91,15 @@ func plural(n int, one, many string) string {
 // tapTrustStory is the Trust tab: what the selected tap's trust state means for
 // its formulae and casks, and the key that changes it. Homebrew loads the
 // formulae and casks of a non-official tap only once the tap is trusted.
-func tapTrustStory(t *brew.Tap, width int) string {
+func tapTrustStory(t *brew.Tap, trustKnown bool, width int) string {
 	var state, meaning string
 	switch {
 	case t.IsOfficial:
 		state = "official"
 		meaning = "Official taps (homebrew/*) are always trusted: their formulae and casks load without a trust step."
+	case !trustKnown:
+		state = "unknown"
+		meaning = "Homebrew did not report this tap's trust state. Press R to read it again."
 	case t.Trusted:
 		state = "trusted"
 		meaning = "Homebrew may load this tap's formulae and casks."
@@ -100,6 +115,11 @@ func tapTrustStory(t *brew.Tap, width int) string {
 		"",
 		"Press t to trust or untrust the tap, or one of its formulae or casks.",
 	}, "\n")
+	if !trustKnown {
+		story = strings.Join([]string{meaning, fmt.Sprintf("Its %d %s and %d %s follow that state.",
+			t.FormulaCount, plural(t.FormulaCount, "formula", "formulae"),
+			t.CaskCount, plural(t.CaskCount, "cask", "casks")), "", "Press R to read the trust state again."}, "\n")
+	}
 	return presentation.Detail([]presentation.Field{
 		{Label: "Tap", Value: t.Name},
 		{Label: "Trust", Value: state},
@@ -112,12 +132,16 @@ func renderTapInfo(p *panelData, width int) string {
 	if len(p.taps) == 0 {
 		return style.SubtleText.Render(emptyMessage(PanelTaps))
 	}
-	header := style.SubtleText.Render(tapSummary(p.taps))
+	summary := style.SubtleText
+	if p.trustUnknown {
+		summary = style.OutdatedBadge
+	}
+	header := summary.Render(tapSummary(p.taps, !p.trustUnknown))
 	t := p.selectedTap()
 	if t == nil {
 		return header
 	}
-	return header + "\n\n" + tapDetails(t, width)
+	return header + "\n\n" + tapDetails(t, !p.trustUnknown, width)
 }
 
 // renderServiceInfo is the Info tab of Services: the selected service's detail
