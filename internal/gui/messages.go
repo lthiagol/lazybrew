@@ -64,6 +64,13 @@ type RefreshMsg struct {
 // so the error toast stays the last word (F-r1-02).
 type servicesReloadMsg struct{}
 
+// opAutoCloseMsg is the timer of a successful operation. It names the operation
+// it is for, so a timer that fires after a newer operation started closes
+// nothing.
+type opAutoCloseMsg struct {
+	op *Operation
+}
+
 type UpdateTickMsg struct{}
 
 type StartUpdateMsg struct{}

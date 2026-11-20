@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/progress"
+	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/anim"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -17,6 +18,23 @@ const operationTailLines = 2
 
 // operationBarWidth is the widest the batch progress bar draws.
 const operationBarWidth = 40
+
+// operationAutoClose is how long a successful operation stays on screen before
+// it closes itself. The toast has already said it finished.
+const operationAutoClose = 2 * time.Second
+
+// autoCloseCmd starts the timer that closes a successful operation. A batch
+// with tasks still queued or running gets none: the last task's success starts
+// the timer.
+func (m Model) autoCloseCmd() tea.Cmd {
+	if m.opState == nil || m.opState.Status != opSuccess || m.batchCount > 0 {
+		return nil
+	}
+	op := m.opState
+	return tea.Tick(operationAutoClose, func(time.Time) tea.Msg {
+		return opAutoCloseMsg{op: op}
+	})
+}
 
 // opStep is one `==> ` step of a brew run and the output lines after it.
 type opStep struct {
