@@ -1,6 +1,6 @@
 ◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
 ╭─ 1 ◉ Status ─────────────╮╭─ Outdated › Info ────────────────────────────────╮
-│▸ Homebrew 7.0.15-36-g1f3…││  Info    Versions                                │
+│▸ Homebrew  7.0.15-36-g1f…││  Info    Versions                                │
 ╰──────────────────────────╯│━━━━━━━━                                          │
 ╭─ 2 ∘ Formulae ───── 125 ─╮│No selection                                      │
 │  ✓ alsa-lib    1.2.16.1_1││                                                  │
