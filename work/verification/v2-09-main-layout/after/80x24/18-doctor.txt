@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Status › Doctor ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││   Dashboard    Config    Doctor                  │
+│  Prefix    /home/linuxbr…││                        ━━━━━━━━━━                │
+╰──────────────────────────╯│ ✓ Your system is ready to brew.                  │
+╭─ 2 ∘ Formulae ───── 125 ─╮│                                                  │
+│▸ ✓ bash            5.3.20││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 3 ▣ Casks ────────── 2 ─╮│                                                  │
+│▸ ✓ Claude Code    2.1.311││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│                                                  │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 5 ⊕ Taps ─────────── 3 ─╮│                                                  │
+│▸ ⚠ danielfoehr… untrusted││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 6 ◎ Services ─────── 3 ─╮│                                                  │
+│▸ dbus                none││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
+│                          ││No commands executed yet                          │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ R refresh  c cleanup  d doctor  A autoremove  B brewfile  v vulns  ? more      

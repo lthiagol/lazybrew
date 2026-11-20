@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Status › Dashboard ─────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││   Dashboard    Config    Doctor                  │
+│  Prefix    /home/linuxbr…││ ━━━━━━━━━━━━━                                    │
+╰──────────────────────────╯│ ╭─ Homebrew ───────────────────────╮             │
+╭─ 2 ∘ Formulae┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓│             │
+│▸ ✓ bash      ┃                                                ┃│             │
+╰──────────────┃                    BREWFILE                    ┃╯             │
+╭─ 3 ▣ Casks ──┃                                                ┃╮             │
+│▸ ✓ Claude Cod┃   0: ▸ Export to Brewfile (brew bundle dump)   ┃│             │
+╰──────────────┃   1:   Install from Brewfile (brew bundle i…   ┃╯             │
+╭─ 4 ↑ Outdated┃   2:   Cleanup (brew bundle cleanup)           ┃╮             │
+│▸ ↑ git-d… 0.2┃   3:   Check (brew bundle check)               ┃│             │
+╰──────────────┃   4:   List entries (brew bundle list)         ┃│             │
+╭─ 5 ⊕ Taps ───┃                                                ┃│             │
+│▸ ⚠ danielfoeh┃      ↑↓ move   enter choose   esc cancel       ┃│             │
+╰──────────────┃                                                ┃╯             │
+╭─ 6 ◎ Services┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛╮             │
+│▸ dbus                none││ │Total:        3                   │             │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
+│                          ││No commands executed yet                          │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ ↑↓ move  enter choose  esc cancel                                              
