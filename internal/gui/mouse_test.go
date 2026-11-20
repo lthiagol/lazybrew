@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -73,6 +75,8 @@ func TestMouseClickSidebarSelectsRow(t *testing.T) {
 	}
 }
 
+// TestMouseWheelMovesSelection: a wheel notch over a sidebar box moves that
+// box's selection one row, and the box is the one the pointer is over.
 func TestMouseWheelMovesSelection(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
@@ -83,15 +87,67 @@ func TestMouseWheelMovesSelection(t *testing.T) {
 	p.selected = 1
 	p.offset = 0
 
-	nm, _ := m.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
+	// The Formulae box is the second box; its first body row is one row below
+	// its top border.
+	heights := m.computeContentHeights()
+	x, y := 2, headerRows+heights[0]+2+1
+	nm, _ := m.Update(tea.MouseWheelMsg{X: x, Y: y, Button: tea.MouseWheelDown})
 	got := nm.(Model)
 	if got.panels[PanelFormulae].selected != 2 {
 		t.Fatalf("wheel down: selected=%d want 2", got.panels[PanelFormulae].selected)
 	}
-	nm, _ = got.Update(tea.MouseWheelMsg{Button: tea.MouseWheelUp})
+	nm, _ = got.Update(tea.MouseWheelMsg{X: x, Y: y, Button: tea.MouseWheelUp})
 	got = nm.(Model)
 	if got.panels[PanelFormulae].selected != 1 {
 		t.Fatalf("wheel up: selected=%d want 1", got.panels[PanelFormulae].selected)
+	}
+}
+
+// TestWheelOverAnotherBoxFocusesIt (AC-04.1): a wheel notch over another sidebar
+// box focuses that box, as a click does, and moves its list.
+func TestWheelOverAnotherBoxFocusesIt(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.cfg.GUI.Mouse = true
+	heights := m.computeContentHeights()
+	casksY := headerRows + (heights[0] + 2) + (heights[1] + 2) + 1
+	nm, _ := m.Update(tea.MouseWheelMsg{X: 2, Y: casksY, Button: tea.MouseWheelDown})
+	if got := nm.(Model).activePanel; got != PanelCasks {
+		t.Fatalf("a wheel notch over the Casks box focused panel %v, want Casks", got)
+	}
+}
+
+// TestWheelOverMainScrollsItsContent (AC-04.1): a wheel notch over the main
+// panel scrolls its tab content three rows, and the sidebar does not move.
+func TestWheelOverMainScrollsItsContent(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m.cfg.GUI.Mouse = true
+	m = sendKey(m, "2")
+	var caveats []string
+	for i := 0; i < 60; i++ {
+		caveats = append(caveats, fmt.Sprintf("line-%02d", i))
+	}
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"foo  1.0"},
+		Formulae: []brew.Formula{{Name: "foo", Version: "1.0", Caveats: strings.Join(caveats, "\n")}}})
+	for range formulaCaveatsTab {
+		m = sendKey(m, "]")
+	}
+	if m.activeTab != formulaCaveatsTab {
+		t.Fatalf("fixture: want the Caveats tab, got %d", m.activeTab)
+	}
+	if !strings.Contains(sgr.ReplaceAllString(m.renderMainPanel(), ""), "line-00") {
+		t.Fatal("fixture: the first caveat line should show before scrolling")
+	}
+
+	l := m.screenLayout()
+	x, y := l.sideW+5, headerRows+1+m.tabBarRows()+1
+	nm, _ := m.Update(tea.MouseWheelMsg{X: x, Y: y, Button: tea.MouseWheelDown})
+	got := nm.(Model)
+	main := sgr.ReplaceAllString(got.renderMainPanel(), "")
+	if strings.Contains(main, "line-00") || !strings.Contains(main, "line-03") {
+		t.Fatalf("a notch should scroll the content three rows, got:\n%s", main)
+	}
+	if got.panels[PanelFormulae].selected != m.panels[PanelFormulae].selected {
+		t.Fatal("a wheel notch over the main panel must not move the sidebar's selection")
 	}
 }
 

@@ -10,7 +10,6 @@ import (
 
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/textinput"
-	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
@@ -35,8 +34,10 @@ type Model struct {
 	panels           []*panelData
 	activeTab        int
 	tabs             []tabInfo
-	viewport         viewport.Model
 	ready            bool
+	// contentScroll is how far the wheel has scrolled each tab item's content,
+	// in rows, keyed by contentKey. An item starts at the top.
+	contentScroll map[string]int
 
 	activeModal    modal.Modal
 	toast          *modal.Toast
@@ -129,19 +130,20 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	icons := iconSet(cfg)
 	cl.SetIcons(icons)
 	m := &Model{
-		client:      client,
-		cfg:         cfg,
-		activePanel: PanelStatus,
-		panels:      panels,
-		activeTab:   0,
-		tabs:        panelTabs[PanelStatus],
-		batch:       newBatchState(),
-		tabContent:  make(map[string]string),
-		tasks:       task.NewManager(task.DefaultMaxQueue),
-		commandLog:  cl,
-		spinner:     s,
-		searchInput: ti,
-		icons:       icons,
+		client:        client,
+		cfg:           cfg,
+		activePanel:   PanelStatus,
+		panels:        panels,
+		activeTab:     0,
+		tabs:          panelTabs[PanelStatus],
+		batch:         newBatchState(),
+		tabContent:    make(map[string]string),
+		tasks:         task.NewManager(task.DefaultMaxQueue),
+		commandLog:    cl,
+		spinner:       s,
+		searchInput:   ti,
+		icons:         icons,
+		contentScroll: make(map[string]int),
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).
@@ -502,16 +504,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.terminalTooSmall = msg.Width < minTerminalWidth || msg.Height < minTerminalHeight
-		// The scroll viewport shows the main content area, so it takes
-		// the layout's content size, not the terminal's.
-		l := m.screenLayout()
-		if !m.ready {
-			m.viewport = viewport.New(viewport.WithWidth(max(10, l.mainW-2)), viewport.WithHeight(max(10, l.contentH)))
-			m.ready = true
-		} else {
-			m.viewport.SetWidth(max(10, l.mainW-2))
-			m.viewport.SetHeight(max(10, l.contentH))
-		}
+		m.ready = true
 		// Re-derive the per-panel viewport heights once per resize, then
 		// clamp cursor/offset per panel here in the Update loop instead
 		// of during render (r1 finding 29, r3 finding R3-7).
@@ -965,8 +958,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	m.viewport, cmd = m.viewport.Update(msg)
-	return m, cmd
+	return m, nil
 }
 
 // View declares the terminal setup the program needs — the alternate screen
