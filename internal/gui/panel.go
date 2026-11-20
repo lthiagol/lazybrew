@@ -61,7 +61,7 @@ var panelTabs = map[PanelID][]tabInfo{
 	PanelCasks:    {{"Info", 0}, {"Deps", 1}, {"Caveats", 2}},
 	PanelOutdated: {{"Info", outdatedInfoTab}, {"Versions", outdatedVersionsTab}},
 	PanelTaps:     {{"Tap Info", tapInfoTab}, {"Trust", tapTrustTab}, {"Formulae", tapFormulaeTab}},
-	PanelServices: {{"Info", serviceInfoTab}},
+	PanelServices: {{"Info", serviceInfoTab}, {"Logs", servicesLogsTab}},
 	PanelSearch:   {},
 }
 

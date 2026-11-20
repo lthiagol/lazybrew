@@ -182,7 +182,8 @@ func TestServicesFooterAndInfoAgreeOnActions(t *testing.T) {
 		selectService(m, name)
 		text := infoText(m, 100)
 		for _, h := range servicesHints(m.panels[PanelServices]) {
-			if h.key == "j/k" || h.key == "c" {
+			// j/k, [ ] and c are keys of the panel, not of the service's state.
+			if h.key == "j/k" || h.key == "[ ]" || h.key == "c" {
 				continue
 			}
 			if !strings.Contains(text, h.key+" "+h.desc) {
