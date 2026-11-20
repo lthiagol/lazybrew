@@ -68,7 +68,7 @@ func TestUnknownCountIsLeftOutNotZero(t *testing.T) {
 func TestStatusRowsAreCompactSummary(t *testing.T) {
 	rows := statusRows(dashboardSummary())
 	want := []string{
-		"Homebrew 4.5.2",
+		"Homebrew  4.5.2",
 		"Prefix    /opt/homebrew",
 		"Formulae  125",
 		"Casks     2",

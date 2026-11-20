@@ -32,7 +32,7 @@ const statusItemName = "dashboard"
 func statusRows(s statusSummary) []string {
 	var rows []string
 	if s.Version != "" {
-		rows = append(rows, "Homebrew "+s.Version)
+		rows = append(rows, fmt.Sprintf("%-10s%s", "Homebrew", s.Version))
 	}
 	if s.Prefix != "" {
 		rows = append(rows, fmt.Sprintf("%-10s%s", "Prefix", s.Prefix))
