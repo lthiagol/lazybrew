@@ -59,6 +59,29 @@ func (s *statusSummary) absorbPanel(id PanelID, msg DataLoadedMsg) {
 	}
 }
 
+// fillUnknown takes from src each count that s does not know. It keeps a count
+// that a panel landing read when a Status load that finished later read the same
+// source too late to see it (v2-08 F-r1-01).
+func (s *statusSummary) fillUnknown(src statusSummary) {
+	if !s.Formulae.Known && src.Formulae.Known {
+		s.Formulae = src.Formulae
+	}
+	if !s.Casks.Known && src.Casks.Known {
+		s.Casks = src.Casks
+	}
+	if !s.Outdated.Known && src.Outdated.Known {
+		s.Outdated = src.Outdated
+	}
+	if !s.Taps.Known && src.Taps.Known {
+		s.Taps = src.Taps
+		s.OfficialTaps = src.OfficialTaps
+	}
+	if !s.Services.Known && src.Services.Known {
+		s.Services = src.Services
+		s.ServicesStarted = src.ServicesStarted
+	}
+}
+
 // knownCount is a count and whether its source answered. An unknown count is
 // left out of the sidebar and the header; it is never shown as 0.
 type knownCount struct {
