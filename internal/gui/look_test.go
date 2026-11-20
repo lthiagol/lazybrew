@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -436,5 +437,32 @@ func TestOperationAndLogGlyphsFollowIcons(t *testing.T) {
 				t.Errorf("log line = %q, want it to start %q", got, want)
 			}
 		})
+	}
+}
+
+// TestHeaderKeepsAGapBeforeBadges sweeps every width from 40 to 140: the
+// version and the first badge never run together (F-r1-04), the bar is exactly
+// the frame's width, and the name always stays.
+func TestHeaderKeepsAGapBeforeBadges(t *testing.T) {
+	version := regexp.MustCompile(`4\.5\.2\d`)
+	for w := 40; w <= 140; w++ {
+		m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+		m.width = w
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, BrewVersion: "4.5.2"})
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 125), Items: make([]string, 125)})
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"a", "b"}})
+		m.cfg.Brew.UpdateOnStart = true
+		head := m.renderHeader()
+		plain := plainLine(head)
+		if lipgloss.Width(head) != w {
+			t.Fatalf("width %d: header is %d cells", w, lipgloss.Width(head))
+		}
+		if !strings.HasPrefix(plain, "◆ lazybrew") {
+			t.Fatalf("width %d: the name must stay, got %q", w, plain)
+		}
+		if version.MatchString(plain) {
+			t.Fatalf("width %d: version and badge run together: %q", w, plain)
+		}
 	}
 }

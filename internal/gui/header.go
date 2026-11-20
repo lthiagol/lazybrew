@@ -27,7 +27,7 @@ func (m Model) renderHeader() string {
 	}
 
 	badges := m.headerBadges()
-	for len(badges) > 0 && lipgloss.Width(left)+joinedWidth(badges) > m.width {
+	for len(badges) > 0 && lipgloss.Width(left)+lipgloss.Width(headerGap)+joinedWidth(badges) > m.width {
 		badges = badges[1:]
 	}
 	right := strings.Join(badges, headerGap)
@@ -55,9 +55,8 @@ func (m Model) headerOperation() string {
 	return ""
 }
 
-// headerBadges lists the badges the header shows, most important first, so
-// the ones dropped when the bar is short are the least useful. A count is
-// shown only once it is known.
+// headerBadges lists the badges the header shows in drop order: when the bar is
+// short the leftmost go first. A count is shown only once it is known.
 func (m Model) headerBadges() []string {
 	var badges []string
 	if p := m.panels[PanelFormulae]; p.loaded && p.err == nil {
