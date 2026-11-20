@@ -344,3 +344,46 @@ func TestLogsHelpListsStreamKeyUnderServices(t *testing.T) {
 	}
 	t.Fatal("there is no Services help page")
 }
+
+// Two services, each with its own stdout log: after j the view shows the new
+// service's lines and none of the old one's, and a read of the old view that
+// lands after the switch is dropped.
+func TestLogsSwitchServiceShowsNewLogAndDropsOld(t *testing.T) {
+	alpha := writeLog(t, "alpha.log", "alpha line 1", "alpha line 2")
+	beta := writeLog(t, "beta.log", "beta line 1")
+	info := servicesInfo()
+	for i := range info {
+		switch info[i].Name {
+		case "moshi-hook":
+			info[i].LogPath, info[i].ErrorLogPath = alpha, alpha
+		case "backup":
+			info[i].LogPath, info[i].ErrorLogPath = beta, beta
+		}
+	}
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = loadServices(m, servicesList(), info)
+	m = selectService(m, "moshi-hook")
+	m = pressKey(m, "]")
+	if view := plainView(m); !strings.Contains(view, "alpha line 2") {
+		t.Fatalf("moshi-hook's log does not show before the switch:\n%s", view)
+	}
+	oldGen := m.logs.gen
+
+	m = pressKey(m, "j")
+	view := plainView(m)
+	if !strings.Contains(view, "beta line 1") {
+		t.Errorf("backup's log does not show after j:\n%s", view)
+	}
+	if strings.Contains(view, "alpha line") {
+		t.Errorf("moshi-hook's lines are still shown after j:\n%s", view)
+	}
+
+	// A read of the old view lands late, carrying moshi-hook's lines.
+	before := plainView(m)
+	m, _ = stepMsg(m, logsReadMsg{gen: oldGen, path: alpha, tail: logtail.Tail{
+		Lines: []string{"alpha line 1", "alpha line 2"},
+	}})
+	if after := plainView(m); after != before {
+		t.Errorf("a stale read of the old service changed the view:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+}
