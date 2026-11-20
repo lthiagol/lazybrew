@@ -3,7 +3,6 @@ package modal
 import (
 	"strconv"
 
-	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -15,8 +14,6 @@ type MenuModal struct {
 	selected  int
 	done      bool
 	cancelled bool
-	viewport  viewport.Model
-	ready     bool
 }
 
 func NewMenuModal(title string, items []string) *MenuModal {
@@ -32,11 +29,6 @@ func (m *MenuModal) Init() tea.Cmd {
 
 func (m *MenuModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		if !m.ready {
-			m.viewport = viewport.New(viewport.WithWidth(msg.Width-8), viewport.WithHeight(min(len(m.items)+4, 12)))
-			m.ready = true
-		}
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
