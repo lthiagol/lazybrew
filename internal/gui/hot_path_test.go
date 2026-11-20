@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -130,5 +131,26 @@ func TestToastNamesFollowTheToast(t *testing.T) {
 	}
 	if !strings.HasPrefix(toastName(a, "dy"), toastKey(a)+":") {
 		t.Fatalf("the name %q should begin with its toast key %q", toastName(a, "dy"), toastKey(a))
+	}
+}
+
+// TestToastOffsetAllocatesNothing (cr3 F-r1-02): a frame reads each toast's
+// offset without building its motion names.
+func TestToastOffsetAllocatesNothing(t *testing.T) {
+	// Toast ids are numbered for the whole process: past 99 they are not
+	// small enough for strconv to hand back a constant string.
+	for i := 0; i < 100; i++ {
+		modal.NewToast("earlier", modal.ToastInfo)
+	}
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m.setToast("saved", modal.ToastSuccess)
+	m.setToast("failed", modal.ToastError)
+	m.motionToasts(false)
+	toast := m.toasts[0]
+	if allocs := testing.AllocsPerRun(100, func() {
+		m.toastOffset(toast, "dx")
+		m.toastOffset(toast, "dy")
+	}); allocs != 0 {
+		t.Fatalf("reading a toast's offsets allocated %v times, want none", allocs)
 	}
 }

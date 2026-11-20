@@ -127,6 +127,17 @@ func toastName(t *modal.Toast, part string) string {
 	return toastKey(t) + ":" + part
 }
 
+// toastNames are the names of one toast's animated values. They are built when
+// the stack is laid out, so a frame reads a toast's offset without building one
+// (cr3 F-r1-02).
+type toastNames struct {
+	slot, dx, dy string
+}
+
+func newToastNames(t *modal.Toast) toastNames {
+	return toastNames{slot: toastName(t, "slot"), dx: toastName(t, "dx"), dy: toastName(t, "dy")}
+}
+
 // motionToasts springs the toast stack. A new toast slides in from the right
 // edge into its slot. A toast whose slot moved, because the stack grew or
 // lost one, springs from where it was. A resize snaps the stack, and a toast
@@ -139,27 +150,31 @@ func (m *Model) motionToasts(resized bool) {
 	}
 	m.motionStack = slices.Clone(m.toasts)
 	alive := make(map[string]bool, len(m.toasts))
+	names := make(map[uint64]toastNames, len(m.toasts))
 	for i, p := range m.restingToastPlacements() {
 		t := m.toasts[i]
+		n := newToastNames(t)
+		names[t.ID()] = n
 		alive[toastKey(t)] = true
-		slot := toastName(t, "slot")
-		dy := toastName(t, "dy")
-		last, seen := m.motion.Get(slot)
+		last, seen := m.motion.Get(n.slot)
 		switch {
 		case !seen:
-			m.motion.Snap(toastName(t, "dx"), float64(m.width-p.x))
-			m.setMotionTarget(toastName(t, "dx"), 0)
+			m.motion.Snap(n.dx, float64(m.width-p.x))
+			m.setMotionTarget(n.dx, 0)
 		case resized:
-			m.motion.Snap(dy, 0)
+			m.motion.Snap(n.dy, 0)
 		case int(last) != p.y:
 			// Keep the offset the toast is drawn at now, so the move is
 			// continuous when it is retargeted mid-flight.
-			now, _ := m.motion.Get(dy)
-			m.motion.Snap(dy, now+last-float64(p.y))
-			m.setMotionTarget(dy, 0)
+			now, _ := m.motion.Get(n.dy)
+			m.motion.Snap(n.dy, now+last-float64(p.y))
+			m.setMotionTarget(n.dy, 0)
 		}
-		m.motion.Snap(slot, float64(p.y))
+		m.motion.Snap(n.slot, float64(p.y))
 	}
+	// The names are those of the stack alone, so a toast that has left it
+	// takes its names with it.
+	m.toastMotionNames = names
 	for _, name := range m.motion.Names() {
 		i := strings.LastIndex(name, ":")
 		if i < 0 {
@@ -174,7 +189,12 @@ func (m *Model) motionToasts(resized bool) {
 // toastOffset is how far a toast is drawn from its slot, in cells, along one
 // axis: dx or dy. A toast with no offset is drawn in its slot.
 func (m Model) toastOffset(t *modal.Toast, part string) int {
-	v, _ := m.motion.Get(toastName(t, part))
+	n := m.toastMotionNames[t.ID()]
+	name := n.dx
+	if part == "dy" {
+		name = n.dy
+	}
+	v, _ := m.motion.Get(name)
 	return int(math.Round(v))
 }
 
