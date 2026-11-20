@@ -49,8 +49,17 @@ func wrapContent(content string, w int) []string {
 // cachedTab reports whether the current tab is a Files or Used By tab that has
 // its content, and that content. Only these tabs keep their wrapped rows: the
 // others draw from data that changes without their key changing.
+//
+// The tab's rows are kept only while renderContent draws them. An operation over
+// the main area and a loading panel draw something else under the same key, so
+// there the rows are not cached: the cache would keep the overlay, or the
+// spinner, after the state that drew it had gone (cr3 F-r1-01).
 func (m Model) cachedTab() (string, bool) {
 	if m.activePanel != PanelFormulae || (m.activeTab != formulaFilesTab && m.activeTab != formulaUsesTab) {
+		return "", false
+	}
+	p := m.panels[PanelFormulae]
+	if m.opState != nil || p.loading || tabItemName(p) == "" {
 		return "", false
 	}
 	src, ok := m.tabContent[m.contentKey()]
