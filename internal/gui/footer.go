@@ -12,7 +12,7 @@ import (
 // own in the footer.
 var globalHints = []keyHint{
 	{"Tab", "next"}, {"S-Tab", "prev"}, {"1-7", "jump"}, {"/", "search"},
-	{"PgUp/Dn", "scroll"}, {"?", "help"}, {"R", "refresh"}, {"C", "log"}, {"q", "quit"},
+	{"?", "help"}, {"R", "refresh"}, {"C", "log"}, {"q", "quit"}, {"PgUp/Dn", "scroll"},
 }
 
 // footerHints is the key row the footer shows: the keys of the open modal,
