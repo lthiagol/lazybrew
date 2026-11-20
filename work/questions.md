@@ -145,3 +145,10 @@ resolved.
 - **Raised by:** orchestrator, 2026-11-19.
 - **Owner's ruling (the user, 2026-11-19):** **Option B, lazygit-style.**
   Applies from slice `v2-03`; `v2-02` does not restructure the sidebar. Closed.
+
+## Q-v2-look — icon set and accent colour for the overhaul
+
+- **Owner's ruling (the user, 2026-11-19):** icons default to the **Nerd Font**
+  set, with a plain-Unicode fallback selectable by config (`gui.icons:
+  unicode`) or `LAZYBREW_ICONS=unicode`. The focus/selection accent stays
+  **Catppuccin mauve** (`#cba6f7`). Applies from slice `v2-03`. Closed.
