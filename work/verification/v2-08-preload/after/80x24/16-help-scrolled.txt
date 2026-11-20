@@ -1,0 +1,24 @@
+╭─ Help ───────────────────────────────────────────────────────── 22–42 of 79 ─╮
+│  x  Uninstall selected                                                       │
+│  r  Reinstall selected                                                       │
+│  u  Upgrade selected                                                         │
+│  U  Upgrade all                                                              │
+│  p  Pin/Unpin selected                                                       │
+│  L  Toggle leaves filter                                                     │
+│  F  Fetch selected                                                           │
+│                                                                              │
+│  Casks                                                                       │
+│                                                                              │
+│  i  Install                                                                  │
+│  x  Uninstall                                                                │
+│  X  Zap uninstall                                                            │
+│  r  Reinstall                                                                │
+│  u  Upgrade                                                                  │
+│  U  Upgrade all                                                              │
+│  F  Fetch                                                                    │
+│                                                                              │
+│  Taps                                                                        │
+│                                                                              │
+│  a  Add tap                                                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ ?/esc close                                                                    
