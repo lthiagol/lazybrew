@@ -570,3 +570,19 @@ Per-commit runs drop `-race`: each commit builds and passes plain
 - Correction (orchestrator): CI did **not** run `-race` (`wip-ci.yml`,
   `stable-ci.yml` run plain `go test`). User ruling: add `-race` to both CI
   test steps in `v2-11` (AC-02b).
+
+## Questions raised — slice `v2-11-cancel-and-test-speed` (runner lane)
+
+### Q-v2-11-a — the brief's Report protocol names the v2-10 receipt
+
+- **Question:** the brief's Report protocol names the receipt
+  `work/inbox/runner-v2-10-tap-actions.md` and the reply line
+  `done: work/inbox/runner-v2-10-tap-actions.md`. Its Fix-rounds section has the
+  same v2-10 names. The slice is v2-11, and AGENTS.md and `work/README.md` name
+  the receipt `work/inbox/<lane>-<slice>.md`. Which name is the contract?
+- **Raised by:** runner lane (slice `v2-11-cancel-and-test-speed`).
+- **Owner:** the orchestrator.
+- **Runner's interim decision:** the receipt is
+  `work/inbox/runner-v2-11-cancel-and-test-speed.md`, and the reply names that
+  file. The brief's v2-10 paths were not used. If the v2-10 name is intended,
+  the receipt can be renamed in one commit.
