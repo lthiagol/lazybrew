@@ -7,7 +7,7 @@
 - AC-03 `9967789` feat(gui): the Logs tab follows its log
 - fix `5327df8` shared-file note stays on screen (AC-02.3)
 - AC-04 `ec7f5d6` tests, help entry, frames, result, STATE row
-- `9ea7419` receipt and `Q-lb09-slide`; `f67ef96` trims this receipt
+- `9ea7419` receipt and `Q-lb09-slide`; later commits trim this receipt
 
 ## Evidence per AC
 
