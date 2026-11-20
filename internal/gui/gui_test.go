@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
@@ -37,11 +37,11 @@ func updateModel(m *Model, msg tea.Msg) *Model {
 }
 
 func sendKey(m *Model, key string) *Model {
-	return updateModel(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)})
+	return updateModel(m, tea.KeyPressMsg{Code: []rune(key)[0], Text: key})
 }
 
-func sendSpecial(m *Model, key tea.KeyType) *Model {
-	return updateModel(m, tea.KeyMsg{Type: key})
+func sendSpecial(m *Model, key rune) *Model {
+	return updateModel(m, tea.KeyPressMsg{Code: key})
 }
 
 func TestNewModel(t *testing.T) {
@@ -153,7 +153,7 @@ func TestPanelNavigation(t *testing.T) {
 		t.Errorf("after Tab: activePanel = %v, want PanelFormulae", m.activePanel)
 	}
 
-	m = sendSpecial(m, tea.KeyShiftTab)
+	m = updateModel(m, tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
 	if m.activePanel != PanelStatus {
 		t.Errorf("after Shift+Tab: activePanel = %v, want PanelStatus", m.activePanel)
 	}
@@ -227,7 +227,7 @@ func TestHelpEscClose(t *testing.T) {
 func TestQuitKey(t *testing.T) {
 	m := newTestModel()
 
-	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	if cmd == nil {
 		t.Fatal("q should return a quit command")
 	}
@@ -240,7 +240,7 @@ func TestQuitKey(t *testing.T) {
 func TestRefreshKey(t *testing.T) {
 	m := newTestModel()
 
-	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'R'}})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
 	if cmd == nil {
 		t.Fatal("R should return a refresh command")
 	}
@@ -332,7 +332,7 @@ func TestSearchEnterShowsInfo(t *testing.T) {
 	m.panels[PanelSearch].items = []string{"lolcat  formula  installed  lolcat description"}
 	m.panels[PanelSearch].selected = 0
 
-	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	if cmd == nil {
 		t.Fatal("expected command from Enter on search result")
 	}
@@ -347,7 +347,7 @@ func TestSearchInstallKeybind(t *testing.T) {
 	m.panels[PanelSearch].items = []string{"lolcat  formula  installed  lolcat description"}
 	m.panels[PanelSearch].selected = 0
 
-	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'i', Text: "i"})
 	if cmd == nil {
 		t.Fatal("expected command from i on search result")
 	}
@@ -566,7 +566,7 @@ func TestRunMissing(t *testing.T) {
 func TestViewNoSmoke(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
-	view := m.View()
+	view := m.View().Content
 	if view == "" {
 		t.Error("View should not return empty string")
 	}
@@ -1146,12 +1146,12 @@ func TestSpaceTogglesOutdatedBatchSelection(t *testing.T) {
 func TestSmallTerminalWarningInView(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 79, Height: 24})
-	view := m.View()
+	view := m.View().Content
 	if !strings.Contains(view, "Terminal too small") {
 		t.Fatalf("79x24 View should show warning, got:\n%s", view[:min(len(view), 300)])
 	}
 	m = updateModel(m, tea.WindowSizeMsg{Width: 80, Height: 24})
-	view = m.View()
+	view = m.View().Content
 	if strings.Contains(view, "Terminal too small") {
 		t.Fatal("80x24 View should not show terminal-too-small warning")
 	}
@@ -1455,7 +1455,7 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 		t.Errorf("zlib deps content should not contain ripgrep dep pcre2, got %q", contentB)
 	}
 
-	view := m.View()
+	view := m.View().Content
 	if !strings.Contains(view, "none-dep-marker") {
 		t.Errorf("View after j should show zlib deps, got snippet:\n%s", view[:min(len(view), 400)])
 	}
@@ -1481,7 +1481,7 @@ func TestDepsTabViewLeavesLoadingAfterFastPath(t *testing.T) {
 	if cmd := m.loadTabContent(); cmd != nil {
 		t.Fatal("expected fast-path nil cmd")
 	}
-	view := m.View()
+	view := m.View().Content
 	if !strings.Contains(view, "pcre2") {
 		t.Fatalf("View should contain deps content pcre2, got:\n%s", view[:min(len(view), 500)])
 	}
@@ -1533,7 +1533,7 @@ func TestDepsTabLoads(t *testing.T) {
 	if m.activePanel != PanelFormulae || m.activeTab != 2 {
 		t.Fatalf("expected Formulae/Deps, got panel=%v tab=%d", m.activePanel, m.activeTab)
 	}
-	view := m.View()
+	view := m.View().Content
 	if !strings.Contains(view, "pcre2") {
 		t.Fatalf("Deps body missing pcre2:\n%s", view[:min(len(view), 600)])
 	}
@@ -2225,7 +2225,7 @@ func TestRefreshMsgWithLoadOutdatedShellsOutdated(t *testing.T) {
 func TestRKeyRequestsOutdatedLoad(t *testing.T) {
 	// The R key is the user-facing "load the count" action.
 	m := newTestModel()
-	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'R'}})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
 	if cmd == nil {
 		t.Fatal("R should return a refresh command")
 	}
@@ -2491,7 +2491,7 @@ func TestKeyEventResetsLastKeyAt(t *testing.T) {
 	before := time.Now().Add(-1 * time.Hour)
 	m.lastKeyAt = before
 
-	nm, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+	nm, _ := m.Update(tea.KeyPressMsg{Code: 'j', Text: "j"})
 	updated, ok := nm.(Model)
 	if !ok {
 		t.Fatalf("Update returned unexpected type %T", nm)

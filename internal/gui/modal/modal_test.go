@@ -4,12 +4,12 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func TestConfirmModalYes(t *testing.T) {
 	m := NewConfirmModal("Test", "Are you sure?")
-	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})
+	m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	if !m.Done() {
 		t.Error("expected Done after y")
 	}
@@ -21,7 +21,7 @@ func TestConfirmModalYes(t *testing.T) {
 
 func TestConfirmModalNo(t *testing.T) {
 	m := NewConfirmModal("Test", "Are you sure?")
-	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("n")})
+	m.Update(tea.KeyPressMsg{Code: 'n', Text: "n"})
 	if !m.Done() {
 		t.Error("expected Done after n")
 	}
@@ -33,7 +33,7 @@ func TestConfirmModalNo(t *testing.T) {
 
 func TestConfirmModalEsc(t *testing.T) {
 	m := NewConfirmModal("Test", "Are you sure?")
-	m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 	if !m.Cancelled() {
 		t.Error("expected Cancelled after Esc")
 	}
@@ -50,9 +50,9 @@ func TestInputModalSubmit(t *testing.T) {
 	m := NewInputModal("Enter name:")
 
 	for _, r := range "test-package" {
-		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+		m.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
 	}
-	m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 
 	if !m.Done() {
 		t.Error("expected Done after Enter")
@@ -65,7 +65,7 @@ func TestInputModalSubmit(t *testing.T) {
 
 func TestInputModalEsc(t *testing.T) {
 	m := NewInputModal("Enter name:")
-	m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 
 	if !m.Cancelled() {
 		t.Error("expected Cancelled after Esc")
@@ -80,17 +80,17 @@ func TestMenuModalNavigation(t *testing.T) {
 		t.Errorf("expected selected 0, got %d", m.selected)
 	}
 
-	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+	m.Update(tea.KeyPressMsg{Code: 'j', Text: "j"})
 	if m.selected != 1 {
 		t.Errorf("expected selected 1 after j, got %d", m.selected)
 	}
 
-	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+	m.Update(tea.KeyPressMsg{Code: 'j', Text: "j"})
 	if m.selected != 2 {
 		t.Errorf("expected selected 2 after second j, got %d", m.selected)
 	}
 
-	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+	m.Update(tea.KeyPressMsg{Code: 'k', Text: "k"})
 	if m.selected != 1 {
 		t.Errorf("expected selected 1 after k, got %d", m.selected)
 	}
@@ -100,8 +100,8 @@ func TestMenuModalEnterSelects(t *testing.T) {
 	items := []string{"Option A", "Option B"}
 	m := NewMenuModal("Test", items)
 
-	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-	m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m.Update(tea.KeyPressMsg{Code: 'j', Text: "j"})
+	m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 
 	if !m.Done() {
 		t.Error("expected Done after Enter")
@@ -114,7 +114,7 @@ func TestMenuModalEnterSelects(t *testing.T) {
 
 func TestMenuModalEsc(t *testing.T) {
 	m := NewMenuModal("Test", []string{"A", "B"})
-	m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 	if !m.Cancelled() {
 		t.Error("expected Cancelled after Esc")
 	}

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 )
@@ -123,7 +123,7 @@ func TestRKeyLoadsOutdatedWhenUpdateOnStart(t *testing.T) {
 	m.cfg.Brew.UpdateOnStart = true
 	m.cfg.GUI.AutoRefreshSeconds = 0
 
-	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'R'}})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
 	if cmd == nil {
 		t.Fatal("R returned nil cmd")
 	}

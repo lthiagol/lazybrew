@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
@@ -42,7 +42,7 @@ func TestPanelCycleSyncsVisibleRows(t *testing.T) {
 	m = sendSpecial(m, tea.KeyTab)
 	check("after Tab")
 
-	m = sendSpecial(m, tea.KeyShiftTab)
+	m = updateModel(m, tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
 	check("after Shift+Tab")
 }
 

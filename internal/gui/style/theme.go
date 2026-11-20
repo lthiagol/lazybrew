@@ -1,17 +1,21 @@
 package style
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"image/color"
+
+	"charm.land/lipgloss/v2"
+)
 
 var (
 	CurrentTheme   *Theme
-	AccentColor    lipgloss.Color
-	SecondaryColor lipgloss.Color
-	SuccessColor   lipgloss.Color
-	WarningColor   lipgloss.Color
-	ErrorColor     lipgloss.Color
-	SubtleColor    lipgloss.Color
-	TextColor      lipgloss.Color
-	BgColor        lipgloss.Color
+	AccentColor    color.Color
+	SecondaryColor color.Color
+	SuccessColor   color.Color
+	WarningColor   color.Color
+	ErrorColor     color.Color
+	SubtleColor    color.Color
+	TextColor      color.Color
+	BgColor        color.Color
 
 	ActiveBorder     lipgloss.Style
 	InactiveBorder   lipgloss.Style
@@ -35,14 +39,14 @@ var (
 )
 
 type Theme struct {
-	AccentColor    lipgloss.Color
-	SecondaryColor lipgloss.Color
-	SuccessColor   lipgloss.Color
-	WarningColor   lipgloss.Color
-	ErrorColor     lipgloss.Color
-	SubtleColor    lipgloss.Color
-	TextColor      lipgloss.Color
-	BgColor        lipgloss.Color
+	AccentColor    color.Color
+	SecondaryColor color.Color
+	SuccessColor   color.Color
+	WarningColor   color.Color
+	ErrorColor     color.Color
+	SubtleColor    color.Color
+	TextColor      color.Color
+	BgColor        color.Color
 }
 
 // DarkTheme is Catppuccin Mocha.

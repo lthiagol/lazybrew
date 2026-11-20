@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
@@ -47,7 +47,7 @@ func TestBatchToggleOffThenUpgradeSkipsDeselected(t *testing.T) {
 	mm := nm.(Model)
 	// The modal needs a WindowSizeMsg before it renders (see confirm.go).
 	mm.activeModal.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	if view := mm.activeModal.View(); !strings.Contains(view, "1 selected") {
+	if view := mm.activeModal.View().Content; !strings.Contains(view, "1 selected") {
 		t.Fatalf("confirm message must count 1 selected package, got view:\n%s", view)
 	}
 
@@ -516,7 +516,7 @@ func TestWindowSizeSyncsVisibleRows(t *testing.T) {
 
 	// Switching the active panel changes the height split: the newly
 	// active panel must get its recomputed viewport without a resize.
-	m = updateModel(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("2")})
+	m = updateModel(m, tea.KeyPressMsg{Code: '2', Text: "2"})
 	heights := m.computeContentHeights()
 	for i := range m.panels {
 		want := max(0, heights[i]-1)
@@ -632,7 +632,7 @@ func TestServicesRestartHintKeyHandled(t *testing.T) {
 	p.items = []string{"redis  stopped"}
 	p.selected = 0
 
-	nm, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'r', Text: "r"})
 	mm := nm.(Model)
 	if cmd == nil {
 		t.Fatal("r on Services must enqueue a restart task (r1 finding 24)")
