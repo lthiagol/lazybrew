@@ -3,8 +3,8 @@ package gui
 import (
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -21,8 +21,12 @@ func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	m.lastKeyAt = time.Now()
 	m.autoRefreshPaused = false
 
+	mouse := msg.Mouse()
+	_, isClick := msg.(tea.MouseClickMsg)
+	leftClick := isClick && mouse.Button == tea.MouseLeft
+
 	if m.showHelp {
-		if msg.Action == tea.MouseActionPress && msg.Button == tea.MouseButtonLeft {
+		if leftClick {
 			m.showHelp = false
 		}
 		return m, nil
@@ -31,11 +35,11 @@ func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if tea.MouseEvent(msg).IsWheel() {
+	if _, isWheel := msg.(tea.MouseWheelMsg); isWheel {
 		return m.handleMouseWheel(msg)
 	}
-	if msg.Action == tea.MouseActionPress && msg.Button == tea.MouseButtonLeft {
-		return m.handleMouseClick(msg.X, msg.Y)
+	if leftClick {
+		return m.handleMouseClick(mouse.X, mouse.Y)
 	}
 	return m, nil
 }
@@ -45,14 +49,15 @@ func (m Model) handleMouseWheel(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	if p == nil {
 		return m, nil
 	}
-	up := msg.Button == tea.MouseButtonWheelUp
+	button := msg.Mouse().Button
+	up := button == tea.MouseWheelUp
 	// Prefer list navigation when the active panel has items.
 	if len(p.items) > 0 {
 		if up {
 			if p.selected > 0 {
 				p.selectIndex(p.selected - 1)
 			}
-		} else if msg.Button == tea.MouseButtonWheelDown {
+		} else if button == tea.MouseWheelDown {
 			if p.selected < len(p.items)-1 {
 				p.selectIndex(p.selected + 1)
 			}
@@ -64,9 +69,9 @@ func (m Model) handleMouseWheel(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	}
 	// Otherwise scroll the content viewport.
 	if up {
-		m.viewport.LineUp(3)
-	} else if msg.Button == tea.MouseButtonWheelDown {
-		m.viewport.LineDown(3)
+		m.viewport.ScrollUp(3)
+	} else if button == tea.MouseWheelDown {
+		m.viewport.ScrollDown(3)
 	}
 	return m, nil
 }

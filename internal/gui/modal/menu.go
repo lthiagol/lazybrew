@@ -3,9 +3,9 @@ package modal
 import (
 	"strconv"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -34,10 +34,10 @@ func (m *MenuModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if !m.ready {
-			m.viewport = viewport.New(msg.Width-8, min(len(m.items)+4, 12))
+			m.viewport = viewport.New(viewport.WithWidth(msg.Width-8), viewport.WithHeight(min(len(m.items)+4, 12)))
 			m.ready = true
 		}
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			m.done = true
@@ -53,7 +53,7 @@ func (m *MenuModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			m.done = true
 		case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
-			idx := int(msg.Runes[0] - '0')
+			idx := int(msg.Text[0] - '0')
 			if idx < len(m.items) {
 				m.selected = idx
 				m.done = true
@@ -63,7 +63,7 @@ func (m *MenuModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *MenuModal) View() string {
+func (m *MenuModal) View() tea.View {
 	width := 50
 	title := style.AccentText.Render(m.title)
 
@@ -86,12 +86,12 @@ func (m *MenuModal) View() string {
 		list,
 	)
 
-	return lipgloss.NewStyle().
+	return tea.NewView(lipgloss.NewStyle().
 		Width(width).
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(style.AccentColor).
-		Render(content)
+		Render(content))
 }
 
 func (m *MenuModal) Done() bool      { return m.done }

@@ -1,10 +1,11 @@
 package modal
 
 import (
+	"image/color"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -55,20 +56,20 @@ func (t *Toast) View() string {
 	if t.dismissed {
 		return ""
 	}
-	var color lipgloss.Color
+	var fg color.Color
 	switch t.Type {
 	case ToastSuccess:
-		color = style.SuccessColor
+		fg = style.SuccessColor
 	case ToastError:
-		color = style.ErrorColor
+		fg = style.ErrorColor
 	case ToastInfo:
-		color = style.AccentColor
+		fg = style.AccentColor
 	case ToastWarning:
-		color = style.WarningColor
+		fg = style.WarningColor
 	}
 
 	return lipgloss.NewStyle().
-		Foreground(color).
+		Foreground(fg).
 		Bold(true).
 		Render("  " + t.Message + "  ")
 }

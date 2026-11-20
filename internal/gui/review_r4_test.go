@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
@@ -73,7 +73,7 @@ func TestCancelledTrustMenuDoesNotPoisonBrewfileMenu(t *testing.T) {
 	if m.pendingAction != "" {
 		t.Fatalf("the Brewfile menu must not set pendingAction, got %q", m.pendingAction)
 	}
-	nm, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	nm, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	m = asModel(nm)
 
 	ts, ok := firstTaskStarted(execCmds(cmd))
@@ -194,7 +194,7 @@ func TestRefreshDuringBatchConfirmStillSurfacesToast(t *testing.T) {
 
 	// Confirming must not be a silent dead-end. (The confirm modal
 	// defaults to "No"; "y" is the explicit confirm.)
-	nm, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})
+	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	rm := asModel(nm)
 	if rm.toast == nil || !strings.Contains(rm.toast.Message, "Outdated list") {
 		t.Fatalf("expected the empty-selection warning toast after confirming, got %+v", rm.toast)

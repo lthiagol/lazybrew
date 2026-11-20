@@ -1,9 +1,9 @@
 package modal
 
 import (
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -34,10 +34,10 @@ func (m *ConfirmModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if !m.ready {
-			m.viewport = viewport.New(msg.Width-8, 8)
+			m.viewport = viewport.New(viewport.WithWidth(msg.Width-8), viewport.WithHeight(8))
 			m.ready = true
 		}
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			m.done = true
@@ -59,9 +59,9 @@ func (m *ConfirmModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *ConfirmModal) View() string {
+func (m *ConfirmModal) View() tea.View {
 	if !m.ready {
-		return "Loading..."
+		return tea.NewView("Loading...")
 	}
 
 	width := 50
@@ -90,12 +90,12 @@ func (m *ConfirmModal) View() string {
 		buttons,
 	)
 
-	return lipgloss.NewStyle().
+	return tea.NewView(lipgloss.NewStyle().
 		Width(width).
 		Align(lipgloss.Center).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(style.AccentColor).
-		Render(content)
+		Render(content))
 }
 
 func (m *ConfirmModal) Done() bool      { return m.done }

@@ -1,9 +1,9 @@
 package modal
 
 import (
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -18,7 +18,7 @@ func NewInputModal(prompt string) *InputModal {
 	ti := textinput.New()
 	ti.Placeholder = "type here..."
 	ti.Focus()
-	ti.Width = 40
+	ti.SetWidth(40)
 
 	return &InputModal{
 		prompt: prompt,
@@ -32,7 +32,7 @@ func (m *InputModal) Init() tea.Cmd {
 
 func (m *InputModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			m.done = true
@@ -49,7 +49,7 @@ func (m *InputModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *InputModal) View() string {
+func (m *InputModal) View() tea.View {
 	width := 50
 	title := style.AccentText.Render(m.prompt)
 	input := m.input.View()
@@ -60,12 +60,12 @@ func (m *InputModal) View() string {
 		input,
 	)
 
-	return lipgloss.NewStyle().
+	return tea.NewView(lipgloss.NewStyle().
 		Width(width).
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(style.AccentColor).
-		Render(content)
+		Render(content))
 }
 
 func (m *InputModal) Done() bool      { return m.done }

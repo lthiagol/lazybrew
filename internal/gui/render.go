@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -37,7 +37,7 @@ func (m Model) renderSidebar() string {
 		}
 		if active {
 			titleLine = lipgloss.Place(contentWidth, 1, lipgloss.Left, lipgloss.Top, titleLine,
-				lipgloss.WithWhitespaceBackground(style.ActivePanelBg.GetBackground()),
+				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(style.ActivePanelBg.GetBackground())),
 			)
 		}
 		itemsMaxRows := max(0, heights[i]-1)
@@ -202,8 +202,8 @@ func (m Model) computeContentHeights() []int {
 
 func (m Model) renderContentInViewport(content string) string {
 	m.viewport.SetContent(content)
-	m.viewport.Width = max(10, m.width-4)
-	m.viewport.Height = max(10, m.height-6)
+	m.viewport.SetWidth(max(10, m.width-4))
+	m.viewport.SetHeight(max(10, m.height-6))
 	return m.viewport.View()
 }
 

@@ -3,7 +3,7 @@ package gui
 import (
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 )
@@ -13,10 +13,9 @@ func TestMouseDisabledNoOp(t *testing.T) {
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.cfg.GUI.Mouse = false
 	before := m.activePanel
-	nm, _ := m.Update(tea.MouseMsg{
+	nm, _ := m.Update(tea.MouseClickMsg{
 		X: 2, Y: 5,
-		Action: tea.MouseActionPress,
-		Button: tea.MouseButtonLeft,
+		Button: tea.MouseLeft,
 	})
 	got := nm.(Model)
 	if got.activePanel != before {
@@ -32,10 +31,9 @@ func TestMouseClickSidebarSwitchesPanel(t *testing.T) {
 	// Click well into the second sidebar box.
 	heights := m.computeContentHeights()
 	y := heights[0] + 2 + 1 // past first box border+content, into second box title
-	nm, _ := m.Update(tea.MouseMsg{
+	nm, _ := m.Update(tea.MouseClickMsg{
 		X: 2, Y: y,
-		Action: tea.MouseActionPress,
-		Button: tea.MouseButtonLeft,
+		Button: tea.MouseLeft,
 	})
 	got := nm.(Model)
 	if got.activePanel != PanelFormulae {
@@ -64,10 +62,9 @@ func TestMouseClickSidebarSelectsRow(t *testing.T) {
 	yItem0 := y0 + 1 + 1
 	yItem1 := y0 + 1 + 2
 
-	nm, _ := m.Update(tea.MouseMsg{
+	nm, _ := m.Update(tea.MouseClickMsg{
 		X: 3, Y: yItem1,
-		Action: tea.MouseActionPress,
-		Button: tea.MouseButtonLeft,
+		Button: tea.MouseLeft,
 	})
 	got := nm.(Model)
 	if got.panels[PanelFormulae].selected != 1 {
@@ -85,12 +82,12 @@ func TestMouseWheelMovesSelection(t *testing.T) {
 	p.selected = 1
 	p.offset = 0
 
-	nm, _ := m.Update(tea.MouseMsg{Button: tea.MouseButtonWheelDown, Action: tea.MouseActionPress})
+	nm, _ := m.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
 	got := nm.(Model)
 	if got.panels[PanelFormulae].selected != 2 {
 		t.Fatalf("wheel down: selected=%d want 2", got.panels[PanelFormulae].selected)
 	}
-	nm, _ = got.Update(tea.MouseMsg{Button: tea.MouseButtonWheelUp, Action: tea.MouseActionPress})
+	nm, _ = got.Update(tea.MouseWheelMsg{Button: tea.MouseWheelUp})
 	got = nm.(Model)
 	if got.panels[PanelFormulae].selected != 1 {
 		t.Fatalf("wheel up: selected=%d want 1", got.panels[PanelFormulae].selected)

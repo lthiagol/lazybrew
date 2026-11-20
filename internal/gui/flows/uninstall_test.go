@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/x/exp/teatest"
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/exp/teatest/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/testutil"
 )
@@ -76,15 +76,15 @@ func TestUninstallFlow(t *testing.T) {
 	runner := newUninstallRecordingRunner()
 	tm := testutil.NewTestModelWithRunner(t, runner, teatest.WithInitialTermSize(120, 40))
 
-	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'2'}})
+	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
 	time.Sleep(100 * time.Millisecond)
-	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	tm.Send(tea.KeyPressMsg{Code: 'x', Text: "x"})
 	time.Sleep(200 * time.Millisecond)
-	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+	tm.Send(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	time.Sleep(200 * time.Millisecond)
-	tm.Send(tea.KeyMsg{Type: tea.KeyEnter})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
 	time.Sleep(50 * time.Millisecond)
-	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
 
 	calls := runner.getStreamCalls()

@@ -1,24 +1,25 @@
 package style
 
 import (
+	"image/color"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 func TestDarkThemeColors(t *testing.T) {
 	theme := DarkTheme()
-	want := map[string]lipgloss.Color{
-		"Accent":    "#cba6f7",
-		"Secondary": "#94e2d5",
-		"Success":   "#a6e3a1",
-		"Warning":   "#f9e2af",
-		"Error":     "#f38ba8",
-		"Subtle":    "#6c7086",
-		"Text":      "#cdd6f4",
-		"Bg":        "#1e1e2e",
+	want := map[string]color.Color{
+		"Accent":    lipgloss.Color("#cba6f7"),
+		"Secondary": lipgloss.Color("#94e2d5"),
+		"Success":   lipgloss.Color("#a6e3a1"),
+		"Warning":   lipgloss.Color("#f9e2af"),
+		"Error":     lipgloss.Color("#f38ba8"),
+		"Subtle":    lipgloss.Color("#6c7086"),
+		"Text":      lipgloss.Color("#cdd6f4"),
+		"Bg":        lipgloss.Color("#1e1e2e"),
 	}
-	got := map[string]lipgloss.Color{
+	got := map[string]color.Color{
 		"Accent":    theme.AccentColor,
 		"Secondary": theme.SecondaryColor,
 		"Success":   theme.SuccessColor,
@@ -37,17 +38,17 @@ func TestDarkThemeColors(t *testing.T) {
 
 func TestLightThemeColors(t *testing.T) {
 	theme := LightTheme()
-	want := map[string]lipgloss.Color{
-		"Accent":    "#34548a",
-		"Secondary": "#0891b2",
-		"Success":   "#33635c",
-		"Warning":   "#8f5e15",
-		"Error":     "#8c4351",
-		"Subtle":    "#9699a3",
-		"Text":      "#343b58",
-		"Bg":        "#f5f5f5",
+	want := map[string]color.Color{
+		"Accent":    lipgloss.Color("#34548a"),
+		"Secondary": lipgloss.Color("#0891b2"),
+		"Success":   lipgloss.Color("#33635c"),
+		"Warning":   lipgloss.Color("#8f5e15"),
+		"Error":     lipgloss.Color("#8c4351"),
+		"Subtle":    lipgloss.Color("#9699a3"),
+		"Text":      lipgloss.Color("#343b58"),
+		"Bg":        lipgloss.Color("#f5f5f5"),
 	}
-	got := map[string]lipgloss.Color{
+	got := map[string]color.Color{
 		"Accent":    theme.AccentColor,
 		"Secondary": theme.SecondaryColor,
 		"Success":   theme.SuccessColor,

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 var ErrQueueFull = errors.New("task queue is full")

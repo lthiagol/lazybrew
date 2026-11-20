@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
@@ -118,7 +118,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	s.Spinner = spinner.Dot
 	ti := textinput.New()
 	ti.Placeholder = "Search packages..."
-	ti.Width = 40
+	ti.SetWidth(40)
 	m := &Model{
 		client:      client,
 		cfg:         cfg,
@@ -482,11 +482,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.terminalTooSmall = msg.Width < minTerminalWidth || msg.Height < minTerminalHeight
 		if !m.ready {
-			m.viewport = viewport.New(max(10, msg.Width-4), max(10, msg.Height-6))
+			m.viewport = viewport.New(viewport.WithWidth(max(10, msg.Width-4)), viewport.WithHeight(max(10, msg.Height-6)))
 			m.ready = true
 		} else {
-			m.viewport.Width = max(10, msg.Width-4)
-			m.viewport.Height = max(10, msg.Height-6)
+			m.viewport.SetWidth(max(10, msg.Width-4))
+			m.viewport.SetHeight(max(10, msg.Height-6))
 		}
 		// Re-derive the per-panel viewport heights once per resize, then
 		// clamp cursor/offset per panel here in the Update loop instead
@@ -579,10 +579,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Batch(cmds...)
 
+	case tea.PasteMsg:
+		// v1 delivered a paste as a KeyMsg, so it reached the active modal,
+		// the focused search box, or started the search box from its panel.
+		// v2 sends a PasteMsg instead; route it the same way.
+		m.lastKeyAt = time.Now()
+		m.autoRefreshPaused = false
+		if m.activeModal != nil {
+			updated, cmd := m.activeModal.Update(msg)
+			if modal, ok := updated.(modal.Modal); ok {
+				m.activeModal = modal
+			}
+			return m, cmd
+		}
+		if m.activePanel == PanelSearch && !m.searchInput.Focused() {
+			m.searchInput.Focus()
+		}
+		if m.searchInput.Focused() {
+			m.searchInput, cmd = m.searchInput.Update(msg)
+		}
+		return m, cmd
+
 	case tea.MouseMsg:
 		return m.handleMouse(msg)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// M12 AC-03: every key press resets the auto-refresh pause
 		// window so the next tick defers its work.
 		m.lastKeyAt = time.Now()
@@ -755,8 +776,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "/":
 			m.switchPanel(PanelSearch)
-			m.searchInput.Focus()
-			return m, m.searchInput.Cursor.BlinkCmd()
+			return m, m.searchInput.Focus()
 
 		case "enter":
 			if m.activePanel == PanelSearch && m.searchInput.Focused() {
@@ -821,7 +841,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.activePanel == PanelFormulae || m.activePanel == PanelCasks || m.activePanel == PanelOutdated {
 				return m.confirmMutation(mutUpgradeAll, "Upgrade All")
 			}
-		case " ":
+		case "space":
 			if m.activePanel == PanelOutdated {
 				p := m.panels[PanelOutdated]
 				m.batch.toggle(p.selected)
@@ -901,7 +921,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.activePanel == PanelSearch && !m.searchInput.Focused() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes && len(keyMsg.Runes) > 0 {
+		if keyMsg, ok := msg.(tea.KeyPressMsg); ok && keyMsg.Text != "" && keyMsg.Code != tea.KeySpace {
 			m.searchInput.Focus()
 			m.searchInput, cmd = m.searchInput.Update(msg)
 			return m, cmd
@@ -920,7 +940,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) View() string {
+// View declares the terminal setup the program needs — the alternate screen
+// and, when the GUI mouse option is on, cell-motion mouse reporting — and
+// wraps the rendered screen. These used to be program options in main.go.
+func (m Model) View() tea.View {
+	v := tea.NewView(m.render())
+	v.AltScreen = true
+	if m.cfg != nil && m.cfg.GUI.Mouse {
+		v.MouseMode = tea.MouseModeCellMotion
+	}
+	return v
+}
+
+func (m Model) render() string {
 	if !m.ready {
 		return "Loading..."
 	}
@@ -967,7 +999,7 @@ func (m Model) View() string {
 	}
 
 	if m.activeModal != nil {
-		modalView := m.activeModal.View()
+		modalView := m.activeModal.View().Content
 		overlay := style.ActiveBorder.Render(modalView)
 		full = lipgloss.JoinVertical(lipgloss.Center, full, "  ", overlay)
 	}

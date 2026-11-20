@@ -6,9 +6,8 @@ import (
 	"os"
 	"runtime/debug"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/app"
-	"github.com/lthiagol/lazybrew/internal/gui"
 )
 
 var version = "1.0.0-rc1"
@@ -39,12 +38,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	opts := []tea.ProgramOption{tea.WithAltScreen()}
-	if gm, ok := m.(*gui.Model); ok && gm.Cfg().GUI.Mouse {
-		opts = append(opts, tea.WithMouseCellMotion())
-	}
-
-	p := tea.NewProgram(m, opts...)
+	p := tea.NewProgram(m)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
