@@ -1781,9 +1781,8 @@ func TestAutoRefreshTickUsesLiveLastKeyAt(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("expected follow-up cmd from autoRefreshTickMsg")
 	}
-	follow := cmd()
-	if _, ok := follow.(autoRefreshPausedMsg); !ok {
-		t.Fatalf("expected autoRefreshPausedMsg when lastKeyAt is recent, got %T", follow)
+	if !hasMsg[autoRefreshPausedMsg](finishedMsgs(cmd)) {
+		t.Fatalf("expected autoRefreshPausedMsg when lastKeyAt is recent, got %v", finishedMsgs(cmd))
 	}
 	if updated, ok := nm.(Model); ok {
 		if !updated.autoRefreshPaused {
@@ -1797,9 +1796,8 @@ func TestAutoRefreshTickUsesLiveLastKeyAt(t *testing.T) {
 	m2.cfg.GUI.AutoRefreshPause = 50 * time.Millisecond
 	m2.lastKeyAt = time.Now().Add(-200 * time.Millisecond)
 	_, cmd2 := m2.Update(autoRefreshTickMsg{at: time.Now()})
-	follow2 := cmd2()
-	if _, ok := follow2.(RefreshMsg); !ok {
-		t.Fatalf("expected RefreshMsg after pause elapsed, got %T", follow2)
+	if !hasMsg[RefreshMsg](finishedMsgs(cmd2)) {
+		t.Fatalf("expected RefreshMsg after pause elapsed, got %v", finishedMsgs(cmd2))
 	}
 }
 

@@ -125,6 +125,11 @@ type Model struct {
 	// within the pause window. The next tick will re-evaluate; the
 	// pending refresh is rescheduled for one AutoRefreshSeconds later.
 	autoRefreshPaused bool
+	// autoRefreshTicking is set while an auto-refresh tick is in flight, so the
+	// chain has one tick at a time (armAutoRefresh). updateTicking does the same
+	// for the update ticker.
+	autoRefreshTicking bool
+	updateTicking      bool
 
 	// motion holds the values the screen animates, and motionOn is whether it
 	// does (gui.animations, LAZYBREW_ANIMATIONS). motionTicking is set while a
@@ -228,9 +233,10 @@ func (m Model) Init() tea.Cmd {
 		} else {
 			cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
 		}
-		if tick := m.autoRefreshCmd(); tick != nil {
-			cmds = append(cmds, tick)
-		}
+	}
+	// Init starts the one auto-refresh chain, with or without update_on_start.
+	if tick := m.autoRefreshCmd(); tick != nil {
+		cmds = append(cmds, tick)
 	}
 	cmds = append(cmds, func() tea.Msg { return m.spinner.Tick() })
 	return tea.Batch(cmds...)
@@ -240,6 +246,27 @@ func (m Model) updateTickerCmd() tea.Cmd {
 	return tea.Tick(10*time.Second, func(t time.Time) tea.Msg {
 		return UpdateTickMsg{}
 	})
+}
+
+// armUpdateTicker starts the next update tick unless one is already in flight.
+func (m *Model) armUpdateTicker() tea.Cmd {
+	if m.updateTicking {
+		return nil
+	}
+	m.updateTicking = true
+	return m.updateTickerCmd()
+}
+
+// armAutoRefresh starts the next auto-refresh tick unless one is already in
+// flight. Only the tick and paused handlers and Init arm it, so a refresh
+// cannot start a second chain.
+func (m *Model) armAutoRefresh() tea.Cmd {
+	if m.autoRefreshTicking {
+		return nil
+	}
+	tick := m.autoRefreshCmd()
+	m.autoRefreshTicking = tick != nil
+	return tick
 }
 
 // autoRefreshCmd schedules the next auto-refresh tick. The tick delivers
@@ -331,6 +358,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case autoRefreshTickMsg:
+		m.autoRefreshTicking = false
 		// Evaluate pause against the *current* model (lastKeyAt may have
 		// advanced since the tick was scheduled).
 		next := m.evaluateAutoRefresh(msg.at)
@@ -339,13 +367,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.autoRefreshPaused = false
 		}
-		return m, func() tea.Msg { return next }
+		// The tick arms the next one, so the chain runs at one tick per
+		// interval whatever the refresh does. Armed before m is returned:
+		// the order of a call and a variable read in one return is unspecified.
+		arm := m.armAutoRefresh()
+		return m, tea.Batch(func() tea.Msg { return next }, arm)
 
 	case autoRefreshPausedMsg:
 		// Reschedule a full tick so pause can re-apply if the user is
-		// still typing when the next interval elapses.
+		// still typing when the next interval elapses. The tick that sent
+		// this message has usually armed the next one already.
 		m.autoRefreshPaused = true
-		return m, m.autoRefreshCmd()
+		arm := m.armAutoRefresh()
+		return m, arm
 
 	case SearchDoneMsg:
 		p := m.panels[PanelSearch]
@@ -416,7 +450,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.tasks.RunNext()
 
 	case UpdateTickMsg:
-		return m, m.updateTickerCmd()
+		m.updateTicking = false
+		arm := m.armUpdateTicker()
+		return m, arm
 
 	case StartUpdateMsg:
 		if m.isUpdating || !m.cfg.Brew.UpdateOnStart {
@@ -725,9 +761,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Count only DataLoadedMsg producers so the "Data refreshed" toast
 		// fires when the last panel lands.
 		m.refreshing = len(cmds)
-		if tick := m.autoRefreshCmd(); tick != nil {
-			cmds = append(cmds, tick)
-		}
 		return m, tea.Batch(cmds...)
 
 	case tea.PasteMsg:
@@ -864,12 +897,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// would also load the count at startup (M9).
 				return m, tea.Batch(
 					m.tasks.RunNext(),
-					func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
-				)
-			}
-			if m.cfg.Brew.UpdateOnStart {
-				return m, tea.Batch(
-					m.updateTickerCmd(),
 					func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
 				)
 			}
