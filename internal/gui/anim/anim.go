@@ -67,6 +67,17 @@ func NewSet() *Set {
 	return &Set{values: make(map[string]*value)}
 }
 
+// Clone returns an independent copy of the set: changes to either are not seen
+// by the other.
+func (s *Set) Clone() *Set {
+	c := NewSet()
+	for name, v := range s.values {
+		cv := *v
+		c.values[name] = &cv
+	}
+	return c
+}
+
 // Target sets where the named value is going. A new name starts at target,
 // with nothing to animate; a known name springs from where it is now.
 func (s *Set) Target(name string, to float64) {
