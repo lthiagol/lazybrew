@@ -209,3 +209,22 @@ here and not decided in code.
   change this: cask parsing is identical before and after. Should the Casks
   Deps tab show the `formula` and `cask` lists?
 - **Raised by:** runner, v2-02-layout-bugs.
+
+## Q-v2-services — Services panel in the overhaul
+
+- **Owner's ruling (the user, 2026-11-19):** besides an Info view, the user
+  wants to **start / stop / restart services** from lazybrew as first-class
+  actions. Orchestrator plan: a dedicated slice `v2-05s-services` after
+  `v2-05`, before `v2-06` (animations):
+  - Info view from `brew services info --json` (status, running, PID, loaded,
+    user, file, command, working dir, exit code, log paths when present);
+  - start / stop / restart (already wired as `s` / `S` / `r` through
+    `task.Manager`) made obvious and safe: shown in the footer and the Info
+    view, state-aware (start only when not running, stop/restart only when
+    running — otherwise a clear toast), confirm before stop/restart, the list
+    and Info view refresh after the action with the selection kept, and a
+    clear error when brew needs `sudo` (system services).
+  - A Logs tab is parked in the backlog for after the overhaul.
+- **Safety:** lanes must **never** run `brew services start|stop|restart|run|cleanup`
+  against this machine's real services (`moshi-hook` is live here). Tests use
+  the mock runner only.
