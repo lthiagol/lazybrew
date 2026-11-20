@@ -237,3 +237,106 @@ func TestUpgradeAllBarShowsOnlyOnceTheTotalIsKnown(t *testing.T) {
 		t.Fatalf("the bar should read 0/1 mid-run, got:\n%s", out)
 	}
 }
+
+// upgradeFormulaeThenCask is `brew upgrade` over two formulae and one cask. The
+// strings are Homebrew's own: cmd/upgrade.rb:458 (the formulae header, with its
+// version lines), upgrade.rb:246 (each formula's step, the version on the next
+// line) and cask/upgrade.rb:102,434 (the cask header and step). The packages
+// and their versions are invented.
+var upgradeFormulaeThenCask = []string{
+	"==> Upgrading 2 outdated packages:",
+	"bash 5.2 -> 5.3",
+	"curl 8.1 -> 8.2",
+	"==> Upgrading bash",
+	"  5.2 -> 5.3",
+	"==> Pouring bash--5.3.arm64_sonoma.bottle.tar.gz",
+	"==> Upgrading curl",
+	"  8.1 -> 8.2",
+	"==> Pouring curl--8.2.arm64_sonoma.bottle.tar.gz",
+	"==> Upgrading 1 outdated package:",
+	"firefox 135.0 -> 136.0",
+	"==> Upgrading firefox",
+	"==> Downloading https://example.test/firefox-136.0.dmg",
+}
+
+// upgradeWithDependent is `brew upgrade` over one formula and one of its
+// dependents. The strings are Homebrew's own: upgrade.rb:424 (the check that
+// comes before the dependents), upgrade.rb:400 (the dependents header, singular
+// here: "1 dependent ... of upgraded formula:") and upgrade.rb:246 (the steps).
+var upgradeWithDependent = []string{
+	"==> Upgrading 1 outdated package:",
+	"zlib 1.3 -> 1.3.1",
+	"==> Upgrading zlib",
+	"  -> 1.3.1",
+	"==> Pouring zlib--1.3.1.arm64_sonoma.bottle.tar.gz",
+	"==> Checking for dependents of upgraded formulae...",
+	"==> Upgrading 1 dependent of upgraded formula:",
+	"zsh 5.9 -> 5.9.1",
+	"==> Upgrading zsh",
+	"  5.9 -> 5.9.1",
+	"==> Pouring zsh--5.9.1.arm64_sonoma.bottle.tar.gz",
+}
+
+// progressAt is the progress after the first n lines of a run with the given
+// status.
+func progressAt(lines []string, n int, status opStatus) (int, int) {
+	return operationProgress(&Operation{Status: status, Upgrades: true, Lines: lines[:n]})
+}
+
+// TestUpgradeAllCountsFormulaeThenCask (v2-05 fix F-r2-01, case a): the total is
+// the formulae header's 2 plus the cask header's 1.
+func TestUpgradeAllCountsFormulaeThenCask(t *testing.T) {
+	n := len(upgradeFormulaeThenCask)
+	// Mid-run on the cask: two formulae done, firefox in progress.
+	if done, total := progressAt(upgradeFormulaeThenCask, n, opRunning); done != 2 || total != 3 {
+		t.Fatalf("mid-run on the cask: %d/%d, want 2/3", done, total)
+	}
+	if done, total := progressAt(upgradeFormulaeThenCask, n, opSuccess); done != 3 || total != 3 {
+		t.Fatalf("finished: %d/%d, want 3/3", done, total)
+	}
+}
+
+// TestUpgradeAllCountsDependents (fix F-r2-01, case b): the dependent's header
+// adds to the total, and the dependent's step is a package.
+func TestUpgradeAllCountsDependents(t *testing.T) {
+	n := len(upgradeWithDependent)
+	// Mid-run on the dependent: the formula is done, zsh in progress.
+	if done, total := progressAt(upgradeWithDependent, n, opRunning); done != 1 || total != 2 {
+		t.Fatalf("mid-run on the dependent: %d/%d, want 1/2", done, total)
+	}
+	if done, total := progressAt(upgradeWithDependent, n, opSuccess); done != 2 || total != 2 {
+		t.Fatalf("finished: %d/%d, want 2/2", done, total)
+	}
+}
+
+// TestUpgradeAllBarNeverFullWhileRunning (fix F-r2-01): at every point of either
+// transcript where the run is still going, the bar is not full.
+func TestUpgradeAllBarNeverFullWhileRunning(t *testing.T) {
+	for name, lines := range map[string][]string{
+		"formulae then cask": upgradeFormulaeThenCask,
+		"with dependent":     upgradeWithDependent,
+	} {
+		for n := 1; n < len(lines); n++ {
+			done, total := progressAt(lines, n, opRunning)
+			if total > 0 && done >= total {
+				t.Fatalf("%s: after %d lines the bar reads %d/%d while the run goes on", name, n, done, total)
+			}
+		}
+	}
+}
+
+// TestUpgradeAllIgnoresDependencyInstalls: brew installs a dependency on the way
+// ("Upgrading zlib dependency: ncurses (6.5)"), which no header names, so it is
+// not counted.
+func TestUpgradeAllIgnoresDependencyInstalls(t *testing.T) {
+	lines := []string{
+		"==> Upgrading 1 outdated package:",
+		"zlib 1.3 -> 1.3.1",
+		"==> Upgrading zlib",
+		"==> Upgrading zlib dependency: ncurses (6.5)",
+		"==> Pouring ncurses--6.5.arm64_sonoma.bottle.tar.gz",
+	}
+	if done, total := progressAt(lines, len(lines), opRunning); done != 0 || total != 1 {
+		t.Fatalf("a dependency install is not a package: %d/%d, want 0/1", done, total)
+	}
+}
