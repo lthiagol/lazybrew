@@ -7,15 +7,25 @@ import (
 )
 
 var (
-	CurrentTheme   *Theme
-	AccentColor    color.Color
+	CurrentTheme *Theme
+
+	// Semantic roles. The GUI draws with these; the names below are the
+	// exported roles other packages already use, mapped onto the same values.
+	AccentColor  color.Color
+	SuccessColor color.Color
+	WarningColor color.Color
+	ErrorColor   color.Color
+	InfoColor    color.Color
+	MutedColor   color.Color
+	TextColor    color.Color
+	BorderColor  color.Color
+	FocusColor   color.Color
+	BgColor      color.Color
+	SurfaceColor color.Color
+	// SubtleColor is the Subtle text role (subtext0).
+	SubtleColor color.Color
+	// SecondaryColor is the Pinned role (teal), kept under its old name.
 	SecondaryColor color.Color
-	SuccessColor   color.Color
-	WarningColor   color.Color
-	ErrorColor     color.Color
-	SubtleColor    color.Color
-	TextColor      color.Color
-	BgColor        color.Color
 
 	ActiveBorder     lipgloss.Style
 	InactiveBorder   lipgloss.Style
@@ -38,86 +48,90 @@ var (
 	DocStyle         lipgloss.Style
 )
 
+// Theme maps the semantic roles onto one palette. Each theme carries its own
+// surface token, so no theme is detected by comparing its background.
 type Theme struct {
-	AccentColor    color.Color
-	SecondaryColor color.Color
-	SuccessColor   color.Color
-	WarningColor   color.Color
-	ErrorColor     color.Color
-	SubtleColor    color.Color
-	TextColor      color.Color
-	BgColor        color.Color
+	Accent     color.Color // focus and selection
+	Success    color.Color
+	Warning    color.Color
+	Error      color.Color
+	Info       color.Color
+	Pinned     color.Color
+	Muted      color.Color // de-emphasised text
+	Subtle     color.Color // secondary text
+	Text       color.Color
+	Border     color.Color // unfocused borders
+	Focus      color.Color // focused borders and titles
+	Surface    color.Color // the active sidebar row's background
+	Background color.Color
+}
+
+// themeFrom assigns the roles for one flavour.
+func themeFrom(p Palette) *Theme {
+	return &Theme{
+		Accent:     p.Mauve,
+		Success:    p.Green,
+		Warning:    p.Yellow,
+		Error:      p.Red,
+		Info:       p.Blue,
+		Pinned:     p.Teal,
+		Muted:      p.Overlay0,
+		Subtle:     p.Subtext0,
+		Text:       p.Text,
+		Border:     p.Surface1,
+		Focus:      p.Mauve,
+		Surface:    p.Surface0,
+		Background: p.Base,
+	}
 }
 
 // DarkTheme is Catppuccin Mocha.
-func DarkTheme() *Theme {
-	return &Theme{
-		AccentColor:    lipgloss.Color("#cba6f7"),
-		SecondaryColor: lipgloss.Color("#94e2d5"),
-		SuccessColor:   lipgloss.Color("#a6e3a1"),
-		WarningColor:   lipgloss.Color("#f9e2af"),
-		ErrorColor:     lipgloss.Color("#f38ba8"),
-		SubtleColor:    lipgloss.Color("#6c7086"),
-		TextColor:      lipgloss.Color("#cdd6f4"),
-		BgColor:        lipgloss.Color("#1e1e2e"),
-	}
-}
+func DarkTheme() *Theme { return themeFrom(Mocha) }
 
-// LightTheme keeps pre-M14 hex values (not Catppuccin Latte).
-func LightTheme() *Theme {
-	return &Theme{
-		AccentColor:    lipgloss.Color("#34548a"),
-		SecondaryColor: lipgloss.Color("#0891b2"),
-		SuccessColor:   lipgloss.Color("#33635c"),
-		WarningColor:   lipgloss.Color("#8f5e15"),
-		ErrorColor:     lipgloss.Color("#8c4351"),
-		SubtleColor:    lipgloss.Color("#9699a3"),
-		TextColor:      lipgloss.Color("#343b58"),
-		BgColor:        lipgloss.Color("#f5f5f5"),
-	}
-}
+// LightTheme is Catppuccin Latte.
+func LightTheme() *Theme { return themeFrom(Latte) }
 
 func ApplyTheme(t *Theme) {
 	CurrentTheme = t
-	AccentColor = t.AccentColor
-	SecondaryColor = t.SecondaryColor
-	SuccessColor = t.SuccessColor
-	WarningColor = t.WarningColor
-	ErrorColor = t.ErrorColor
-	SubtleColor = t.SubtleColor
-	TextColor = t.TextColor
-	BgColor = t.BgColor
+	AccentColor = t.Accent
+	SuccessColor = t.Success
+	WarningColor = t.Warning
+	ErrorColor = t.Error
+	InfoColor = t.Info
+	MutedColor = t.Muted
+	TextColor = t.Text
+	BorderColor = t.Border
+	FocusColor = t.Focus
+	BgColor = t.Background
+	SurfaceColor = t.Surface
+	SubtleColor = t.Subtle
+	SecondaryColor = t.Pinned
 
-	surface0 := lipgloss.Color("#313244")
-	if t.BgColor == LightTheme().BgColor {
-		surface0 = lipgloss.Color("#ccd0da")
-	}
-
-	ActiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.AccentColor)
-	InactiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.SubtleColor)
-	SelectedItem = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true)
-	NormalItem = lipgloss.NewStyle().Foreground(t.TextColor)
+	ActiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Focus)
+	InactiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Border)
+	SelectedItem = lipgloss.NewStyle().Foreground(t.Accent).Bold(true)
+	NormalItem = lipgloss.NewStyle().Foreground(t.Text)
 	TabActive = lipgloss.NewStyle().
-		Foreground(t.AccentColor).
+		Foreground(t.Accent).
 		Bold(true).
 		Border(lipgloss.Border{Bottom: "━"}, false, false, true, false).
-		BorderForeground(t.AccentColor).
+		BorderForeground(t.Accent).
 		Padding(0, 1)
 	TabInactive = lipgloss.NewStyle().
-		Foreground(t.SubtleColor).
+		Foreground(t.Subtle).
 		Padding(0, 1)
-	HintKey = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true).Padding(0, 1)
-	HintDesc = lipgloss.NewStyle().Foreground(t.SubtleColor)
-	PanelTitle = lipgloss.NewStyle().Foreground(t.TextColor).Bold(true)
-	PanelTitleActive = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true)
-	ActivePanelBg = lipgloss.NewStyle().Background(surface0)
-	LogBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.SubtleColor)
-	OutdatedBadge = lipgloss.NewStyle().Foreground(t.WarningColor)
-	PinnedBadge = lipgloss.NewStyle().Foreground(t.SecondaryColor)
-	InstalledBadge = lipgloss.NewStyle().Foreground(t.SuccessColor)
-	ErrorBadge = lipgloss.NewStyle().Foreground(t.ErrorColor)
-	SubtleText = lipgloss.NewStyle().Foreground(t.SubtleColor)
-	AccentText = lipgloss.NewStyle().Foreground(t.AccentColor).Bold(true)
+	HintKey = lipgloss.NewStyle().Foreground(t.Accent).Bold(true).Padding(0, 1)
+	HintDesc = lipgloss.NewStyle().Foreground(t.Subtle)
+	PanelTitle = lipgloss.NewStyle().Foreground(t.Text).Bold(true)
+	PanelTitleActive = lipgloss.NewStyle().Foreground(t.Focus).Bold(true)
+	ActivePanelBg = lipgloss.NewStyle().Background(t.Surface)
+	LogBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Border)
+	OutdatedBadge = lipgloss.NewStyle().Foreground(t.Warning)
+	PinnedBadge = lipgloss.NewStyle().Foreground(t.Pinned)
+	InstalledBadge = lipgloss.NewStyle().Foreground(t.Success)
+	ErrorBadge = lipgloss.NewStyle().Foreground(t.Error)
+	SubtleText = lipgloss.NewStyle().Foreground(t.Subtle)
+	AccentText = lipgloss.NewStyle().Foreground(t.Accent).Bold(true)
 	DocStyle = lipgloss.NewStyle().Padding(1, 2)
 }
 

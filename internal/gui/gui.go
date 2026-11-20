@@ -952,6 +952,9 @@ func (m Model) View() tea.View {
 	v := tea.NewView(m.render())
 	v.AltScreen = true
 	v.WindowTitle = "lazybrew"
+	// The app owns its canvas: the theme's base and text, as change-gate does.
+	v.BackgroundColor = style.BgColor
+	v.ForegroundColor = style.TextColor
 	if m.cfg != nil && m.cfg.GUI.Mouse {
 		v.MouseMode = tea.MouseModeCellMotion
 	}
