@@ -1,12 +1,14 @@
 package gui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -236,4 +238,50 @@ func TestToastMessageIsCutWithEllipsis(t *testing.T) {
 // plainLinesOf is a rendered box as plain text, one string per row.
 func plainLinesOf(box string) []string {
 	return strings.Split(sgr.ReplaceAllString(box, ""), "\n")
+}
+
+// TestToastStackLeavesCellsBesideBoxesAlone locks F-r1-01: with toasts of
+// mixed widths, only the cells inside a toast box differ from the base frame.
+// A narrower toast must not blank the cells beside it.
+func TestToastStackLeavesCellsBesideBoxesAlone(t *testing.T) {
+	for _, sz := range [][2]int{{80, 24}, {140, 40}} {
+		t.Run(fmt.Sprintf("%dx%d", sz[0], sz[1]), func(t *testing.T) {
+			w, h := sz[0], sz[1]
+			base := updateModel(newTestModel(), tea.WindowSizeMsg{Width: w, Height: h})
+			withToasts := updateModel(newTestModel(), tea.WindowSizeMsg{Width: w, Height: h})
+			withToasts.toasts = []*modal.Toast{
+				modal.NewToast("ok", modal.ToastSuccess),
+				modal.NewToast("a much longer message that is wider than the others", modal.ToastError),
+				modal.NewToast("mid", modal.ToastWarning),
+			}
+			after := plainRows(withToasts.View().Content)
+			before := plainRows(base.View().Content)
+			assertFrameSize(t, withToasts.View().Content, w, h)
+
+			placements := withToasts.toastPlacements()
+			inBox := func(r, c int) bool {
+				for _, p := range placements {
+					bw, bh := lipgloss.Width(p.box), lipgloss.Height(p.box)
+					if r >= p.y && r < p.y+bh && c >= p.x && c < p.x+bw {
+						return true
+					}
+				}
+				return false
+			}
+			for r := range before {
+				for c := range before[r] {
+					if !inBox(r, c) && before[r][c] != after[r][c] {
+						t.Fatalf("cell (%d,%d) outside every toast box changed: %q -> %q", c, r, before[r][c], after[r][c])
+					}
+				}
+			}
+			for _, p := range placements {
+				for i, row := range plainRows(p.box) {
+					if got, want := string(after[p.y+i][p.x:p.x+len(row)]), string(row); got != want {
+						t.Fatalf("toast box row %d is %q, want %q", i, got, want)
+					}
+				}
+			}
+		})
+	}
 }

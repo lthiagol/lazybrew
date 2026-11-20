@@ -78,27 +78,46 @@ func (m Model) toastBoxes() []string {
 	return boxes
 }
 
-// toastLayer floats the stack flush right, its last box on the last body row,
-// so it grows upward above the footer and never covers the header.
-func (m Model) toastLayer() *lipgloss.Layer {
-	stack := lipgloss.JoinVertical(lipgloss.Right, m.toastBoxes()...)
-	x, y := bottomRightOrigin(stack, m.width, m.height)
-	return lipgloss.NewLayer(stack).X(x).Y(y)
+// toastPlacement is where one toast's box goes in the frame.
+type toastPlacement struct {
+	box  string
+	x, y int
 }
 
-// toastAt is the index of the toast whose box covers the frame cell (x, y), or
-// -1. It lays the boxes out exactly as toastLayer does.
-func (m Model) toastAt(x, y int) int {
+// toastPlacements lays the stack out: the boxes stack upward from the last
+// body row, flush right, the newest lowest. Each box keeps its own width, so
+// a narrow toast does not pad out to the widest one.
+func (m Model) toastPlacements() []toastPlacement {
 	boxes := m.toastBoxes()
 	stack := lipgloss.JoinVertical(lipgloss.Right, boxes...)
 	left, top := bottomRightOrigin(stack, m.width, m.height)
 	right := left + lipgloss.Width(stack)
-	for i, box := range boxes {
-		bw, bh := lipgloss.Width(box), lipgloss.Height(box)
-		if x >= right-bw && x < right && y >= top && y < top+bh {
+	out := make([]toastPlacement, 0, len(boxes))
+	for _, box := range boxes {
+		out = append(out, toastPlacement{box: box, x: right - lipgloss.Width(box), y: top})
+		top += lipgloss.Height(box)
+	}
+	return out
+}
+
+// toastLayers floats each toast as its own layer, so only its box covers the
+// frame: the cells beside a narrower toast keep the base frame.
+func (m Model) toastLayers() []*lipgloss.Layer {
+	var layers []*lipgloss.Layer
+	for _, p := range m.toastPlacements() {
+		layers = append(layers, lipgloss.NewLayer(p.box).X(p.x).Y(p.y))
+	}
+	return layers
+}
+
+// toastAt is the index of the toast whose box covers the frame cell (x, y), or
+// -1. It reads the same placements toastLayers draws.
+func (m Model) toastAt(x, y int) int {
+	for i, p := range m.toastPlacements() {
+		bw, bh := lipgloss.Width(p.box), lipgloss.Height(p.box)
+		if x >= p.x && x < p.x+bw && y >= p.y && y < p.y+bh {
 			return i
 		}
-		top += bh
 	}
 	return -1
 }
