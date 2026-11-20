@@ -99,26 +99,25 @@ func TestFetchStatusDataTimesOut(t *testing.T) {
 
 	client := brew.NewClient(blockingRunner())
 
-	// The user-visible path: the dashboard carries the timeout as a ⚠ line.
+	// The user-visible path: the Health card carries the timeout as a ⚠ line.
 	msg := awaitMsg(t, fetchStatusData(client, false), 2*time.Second)
 	dMsg, ok := msg.(DataLoadedMsg)
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	joined := strings.Join(dMsg.Dashboard, "\n")
-	if !strings.Contains(joined, "brew list timed out after 50ms") {
-		t.Errorf("dashboard does not report the timed-out read:\n%s", joined)
+	if health := healthWords(dMsg); !strings.Contains(health, "brew list timed out after 50ms") {
+		t.Errorf("Health does not report the timed-out read:\n%s", health)
 	}
 
-	// The typed error behind that line.
-	items, _, errs := statusDashboard(client, false)
+	// The typed summary and the typed error behind that line.
+	if !strings.Contains(strings.Join(dMsg.Summary.Problems, "\n"), "brew list timed out after 50ms") {
+		t.Error("the summary does not name the command and the duration")
+	}
+	_, errs := statusDashboard(client, false)
 	if len(errs) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}
 	assertTimeout(t, errs[0], "list", "50ms")
-	if !strings.Contains(strings.Join(items, "\n"), "brew list timed out after 50ms") {
-		t.Error("dashboard items do not name the command and the duration")
-	}
 }
 
 func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
@@ -144,7 +143,7 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	if len(dMsg.Dashboard) == 0 {
+	if healthWords(dMsg) == "" {
 		t.Error("expected the dashboard to render despite every read hanging")
 	}
 
@@ -155,7 +154,7 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 		t.Errorf("fetchStatusData took %s — the sum of the per-read caps, not the total budget", elapsed)
 	}
 
-	_, _, errs := statusDashboard(client, false)
+	_, errs := statusDashboard(client, false)
 	if len(errs) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}

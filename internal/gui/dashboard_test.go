@@ -16,11 +16,12 @@ func TestDashboardCardsSideBySideWhenTheWidthAllowsIt(t *testing.T) {
 	m := newTestModel()
 	m.status = statusSummary{Formulae: knownCount{N: 1, Known: true}}
 	wide := strings.Split(ansi.Strip(m.renderDashboard(2*dashboardCardWidth)), "\n")
-	if !strings.Contains(wide[0], "Homebrew") || !strings.Contains(wide[0], "Packages") {
+	// Health is the second card, so the first row is Homebrew and Health (fix F-r1-02).
+	if !strings.Contains(wide[0], "Homebrew") || !strings.Contains(wide[0], "Health") {
 		t.Fatalf("at twice a card's width the first two cards should share a row, got %q", wide[0])
 	}
 	narrow := strings.Split(ansi.Strip(m.renderDashboard(2*dashboardCardWidth-1)), "\n")
-	if strings.Contains(narrow[0], "Packages") {
+	if strings.Contains(narrow[0], "Health") {
 		t.Fatalf("below twice a card's width the cards should stack, got %q", narrow[0])
 	}
 	for _, row := range narrow {
@@ -120,4 +121,21 @@ func TestDashboardTabWaitsForTheLoad(t *testing.T) {
 	if out := ansi.Strip(m.renderContent(80, 20)); !strings.Contains(out, "not loaded yet") {
 		t.Fatalf("before the load the tab should say so, got:\n%s", out)
 	}
+}
+
+// dashboardCards is a status load as the user reads it: the cards, drawn plain
+// at a width where every card shows (v2-05 fix F-r1-02: the checks that read
+// the dashboard now read these cards, not a text block no user sees).
+func dashboardCards(msg DataLoadedMsg) string {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = updateModel(m, msg)
+	return ansi.Strip(m.renderDashboard(140))
+}
+
+// healthWords is the Health card's text with its line breaks joined, so a line
+// the card wraps still reads as one phrase.
+func healthWords(msg DataLoadedMsg) string {
+	m := newTestModel()
+	m.status = msg.Summary
+	return strings.Join(strings.Fields(ansi.Strip(m.healthBody())), " ")
 }

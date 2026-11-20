@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -21,15 +22,17 @@ const dashboardCardWidth = 36
 func (m Model) renderDashboard(width int) string {
 	inner := dashboardCardWidth - 2
 	s := m.status
+	// Health comes second, so that when the cards stack a problem is in view
+	// without scrolling.
 	cards := []string{
 		dashCard("Homebrew", presentation.Detail([]presentation.Field{
 			{Label: "Version", Value: valueOr(s.Version, "unknown")},
 			{Label: "Prefix", Value: valueOr(s.Prefix, "unknown")},
 		}, inner)),
+		dashCard("Health", m.healthBody()),
 		dashCard("Packages", m.packagesBody(inner)),
 		dashCard("Taps", tapsBody(s, inner)),
 		dashCard("Services", m.servicesBody(inner)),
-		dashCard("Health", m.healthBody()),
 	}
 	if width < 2*dashboardCardWidth {
 		return lipgloss.JoinVertical(lipgloss.Left, cards...)
@@ -92,11 +95,15 @@ func (m Model) servicesBody(inner int) string {
 }
 
 // healthBody is the Health card: the doctor summary when a run has answered,
-// the prompt to run it when none has, and the sources that failed.
+// the reason when its run failed, the prompt to run it when none has, and the
+// sources that failed. A line the card is too narrow for wraps, so a timeout
+// or a failure is read whole.
 func (m Model) healthBody() string {
 	s := m.status
 	var rows []string
 	switch {
+	case s.DoctorErr != "":
+		rows = append(rows, warningLines(withIcon(m.icons.Warn, "doctor unavailable: "+s.DoctorErr))...)
 	case !s.Doctor.Known:
 		rows = append(rows, style.SubtleText.Render("press d to run doctor"))
 	case s.Doctor.N == 0:
@@ -107,9 +114,20 @@ func (m Model) healthBody() string {
 			Render(withIcon(m.icons.Warn, fmt.Sprintf("%d %s", s.Doctor.N, plural(s.Doctor.N, "warning", "warnings")))))
 	}
 	for _, p := range s.Problems {
-		rows = append(rows, lipgloss.NewStyle().Foreground(style.WarningColor).Render(p))
+		rows = append(rows, warningLines(p)...)
 	}
 	return strings.Join(rows, "\n")
+}
+
+// warningLines is text in the Warning role, wrapped to the card's inner width
+// and one row per wrapped line.
+func warningLines(text string) []string {
+	warning := lipgloss.NewStyle().Foreground(style.WarningColor)
+	var out []string
+	for _, line := range strings.Split(ansi.Wrap(text, dashboardCardWidth-2, ""), "\n") {
+		out = append(out, warning.Render(line))
+	}
+	return out
 }
 
 // countField is a count row: the number and its noun, or not loaded.

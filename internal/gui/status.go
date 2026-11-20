@@ -17,9 +17,11 @@ type statusSummary struct {
 	OfficialTaps    int
 	ServicesStarted int
 	// Doctor counts the warnings of the last brew doctor run; it is unknown
-	// until that run has answered.
-	Doctor knownCount
-	// Problems are the sources that failed or timed out, as ⚠ lines.
+	// until that run has answered. DoctorErr is the reason its run failed.
+	Doctor    knownCount
+	DoctorErr string
+	// Problems are the sources other than doctor that failed or timed out,
+	// as ⚠ lines.
 	Problems []string
 }
 
