@@ -57,6 +57,9 @@ func NewConfirmModal(kind ActionKind, title, message string) *ConfirmModal {
 // Kind reports the action the dialog confirms.
 func (m *ConfirmModal) Kind() ActionKind { return m.kind }
 
+// Detail is the subtle consequence line under the question; empty if none.
+func (m *ConfirmModal) Detail() string { return m.detail }
+
 // WithDetail sets the subtle line under the question: what the action will do.
 func (m *ConfirmModal) WithDetail(detail string) *ConfirmModal {
 	m.detail = detail

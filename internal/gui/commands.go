@@ -900,7 +900,8 @@ func (m Model) togglePin() (tea.Model, tea.Cmd) {
 // bypass task.Manager (r1 finding 5).
 func (m Model) serviceCleanup() (tea.Model, tea.Cmd) {
 	m.pendingAction = "services-cleanup"
-	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup Services", "Remove stale service files?")
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup Services", "Remove stale service files?").
+		WithDetail("Removes the service files of formulae that are no longer installed.")
 	return m, m.activeModal.Init()
 }
 
@@ -1208,7 +1209,8 @@ func (m Model) confirmRepair() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.pendingAction = "repair"
-	m.activeModal = modal.NewConfirmModal(modal.ActionInstall, "Repair "+name, "Repair tap "+name+"?")
+	m.activeModal = modal.NewConfirmModal(modal.ActionInstall, "Repair "+name, "Repair tap "+name+"?").
+		WithDetail("Runs brew tap --repair, which migrates the tap to the current layout.")
 	return m, m.activeModal.Init()
 }
 
@@ -1280,6 +1282,22 @@ func removalDetail(name string, zap bool, uses []string, err error) string {
 	return what
 }
 
+// mutationDetail is the consequence line under a package mutation's question.
+func mutationDetail(mutType mutationType, name string) string {
+	switch mutType {
+	case mutInstall:
+		return "Installs " + name + " from Homebrew."
+	case mutReinstall:
+		return "Installs " + name + " again at its current version."
+	case mutUpgrade:
+		return "Installs the newest version of " + name + "."
+	case mutUpgradeAll:
+		return "Installs the newest version of every outdated package."
+	default:
+		return ""
+	}
+}
+
 func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {
 	panel := m.panels[m.activePanel]
 	if panel.selected >= len(panel.items) {
@@ -1302,7 +1320,8 @@ func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, t
 
 	m.pendingAction = "mutation"
 	m.pendingMutType = mutType
-	modal := modal.NewConfirmModal(mutationKind(mutType), "Confirm "+actionLabel, message)
+	modal := modal.NewConfirmModal(mutationKind(mutType), "Confirm "+actionLabel, message).
+		WithDetail(mutationDetail(mutType, name))
 	m.activeModal = modal
 	return m, m.activeModal.Init()
 }
@@ -1333,7 +1352,8 @@ func (m Model) confirmBatchUpgrade() (tea.Model, tea.Cmd) {
 	message := "Upgrade " + strconv.Itoa(n) + " selected packages?"
 
 	m.pendingAction = "batch-upgrade"
-	modal := modal.NewConfirmModal(modal.ActionUpgrade, "Confirm Batch Upgrade", message)
+	modal := modal.NewConfirmModal(modal.ActionUpgrade, "Confirm Batch Upgrade", message).
+		WithDetail("Installs the newest version of each selected package.")
 	m.activeModal = modal
 	return m, m.activeModal.Init()
 }
