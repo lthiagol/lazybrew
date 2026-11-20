@@ -96,11 +96,32 @@ func (cl *CommandLog) SetStatus(id int, status CommandStatus) {
 	}
 }
 
+// Entries is every entry the log holds, oldest first.
 func (cl *CommandLog) Entries() []LogEntry {
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
-	n := cl.count
-	if n == 0 {
+	return cl.lastLocked(cl.count)
+}
+
+// Len is how many entries the log holds.
+func (cl *CommandLog) Len() int {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
+	return cl.count
+}
+
+// Last is the newest n entries, oldest first: fewer when the log holds fewer.
+// It copies those n, not the whole ring.
+func (cl *CommandLog) Last(n int) []LogEntry {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
+	return cl.lastLocked(n)
+}
+
+// lastLocked is the newest n entries, oldest first. The caller holds the lock.
+func (cl *CommandLog) lastLocked(n int) []LogEntry {
+	n = min(n, cl.count)
+	if n <= 0 {
 		return nil
 	}
 	result := make([]LogEntry, n)
@@ -112,20 +133,15 @@ func (cl *CommandLog) Entries() []LogEntry {
 }
 
 func (cl *CommandLog) View(width, height int) string {
-	entries := cl.Entries()
-	if len(entries) == 0 {
+	if cl.Len() == 0 {
 		return lipgloss.NewStyle().Width(width).Height(height).Render(
 			style.SubtleText.Render("No commands executed yet"),
 		)
 	}
 
 	var lines []string
-	start := 0
-	if len(entries) > height {
-		start = len(entries) - height
-	}
 	icons := cl.currentIcons()
-	for _, e := range entries[start:] {
+	for _, e := range cl.Last(height) {
 		glyph := icons.Refresh
 		cmdStyle := style.SubtleText
 		switch e.Status {

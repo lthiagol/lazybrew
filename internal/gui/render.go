@@ -78,9 +78,13 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 // box stacked below it at the same width. The column is exactly
 // l.mainW wide and l.bodyH rows tall.
 func (m Model) renderMainPanel() string {
-	l := m.screenLayout()
+	return m.renderMainPanelIn(m.screenLayout())
+}
+
+// renderMainPanelIn is the main panel drawn to the layout l.
+func (m Model) renderMainPanelIn(l screenLayout) string {
 	innerW := l.mainW - 2
-	cw := m.mainContentWidth()
+	cw := contentWidthIn(l)
 
 	// The title is the breadcrumb: the panel, then the tab.
 	title := m.panels[m.activePanel].title
@@ -117,7 +121,12 @@ const mainPadX = 1
 // less its border and the padding either side. Every helper that cuts or wraps
 // the main content uses it, so nothing overflows into the padding.
 func (m Model) mainContentWidth() int {
-	return max(1, m.screenLayout().mainW-2-2*mainPadX)
+	return contentWidthIn(m.screenLayout())
+}
+
+// contentWidthIn is mainContentWidth for the layout l.
+func contentWidthIn(l screenLayout) int {
+	return max(1, l.mainW-2-2*mainPadX)
 }
 
 // screenLayout is the one geometry every frame is drawn to. Render, the
@@ -133,8 +142,13 @@ type screenLayout struct {
 	contentH int // main content rows, below the tab bar
 }
 
+// bodyRows is the rows above the bottom bar, the body of the screen.
+func (m Model) bodyRows() int {
+	return max(0, m.height-headerRows-bottomBarRows)
+}
+
 func (m Model) screenLayout() screenLayout {
-	bodyH := max(0, m.height-headerRows-bottomBarRows)
+	bodyH := m.bodyRows()
 	sideW := sidebarWidth(m.cfg, m.width)
 	logH := m.logHeight(bodyH)
 	mainH := bodyH - logH
@@ -168,7 +182,7 @@ func (m Model) logHeight(bodyH int) int {
 	switch {
 	case m.tasks.IsRunning():
 		h = full
-	case len(m.commandLog.Entries()) == 0:
+	case m.commandLog.Len() == 0:
 		h = logEmptyH
 	default:
 		h = min(full, logIdleH)
@@ -343,7 +357,7 @@ func (m Model) restingContentHeights() []int {
 	if n == 0 {
 		return nil
 	}
-	sidebarHeight := m.screenLayout().bodyH
+	sidebarHeight := m.bodyRows()
 	borderOverhead := n * 2
 	availableRows := sidebarHeight - borderOverhead
 	if availableRows < n {

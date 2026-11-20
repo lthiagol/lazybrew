@@ -1243,8 +1243,9 @@ func (m Model) render() string {
 		return m.renderHelpScreen()
 	}
 
+	l := m.screenLayout()
 	sidebar := m.renderSidebar()
-	mainContent := m.renderMainPanel()
+	mainContent := m.renderMainPanelIn(l)
 	bottomBar := m.renderBottomBar()
 
 	body := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainContent)

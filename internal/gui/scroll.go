@@ -109,7 +109,7 @@ func (m Model) scrollRows(contentH int) int {
 // area: the offset at which the content's last row is on the area's bottom row.
 func (m Model) contentLast() int {
 	l := m.screenLayout()
-	cw := m.mainContentWidth()
+	cw := contentWidthIn(l)
 	h := m.scrollRows(l.contentH)
 	return max(0, len(m.mainRows(cw, h))-h)
 }
