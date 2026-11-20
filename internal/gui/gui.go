@@ -486,7 +486,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case DepCheckMsg:
 		m.pendingAction = "uninstall"
 		m.pendingMutType = msg.MutType
-		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Label+" "+msg.Name, msg.Message)
+		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Label+" "+msg.Name, msg.Message).WithDetail(msg.Detail)
 		return m, m.activeModal.Init()
 
 	case TabContentMsg:
@@ -1046,8 +1046,7 @@ func (m Model) render() string {
 		}
 	}
 	if m.activeModal != nil {
-		overlay := style.ActiveBorder.Render(m.activeModal.View().Content)
-		overlays = append(overlays, centred(overlay, m.width, m.height))
+		overlays = append(overlays, centred(m.activeModal.View().Content, m.width, m.height))
 	}
 	if len(overlays) == 0 {
 		return base

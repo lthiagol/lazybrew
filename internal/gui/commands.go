@@ -1189,7 +1189,8 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 		return m, m.setToast("Cannot untap official taps", modal.ToastWarning)
 	}
 	m.pendingAction = "untap"
-	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Untap "+name, "Remove tap "+name+"? Installed formulae from this tap will become unavailable for updates.")
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Untap "+name, "Remove tap "+name+"?").
+		WithDetail("Installed formulae from this tap will become unavailable for updates.")
 	return m, m.activeModal.Init()
 }
 
@@ -1248,8 +1249,35 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 			message += "\n\nDependency check timed out after " + timeoutErr.Timeout.String() +
 				" — the list of packages that depend on " + name + " may be incomplete."
 		}
-		return DepCheckMsg{MutType: mutType, Name: name, Label: label, Message: message, Kind: mutationKind(mutType)}
+		return DepCheckMsg{
+			MutType: mutType,
+			Name:    name,
+			Label:   label,
+			Message: message,
+			Kind:    mutationKind(mutType),
+			Detail:  removalDetail(name, mutType == mutZap, uses, err),
+		}
 	}
+}
+
+// removalDetail is the subtle line under an uninstall or zap question: what
+// goes, and how many installed packages depend on it. A timed-out check says
+// the count is unknown rather than zero.
+func removalDetail(name string, zap bool, uses []string, err error) string {
+	what := "removes " + name
+	if zap {
+		what = "removes " + name + " and all its files and preferences"
+	}
+	var timeoutErr *brew.TimeoutError
+	switch {
+	case errors.As(err, &timeoutErr):
+		return what + "; dependents unknown (check timed out)"
+	case len(uses) == 1:
+		return what + "; 1 package depends on it"
+	case len(uses) > 1:
+		return fmt.Sprintf("%s; %d packages depend on it", what, len(uses))
+	}
+	return what
 }
 
 func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {

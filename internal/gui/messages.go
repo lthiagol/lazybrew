@@ -68,6 +68,7 @@ type DepCheckMsg struct {
 	Label   string
 	Message string
 	Kind    modal.ActionKind
+	Detail  string
 }
 
 // autoRefreshTickMsg is delivered by tea.Tick so Update can evaluate

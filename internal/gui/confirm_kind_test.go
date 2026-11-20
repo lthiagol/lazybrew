@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -107,6 +108,9 @@ func TestUninstallConfirmIsDanger(t *testing.T) {
 		dMsg, ok := cmd().(DepCheckMsg)
 		if !ok {
 			t.Fatalf("mutation %v: expected DepCheckMsg", mut)
+		}
+		if !strings.HasPrefix(dMsg.Detail, "removes ripgrep") {
+			t.Fatalf("mutation %v: detail = %q, want it to name what goes", mut, dMsg.Detail)
 		}
 		nm := updateModel(newTestModel(), dMsg)
 		if got := confirmKindOf(t, nm); got != modal.ActionDanger {

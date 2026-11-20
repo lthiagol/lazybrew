@@ -56,9 +56,6 @@ func (m *MenuModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *MenuModal) View() tea.View {
-	width := 50
-	title := style.AccentText.Render(m.title)
-
 	var lines []string
 	for i, item := range m.items {
 		prefix := "  "
@@ -71,20 +68,13 @@ func (m *MenuModal) View() tea.View {
 		lines = append(lines, itemStyle.Render(shortcut+prefix+item))
 	}
 
-	list := lipgloss.JoinVertical(lipgloss.Top, lines...)
-	content := lipgloss.JoinVertical(lipgloss.Center,
-		title,
-		"",
-		list,
+	keys := keyLine(
+		keyHint(style.AccentColor, "↑↓", "move"),
+		keyHint(style.AccentColor, "enter", "choose"),
+		keyHint(style.AccentColor, "esc", "cancel"),
 	)
-
-	// Width counts the border in v2; add it back so the box is the v1 size.
-	return tea.NewView(lipgloss.NewStyle().
-		Width(width+2).
-		Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(style.AccentColor).
-		Render(content))
+	list := lipgloss.JoinVertical(lipgloss.Left, lines...)
+	return tea.NewView(dialog(style.AccentColor, m.title, formWidth, list, "", keys))
 }
 
 func (m *MenuModal) Done() bool      { return m.done }
