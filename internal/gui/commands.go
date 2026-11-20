@@ -823,16 +823,15 @@ func (m Model) serviceAction(action string) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	// The state decides: starting a running service, or stopping or restarting
-	// a stopped one, would change nothing, so it says so instead of running.
-	running := serviceRunning(*s)
+	// one that is not loaded, would change nothing, so it says so instead.
 	switch action {
 	case "start":
-		if running {
+		if serviceRunning(*s) {
 			toast := m.setToast(s.Name+" is already running", modal.ToastInfo)
 			return m, toast
 		}
 	case "stop", "restart":
-		if !running {
+		if !serviceStoppable(*s) {
 			toast := m.setToast(s.Name+" is not running", modal.ToastInfo)
 			return m, toast
 		}
