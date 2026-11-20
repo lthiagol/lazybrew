@@ -6,7 +6,7 @@ import (
 )
 
 func renderBox(content string, width, height int, active bool) string {
-	borderColor := style.SubtleColor
+	borderColor := style.BorderColor
 	if active {
 		borderColor = style.AccentColor
 	}
