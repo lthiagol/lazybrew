@@ -18,6 +18,7 @@ decision). The source is provenance, not a spec.
 | LB-07 | Apply context timeouts to the two brew reads still unbounded: the uninstall dependency pre-check (`internal/gui/commands.go:1034`, `Formulae.Uses`) and `toggleLeaves` (`internal/gui/commands.go:1128`, `Formulae.Leaves`) | found by lb02-fetch-timeouts | low | closed |
 | LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slice 1 `v2-01-charm-v2` (move to the Charm v2 stack) is closed; next is `v2-02` | orchestrator review 2026-11-19 | medium | active |
 | LB-09 | Services Logs tab: tail a service's stdout/stderr log files from lazybrew | user, 2026-11-19 | low | parked |
+| LB-10 | Confirm dialog: when a long dependents list is cut, the closing `…` row is centred instead of placed in the list column (`dialogMaxRows` cut in `modal/frame.go`, > ~12 body rows) | reviewer v2-04 r4 | low | parked |
 | LB-DROP-01 | Dead header fix in the `master-plan-bkp` directory | B-01 | n/a | dropped |
 
 **LB-DROP-01 reason:** the target directory does not exist on this machine —

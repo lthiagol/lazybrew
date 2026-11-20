@@ -14,7 +14,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-02-layout-bugs | 2611e00, a9ccbbe, a56fd8e, 2498d26, 23a031c, 5525dfd, 9046165, 8d9af6b, 690e5dd, 4a649cf | closed | ok |
 | v2-03-look-foundation | a6f22ab, c569ee0, 85f5e3f, 0d4593e, e56d97c, d58fb96, 4aaa3b0, f6c950a, 02fcbae, 18796ad, b79b0e3, 96a5508, 6736abd, 56e78c0, f4f4abf, 3677383 | closed | ok |
 | v2-03b-sidebar-lists | 0fa39ff, 4b16b65, c30158e, 33f6348, 01fb663, 9ba0f80, d68d66f, 3c38d91, 8d2c171, 752583b, 3fefcf8, 9c91b5d, b501d1f, 020011f | closed | ok |
-| v2-04-overlays-styled | — | implemented | awaiting reviewer |
+| v2-04-overlays-styled | f8a8b10, 54fe613, aa432d6, b8c110d, 6b01ecb, 215aadd, 23dbb79, 40588cf, f6807c4, f4b4127, 64bc9d8 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -209,3 +209,16 @@ rulings Q-v2-03b-a/c/d (batch marks only on Outdated, Trust tab, page keys);
 r2: `g`/`G` had stolen type-to-search on the Search panel (major) and a plural
 (minor); r3 `ok`. Tests 615 → 633 PASS lines (some table tests removed with
 named replacements). Frames: `work/verification/v2-03b-sidebar-lists/after/`.
+
+**v2-04-overlays-styled, closed.** Overlays in the change-gate style: every
+confirm carries an action kind (danger red, upgrade yellow, install blue,
+neutral mauve) chosen at the call site; the dialog has a thick accent border,
+an action chip (` UNINSTALL `), the question, a consequence line on every call
+site, and `[y]es [n]o esc cancel`; input and menu share the frame. Prose wraps,
+single-line parts are cut (ruling Q-v2-04-wrap). The frame behind an open
+modal is muted at the compositing step. Toasts are a stack of up to 3 icon
+boxes, bottom-right, each its own layer; 3 s (errors 6 s); a click dismisses.
+Review: r1 toast padding blanked frame cells and most confirms lacked the
+consequence line (both major) + 3 minors; r2 the input modal was off-centre;
+r3 the per-row centring scattered the dependents list; r4 `ok`. Frames:
+`work/verification/v2-04-overlays-styled/after/` (incl. 12–15).
