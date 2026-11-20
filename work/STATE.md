@@ -398,3 +398,7 @@ returns in `internal/gui` (reviewer proved the rewrite order-only) and added
 the two-service stale-read test (F-r1-02). gui coverage 86.2 → 85.6 % from the
 extra statements only (floor unchanged). Receipts: `work/inbox/runner-lb09-service-logs*.md`,
 `work/inbox/reviewer-lb09-service-logs-r{1,2}.md`.
+
+**Coverage floors reset (Q-cover-floors).** `scripts/check-coverage.sh` now
+covers all ten tested packages at measured − 2 (app 64, brew 78, config 85,
+gui 83, anim 86, modal 88, presentation 96, style 88, task 93, logtail 90).
