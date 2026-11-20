@@ -95,8 +95,8 @@ passes the tests; `TestEveryFrameIsTerminalSize` passes at every commit.
 ### AC-06 — evidence and bookkeeping
 
 1. Harness copied to `work/verification/v2-05-content-polish/`; same screens
-   and sizes plus `15-help-scrolled` (help, scrolled down a page),
-   `16-cask-info` (Casks → first cask Info), `17-doctor` only if doctor output
+   and sizes plus `16-help-scrolled` (help, scrolled down a page),
+   `17-cask-info` (Casks → first cask Info), `18-doctor` only if doctor output
    is cached/cheap — otherwise skip and say so (do **not** run `brew doctor`
    repeatedly). The Operation view is covered by tests, not frames (no brew
    writes). `before/` = `v2-04-overlays-styled/after/` (frames 01–15); `after/` with `.ansi`
