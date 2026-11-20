@@ -470,3 +470,33 @@ Accepted. The user restarted `moshi-hook` from lazybrew before this slice
 (that restart is the bug v2-07 fixes), so its PID changed from 800 to 1332457.
 A frame that differs from `v2-06-animations/after/` only in that live PID row
 satisfies AC-04.1. Later slices compare against `v2-07-op-dismiss/after/`.
+
+## Questions raised — slice `v2-08-preload` (runner lane)
+
+Neither blocks a criterion. Both are decided in code as described; the
+orchestrator can redirect either.
+
+### Q-v2-08-a — a failed preloaded panel retries when the user switches to it
+
+- **Question:** AC-02.2 says a failed read shows its error in its box only. The
+  existing `lazyLoadPanel` policy retries a panel that has no items when it is
+  switched to, so a failed preloaded panel shows its `!` and error until the user
+  switches to it; the switch then retries the read, and the error returns if it
+  fails again. Keep the retry, or make a failed preloaded panel stay failed until
+  `R`?
+- **Runner's decision:** kept the existing retry (no change to the lazy policy).
+  Test: `TestPreloadFailedReadShowsItsErrorOnItsPanelOnly`.
+- **Raised by:** runner lane (slice `v2-08-preload`).
+
+### Q-v2-08-b — a slow `brew tap-info` shows a degraded Taps panel with no error
+
+- **Observation:** on this machine `brew tap-info --json <3 taps>` takes ~87 s
+  (rc 0), past the 30 s `brewReadTimeout`. `tapsReader.List` then returns the
+  name-only list and does not cache it, so the Taps panel shows `0 trusted`, no
+  remote, and no error. The lazy path does this too (checked with preload off).
+  Preload makes it visible at startup for every user with a slow brew. The
+  frames in `work/verification/v2-08-preload/` (06, 14) carry the degraded read.
+- **Question:** should a timed-out tap-info surface as an error on the Taps panel
+  (as the other reads do), or stay a silent fallback? Changing it touches
+  `internal/brew/**`, which this slice does not.
+- **Raised by:** runner lane (slice `v2-08-preload`).
