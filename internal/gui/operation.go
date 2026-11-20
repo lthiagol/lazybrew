@@ -24,8 +24,8 @@ const operationBarWidth = 40
 const operationCloseHint = " · Esc to close"
 
 // operationAutoClose is how long a successful operation stays on screen before
-// it closes itself. The toast has already said it finished.
-const operationAutoClose = 2 * time.Second
+// it closes itself. The toast has already said it finished. Tests shorten it.
+var operationAutoClose = 2 * time.Second
 
 // autoCloseCmd starts the timer that closes a successful operation. A batch
 // with tasks still queued or running gets none: the last task's success starts

@@ -90,8 +90,8 @@ func TestFetchPanelDataTimesOut(t *testing.T) {
 func TestFetchStatusDataTimesOut(t *testing.T) {
 	origRead := brewReadTimeout
 	origTotal := brewStatusTotalTimeout
-	brewReadTimeout = 50 * time.Millisecond
-	brewStatusTotalTimeout = 500 * time.Millisecond
+	brewReadTimeout = 10 * time.Millisecond
+	brewStatusTotalTimeout = 100 * time.Millisecond
 	defer func() {
 		brewReadTimeout = origRead
 		brewStatusTotalTimeout = origTotal
@@ -105,19 +105,19 @@ func TestFetchStatusDataTimesOut(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	if health := healthWords(dMsg.Summary); !strings.Contains(health, "brew list timed out after 50ms") {
+	if health := healthWords(dMsg.Summary); !strings.Contains(health, "brew list timed out after 10ms") {
 		t.Errorf("Health does not report the timed-out read:\n%s", health)
 	}
 
 	// The typed summary and the typed error behind that line.
-	if !strings.Contains(strings.Join(dMsg.Summary.Problems, "\n"), "brew list timed out after 50ms") {
+	if !strings.Contains(strings.Join(dMsg.Summary.Problems, "\n"), "brew list timed out after 10ms") {
 		t.Error("the summary does not name the command and the duration")
 	}
 	_, errs := statusDashboard(client, false)
 	if len(errs) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}
-	assertTimeout(t, errs[0], "list", "50ms")
+	assertTimeout(t, errs[0], "list", "10ms")
 }
 
 func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
@@ -126,8 +126,8 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 	// Tiny per-read caps and a total budget below the sum of those caps: the
 	// dashboard must resolve on the budget, not after every read ran to its
 	// own cap.
-	brewReadTimeout = 100 * time.Millisecond
-	brewStatusTotalTimeout = 200 * time.Millisecond
+	brewReadTimeout = 20 * time.Millisecond
+	brewStatusTotalTimeout = 40 * time.Millisecond
 	defer func() {
 		brewReadTimeout = origRead
 		brewStatusTotalTimeout = origTotal
@@ -172,7 +172,7 @@ func TestFetchStatusDataTotalBudgetBoundsTheAggregate(t *testing.T) {
 	// A per-read cap wider than the total budget: only the total budget can
 	// end the wait, so it is the bound that must bind.
 	brewReadTimeout = 2 * time.Second
-	brewStatusTotalTimeout = 150 * time.Millisecond
+	brewStatusTotalTimeout = 30 * time.Millisecond
 	defer func() {
 		brewReadTimeout = origRead
 		brewStatusTotalTimeout = origTotal

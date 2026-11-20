@@ -77,13 +77,12 @@ func TestUninstallFlow(t *testing.T) {
 	tm := testutil.NewTestModelWithRunner(t, runner, teatest.WithInitialTermSize(120, 40))
 
 	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
-	time.Sleep(100 * time.Millisecond)
+	waitForScreen(t, tm, "▸ ✓ testformula")
 	tm.Send(tea.KeyPressMsg{Code: 'x', Text: "x"})
-	time.Sleep(200 * time.Millisecond)
+	waitForScreen(t, tm, "Uninstall testformula?")
 	tm.Send(tea.KeyPressMsg{Code: 'y', Text: "y"})
-	time.Sleep(200 * time.Millisecond)
+	waitForCall(t, runner.getStreamCalls, "uninstall", "testformula")
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
-	time.Sleep(50 * time.Millisecond)
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
 

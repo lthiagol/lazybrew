@@ -29,10 +29,19 @@ func TestCacheMiss(t *testing.T) {
 	}
 }
 
+// newCacheWithClock returns a cache on a clock that stands still until advance
+// is called, so a TTL test moves time forward instead of sleeping.
+func newCacheWithClock(ttl time.Duration) (c *Cache, advance func(time.Duration)) {
+	now := time.Now()
+	c = NewCache(ttl)
+	c.now = func() time.Time { return now }
+	return c, func(d time.Duration) { now = now.Add(d) }
+}
+
 func TestCacheTTL(t *testing.T) {
-	c := NewCache(50 * time.Millisecond)
+	c, advance := newCacheWithClock(50 * time.Millisecond)
 	c.Set(KeyFormulaeList, "data")
-	time.Sleep(100 * time.Millisecond)
+	advance(100 * time.Millisecond)
 	_, ok := c.Get(KeyFormulaeList)
 	if ok {
 		t.Error("expected cache miss after TTL expiry")
@@ -170,12 +179,12 @@ func TestCacheSeparateOutdatedKeys(t *testing.T) {
 }
 
 func TestCacheSetWithTTLUsesPerEntryTTL(t *testing.T) {
-	c := NewCache(50 * time.Millisecond)
+	c, advance := newCacheWithClock(50 * time.Millisecond)
 	c.SetWithTTL(KeyOutdatedFormulae, "outdated", 5*time.Second)
 
 	// Per-entry TTL overrides cache default; entry should still be fresh
 	// after the cache default would have expired.
-	time.Sleep(75 * time.Millisecond)
+	advance(75 * time.Millisecond)
 	v, ok := c.Get(KeyOutdatedFormulae)
 	if !ok {
 		t.Fatal("expected hit; per-entry TTL should override cache default")
@@ -186,20 +195,20 @@ func TestCacheSetWithTTLUsesPerEntryTTL(t *testing.T) {
 }
 
 func TestCacheSetWithTTLZeroInheritsDefault(t *testing.T) {
-	c := NewCache(50 * time.Millisecond)
+	c, advance := newCacheWithClock(50 * time.Millisecond)
 	c.SetWithTTL(KeyOutdatedFormulae, "outdated", 0)
 
-	time.Sleep(75 * time.Millisecond)
+	advance(75 * time.Millisecond)
 	if _, ok := c.Get(KeyOutdatedFormulae); ok {
 		t.Error("expected miss after cache default TTL elapsed (per-entry ttl=0 inherits)")
 	}
 }
 
 func TestCacheSetWithoutTTLStillUsesDefault(t *testing.T) {
-	c := NewCache(50 * time.Millisecond)
+	c, advance := newCacheWithClock(50 * time.Millisecond)
 	c.Set(KeyOutdatedFormulae, "outdated")
 
-	time.Sleep(75 * time.Millisecond)
+	advance(75 * time.Millisecond)
 	if _, ok := c.Get(KeyOutdatedFormulae); ok {
 		t.Error("expected miss after cache default TTL elapsed (plain Set, no per-entry ttl)")
 	}
@@ -209,7 +218,7 @@ func TestCacheSetWithoutTTLStillUsesDefault(t *testing.T) {
 // key (formulae/casks/taps/services/doctor/outdated) can carry its own
 // TTL override without coupling the entries together.
 func TestCacheSetWithTTLAllKeys(t *testing.T) {
-	c := NewCache(50 * time.Millisecond)
+	c, advance := newCacheWithClock(50 * time.Millisecond)
 	c.SetWithTTL(KeyFormulaeList, "f", 1*time.Hour)
 	c.SetWithTTL(KeyCasksList, "c", 1*time.Hour)
 	c.SetWithTTL(KeyTapsList, "t", 1*time.Hour)
@@ -219,7 +228,7 @@ func TestCacheSetWithTTLAllKeys(t *testing.T) {
 	c.SetWithTTL(KeyOutdatedCasks, "oc", 1*time.Hour)
 
 	// Wait past cache default; per-entry TTL should keep all entries fresh.
-	time.Sleep(75 * time.Millisecond)
+	advance(75 * time.Millisecond)
 	for key, want := range map[CacheKey]string{
 		KeyFormulaeList:     "f",
 		KeyCasksList:        "c",

@@ -45,6 +45,15 @@ func waitForPid(t *testing.T, pidFile string) int {
 	return 0
 }
 
+// shortenKillGroupDelay runs the test with a WaitDelay of d, so a stray holder
+// is cut off in d rather than killGroupDelay.
+func shortenKillGroupDelay(t *testing.T, d time.Duration) {
+	t.Helper()
+	orig := killGroupDelay
+	killGroupDelay = d
+	t.Cleanup(func() { killGroupDelay = orig })
+}
+
 // waitGone polls until the process no longer exists.
 func waitGone(t *testing.T, pid int) {
 	t.Helper()
@@ -123,12 +132,13 @@ func TestExecuteCancelKillsGrandchild(t *testing.T) {
 
 // TestExecuteStreamStrayHolderDoesNotHang locks the WaitDelay half of AC-01: a
 // child that leaves the process group (setsid) keeps the pipes open and
-// escapes the group kill, yet the cancelled stream still closes within
-// killGroupDelay.
+// escapes the group kill, yet the cancelled stream still closes once
+// killGroupDelay has passed.
 func TestExecuteStreamStrayHolderDoesNotHang(t *testing.T) {
 	if _, err := exec.LookPath("setsid"); err != nil {
 		t.Skip("setsid not available")
 	}
+	shortenKillGroupDelay(t, 100*time.Millisecond)
 	pidFile := filepath.Join(t.TempDir(), "pid")
 	r := writeFakeBrew(t, fmt.Sprintf("setsid sleep 30 &\necho $! > %s\nwait\n", pidFile))
 
@@ -146,7 +156,7 @@ func TestExecuteStreamStrayHolderDoesNotHang(t *testing.T) {
 	}()
 	select {
 	case <-drained:
-	case <-time.After(killGroupDelay + 5*time.Second):
+	case <-time.After(5 * time.Second):
 		t.Fatal("ExecuteStream hung on a stray pipe holder")
 	}
 
@@ -161,13 +171,14 @@ func TestExecuteStreamStrayHolderDoesNotHang(t *testing.T) {
 }
 
 // TestExecuteStrayHolderAfterExitIsNotAFailure locks finishErr: brew exits 0
-// while a setsid child still holds stdout, so Wait returns ErrWaitDelay after
-// killGroupDelay. The command succeeded, so Execute reports no error and keeps
+// while a setsid child still holds stdout, so Wait returns ErrWaitDelay once
+// killGroupDelay has passed. The command succeeded, so Execute reports no error and keeps
 // its output.
 func TestExecuteStrayHolderAfterExitIsNotAFailure(t *testing.T) {
 	if _, err := exec.LookPath("setsid"); err != nil {
 		t.Skip("setsid not available")
 	}
+	shortenKillGroupDelay(t, 100*time.Millisecond)
 	pidFile := filepath.Join(t.TempDir(), "pid")
 	r := writeFakeBrew(t, fmt.Sprintf("setsid sleep 30 &\necho $! > %s\necho done\nexit 0\n", pidFile))
 

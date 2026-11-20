@@ -16,13 +16,16 @@ import (
 // that the reader is mid-Read when the kill lands, so both orderings
 // (EOF first, read error first) are exercised across iterations.
 func TestExecuteStreamCancelWinsOverReaderError(t *testing.T) {
-	r := writeFakeBrew(t, "while true; do echo tick; sleep 0.02; done\n")
+	r := writeFakeBrew(t, "while true; do echo tick; sleep 0.005; done\n")
 
 	for i := 0; i < 5; i++ {
 		ctx, cancel := context.WithCancel(context.Background())
 		out, errCh := r.ExecuteStream(ctx, "whatever")
 
-		time.Sleep(80 * time.Millisecond)
+		// Cancel once the script is running and writing.
+		for range 3 {
+			<-out
+		}
 		cancel()
 
 		// Drain stdout until close so the channels resolve.

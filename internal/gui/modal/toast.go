@@ -114,9 +114,9 @@ func toastRows(msg string, width int) []string {
 	return append(all[:toastMaxRows-1:toastMaxRows-1], last)
 }
 
-// ToastTick is the command that delivers a ToastTickMsg after one interval.
-func ToastTick() tea.Cmd {
-	return tea.Tick(500*time.Millisecond, func(time.Time) tea.Msg {
+// ToastTick is the command that delivers a ToastTickMsg after interval.
+func ToastTick(interval time.Duration) tea.Cmd {
+	return tea.Tick(interval, func(time.Time) tea.Msg {
 		return ToastTickMsg{}
 	})
 }
