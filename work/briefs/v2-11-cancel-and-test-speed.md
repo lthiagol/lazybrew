@@ -30,7 +30,8 @@ never submit the add-tap input.
 ## Acceptance criteria
 
 One commit per criterion, in order, staged by name. Every commit builds and
-passes the tests.
+passes `go test -race` for the packages it touches; the full gate runs once,
+before the receipt (ruling `Q-v2-builder-speed`).
 
 ### AC-01 — cancel kills the process group
 

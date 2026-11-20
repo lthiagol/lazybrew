@@ -535,3 +535,19 @@ running install waits for curl/git to finish). Ruling (user, recommended
 option): a new slice `v2-11-cancel-and-test-speed` **after** v2-10, before the
 final checkpoint — kill the process group on cancel, and drive the gui tests'
 real waits with fake time.
+
+### Q-v2-builder-speed — the user's ruling on builder speed (2026-11-20)
+
+Measured: the v2-09 builder spent 12.6 of its 25 min running tests (36 runs,
+17 full suites at ~40 s each) and ~11.5 min generating; slice size (~800
+lines, half tests) is normal. Rulings (user, both recommended):
+
+- **Order:** `v2-11-cancel-and-test-speed` runs **next**, before `v2-10`
+  (supersedes the "after v2-10" order in Q-v2-test-speed).
+- **Lighter per-commit gate**, for v2-11 onward and all fix rounds: each
+  commit must build and pass `go test` (with `-race`) for the packages it
+  touches; the **full gate** (`make build`, `make lint`,
+  `CGO_ENABLED=1 go test ./... -race -count=1`, `make cover-check`) runs once,
+  before the receipt. Where a brief says "every commit passes the tests", this
+  ruling defines it. CI still runs the full suite on every push.
+- Builder stays on high effort.
