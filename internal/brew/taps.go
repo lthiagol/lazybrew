@@ -168,19 +168,55 @@ func (s *tapsReader) fetchTapInfo(ctx context.Context, name string) (*tapInfoJSO
 	return &infos[0], nil
 }
 
-// fetchTapInfoBatch issues a single `brew tap-info --json name1 name2 …`
-// invocation and returns the parsed entries. M11 replaces the per-tap
-// loop with this so listing N taps is O(1) shell calls instead of N+1.
-func (s *tapsReader) fetchTapInfoBatch(ctx context.Context, names []string) ([]tapInfoJSON, error) {
-	args := make([]string, 0, 2+len(names))
-	args = append(args, "tap-info", "--json")
-	args = append(args, names...)
+// tapInfoChunkMax and tapInfoChunkBytes bound one `brew tap-info` call: a name
+// count, and a byte budget for the names, both well under the OS argument
+// limit (ARG_MAX). Tests lower them to exercise the split.
+var (
+	tapInfoChunkMax   = 100
+	tapInfoChunkBytes = 64 << 10
+)
 
-	var data []tapInfoJSON
-	if err := s.runner.ExecuteJSON(ctx, &data, args...); err != nil {
-		return nil, err
+// fetchTapInfoBatch reads the names with `brew tap-info --json`, one call per
+// chunk (see chunkTapNames), and returns the entries in input order. A typical
+// install fits one chunk, so it is one call. M11 replaces the per-tap loop
+// with this so listing N taps is O(1) shell calls instead of N+1.
+func (s *tapsReader) fetchTapInfoBatch(ctx context.Context, names []string) ([]tapInfoJSON, error) {
+	var all []tapInfoJSON
+	for _, chunk := range chunkTapNames(names) {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		args := make([]string, 0, 2+len(chunk))
+		args = append(args, "tap-info", "--json")
+		args = append(args, chunk...)
+
+		var data []tapInfoJSON
+		if err := s.runner.ExecuteJSON(ctx, &data, args...); err != nil {
+			return nil, err
+		}
+		all = append(all, data...)
 	}
-	return data, nil
+	return all, nil
+}
+
+// chunkTapNames splits names into runs of at most tapInfoChunkMax names and at
+// most tapInfoChunkBytes bytes, each name counted with its terminating NUL. A
+// name over the byte budget on its own still gets a run of its own.
+func chunkTapNames(names []string) [][]string {
+	var chunks [][]string
+	start, size := 0, 0
+	for i, name := range names {
+		n := len(name) + 1
+		if i > start && (i-start >= tapInfoChunkMax || size+n > tapInfoChunkBytes) {
+			chunks = append(chunks, names[start:i])
+			start, size = i, 0
+		}
+		size += n
+	}
+	if start < len(names) {
+		chunks = append(chunks, names[start:])
+	}
+	return chunks
 }
 
 func (s *tapsWriter) Tap(ctx context.Context, name string) error {
