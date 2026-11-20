@@ -5,16 +5,16 @@
 ╭─ 2 ∘ Formulae ───── 125 ─╮│Name:        bash                                 │
 │  ✓┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   │
 │▸ ✓┃                                                                      ┃   │
-╰───┃                               UNINSTALL                              ┃   │
+╰───┃                              UNINSTALL                               ┃   │
 ╭─ 3┃                                                                      ┃   │
 │   ┃                Uninstall bash? This cannot be undone.                ┃   │
-╰───┃                 removes bash; 1 package depends on it                ┃   │
+╰───┃                removes bash; 1 package depends on it                 ┃   │
 ╭─ 4┃                                                                      ┃ … │
 │   ┃                                                                      ┃   │
-╰───┃                     The following depend on bash:                    ┃   │
-╭─ 5┃                       direnv                                         ┃   │
+╰───┃                    The following depend on bash:                     ┃   │
+╭─ 5┃                                 direnv                               ┃   │
 │▸ ⚠┃                                                                      ┃   │
-╰───┃                       [y]es   [n]o   esc cancel                      ┃   │
+╰───┃                      [y]es   [n]o   esc cancel                       ┃   │
 ╭─ 6┃                                                                      ┃   │
 │   ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───╯
 ╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
