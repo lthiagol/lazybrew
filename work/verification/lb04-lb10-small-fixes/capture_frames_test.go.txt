@@ -1,0 +1,100 @@
+package flows_test
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/testutil"
+)
+
+// lb10Settle runs cmd and feeds its message back through Update, then runs the
+// commands that returns, as the program would, up to a small depth.
+func lb10Settle(m tea.Model, cmd tea.Cmd, depth int) tea.Model {
+	if cmd == nil || depth > 16 {
+		return m
+	}
+	ch := make(chan tea.Msg, 1)
+	go func() { ch <- cmd() }()
+	var msg tea.Msg
+	select {
+	case msg = <-ch:
+	case <-time.After(10 * time.Second):
+		return m
+	}
+	if msg == nil {
+		return m
+	}
+	if b, ok := msg.(tea.BatchMsg); ok {
+		for _, c := range b {
+			m = lb10Settle(m, c, depth+1)
+		}
+		return m
+	}
+	if _, ok := msg.(spinner.TickMsg); ok {
+		return m
+	}
+	nm, nc := m.Update(msg)
+	return lb10Settle(nm, nc, depth+1)
+}
+
+func TestLB10CaptureUninstallConfirm(t *testing.T) {
+	dir := os.Getenv("LB10_DIR")
+	if dir == "" {
+		t.Skip("set LB10_DIR to capture the frames")
+	}
+	var deps []string
+	for i := 0; i < 30; i++ {
+		deps = append(deps, fmt.Sprintf("dependent-formula-%02d", i))
+	}
+	r := &brew.MockRunner{}
+	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
+		if len(args) >= 2 && args[0] == "info" {
+			raw, _ := json.Marshal(map[string]any{"formulae": []map[string]string{
+				{"name": "testformula", "full_name": "testformula", "desc": "Test formula", "tap": "homebrew/core"},
+			}})
+			return json.Unmarshal(raw, result)
+		}
+		return nil
+	}
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "uses" {
+			return []byte(strings.Join(deps, "\n") + "\n"), nil
+		}
+		return []byte{}, nil
+	}
+
+	for _, sz := range [][2]int{{80, 24}, {140, 40}} {
+		var m tea.Model = testutil.NewModel(r)
+		m = lb10Settle(m, m.Init(), 0)
+		nm, c := m.Update(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+		m = lb10Settle(nm, c, 0)
+		m = lb10Key(m, '2', "2")
+		m = lb10Key(m, 'x', "x")
+		out := fmt.Sprintf("%s/uninstall-%dx%d.txt", dir, sz[0], sz[1])
+		view := ansi.Strip(m.View().Content)
+		if err := os.WriteFile(out, []byte(view), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("wrote %s", out)
+		// Close the confirm with esc; nothing is run.
+		m = lb10Key(m, 0, "")
+	}
+}
+
+func lb10Key(m tea.Model, code rune, text string) tea.Model {
+	k := tea.KeyPressMsg{Code: code, Text: text}
+	if code == 0 {
+		k = tea.KeyPressMsg{Code: tea.KeyEsc}
+	}
+	nm, c := m.Update(k)
+	return lb10Settle(nm, c, 0)
+}

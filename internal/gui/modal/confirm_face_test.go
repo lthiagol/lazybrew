@@ -1,6 +1,7 @@
 package modal
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -321,5 +322,53 @@ func TestDependentsAlignAsOneBlock(t *testing.T) {
 				t.Fatalf("the names are at column %d, want two cells in from the heading at %d", starts["git"], heading)
 			}
 		}
+	}
+}
+
+// firstTextColumn is the cell column where a box row's text starts, past the
+// border and the padding.
+func firstTextColumn(row string) int {
+	rest := strings.TrimLeft(row, " ┃")
+	return lipgloss.Width(row[:len(row)-len(rest)])
+}
+
+// TestCutBodyEllipsisSitsInListColumn locks LB-10: a body cut to fit the box
+// ends in an ellipsis that starts in the column of the list it cuts, not
+// centred alone in the middle of the box.
+func TestCutBodyEllipsisSitsInListColumn(t *testing.T) {
+	var deps []string
+	for i := 0; i < 30; i++ {
+		deps = append(deps, fmt.Sprintf("  dependent-package-%02d", i))
+	}
+	m := NewConfirmModal(ActionDanger, "Uninstall bash", "Uninstall bash?\n"+strings.Join(deps, "\n"))
+	lines := plainLines(m.View().Content)
+	if len(lines) > dialogMaxRows {
+		t.Fatalf("box is %d rows, want at most %d", len(lines), dialogMaxRows)
+	}
+	for i, line := range lines {
+		if w := lipgloss.Width(line); w != confirmWidth {
+			t.Fatalf("row %d is %d cells wide, want %d: %q", i, w, confirmWidth, line)
+		}
+	}
+
+	list, cut := -1, -1
+	for _, line := range lines {
+		switch {
+		case strings.Contains(line, "dependent-package-"):
+			col := firstTextColumn(line)
+			if list >= 0 && col != list {
+				t.Fatalf("list rows start at columns %d and %d:\n%s", list, col, strings.Join(lines, "\n"))
+			}
+			list = col
+		case strings.Contains(line, "…"):
+			cut = firstTextColumn(line)
+		}
+	}
+	if list < 0 || cut < 0 {
+		t.Fatalf("want a list row and an ellipsis row:\n%s", strings.Join(lines, "\n"))
+	}
+	if cut != list {
+		t.Fatalf("the ellipsis starts at column %d, the list at column %d:\n%s",
+			cut, list, strings.Join(lines, "\n"))
 	}
 }
