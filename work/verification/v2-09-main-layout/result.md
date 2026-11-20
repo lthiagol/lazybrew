@@ -51,8 +51,18 @@ skipped. Expectations that moved are listed under each AC below.
 - cells cut with `…`; rows never wrap.
 
 Drop order at narrow widths: **Description first (drop 2), then Version (drop 1).**
-The icon and the name are never dropped. Measured at 80x24 in the Deps frame, the
-Description goes and the Version stays.
+The icon and the name are never dropped.
+
+A column is dropped only when the kept columns, each at its minimum useful width,
+do not fit. The minimum useful width is **12 cells** (`tableMinUseful`); a column
+narrower than that already (a version, a short name) keeps its natural width. So a
+long description is cut with `…` to the slack and is kept, and it goes only when
+even 12 cells of it cannot fit beside the name and the version. (Review F-r1-01:
+the first AC-02 rule dropped Description as soon as one description was wider than
+the slack.)
+
+At 80x24 the Deps frames keep Description and cut it: `Library for command-line …`.
+At 140x40 every description fits, so those frames do not change.
 
 Where it is used:
 
@@ -175,14 +185,14 @@ and the Log box, plus the table or the Info change named below.
 | 01 status | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
 | 02 formulae | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
 | 03 formulae info | padded, single column, Log 3 rows | same | AC-01, AC-03 (single column below 98), AC-04 |
-| 04 formulae deps | Deps table: Name/Version/Description, groups as heading rows | Deps table: Description dropped, Version kept | AC-02, AC-01 |
+| 04 formulae deps | Deps table: Name/Version/Description, groups as heading rows | Deps table: Description kept and cut with `…`, Version kept | AC-02, AC-01 |
 | 05 outdated | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
 | 06 taps (Tap Info) | padded, single column, Log 3 rows | same | AC-01, AC-03, AC-04 |
 | 07 confirm modal | backdrop padded, Log 3 rows | same | AC-01, AC-04 |
 | 08 help | unchanged | unchanged | help covers the main area |
 | 09 search | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
 | 10 toast | padded; toast now covers the 3-row Log | same | AC-01, AC-04 |
-| 11 deps (bash) | Deps table | Deps table | AC-02 |
+| 11 deps (bash) | Deps table | Deps table, Description kept and cut with `…` | AC-02 |
 | 12 confirm upgrade | padded, Log 3 rows | same | AC-01, AC-04 |
 | 13 toast stack | padded; toasts over the Log | same | AC-01, AC-04 |
 | 14 input modal | padded, Log 3 rows | same | AC-01, AC-04 |

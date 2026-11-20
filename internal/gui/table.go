@@ -30,6 +30,12 @@ const tableGap = 2
 // given up to the last column's cut.
 const tableMinW = 4
 
+// tableMinUseful is the narrowest a column is kept at. A column that cannot get
+// this many cells goes, rather than being kept as a sliver; a column already
+// narrower than this keeps its natural width. So a long description is cut with
+// … to the slack, and is dropped only when even its minimum does not fit.
+const tableMinUseful = 12
+
 // renderTable draws cols and rows as an aligned table at most w cells wide. The
 // header row is Muted. Each column is as wide as its widest cell, and the last
 // kept column takes the slack. Cells are cut with … and rows never wrap.
@@ -72,7 +78,7 @@ func tableWidths(cols []tableCol, rows []tableRow, w int) []int {
 		kept[i] = true
 	}
 
-	for natural(nat, kept) > w {
+	for minimal(nat, kept) > w {
 		drop := -1
 		for i, c := range cols {
 			if kept[i] && c.drop > 0 && (drop < 0 || c.drop > cols[drop].drop) {
@@ -115,13 +121,13 @@ func tableWidths(cols []tableCol, rows []tableRow, w int) []int {
 	return widths
 }
 
-// natural is the width of the kept columns at their natural widths, gaps
-// included.
-func natural(nat []int, kept []bool) int {
+// minimal is the width of the kept columns, each at the least it may be kept at
+// (its natural width, or tableMinUseful when that is narrower), gaps included.
+func minimal(nat []int, kept []bool) int {
 	total := 0
 	for i, n := range nat {
 		if kept[i] {
-			total += n
+			total += min(n, tableMinUseful)
 		}
 	}
 	return total + gaps(kept)
