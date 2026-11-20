@@ -13,25 +13,25 @@ type Icons struct {
 // of the Unicode Private Use Area, so they need a patched font; the escapes
 // keep the source readable and the glyphs invisible in review.
 var NerdIcons = Icons{
-	App:        "", // beer
-	Status:     "", // tachometer
-	Formula:    "", // flask
-	Cask:       "", // archive
-	Outdated:   "", // arrow-circle-up
-	Tap:        "", // code-fork
-	Service:    "", // cog
-	Search:     "", // search
-	Installed:  "", // check-circle
-	Upgradable: "", // arrow-up
-	Pinned:     "", // thumb-tack
-	Running:    "", // play-circle
-	Stopped:    "", // stop-circle
-	Error:      "", // times-circle
-	Warn:       "", // exclamation-triangle
-	OK:         "", // check
-	Info:       "", // info-circle
-	Marker:     "", // chevron-right
-	Refresh:    "", // refresh
+	App:        "\uf0fc", // beer
+	Status:     "\uf0e4", // tachometer
+	Formula:    "\uf0c3", // flask
+	Cask:       "\uf187", // archive
+	Outdated:   "\uf0aa", // arrow-circle-up
+	Tap:        "\uf126", // code-fork
+	Service:    "\uf013", // cog
+	Search:     "\uf002", // search
+	Installed:  "\uf058", // check-circle
+	Upgradable: "\uf062", // arrow-up
+	Pinned:     "\uf08d", // thumb-tack
+	Running:    "\uf144", // play-circle
+	Stopped:    "\uf28d", // stop-circle
+	Error:      "\uf057", // times-circle
+	Warn:       "\uf071", // exclamation-triangle
+	OK:         "\uf00c", // check
+	Info:       "\uf05a", // info-circle
+	Marker:     "\uf054", // chevron-right
+	Refresh:    "\uf021", // refresh
 }
 
 // UnicodeIcons draws with plain Unicode for terminals without a Nerd Font.
