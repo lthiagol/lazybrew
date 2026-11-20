@@ -642,3 +642,14 @@ sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
   and the panel's key list, not in the footer. Should the footer list it too?
 - **Runner's decision:** menu untrust confirms; footer unchanged (exact set).
 - **Raised by:** runner lane (slice `v2-10-tap-actions`).
+
+### Orchestrator rulings on the v2-10 runner questions (2026-11-20)
+
+- **Q-v2-10-a:** the brief was wrong. lazybrew refuses to untap official taps,
+  so an official tap's key line and footer must not offer `x untap`: they show
+  `r repair` only (plus `a add tap` in the footer). Fix before review.
+- **Q-v2-10-b:** accepted — untrust from the `T` menu confirms too (same
+  danger as `t`); `T` stays out of the footer and is listed in help.
+- **Parked (LB-11):** suspend the TUI for brew steps that need a terminal
+  (macOS `.pkg` casks asking for sudo) with `tea.ExecProcess`, as lazygit does
+  for the editor. Until then they fail fast with the needs-sudo text (v2-11).

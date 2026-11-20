@@ -19,6 +19,7 @@ decision). The source is provenance, not a spec.
 | LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slices v2-01..v2-06 + v2-05s closed 2026-11-20; checkpoint passed 2026-11-20; follow-up slices v2-07..v2-10 (Q-v2-next) | orchestrator review 2026-11-19 | medium | active |
 | LB-09 | Services Logs tab: tail a service's stdout/stderr log files from lazybrew | user, 2026-11-19 | low | parked |
 | LB-10 | Confirm dialog: when a long dependents list is cut, the closing `…` row is centred instead of placed in the list column (`dialogMaxRows` cut in `modal/frame.go`, > ~12 body rows) | reviewer v2-04 r4 | low | parked |
+| LB-11 | Run brew steps that need a terminal (macOS `.pkg` casks asking for sudo) with the TUI suspended (`tea.ExecProcess`), so the user can type the password; today they fail fast with the needs-sudo text | orchestrator + user, 2026-11-20 (Q-v2-11-b) | low | parked |
 | LB-DROP-01 | Dead header fix in the `master-plan-bkp` directory | B-01 | n/a | dropped |
 
 **LB-DROP-01 reason:** the target directory does not exist on this machine —
