@@ -946,6 +946,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() tea.View {
 	v := tea.NewView(m.render())
 	v.AltScreen = true
+	v.WindowTitle = "lazybrew"
 	if m.cfg != nil && m.cfg.GUI.Mouse {
 		v.MouseMode = tea.MouseModeCellMotion
 	}

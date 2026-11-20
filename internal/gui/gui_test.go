@@ -572,6 +572,31 @@ func TestViewNoSmoke(t *testing.T) {
 	}
 }
 
+// TestViewDeclaresTerminalSetup pins the program's terminal setup, which
+// lives in View() now that v1 program options are gone: alt screen and
+// window title always, cell-motion mouse only when the GUI mouse option is on.
+func TestViewDeclaresTerminalSetup(t *testing.T) {
+	for _, mouse := range []bool{true, false} {
+		m := newTestModel()
+		m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+		m.cfg.GUI.Mouse = mouse
+		v := m.View()
+		if !v.AltScreen {
+			t.Errorf("mouse=%v: AltScreen = false, want true", mouse)
+		}
+		if v.WindowTitle != "lazybrew" {
+			t.Errorf("mouse=%v: WindowTitle = %q, want %q", mouse, v.WindowTitle, "lazybrew")
+		}
+		want := tea.MouseModeNone
+		if mouse {
+			want = tea.MouseModeCellMotion
+		}
+		if v.MouseMode != want {
+			t.Errorf("mouse=%v: MouseMode = %v, want %v", mouse, v.MouseMode, want)
+		}
+	}
+}
+
 func TestConfirmRepair(t *testing.T) {
 	m := newTestModel()
 	m.switchPanel(PanelTaps)
