@@ -1349,7 +1349,7 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep")
+	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep", style.Icons{})
 	if cmd == nil {
 		t.Fatal("fetchTabContentCmd returned nil cmd")
 	}
@@ -1576,7 +1576,7 @@ func TestFetchDepsTabReturnsContent(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep")
+	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep", style.Icons{})
 	if cmd == nil {
 		t.Fatal("fetchTabContentCmd returned nil cmd")
 	}
@@ -2399,7 +2399,7 @@ func TestDoctorTabExitCode1ShowsWarnings(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchTabContentCmd(client, PanelStatus, 2, "doctor")
+	cmd := fetchTabContentCmd(client, PanelStatus, 2, "doctor", style.Icons{})
 	if cmd == nil {
 		t.Fatal("fetchTabContentCmd returned nil")
 	}
@@ -2426,7 +2426,7 @@ func TestDoctorTabRealErrorShowsError(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchTabContentCmd(client, PanelStatus, 2, "doctor")
+	cmd := fetchTabContentCmd(client, PanelStatus, 2, "doctor", style.Icons{})
 	msg := cmd()
 	tMsg, ok := msg.(TabContentMsg)
 	if !ok {

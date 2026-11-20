@@ -86,10 +86,7 @@ type panelData struct {
 	casks              []brew.Cask
 	taps               []brew.Tap
 	services           []brew.Service
-	// dashboard is the Status dashboard's text, for its Dashboard tab. The
-	// sidebar rows for Status are built from the typed summary instead.
-	dashboard   []string
-	visibleRows int
+	visibleRows        int
 	// loaded is set once a fetch result has landed for this panel, error or
 	// not. It tells "never fetched" (not loaded) from "fetched, nothing
 	// there" (empty), which items alone cannot.
