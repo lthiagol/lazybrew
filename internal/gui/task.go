@@ -1,5 +1,7 @@
 package gui
 
+import "time"
+
 type batchState struct {
 	selected map[int]bool
 }
@@ -80,10 +82,22 @@ const (
 )
 
 type Operation struct {
-	Title  string
+	Title string
+	// Icon is the glyph of the action the task runs.
+	Icon   string
 	Lines  []string
 	Status opStatus
 	Err    error
+	// Started and Ended bound the run; Ended is zero until it is done.
+	Started time.Time
+	Ended   time.Time
+	// BatchDone and BatchTotal are the progress of a batch when BatchTotal is
+	// more than 0. Upgrades says BatchDone is read from the packages brew has
+	// begun upgrading, as an upgrade of everything reports them, rather than
+	// fixed at start.
+	BatchDone  int
+	BatchTotal int
+	Upgrades   bool
 }
 
 func (o *Operation) AppendLine(line string) {

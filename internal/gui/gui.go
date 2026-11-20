@@ -87,7 +87,6 @@ type Model struct {
 	commandLog *CommandLog
 	spinner    spinner.Model
 	opState    *Operation
-	opDoneAt   time.Time
 	// taskID was removed (r3 finding R3-6): nothing read it, and stale
 	// output filtering belongs to the TaskManager, not the model.
 	refreshing int
@@ -286,17 +285,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case TaskStartedMsg:
 		title := msg.Title
+		op := &Operation{
+			Icon:    m.actionIcon(msg.ID),
+			Status:  opRunning,
+			Started: time.Now(),
+		}
 		// Surface the batch counter in the Operation overlay: batchCount
 		// used to be write-only state with no user-visible effect (r3
-		// finding R3-5).
+		// finding R3-5). The title and the bar both carry it.
 		if _, ok := m.batchIDs[msg.ID]; ok && m.batchTotal > 0 {
 			title = fmt.Sprintf("%s (%d/%d done)", msg.Title, m.batchTotal-m.batchCount, m.batchTotal)
+			op.BatchDone = m.batchTotal - m.batchCount
+			op.BatchTotal = m.batchTotal
 		}
-		m.opState = &Operation{
-			Title:  title,
-			Status: opRunning,
+		// Upgrade all is one brew run: its progress is the outdated count
+		// the dashboard holds, and the packages brew has begun upgrading.
+		if msg.ID == "upgrade-all" && m.status.Outdated.Known {
+			op.BatchTotal = m.status.Outdated.N
+			op.Upgrades = true
 		}
-		m.opDoneAt = time.Time{}
+		op.Title = title
+		m.opState = op
 		return m, m.tasks.RunNext()
 
 	case UpdateTickMsg:
@@ -371,7 +380,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.opState.Status = opSuccess
 			}
-			m.opDoneAt = time.Now()
+			m.opState.Ended = time.Now()
 		}
 		// Batch bookkeeping applies to success, failure and cancel alike:
 		// decrementing only on the success path left failed batch tasks

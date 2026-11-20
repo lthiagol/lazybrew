@@ -507,40 +507,6 @@ func searchStatus(info *pkgInfo, icons style.Icons) (string, color.Color) {
 	return withIcon(icons.Installed, status), style.SuccessColor
 }
 
-func (m Model) renderOperation(width, height int) string {
-	op := m.opState
-	if op == nil {
-		return ""
-	}
-
-	title := style.AccentText.Render(withIcon(m.icons.Refresh, op.Title))
-	statusLine := ""
-	switch op.Status {
-	case opRunning:
-		statusLine = style.SubtleText.Render("Running... (Esc to cancel)")
-	case opSuccess:
-		statusLine = style.InstalledBadge.Render("Completed")
-	case opError:
-		statusLine = style.ErrorBadge.Render("Error: " + op.Err.Error())
-	case opCancelled:
-		statusLine = style.SubtleText.Render("Cancelled")
-	}
-
-	bodyLines := op.Lines
-	if len(bodyLines) > height-5 {
-		bodyLines = bodyLines[len(bodyLines)-(height-5):]
-	}
-	body := strings.Join(bodyLines, "\n")
-
-	return lipgloss.JoinVertical(lipgloss.Top,
-		title,
-		"",
-		body,
-		"",
-		statusLine,
-	)
-}
-
 func boolStr(b bool) string {
 	if b {
 		return "yes"
