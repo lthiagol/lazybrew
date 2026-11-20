@@ -2,6 +2,8 @@ package gui
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -122,7 +124,7 @@ func TestOperationElapsedWhileRunning(t *testing.T) {
 func TestOperationStepMarks(t *testing.T) {
 	m := newTestModel()
 	m.icons = style.UnicodeIcons
-	m.opState = &Operation{Title: "upgrade bash", Status: opRunning, Started: time.Now(), Lines: upgradeTranscript}
+	m.opState = operationFrom(Operation{Title: "upgrade bash", Status: opRunning, Started: time.Now()}, upgradeTranscript)
 	out := ansi.Strip(m.renderOperation(90, 30))
 	if !strings.Contains(out, "✓ Fetching bash") {
 		t.Fatalf("a finished step should be ticked, got:\n%s", out)
@@ -144,7 +146,7 @@ func TestOperationTailKeepsTheLatestOutput(t *testing.T) {
 		lines = append(lines, "==> step "+strings.Repeat("x", i%5))
 	}
 	lines = append(lines, "==> the last step")
-	m.opState = &Operation{Title: "upgrade everything", Status: opRunning, Started: time.Now(), Lines: lines}
+	m.opState = operationFrom(Operation{Title: "upgrade everything", Status: opRunning, Started: time.Now()}, lines)
 	out := ansi.Strip(m.renderOperation(60, 8))
 	if !strings.Contains(out, "the last step") {
 		t.Fatalf("the latest step must stay visible, got:\n%s", out)
@@ -215,7 +217,7 @@ func TestUpgradeAllCountsPackagesBegun(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			op := &Operation{Title: "Upgrade All", Status: c.status, Upgrades: true, Lines: c.lines}
+			op := operationFrom(Operation{Title: "Upgrade All", Status: c.status, Upgrades: true}, c.lines)
 			done, total := operationProgress(op)
 			if done != c.done || total != c.total {
 				t.Fatalf("progress = %d/%d, want %d/%d", done, total, c.done, c.total)
@@ -227,12 +229,13 @@ func TestUpgradeAllCountsPackagesBegun(t *testing.T) {
 // TestUpgradeAllBarShowsOnlyOnceTheTotalIsKnown: no bar before brew's header.
 func TestUpgradeAllBarShowsOnlyOnceTheTotalIsKnown(t *testing.T) {
 	m := newTestModel()
-	m.opState = &Operation{Title: "Upgrade All", Status: opRunning, Started: time.Now(),
-		Upgrades: true, Lines: []string{"==> Fetching brew"}}
+	m.opState = operationFrom(Operation{Title: "Upgrade All", Status: opRunning, Started: time.Now(),
+		Upgrades: true}, []string{"==> Fetching brew"})
 	if out := ansi.Strip(m.renderOperation(60, 12)); strings.Contains(out, "/") {
 		t.Fatalf("no bar before the header, got:\n%s", out)
 	}
-	m.opState.Lines = append(m.opState.Lines, "==> Upgrading 1 outdated package:", "==> Upgrading bash 5.2 -> 5.3")
+	m.opState.AppendLine("==> Upgrading 1 outdated package:")
+	m.opState.AppendLine("==> Upgrading bash 5.2 -> 5.3")
 	if out := ansi.Strip(m.renderOperation(60, 12)); !strings.Contains(out, "0/1") {
 		t.Fatalf("the bar should read 0/1 mid-run, got:\n%s", out)
 	}
@@ -280,7 +283,7 @@ var upgradeWithDependent = []string{
 // progressAt is the progress after the first n lines of a run with the given
 // status.
 func progressAt(lines []string, n int, status opStatus) (int, int) {
-	return operationProgress(&Operation{Status: status, Upgrades: true, Lines: lines[:n]})
+	return operationProgress(operationFrom(Operation{Status: status, Upgrades: true}, lines[:n]))
 }
 
 // TestUpgradeAllCountsFormulaeThenCask (v2-05 fix F-r2-01, case a): the total is
@@ -338,5 +341,74 @@ func TestUpgradeAllIgnoresDependencyInstalls(t *testing.T) {
 	}
 	if done, total := progressAt(lines, len(lines), opRunning); done != 0 || total != 1 {
 		t.Fatalf("a dependency install is not a package: %d/%d, want 0/1", done, total)
+	}
+}
+
+// operationFrom is an Operation whose lines arrived one at a time, through
+// AppendLine, as a run's do. Render and progress read the step state that
+// AppendLine keeps, so a fixture built from a Lines literal would have none.
+func operationFrom(op Operation, lines []string) *Operation {
+	for _, line := range lines {
+		op.AppendLine(line)
+	}
+	return &op
+}
+
+// TestOperationStepsMatchParseSteps (cr3 AC-02): the step state kept as lines
+// arrive equals parseSteps over the whole run, after every line.
+func TestOperationStepsMatchParseSteps(t *testing.T) {
+	fixtures := map[string][]string{
+		"upgrade transcript":    append(append([]string{}, upgradeTranscript...), ""),
+		"formulae then cask":    upgradeFormulaeThenCask,
+		"with dependent":        upgradeWithDependent,
+		"before the first step": {"Warning: something early", "==> Fetching bash", "  output", "", "==> Pouring bash"},
+		"long step output":      append([]string{"==> Pouring bash"}, strings.Split(strings.Repeat("line\n", 9), "\n")...),
+		"step with no output":   {"==> Fetching bash", "==> Fetching curl"},
+	}
+	for name, lines := range fixtures {
+		op := &Operation{}
+		for n, line := range lines {
+			op.AppendLine(line)
+			if want := parseSteps(lines[:n+1]); !reflect.DeepEqual(op.steps, want) {
+				t.Fatalf("%s: after %d lines the step state is\n%+v\nwant\n%+v", name, n+1, op.steps, want)
+			}
+		}
+	}
+}
+
+// TestOperationKeepsOnlyTheLastLinesOfAStep: a step's output is read for its
+// last operationTailLines lines only, so the state keeps no more than that.
+func TestOperationKeepsOnlyTheLastLinesOfAStep(t *testing.T) {
+	var lines []string
+	for i := 0; i < 100; i++ {
+		lines = append(lines, fmt.Sprintf("out %d", i))
+	}
+	steps := parseSteps(append([]string{"==> Pouring bash"}, lines...))
+	if got := steps[0].output; !reflect.DeepEqual(got, []string{"out 98", "out 99"}) {
+		t.Fatalf("the step's output = %q, want the last %d lines", got, operationTailLines)
+	}
+}
+
+// TestOperationLinesAreCapped (cr3 AC-02): the output keeps its latest 5000
+// lines. Older lines are dropped from Lines and the progress does not change:
+// the header that named the total is dropped, and the total still reads 2000.
+func TestOperationLinesAreCapped(t *testing.T) {
+	op := &Operation{Status: opRunning, Upgrades: true}
+	op.AppendLine("==> Upgrading 2000 outdated packages:")
+	for i := 0; i < 2000; i++ {
+		op.AppendLine(fmt.Sprintf("==> Upgrading pkg%04d", i))
+		op.AppendLine("  1.0 -> 1.1")
+		op.AppendLine("  fetched")
+	}
+	if got := len(op.Lines); got != 5000 {
+		t.Fatalf("Lines holds %d lines, want the cap of 5000", got)
+	}
+	// The run is 6001 lines; the last 5000 start at the first output line of
+	// package 333, which is line 1001 of the run.
+	if op.Lines[0] != "  1.0 -> 1.1" || op.Lines[len(op.Lines)-1] != "  fetched" {
+		t.Fatalf("kept lines run from %q to %q, want the last 5000 lines of the run", op.Lines[0], op.Lines[len(op.Lines)-1])
+	}
+	if done, total := operationProgress(op); done != 1999 || total != 2000 {
+		t.Fatalf("progress after the cap = %d/%d, want 1999/2000", done, total)
 	}
 }

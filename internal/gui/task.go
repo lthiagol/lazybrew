@@ -84,8 +84,11 @@ const (
 type Operation struct {
 	Title string
 	// Icon is the glyph of the action the task runs.
-	Icon   string
-	Lines  []string
+	Icon  string
+	Lines []string
+	// steps is the step state of Lines, kept as each line arrives, so a render
+	// reads it rather than parsing the output again (cr3 AC-02).
+	steps  []opStep
 	Status opStatus
 	Err    error
 	// Started and Ended bound the run; Ended is zero until it is done.
@@ -99,8 +102,14 @@ type Operation struct {
 	Upgrades   bool
 }
 
+// AppendLine adds one line of output, updating the step state with it. Past
+// operationMaxLines lines, the oldest are dropped.
 func (o *Operation) AppendLine(line string) {
+	o.steps = addStepLine(o.steps, line)
 	o.Lines = append(o.Lines, line)
+	if n := len(o.Lines) - operationMaxLines; n > 0 {
+		o.Lines = o.Lines[n:]
+	}
 }
 
 func (o *Operation) Running() bool {

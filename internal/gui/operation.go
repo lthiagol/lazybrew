@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,11 @@ import (
 
 // operationTailLines is how many output lines a step shows under its title.
 const operationTailLines = 2
+
+// operationMaxLines is how many output lines an Operation keeps. The step state
+// is updated as each line arrives, so the lines dropped past it change nothing
+// the view shows.
+const operationMaxLines = 5000
 
 // operationBarWidth is the widest the batch progress bar draws.
 const operationBarWidth = 40
@@ -47,19 +53,29 @@ type opStep struct {
 }
 
 // parseSteps splits brew's output at its `==> ` lines. Blank lines are not
-// output. Lines before the first step belong to no step.
+// output. Lines before the first step belong to no step. It is the step state
+// of a whole run; an Operation keeps the same state as its lines arrive.
 func parseSteps(lines []string) []opStep {
 	var steps []opStep
 	for _, line := range lines {
-		if rest, ok := strings.CutPrefix(line, "==> "); ok {
-			steps = append(steps, opStep{title: strings.TrimSpace(rest)})
-			continue
-		}
-		if len(steps) == 0 || strings.TrimSpace(line) == "" {
-			continue
-		}
-		last := &steps[len(steps)-1]
-		last.output = append(last.output, line)
+		steps = addStepLine(steps, line)
+	}
+	return steps
+}
+
+// addStepLine adds one line of brew's output to the steps. A step keeps only
+// its last operationTailLines lines of output: the ones its row shows.
+func addStepLine(steps []opStep, line string) []opStep {
+	if rest, ok := strings.CutPrefix(line, "==> "); ok {
+		return append(steps, opStep{title: strings.TrimSpace(rest)})
+	}
+	if len(steps) == 0 || strings.TrimSpace(line) == "" {
+		return steps
+	}
+	last := &steps[len(steps)-1]
+	last.output = append(last.output, line)
+	if len(last.output) > operationTailLines {
+		last.output = last.output[1:]
 	}
 	return steps
 }
@@ -107,8 +123,9 @@ func (m Model) renderOperation(width, height int) string {
 	}
 	head = append(head, "")
 
-	body := m.operationBody(op)
-	if room := max(0, height-len(head)); len(body) > room {
+	room := max(0, height-len(head))
+	body := m.operationBody(op, room)
+	if len(body) > room {
 		body = body[len(body)-room:]
 	}
 	return cutLines(strings.Join(append(head, body...), "\n"), width)
@@ -172,7 +189,7 @@ func operationProgress(op *Operation) (done, total int) {
 		return op.BatchDone, op.BatchTotal
 	}
 	begun := 0
-	for _, s := range parseSteps(op.Lines) {
+	for _, s := range op.steps {
 		if n, ok := upgradeHeaderCount(s.title); ok {
 			total += n
 		} else if isPackageUpgrade(s.title) {
@@ -219,32 +236,30 @@ func isPackageUpgrade(title string) bool {
 		!strings.Contains(title, " dependency: ")
 }
 
-// operationBody is the step list of the run: each step with its mark, and the
-// last lines of its output in the Muted role under it. With no steps, the raw
-// output shows as it came.
-func (m Model) operationBody(op *Operation) []string {
-	steps := parseSteps(op.Lines)
-	if len(steps) == 0 {
-		var rows []string
-		for _, line := range op.Lines {
-			if strings.TrimSpace(line) != "" {
+// operationBody is the step list of the run, from its last row back to at
+// least room rows: each step with its mark, and the last lines of its output in
+// the Muted role under it. With no steps, the raw output shows as it came. The
+// rows are built from the end, so a render costs what it shows, not the run.
+func (m Model) operationBody(op *Operation, room int) []string {
+	var rows []string // newest row first, reversed below
+	if len(op.steps) == 0 {
+		for i := len(op.Lines) - 1; i >= 0 && len(rows) < room; i-- {
+			if line := op.Lines[i]; strings.TrimSpace(line) != "" {
 				rows = append(rows, style.SubtleText.Render(line))
 			}
 		}
+		slices.Reverse(rows)
 		return rows
 	}
 	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
-	var rows []string
-	for i, s := range steps {
-		rows = append(rows, m.stepMark(op, i == len(steps)-1)+" "+style.NormalItem.Render(s.title))
-		out := s.output
-		if len(out) > operationTailLines {
-			out = out[len(out)-operationTailLines:]
+	for i := len(op.steps) - 1; i >= 0 && len(rows) < room; i-- {
+		s := op.steps[i]
+		for j := len(s.output) - 1; j >= 0; j-- {
+			rows = append(rows, "    "+muted.Render(s.output[j]))
 		}
-		for _, line := range out {
-			rows = append(rows, "    "+muted.Render(line))
-		}
+		rows = append(rows, m.stepMark(op, i == len(op.steps)-1)+" "+style.NormalItem.Render(s.title))
 	}
+	slices.Reverse(rows)
 	return rows
 }
 
