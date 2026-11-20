@@ -134,7 +134,7 @@ func TestSidebarTitlesCarryIconOnlyWhenShown(t *testing.T) {
 		t.Fatalf("sidebar title should carry the Unicode icon, got %q", top)
 	}
 
-	cfg := config.Default()
+	cfg := testConfig()
 	cfg.GUI.ShowIcons = false
 	off := updateModel(New(brew.NewClient(brew.NewMockRunner()), cfg), tea.WindowSizeMsg{Width: 140, Height: 40})
 	if top := plainLine(strings.Split(off.renderSidebar(), "\n")[0]); !strings.HasPrefix(top, "╭─ 1 Status ") {
@@ -424,7 +424,7 @@ func TestOperationAndLogGlyphsFollowIcons(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv(config.IconsEnv, "")
-			cfg := config.Default()
+			cfg := testConfig()
 			cfg.GUI.Icons = tc.icons
 			cfg.GUI.ShowIcons = tc.show
 			m := New(brew.NewClient(brew.NewMockRunner()), cfg)

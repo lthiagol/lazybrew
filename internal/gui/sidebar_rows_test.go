@@ -9,7 +9,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -19,7 +18,7 @@ var bgOpen = regexp.MustCompile("\x1b\\[48[;:0-9]*m")
 // TestSidebarWidthRule (AC-01.1): the sidebar is a percentage of the terminal,
 // 35% by default, with a 20-cell floor and a 60-cell cap.
 func TestSidebarWidthRule(t *testing.T) {
-	cfg := config.Default()
+	cfg := testConfig()
 	if got := sidebarWidth(cfg, 140); got != 49 {
 		t.Errorf("default sidebar at 140 columns = %d, want 49 (35%%)", got)
 	}

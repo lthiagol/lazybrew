@@ -18,13 +18,13 @@ func frameAt(start time.Time, n int) anim.TickMsg {
 }
 
 func TestTestsRunWithAnimationsOff(t *testing.T) {
-	if animationsOn(config.Default()) {
+	if animationsOn(testConfig()) {
 		t.Fatal("the test run animates: the gui tests must run with LAZYBREW_ANIMATIONS=0")
 	}
 }
 
 func TestAnimationsEnvOverridesTheConfig(t *testing.T) {
-	on, off := config.Default(), config.Default()
+	on, off := testConfig(), testConfig()
 	off.GUI.Animations = false
 	cases := []struct {
 		env  string

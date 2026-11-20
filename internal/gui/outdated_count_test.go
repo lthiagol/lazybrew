@@ -7,7 +7,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 // collectRefreshMsgs drains a command (and every command in a batch it
@@ -73,7 +72,7 @@ func TestStatusRefreshKeepsOutdatedCache(t *testing.T) {
 	client.Cache.SetWithTTL(brew.KeyOutdatedFormulae, []brew.Formula{{Name: "ripgrep"}}, time.Minute)
 	client.Cache.SetWithTTL(brew.KeyOutdatedCasks, []brew.Cask{}, time.Minute)
 
-	m := New(client, config.Default())
+	m := New(client, testConfig())
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
 

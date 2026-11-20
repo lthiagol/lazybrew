@@ -11,7 +11,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
@@ -67,7 +66,7 @@ func TestTapAddFlowRunsBrewTap(t *testing.T) {
 		gotArgs = append(gotArgs, args)
 		return []byte(""), nil
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.switchPanel(PanelTaps)
 	m.panels[PanelTaps].items = []string{"homebrew/core"}
 
@@ -159,7 +158,7 @@ func TestServicesCleanupTaskIsSerialized(t *testing.T) {
 		gotArgs = append(gotArgs, args)
 		return []byte(""), nil
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.switchPanel(PanelServices)
 	m.panels[PanelServices].items = []string{"redis"}
 
@@ -265,7 +264,7 @@ func TestSearchInstallUsesCaskWriterForCasks(t *testing.T) {
 		close(errCh)
 		return ch, errCh
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.activePanel = PanelSearch
 	m.searchResults = []brew.SearchResult{{Name: "firefox", IsCask: true}}
 	p := m.panels[PanelSearch]
@@ -305,7 +304,7 @@ func TestSearchInstallUsesFormulaWriterForFormulae(t *testing.T) {
 		close(errCh)
 		return ch, errCh
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.activePanel = PanelSearch
 	m.searchResults = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
 	p := m.panels[PanelSearch]
@@ -338,7 +337,7 @@ func TestTogglePinLooksUpPinnedStateByName(t *testing.T) {
 		gotArgs = append(gotArgs, args)
 		return []byte(""), nil
 	}
-	m := New(brew.NewClient(r), config.Default())
+	m := New(brew.NewClient(r), testConfig())
 	m.activePanel = PanelFormulae
 	p := m.panels[PanelFormulae]
 	// Leaves filter: items show only "bar", but formulae keeps both —

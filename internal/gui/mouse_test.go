@@ -7,7 +7,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 func TestMouseDisabledNoOp(t *testing.T) {
@@ -238,7 +237,7 @@ func TestSelectIndexClampsAndScrolls(t *testing.T) {
 }
 
 func TestMouseDefaultConfigEnabled(t *testing.T) {
-	cfg := config.Default()
+	cfg := testConfig()
 	if !cfg.GUI.Mouse {
 		t.Fatal("default config should enable mouse")
 	}

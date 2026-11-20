@@ -102,6 +102,9 @@ type Model struct {
 	// status is what the last dashboard load read: the header's version and
 	// counts, and the Status sidebar's rows. Empty until the dashboard loads.
 	status statusSummary
+	// preload is the background load of the panels after the Status dashboard
+	// (gui.preload); see preload.go.
+	preload preloadState
 
 	// lastKeyAt tracks the last time the user pressed a key. The auto
 	// refresh tick consults this to pause refreshes during interaction
@@ -205,8 +208,10 @@ func (m Model) Init() tea.Cmd {
 		)
 	} else {
 		// M12: Init only fetches the active panel (default = Status,
-		// which doubles as the dashboard). Other panels lazy-load on
-		// first switch via lazyLoadPanel().
+		// which doubles as the dashboard). With gui.preload the other
+		// panels then load in the background once Status has landed
+		// (preload.go); otherwise they lazy-load on first switch via
+		// lazyLoadPanel().
 		if m.activePanel == PanelStatus {
 			cmds = append(cmds, fetchStatusData(m.client, false))
 		} else {
@@ -592,54 +597,18 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case DataLoadedMsg:
-		if int(msg.PanelID) < len(m.panels) {
-			p := m.panels[msg.PanelID]
-			// A reload keeps the cursor on the same service by name, not by
-			// index, so a list that changed under it does not move the
-			// selection (AC-03.3).
-			selectedService := ""
-			if s := p.selectedService(); msg.PanelID == PanelServices && s != nil {
-				selectedService = s.Name
-			}
-			p.loading = false
-			p.loaded = true
-			p.err = msg.Err
-			if msg.Err == nil {
-				p.items = msg.Items
-				p.formulae = msg.Formulae
-				p.casks = msg.Casks
-				p.taps = msg.Taps
-				p.services = msg.Services
-				p.serviceInfo = msg.ServiceInfo
-				if msg.PanelID == PanelStatus {
-					m.status = msg.Summary
-				}
-				p.selectServiceNamed(selectedService)
-			}
-			p.normalize()
+		cmd := m.landData(msg, false)
+		// The first Status load starts the preload. With update_on_start that
+		// is the load after the brew update, so the preload reads fresh data.
+		if msg.PanelID == PanelStatus && m.cfg.GUI.Preload && !m.preload.started {
+			cmd = tea.Batch(cmd, tea.Batch(m.startPreload()...))
 		}
-		// The Outdated panel was just rewritten: an index-based batch
-		// selection would silently remap onto different rows and make a
-		// later batch upgrade target the wrong packages (r4 finding
-		// R4-2). A failed fetch keeps the old items, so the selection is
-		// only dropped when the list actually changed.
-		if msg.PanelID == PanelOutdated && msg.Err == nil {
-			m.batch.selected = make(map[int]bool)
-		}
-		m.clearPanelTabContent(msg.PanelID)
-		if m.refreshing > 0 {
-			m.refreshing--
-			if m.refreshing == 0 {
-				return m, tea.Batch(
-					m.setToast("Data refreshed", modal.ToastSuccess),
-					m.loadTabContent(),
-				)
-			}
-		}
-		if msg.PanelID == m.activePanel && needsTabFetch(m.activePanel, m.activeTab) {
-			return m, m.loadTabContent()
-		}
-		return m, nil
+		return m, cmd
+
+	case preloadedMsg:
+		m.preload.inFlight--
+		cmd := m.landData(DataLoadedMsg(msg), true)
+		return m, tea.Batch(cmd, tea.Batch(m.nextPreloadReads()...))
 
 	case servicesReloadMsg:
 		m.invalidatePanelCache(PanelServices)
@@ -1076,6 +1045,60 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// landData applies a panel's fresh data to the model and returns the commands
+// the landing starts. preloaded is set for a preload read.
+func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
+	if int(msg.PanelID) < len(m.panels) {
+		p := m.panels[msg.PanelID]
+		// A reload keeps the cursor on the same service by name, not by
+		// index, so a list that changed under it does not move the
+		// selection (AC-03.3).
+		selectedService := ""
+		if s := p.selectedService(); msg.PanelID == PanelServices && s != nil {
+			selectedService = s.Name
+		}
+		p.loading = false
+		p.loaded = true
+		p.err = msg.Err
+		if msg.Err == nil {
+			p.items = msg.Items
+			p.formulae = msg.Formulae
+			p.casks = msg.Casks
+			p.taps = msg.Taps
+			p.services = msg.Services
+			p.serviceInfo = msg.ServiceInfo
+			if msg.PanelID == PanelStatus {
+				m.status = msg.Summary
+			}
+			p.selectServiceNamed(selectedService)
+		}
+		p.normalize()
+	}
+	// The Outdated panel was just rewritten: an index-based batch
+	// selection would silently remap onto different rows and make a
+	// later batch upgrade target the wrong packages (r4 finding
+	// R4-2). A failed fetch keeps the old items, so the selection is
+	// only dropped when the list actually changed.
+	if msg.PanelID == PanelOutdated && msg.Err == nil {
+		m.batch.selected = make(map[int]bool)
+	}
+	m.clearPanelTabContent(msg.PanelID)
+	// A preload read is not one a refresh waits for, so it does not count.
+	if m.refreshing > 0 && !preloaded {
+		m.refreshing--
+		if m.refreshing == 0 {
+			return tea.Batch(
+				m.setToast("Data refreshed", modal.ToastSuccess),
+				m.loadTabContent(),
+			)
+		}
+	}
+	if msg.PanelID == m.activePanel && needsTabFetch(m.activePanel, m.activeTab) {
+		return m.loadTabContent()
+	}
+	return nil
+}
+
 // View declares the terminal setup the program needs — the alternate screen
 // and, when the GUI mouse option is on, cell-motion mouse reporting — and
 // wraps the rendered screen. These used to be program options in main.go.
@@ -1171,7 +1194,8 @@ func (m *Model) invalidatePanelCache(id PanelID) {
 // policy: callers that activate any non-Status panel (switchPanel,
 // nextPanel, prevPanel) delegate here. Clearing p.err on retry ensures
 // a stale error from a previous failed fetch doesn't block the new
-// attempt.
+// attempt. A panel the preload has queued is not fetched a second time:
+// it moves to the front of the preload queue instead.
 func (m *Model) lazyLoadPanel(id PanelID) tea.Cmd {
 	if id == PanelStatus || id == PanelSearch {
 		return nil
@@ -1181,6 +1205,9 @@ func (m *Model) lazyLoadPanel(id PanelID) tea.Cmd {
 		p.loading = true
 		p.err = nil
 		return fetchPanelData(m.client, id)
+	}
+	if m.promotePreload(id) {
+		return tea.Batch(m.nextPreloadReads()...)
 	}
 	return nil
 }
