@@ -80,7 +80,7 @@ func (m Model) renderMainPanel() string {
 	// The tab bar is cut to the box, not wrapped: a tab that does not fit is
 	// cut, and the bar's trailing padding goes with it.
 	tabBar := fitFrame(m.renderTabBar(innerW), innerW, m.tabBarRows())
-	content := fitBox(m.renderContent(innerW, l.contentH), innerW, l.contentH)
+	content := m.scrolledContent(m.renderContent(innerW, l.contentH), innerW, l.contentH)
 	body := lipgloss.JoinVertical(lipgloss.Top, tabBar, content)
 
 	box := panel(titled(title), borderLabel{}, body, l.mainW, l.mainH, true)
@@ -266,13 +266,6 @@ func (m Model) computeContentHeights() []int {
 	return heights
 }
 
-func (m Model) renderContentInViewport(content string, width, height int) string {
-	m.viewport.SetContent(content)
-	m.viewport.SetWidth(width)
-	m.viewport.SetHeight(height)
-	return m.viewport.View()
-}
-
 func (m Model) renderContent(width, height int) string {
 	if m.opState != nil {
 		return m.renderOperation(width, height)
@@ -305,7 +298,7 @@ func (m Model) renderContent(width, height int) string {
 			}
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
-				return m.renderContentInViewport(content, width, height)
+				return content
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
 		case formulaCaveatsTab:
@@ -334,7 +327,7 @@ func (m Model) renderContent(width, height int) string {
 			for _, d := range c.DependsOn {
 				result += d + "\n"
 			}
-			return m.renderContentInViewport(result, width, height)
+			return result
 		case 2:
 			c := panel.selectedCask()
 			if c == nil {
@@ -347,7 +340,7 @@ func (m Model) renderContent(width, height int) string {
 					result += "  " + a + "\n"
 				}
 			}
-			return m.renderContentInViewport(result, width, height)
+			return result
 		}
 
 	case PanelStatus:
@@ -364,7 +357,7 @@ func (m Model) renderContent(width, height int) string {
 			}
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
-				return m.renderContentInViewport(content, width, height)
+				return content
 			}
 			return m.spinner.View() + style.SubtleText.Render(" Loading...")
 		}

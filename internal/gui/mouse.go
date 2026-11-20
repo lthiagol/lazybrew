@@ -44,36 +44,67 @@ func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// handleMouseWheel routes a wheel notch by where the pointer is. Over a sidebar
+// box it moves that box's list, focusing the box as a click does. Over the main
+// panel it scrolls the tab content, three rows a notch.
 func (m Model) handleMouseWheel(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	p := m.panels[m.activePanel]
-	if p == nil {
+	mouse := msg.Mouse()
+	delta := 0
+	switch mouse.Button {
+	case tea.MouseWheelUp:
+		delta = -1
+	case tea.MouseWheelDown:
+		delta = 1
+	default:
 		return m, nil
 	}
-	button := msg.Mouse().Button
-	up := button == tea.MouseWheelUp
-	// Prefer list navigation when the active panel has items.
-	if len(p.items) > 0 {
-		if up {
-			if p.selected > 0 {
-				p.selectIndex(p.selected - 1)
-			}
-		} else if button == tea.MouseWheelDown {
-			if p.selected < len(p.items)-1 {
-				p.selectIndex(p.selected + 1)
-			}
+
+	y := mouse.Y - headerRows
+	l := m.screenLayout()
+	if mouse.X >= sidebarWidth(m.cfg, m.width) {
+		// The Log box is below the main panel; a notch there scrolls nothing.
+		if y < 0 || y >= l.mainH {
+			return m, nil
 		}
-		if needsTabFetch(m.activePanel, m.activeTab) {
-			return m, m.loadTabContent()
-		}
+		return m.scrollContent(delta * 3), nil
+	}
+
+	if y < 0 || y >= l.bodyH {
 		return m, nil
 	}
-	// Otherwise scroll the content viewport.
-	if up {
-		m.viewport.ScrollUp(3)
-	} else if button == tea.MouseWheelDown {
-		m.viewport.ScrollDown(3)
+	pid, innerY, h, ok := m.sidebarBoxAt(y)
+	if !ok {
+		return m, nil
 	}
-	return m, nil
+	var cmd tea.Cmd
+	if pid != m.activePanel {
+		cmd = m.switchPanel(pid)
+	}
+	// A border row has no list row under the pointer.
+	if innerY < 0 || innerY >= h {
+		return m, cmd
+	}
+	p := m.panels[pid]
+	if next := p.selected + delta; next >= 0 && next < len(p.items) {
+		p.selectIndex(next)
+	}
+	return m, tea.Batch(cmd, m.loadTabContent())
+}
+
+// sidebarBoxAt returns the sidebar box under body row y, and the row within its
+// body: innerY is below zero on the top border and at least h on the bottom
+// one. ok is false when no box is under y.
+func (m Model) sidebarBoxAt(y int) (pid PanelID, innerY, h int, ok bool) {
+	heights := m.computeContentHeights()
+	yCursor := 0
+	for i, boxBody := range heights {
+		boxH := boxBody + 2 // rounded border top and bottom
+		if y >= yCursor && y < yCursor+boxH {
+			return PanelID(i), y - yCursor - 1, boxBody, true
+		}
+		yCursor += boxH
+	}
+	return 0, 0, 0, false
 }
 
 func (m Model) handleMouseClick(x, y int) (tea.Model, tea.Cmd) {
@@ -87,55 +118,35 @@ func (m Model) handleMouseClick(x, y int) (tea.Model, tea.Cmd) {
 
 	sw := sidebarWidth(m.cfg, m.width)
 	if x < sw {
-		return m.handleSidebarClick(x, y, sw)
+		return m.handleSidebarClick(y)
 	}
 	return m.handleMainClick(x, y, sw)
 }
 
-func (m Model) handleSidebarClick(x, y, sw int) (tea.Model, tea.Cmd) {
-	heights := m.computeContentHeights()
-	contentW := sw - 2
-	_ = contentW
-	yCursor := 0
-	for i, h := range heights {
-		boxH := h + 2 // rounded border top+bottom
-		if y < yCursor || y >= yCursor+boxH {
-			yCursor += boxH
-			continue
-		}
-		// Inside panel i (including borders). The title sits in the top
-		// border, so innerY 0 is the first item row.
-		pid := PanelID(i)
-		innerY := y - yCursor - 1
-		var cmd tea.Cmd
-		if pid != m.activePanel {
-			cmd = m.switchPanel(pid)
-		}
-		p := m.panels[pid]
-		// Top border or empty: just activate panel.
-		if innerY < 0 || p == nil || len(p.items) == 0 {
-			return m, cmd
-		}
-		// Bottom border, below the body.
-		if innerY >= h {
-			return m, cmd
-		}
-		idx := p.offset + innerY
-		if idx >= 0 && idx < len(p.items) {
-			p.selectIndex(idx)
-			if needsTabFetch(m.activePanel, m.activeTab) {
-				fetch := m.loadTabContent()
-				if cmd != nil && fetch != nil {
-					return m, tea.Batch(cmd, fetch)
-				}
-				if fetch != nil {
-					return m, fetch
-				}
-			}
-		}
+func (m Model) handleSidebarClick(y int) (tea.Model, tea.Cmd) {
+	pid, innerY, h, ok := m.sidebarBoxAt(y)
+	if !ok {
+		return m, nil
+	}
+	var cmd tea.Cmd
+	if pid != m.activePanel {
+		cmd = m.switchPanel(pid)
+	}
+	p := m.panels[pid]
+	// Top border or empty: just activate panel.
+	if innerY < 0 || len(p.items) == 0 {
 		return m, cmd
 	}
-	return m, nil
+	// Bottom border, below the body.
+	if innerY >= h {
+		return m, cmd
+	}
+	idx := p.offset + innerY
+	if idx >= 0 && idx < len(p.items) {
+		p.selectIndex(idx)
+		return m, tea.Batch(cmd, m.loadTabContent())
+	}
+	return m, cmd
 }
 
 func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
