@@ -609,3 +609,13 @@ orchestrator copy error. Fixed in the brief; the v2-11 paths are the record.
 - **Raised by:** reviewer lane (r1). Not a finding: the brief mandates `Setpgid`.
 - **Owner:** the orchestrator. Untested with real brew: that needs a live write,
   which the human owns.
+
+### Orchestrator ruling on Q-v2-11-b (2026-11-20)
+
+Not accepted as is — a silent hang is worse than a clear failure. Use
+`Setsid` instead of `Setpgid`: brew runs in a new session with no controlling
+terminal (still its own process group, so the cancel kills the group as now).
+`sudo` then fails at once ("a terminal is required…") instead of stopping, and
+the failed task's toast says plainly that the step needs sudo and to run the
+command in a terminal — like the services needs-sudo text. lazybrew never runs
+sudo and sets no `SUDO_ASKPASS`. Fix round r1 on v2-11.
