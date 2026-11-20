@@ -11,8 +11,8 @@ closed `ok`, pushed, `wip-ci` green (with `-race`). No agent is running.
 
 **Next, in order** (user ruling `Q-backlog-next`, 2026-11-20 — LB-05 smoke
 deferred, backlog first, LB-11 deferred).
-1. Slice `lb04-lb10-small-fixes` (LB-04 + LB-10) — in flight.
-2. LB-09 Services logs: put its design questions to the user, then brief.
+1. ~~`lb04-lb10-small-fixes`~~ closed `ok` r1.
+2. Slice `lb09-service-logs` (LB-09, design `Q-lb09-design`) — in flight.
 3. Then the LB-05 smoke and, on the user's go-ahead, the PR `wip` → `stable`
    (`gh pr create --base stable --head wip`). Never push to `stable` directly.
 
@@ -51,7 +51,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | v2-09-main-layout | fd1bde3, 12a3b1b, 95766a6, 539a515, 7f6e93b, 801054e, 77f0e2c, d2b31bd, e8bde9a, b2ac4f6, 5d22e50, 5d04885, a3d3d93 | closed | ok |
 | v2-10-tap-actions | 5f91936, 1e91fad, a4eaf97, 6d5c46a, d1ee781, f05b443, 9c4afce, 8dd6f81 | closed | ok |
 | v2-11-cancel-and-test-speed | d76b8de, f11d2a6, 02e9cac, 74c4438, 1872c96, 5174d37 | closed | ok |
-| lb04-lb10-small-fixes | — | implemented | awaiting reviewer |
+| lb04-lb10-small-fixes | 920887d, ac065b8, e6ec90e | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -378,3 +378,11 @@ r1 the Trust tab's key hint was stale; r2 `ok`.
 then LB-05 (human smoke gate) and the `wip` → `stable` PR. Not verified by
 agents: real-terminal feel, any live brew write (install/upgrade/tap/untap/
 trust/services), a real sudo refusal.
+
+**lb04-lb10-small-fixes, closed (r1 ok).** LB-04: `fetchTapInfoBatch` splits
+names into chunks bounded by `tapInfoChunkMax` (100) and `tapInfoChunkBytes`
+(64 KiB); a typical install still makes one call; a failed chunk keeps the
+`TrustUnknown`, not-cached fallback. LB-10: a cut confirm body's `…` row keeps
+the list column (`cutRow`). Reviewer mutation-checked both. Receipts:
+`work/inbox/runner-lb04-lb10-small-fixes.md`,
+`work/inbox/reviewer-lb04-lb10-small-fixes-r1.md`.
