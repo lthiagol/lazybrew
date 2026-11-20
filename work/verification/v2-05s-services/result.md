@@ -38,3 +38,13 @@ one-row toasts as they were.
 - The stopped footer (`s start  f run`): frame 19 is a running service. Covered
   by `TestServicesFooterLeadsWithStateActions`.
 - The long sudo toast wrapped over rows: covered by `TestToastWrapsALongMessageWhole`.
+
+## Fix round r1 (F-r1-03)
+
+The toasts injected for frames 10 and 13 were still on screen at frame 19, over
+the 80×24 Info key line. The harness now waits 7 s after frame 18 (the error
+toast lives 6 s) and sends `modal.ToastTickMsg`, which drops the expired toasts
+through the normal path, before frame 19. Frames 19 and 20 were re-captured at
+both sizes; the `.ansi` is 140×40 only. Frames 01–18 are unchanged, and
+`git status` lists only `19-*` and `20-*` (and the harness). At 80×24 the Info
+key line now reads `S stop  r restart  c cleanup` with nothing over it.
