@@ -20,6 +20,15 @@ type Options struct {
 	Runner brew.Runner
 }
 
+// enableDebugLog sends brew's debug logging to ~/.config/lazybrew/debug.log.
+func enableDebugLog() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	return brew.EnableFileLogging(filepath.Join(home, ".config", "lazybrew", "debug.log"))
+}
+
 func New(opts Options) (tea.Model, error) {
 	cfg, err := config.Load(opts.ConfigPath)
 	if err != nil {
@@ -27,13 +36,11 @@ func New(opts Options) (tea.Model, error) {
 	}
 
 	if opts.Debug {
-		brew.SetDebug(true)
-		home, err := os.UserHomeDir()
-		if err == nil {
-			logPath := filepath.Join(home, ".config", "lazybrew", "debug.log")
-			if err := brew.EnableFileLogging(logPath); err != nil {
-				fmt.Fprintf(os.Stderr, "warning: could not enable file logging: %v\n", err)
-			}
+		// The TUI owns the terminal, so debug output goes to the log file or
+		// nowhere, never to stderr. The brew logger stays off when the file
+		// cannot be opened; the warning is printed before the TUI starts.
+		if err := enableDebugLog(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: debug logging is off: %v\n", err)
 		}
 	}
 
