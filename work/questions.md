@@ -422,3 +422,29 @@ criterion; the code is as described and the orchestrator can redirect it.
 - **Q-v2-services-icons:** accepted — Info status glyphs come from the icon set
   with the word `running`/`stopped`/…; the sidebar keeps brew's status word.
 - Cron shown as `hour 3, minute 0` and `c cleanup` always shown: accepted.
+
+## Q-v2-next — the user's checkpoint feedback on LB-08 (2026-11-20)
+
+The user reviewed the checkpoint and liked it. They asked for four more things.
+Rulings, all answered with the orchestrator's recommendation:
+
+- **Plan:** four slices, run back to back with the same lane flow (Haiku builder,
+  Opus reviewer, at most 5 rounds): `v2-07-op-dismiss` (bug) → `v2-08-preload`
+  → `v2-09-main-layout` → `v2-10-tap-actions`. One user checkpoint at the end,
+  then LB-05 smoke and the `wip` → `stable` PR.
+- **Finished operation (bug):** after `restart moshi-hook` the main area stayed
+  on `Completed in 0s` until Esc, with no hint. Ruling: a **successful**
+  operation closes itself after ~2 s (the toast already reports it); a failed
+  or cancelled one stays with an `Esc to close` hint; switching panels closes
+  any finished operation.
+- **Preload:** load every panel at startup, in the background, without
+  blocking keys: Status first, then Formulae → Outdated → Casks → Taps →
+  Services, at most 2 reads at once; the sidebar shows a loading state, not
+  `not loaded`. `gui.preload` (default `true`) turns it off. Measured on this
+  machine: every read is < 0.9 s, ~2.8 s serial.
+- **Main panel layout:** full treatment — one column of inner padding,
+  full-width tables for lists (Deps, Used By, tap Formulae, …), two-column
+  Info views when the main area is wide, the Log box shrinks when idle.
+- **Tap actions:** same standard as services — state-aware actions in Tap Info
+  and the footer, `t` toggles trust (untrust confirmed), untap confirm states
+  the consequence, selection kept by name after an action.
