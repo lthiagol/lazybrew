@@ -1,7 +1,6 @@
 # Receipt: runner-v2-09-main-layout-fix-r1
 
-Brief `work/briefs/fix-v2-09-main-layout-r1.md`; reviewer `work/inbox/reviewer-v2-09-main-layout-r1.md`.
-Gate per Q-v2-builder-speed: touched packages per commit, full gate once here.
+Brief `work/briefs/fix-v2-09-main-layout-r1.md`. Gate per Q-v2-builder-speed.
 
 ## Commits, one per finding
 
@@ -9,8 +8,7 @@ Gate per Q-v2-builder-speed: touched packages per commit, full gate once here.
   useful width (12 cells, `tableMinUseful`), do not fit. A long description is cut
   with `…`. Drop order unchanged: Description, then Version.
   Test: `TestLongDescriptionIsCutNotDropped` (87 cells, kept, cut, lines 87 wide).
-- F-r1-02 77f0e2c — result.md lists commits in git order; names the AC-03/AC-04
-  breach (7f6e93b after 539a515). No rebase, no amend.
+- F-r1-02 77f0e2c — result.md lists commits in git order, names the AC-03/04 breach.
 - F-r1-03 d2b31bd — `pkgRows` reads the installed list once per table; `pkgRow`
   takes the list. Test: `TestPkgRowsMatchPkgRow`.
 
@@ -28,7 +26,4 @@ Gate per Q-v2-builder-speed: touched packages per commit, full gate once here.
 - `CGO_ENABLED=1 go test ./... -race -count=1`: every package ok
 - `make cover-check`: All coverage floors met
 
-## Open
-
-- Q-v2-09-a (140x40 threshold) still open for the orchestrator.
-- The Log box is still not padded; this round did not touch it.
+Open, not changed here: Q-v2-09-a; the Log box is not padded.
