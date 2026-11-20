@@ -124,9 +124,8 @@ the sidebar.
 - `05-outdated` (both sizes): the Outdated list now has `git-delta`, and its
   Info tab shows it. Data change only; the preload did not alter the panel.
 - `15-menu-brewfile` (140x40 only): the Brewfile menu covers part of the
-  dashboard, and the rows it leaves show `Outdated: 1 package` as in `01`, and,
-  since F-r2-01, the dashboard's Taps counts (3 taps; see the recapture below).
-  At 80x24 the menu covers the dashboard, so no dashboard row changes there.
+  dashboard, and the rows it leaves show `Outdated: 1 package` as in `01`. At 80x24
+  the menu covers the dashboard, so no dashboard row changes there.
 
 `06-taps` and `14-input-modal` no longer differ in the main area: the Taps header
 reads `2 trusted · 1 untrusted` and the selected tap shows its remote, as in v2-07.
@@ -145,26 +144,33 @@ The harness's step 13 injects a Taps landing for the untap refusal. It had no
    frames 15 on. Frame 13 is the only frame that shows the injected tap.
 
 Frames regenerated with the same harness (`DUMP_DIR` as before; `ok`, 48 s). Against
-the committed frames of e3c4e08, 18 files changed. Each is named here, and
-nothing else changed:
+the committed frames of e3c4e08, 18 files changed. The differences from `before/`
+(v2-07) that the harness change causes are listed per frame below (F-r3-01). They come
+from the harness, not from production code or from brew's data.
 
-- `13-toast-stack` (both sizes): the injected tap now has its production shape,
-  so the Taps details (trust, official, formula and cask counts) show where the
-  committed frame said `No custom taps`. Harness setup only.
-- `15-menu-brewfile`, `18-doctor` (140x40): the dashboard's Taps counts read `3`,
-  with the machine's real Total, Official and Third-party, where the committed
-  frames read `0` (the r2 finding). The Taps box reads `3`.
-- `17-cask-info`, `19-services-info`, `20-services-stop-confirm` (140x40): the
-  Taps box lists the machine's three taps with their real trust states, not the
-  injected one.
-- `15`, `17`, `18`, `19`, `20` (80x24): the Taps box and its rows are the three
-  taps, as above. In 15, 17 and 18 the inactive Formulae box shows its cursor row
-  (bash) differently: behind the overlay in 15, and at a different scroll offset
-  in 17 and 18. The selection is the same item (bash, as in `03`); only the
-  visible window of the box moved after the refresh.
+Taps dashboard counts are not among them: at 140x40, where the dashboard is visible,
+the Status Taps count is 3 in v2-07 and in these frames. The row it sits on moved down
+by one because of the new Outdated row, which is brew data.
 
-Remaining changes in 15 and 18 relative to v2-07 are the Outdated count, as before,
-and now the machine's three taps, which v2-07 also showed.
+| frame | 140x40 | 80x24 |
+|---|---|---|
+| `13-toast-stack` | Taps box row is the injected tap in its production shape (`▸ ✓ homebrew/cask-versions official`, with its trust icon); the Taps main panel shows that tap's trust, official, formula and cask rows where v2-07 showed `No custom taps`. Toasts kept. | the same Taps box and main-panel change (truncated). Toasts kept. |
+| `14-input-modal` | no harness effect (taken before the injection); differences from v2-07 are brew data and the preload's counts. | same. |
+| `15-menu-brewfile` | Taps box: the injected row is replaced by the machine's taps (`⚠ danielfoehrkn/switch untrusted`, `✓ lthiagol/tap trusted`, ...). Toasts removed: `Install bash completed`, `Upgrade bash: brew upgrade failed`, `Cannot untap official taps`. | Taps box first row replaced by the machine's first tap. Toasts removed (the same three lines). The inactive Formulae box shows its cursor row `▸ bash`, where v2-07 showed `alsa-lib` at that row; frame 13 (before the refresh) shows the Formulae rows unchanged. Selection is still bash. |
+| `16-help-scrolled` | none (help overlay, sidebar hidden). | none. |
+| `17-cask-info` | Taps box rows replaced by the machine's taps. Toasts removed (the same three). | Taps box row replaced. Toasts removed. Formulae cursor row, as in `15`. |
+| `18-doctor` | Taps box rows replaced by the machine's taps. Toasts removed (the same three). | Taps box row replaced. Toasts removed. Formulae cursor row, as in `15`. |
+| `19-services-info` | Taps box rows replaced by the machine's taps. No toasts were on screen in v2-07, so none removed. | Taps box row replaced. Formulae cursor row, as in `15`. |
+| `20-services-stop-confirm` | Taps box rows replaced by the machine's taps, outside the confirm overlay. | Taps box first row replaced (`▸ h…` in v2-07, `▸ ⚠…` now: the machine's first tap); the rest of the row is under the overlay. Formulae cursor row, as in `15`. |
+
+Why the toasts went: v2-07 had no wait between frame 13 and frame 15, so the toasts
+of frame 13 were on screen at 15, 17 and 18. The harness change adds a 7 s wait and
+a toast tick after frame 13, which drops them before 15. The same wait is what
+drops them before 19 in v2-07, so they are gone from 19 in both sets.
+
+Why the Formulae cursor row moved at 80x24: the refresh reloads the Formulae list
+and recomputes its window; the cursor item is the same (bash). Frame 13 is taken
+before the refresh and its Formulae rows are unchanged.
 
 ## Environment: the first capture ran with brew slow
 
