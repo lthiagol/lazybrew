@@ -66,3 +66,17 @@ func BenchmarkFilesTabPageDown(b *testing.B) {
 		_ = m.View()
 	}
 }
+
+// BenchmarkViewCommandLog is View() at 140x40 with the command log full, the
+// frame every key and tick draws (cr3 AC-05).
+func BenchmarkViewCommandLog(b *testing.B) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	for i := 0; i < 500; i++ {
+		m.commandLog.SetStatus(m.commandLog.Append(fmt.Sprintf("info --json=v2 pkg%d", i)), CommandSuccess)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = m.View()
+	}
+}
