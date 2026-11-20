@@ -45,21 +45,10 @@ type tabInfo struct {
 	id   int
 }
 
-// The Formulae tab indices, in the order panelTabs lists them. Code names a
-// tab by these, never by a bare number, so a reordered bar changes one list.
-// The Info tab is first, so a panel's default tab is its details.
-const (
-	formulaInfoTab = iota
-	formulaDepsTab
-	formulaUsesTab
-	formulaCaveatsTab
-	formulaFilesTab
-)
-
 var panelTabs = map[PanelID][]tabInfo{
 	PanelStatus:   {{"Dashboard", statusDashboardTab}, {"Config", statusConfigTab}, {"Doctor", statusDoctorTab}},
 	PanelFormulae: {{"Info", formulaInfoTab}, {"Deps", formulaDepsTab}, {"Used By", formulaUsesTab}, {"Caveats", formulaCaveatsTab}, {"Files", formulaFilesTab}},
-	PanelCasks:    {{"Info", 0}, {"Deps", 1}, {"Caveats", 2}},
+	PanelCasks:    {{"Info", caskInfoTab}, {"Deps", caskDepsTab}, {"Caveats", caskCaveatsTab}},
 	PanelOutdated: {{"Info", outdatedInfoTab}, {"Versions", outdatedVersionsTab}},
 	PanelTaps:     {{"Tap Info", tapInfoTab}, {"Trust", tapTrustTab}, {"Formulae", tapFormulaeTab}},
 	PanelServices: {{"Info", serviceInfoTab}, {"Logs", servicesLogsTab}},
@@ -423,31 +412,18 @@ func emptyMessage(id PanelID) string {
 	}
 }
 
+// panelCount is how many panels the sidebar lists: every PanelID, in order.
+const panelCount = int(PanelSearch) + 1
+
 func initPanels() []*panelData {
-	panels := make([]*panelData, 7)
-	panelDefs := []struct {
-		id    PanelID
-		title string
-	}{
-		{PanelStatus, "Status"},
-		{PanelFormulae, "Formulae"},
-		{PanelCasks, "Casks"},
-		{PanelOutdated, "Outdated"},
-		{PanelTaps, "Taps"},
-		{PanelServices, "Services"},
-		{PanelSearch, "Search"},
-	}
-	for i, def := range panelDefs {
+	panels := make([]*panelData, panelCount)
+	for i := range panels {
 		// M12: every panel starts with loading=false. Init only fetches
 		// the active panel (Status by default); everything else lazy-
 		// loads on first switchPanel via lazyLoadPanel(). RefreshMsg
 		// sets loading=true on the panels it re-fetches.
-		loading := false
-		panels[i] = &panelData{
-			id:      def.id,
-			title:   def.title,
-			loading: loading,
-		}
+		id := PanelID(i)
+		panels[i] = &panelData{id: id, title: id.String()}
 	}
 	panels[0].active = true
 	return panels

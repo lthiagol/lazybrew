@@ -13,31 +13,6 @@ import (
 	"strings"
 )
 
-// The tab indices of the panels whose sidebar list is the list (v2-03b). Their
-// main tabs show the selected item's details, never the list again.
-const (
-	statusDashboardTab = iota
-	statusConfigTab
-	statusDoctorTab
-)
-
-const (
-	outdatedInfoTab = iota
-	outdatedVersionsTab
-)
-
-const (
-	tapInfoTab = iota
-	tapTrustTab
-	tapFormulaeTab
-)
-
-// The tabs of the Services panel: the selected service's Info, and its log.
-const (
-	serviceInfoTab = iota
-	servicesLogsTab
-)
-
 // trustUnknownText is what the Taps panel says when brew did not give the trust
 // state of its taps: the rows, the border label and the Tap Info all use it.
 const trustUnknownText = "trust unknown — press R"
