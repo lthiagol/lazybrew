@@ -804,7 +804,7 @@ func TestModelTaskOutputAppendsLine(t *testing.T) {
 	m := newTestModel()
 	m.opState = &Operation{Title: "Test", Status: opRunning, Lines: []string{}}
 
-	msg := TaskOutputMsg{ID: "t1", Line: "hello"}
+	msg := TaskOutputMsg{ID: "t1", Lines: []string{"hello"}}
 	m = updateModel(m, msg)
 
 	if len(m.opState.Lines) != 1 || m.opState.Lines[0] != "hello" {
@@ -881,8 +881,8 @@ func TestOutdatedPanelTypedData(t *testing.T) {
 func TestOperationOutputRendersInline(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, TaskStartedMsg{ID: "t1", Title: "Install foo"})
-	m = updateModel(m, TaskOutputMsg{ID: "t1", Line: "==> Downloading foo"})
-	m = updateModel(m, TaskOutputMsg{ID: "t1", Line: "==> Installing foo"})
+	m = updateModel(m, TaskOutputMsg{ID: "t1", Lines: []string{"==> Downloading foo"}})
+	m = updateModel(m, TaskOutputMsg{ID: "t1", Lines: []string{"==> Installing foo"}})
 
 	content := m.renderContent(60, 20)
 	if !strings.Contains(content, "Install foo") {

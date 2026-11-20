@@ -466,10 +466,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case TaskOutputMsg:
 		if m.isUpdating {
-			m.updateOutput = append(m.updateOutput, msg.Line)
+			m.updateOutput = append(m.updateOutput, msg.Lines...)
 		}
 		if m.opState != nil {
-			m.opState.AppendLine(msg.Line)
+			for _, line := range msg.Lines {
+				m.opState.AppendLine(line)
+			}
 		}
 		return m, m.tasks.RunNext()
 

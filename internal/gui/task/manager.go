@@ -24,11 +24,17 @@ const (
 
 const DefaultMaxQueue = 10
 
+// taskOutputBatch is the most output lines one TaskOutputMsg carries.
+const taskOutputBatch = 64
+
 type runningTask struct {
 	task  *Task
+	ctx   context.Context
 	outCh <-chan string
 	errCh <-chan error
-	done  bool
+	// err is the task's error, once errCh has delivered it.
+	err  error
+	done bool
 }
 
 type Manager struct {
@@ -131,6 +137,7 @@ func (m *Manager) RunNext() tea.Cmd {
 
 	rt := &runningTask{
 		task:  next,
+		ctx:   ctx,
 		outCh: outCh,
 		errCh: errCh,
 	}
@@ -143,60 +150,73 @@ func (m *Manager) RunNext() tea.Cmd {
 	}
 }
 
+// readChunk is the next message of a running task: a batch of its output, or
+// its completion once the output is done and the error is in.
 func (m *Manager) readChunk(rt *runningTask) tea.Cmd {
 	return func() tea.Msg {
-		if rt.outCh == nil {
-			var err error
+		for rt.outCh != nil {
 			if rt.errCh != nil {
-				err = <-rt.errCh
-				rt.errCh = nil
+				// The task is still running: take whichever comes first, a line
+				// or the error.
+				select {
+				case line, ok := <-rt.outCh:
+					if ok {
+						return TaskOutputMsg{ID: rt.task.ID, Lines: rt.batch(line)}
+					}
+					rt.outCh = nil
+				case err := <-rt.errCh:
+					rt.err = err
+					rt.errCh = nil
+				}
+				continue
 			}
-			m.mu.Lock()
-			rt.done = true
-			rt.task.Status = statusFromErr(err)
-			m.mu.Unlock()
-			return TaskCompletedMsg{
-				ID:    rt.task.ID,
-				Title: rt.task.Title,
-				Err:   err,
+			// The error is in, and brew's lines may still be buffered behind it.
+			// They come before the completion: read up to the close of outCh,
+			// or until the task is cancelled (C10).
+			select {
+			case line, ok := <-rt.outCh:
+				if ok {
+					return TaskOutputMsg{ID: rt.task.ID, Lines: rt.batch(line)}
+				}
+				rt.outCh = nil
+			case <-rt.ctx.Done():
+				rt.outCh = nil
 			}
 		}
-
-		// Prefer draining buffered output lines before handling the
-		// error channel: the error may already be buffered while up to a
-		// full channel of output lines is still pending, and taking the
-		// error first would drop them (r1 finding 15).
-		select {
-		case line, ok := <-rt.outCh:
-			if ok {
-				return TaskOutputMsg{ID: rt.task.ID, Line: line}
-			}
-			rt.outCh = nil
-			return m.readChunk(rt)()
-		default:
-		}
-
-		select {
-		case line, ok := <-rt.outCh:
-			if ok {
-				return TaskOutputMsg{ID: rt.task.ID, Line: line}
-			}
-			rt.outCh = nil
-			return m.readChunk(rt)()
-		case err := <-rt.errCh:
-			rt.outCh = nil
+		if rt.errCh != nil {
+			rt.err = <-rt.errCh
 			rt.errCh = nil
-			m.mu.Lock()
-			rt.done = true
-			rt.task.Status = statusFromErr(err)
-			m.mu.Unlock()
-			return TaskCompletedMsg{
-				ID:    rt.task.ID,
-				Title: rt.task.Title,
-				Err:   err,
-			}
+		}
+		m.mu.Lock()
+		rt.done = true
+		rt.task.Status = statusFromErr(rt.err)
+		m.mu.Unlock()
+		return TaskCompletedMsg{
+			ID:    rt.task.ID,
+			Title: rt.task.Title,
+			Err:   rt.err,
 		}
 	}
+}
+
+// batch is first, then the lines already buffered behind it, up to
+// taskOutputBatch. It never blocks: a line not yet buffered waits for the next
+// message. A close of outCh seen here is recorded, so the next read sees it.
+func (rt *runningTask) batch(first string) []string {
+	lines := []string{first}
+	for len(lines) < taskOutputBatch {
+		select {
+		case line, ok := <-rt.outCh:
+			if !ok {
+				rt.outCh = nil
+				return lines
+			}
+			lines = append(lines, line)
+		default:
+			return lines
+		}
+	}
+	return lines
 }
 
 func statusFromErr(err error) Status {
