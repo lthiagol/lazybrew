@@ -5,10 +5,12 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // screenText is the plain text of the frame the model draws now.
@@ -138,5 +140,88 @@ func TestFailedAndCancelledOperationsStartNoTimer(t *testing.T) {
 	m = finishOp(m, "service-stop:moshi-hook", "stop moshi-hook", context.Canceled)
 	if m.autoCloseCmd() != nil {
 		t.Fatal("a cancelled run starts a timer")
+	}
+}
+
+// statusRow is the row under the operation's title, plain.
+func statusRow(t *testing.T, m *Model, width int) string {
+	t.Helper()
+	rows := strings.Split(ansi.Strip(m.renderOperation(width, 12)), "\n")
+	if len(rows) < 2 {
+		t.Fatalf("the operation view has no status row:\n%s", strings.Join(rows, "\n"))
+	}
+	return strings.TrimRight(rows[1], " ")
+}
+
+// TestFinishedRunsEndWithTheCloseHint (v2-07 AC-02.1): the error and cancelled
+// rows end with the close hint, and so does the success row during its 2 s. A
+// running row keeps its cancel hint.
+func TestFinishedRunsEndWithTheCloseHint(t *testing.T) {
+	start := time.Now().Add(-time.Hour)
+	cases := []struct {
+		name string
+		op   Operation
+		want string
+	}{
+		{"success", Operation{Title: "stop moshi-hook", Status: opSuccess, Started: start, Ended: start},
+			"✓ Completed in 0s · Esc to close"},
+		{"failed", Operation{Title: "stop moshi-hook", Status: opError, Err: errors.New("boom"), Started: start, Ended: start},
+			"✗ Failed: boom · Esc to close"},
+		{"cancelled", Operation{Title: "stop moshi-hook", Status: opCancelled, Started: start, Ended: start},
+			"Cancelled · Esc to close"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := newTestModel()
+			m.icons = style.UnicodeIcons
+			op := c.op
+			m.opState = &op
+			if got := statusRow(t, m, 80); got != c.want {
+				t.Fatalf("status row = %q, want %q", got, c.want)
+			}
+		})
+	}
+
+	m := newTestModel()
+	m.opState = &Operation{Title: "stop moshi-hook", Status: opRunning, Started: time.Now()}
+	if got := statusRow(t, m, 80); !strings.HasSuffix(got, "Esc to cancel") || strings.Contains(got, "close") {
+		t.Fatalf("a running row should keep its cancel hint, got %q", got)
+	}
+}
+
+// A long error is cut so the close hint is still on the row.
+func TestLongErrorKeepsTheCloseHint(t *testing.T) {
+	m := newTestModel()
+	m.icons = style.UnicodeIcons
+	m.opState = &Operation{Title: "stop moshi-hook", Status: opError,
+		Err: errors.New(strings.Repeat("brew services failed ", 10)), Started: time.Now(), Ended: time.Now()}
+	got := statusRow(t, m, 60)
+	if !strings.HasSuffix(got, "· Esc to close") {
+		t.Fatalf("the close hint is cut off: %q", got)
+	}
+	if w := ansi.StringWidth(got); w > 60 {
+		t.Fatalf("the status row is %d cells, want at most 60: %q", w, got)
+	}
+}
+
+// TestFinishedOperationFooterStartsWithEscClose (v2-07 AC-02.2): while a finished
+// operation is shown, the footer's first hint is esc close; a running one keeps
+// the panel's own keys first.
+func TestFinishedOperationFooterStartsWithEscClose(t *testing.T) {
+	m := sizedServicesModel(t)
+	m.opState = &Operation{Title: "stop moshi-hook", Status: opError, Err: errors.New("boom"), Started: time.Now(), Ended: time.Now()}
+	if hints := m.footerHints(); len(hints) == 0 || hints[0] != (keyHint{"esc", "close"}) {
+		t.Fatalf("first footer hint = %+v, want esc close", hints)
+	}
+	if !strings.Contains(screenText(m), "esc close") {
+		t.Fatalf("the footer should show esc close, got:\n%s", screenText(m))
+	}
+
+	m.opState = &Operation{Title: "stop moshi-hook", Status: opRunning, Started: time.Now()}
+	if hints := m.footerHints(); len(hints) == 0 || hints[0] == (keyHint{"esc", "close"}) {
+		t.Fatalf("a running operation should not offer esc close first, got %+v", hints)
+	}
+	if strings.Contains(screenText(m), "esc close") {
+		t.Fatalf("a running operation shows no close hint in the footer")
 	}
 }
