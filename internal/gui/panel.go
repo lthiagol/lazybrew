@@ -71,8 +71,8 @@ type panelData struct {
 	icon            string
 	items           []string
 	unfilteredItems []string
-	// formulae and casks are the typed rows, index-aligned with items. The
-	// leaves filter narrows both, so a row and its selected package agree.
+	// unfilteredFormulae holds the formulae the leaves filter narrows, so leaves
+	// off can restore them. formulae is index-aligned with items.
 	unfilteredFormulae []brew.Formula
 	leavesActive       bool
 	selected           int
