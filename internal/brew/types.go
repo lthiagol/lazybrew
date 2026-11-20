@@ -60,10 +60,17 @@ type Cask struct {
 	Artifacts   []string `json:"artifacts"` // app names
 	AutoUpdates bool     `json:"auto_updates"`
 	// 6.0.0 additions
-	Pinned        bool     `json:"pinned,omitempty"` // cask pinning
-	Sha256        string   `json:"sha256,omitempty"` // checksum
-	URL           string   `json:"url,omitempty"`    // download URL
-	DependsOn     []string `json:"depends_on,omitempty"`
+	Pinned bool   `json:"pinned,omitempty"` // cask pinning
+	Sha256 string `json:"sha256,omitempty"` // checksum
+	URL    string `json:"url,omitempty"`    // download URL
+	// DependsOn names every formula and cask the cask depends on. The split
+	// lists and the requirements come from brew's object shape of depends_on
+	// (v2-05 AC-02.2); they are filled by Cask.UnmarshalJSON.
+	DependsOn         []string `json:"depends_on,omitempty"`
+	DependsOnFormulae []string `json:"-"`
+	DependsOnCasks    []string `json:"-"`
+	// Requirements reads like "macOS ≥ 13" or "arch arm64".
+	Requirements  []string `json:"-"`
 	ConflictsWith []string `json:"conflicts_with,omitempty"`
 
 	// Installed holds the "installed" entries of a `brew info --json=v2`

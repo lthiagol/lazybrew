@@ -3,6 +3,8 @@ package brew
 import (
 	"context"
 	"encoding/json"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -112,21 +114,21 @@ type casksJSON struct {
 }
 
 type caskJSON struct {
-	Name        flexString    `json:"name"`
-	FullName    string        `json:"full_name"`
-	Tap         string        `json:"tap"`
-	Version     string        `json:"version"`
-	Desc        string        `json:"desc"`
-	Homepage    string        `json:"homepage"`
-	Outdated    bool          `json:"outdated"`
-	AutoUpdates bool          `json:"auto_updates"`
-	Pinned      bool          `json:"pinned"`
-	Sha256      string        `json:"sha256"`
-	URL         string        `json:"url"`
-	Installed   interface{}   `json:"installed"`
-	Artifacts   []interface{} `json:"artifacts"`
-	DependsOn   flexStrings   `json:"depends_on"`
-	Namespace   string        `json:"_namespace"`
+	Name        flexString      `json:"name"`
+	FullName    string          `json:"full_name"`
+	Tap         string          `json:"tap"`
+	Version     string          `json:"version"`
+	Desc        string          `json:"desc"`
+	Homepage    string          `json:"homepage"`
+	Outdated    bool            `json:"outdated"`
+	AutoUpdates bool            `json:"auto_updates"`
+	Pinned      bool            `json:"pinned"`
+	Sha256      string          `json:"sha256"`
+	URL         string          `json:"url"`
+	Installed   interface{}     `json:"installed"`
+	Artifacts   []interface{}   `json:"artifacts"`
+	DependsOn   json.RawMessage `json:"depends_on"`
+	Namespace   string          `json:"_namespace"`
 }
 
 func (s *casksReader) List(ctx context.Context) ([]Cask, error) {
@@ -308,7 +310,7 @@ func parseCask(c caskJSON) Cask {
 		}
 	}
 
-	return Cask{
+	cask := Cask{
 		Name:        string(c.Name),
 		FullName:    c.FullName,
 		Tap:         c.Tap,
@@ -320,6 +322,142 @@ func parseCask(c caskJSON) Cask {
 		Sha256:      c.Sha256,
 		URL:         c.URL,
 		Artifacts:   artifactNames,
-		DependsOn:   []string(c.DependsOn),
 	}
+	cask.setDepends(parseCaskDepends(c.DependsOn))
+	return cask
+}
+
+// UnmarshalJSON decodes a cask whose depends_on is brew's object shape as well
+// as a plain list, so a payload that names a formula dependency still decodes.
+func (c *Cask) UnmarshalJSON(data []byte) error {
+	type plain Cask
+	var aux struct {
+		plain
+		DependsOn json.RawMessage `json:"depends_on,omitempty"`
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*c = Cask(aux.plain)
+	c.setDepends(parseCaskDepends(aux.DependsOn))
+	return nil
+}
+
+// caskDepends is a cask's depends_on, read into its parts.
+type caskDepends struct {
+	Formulae     []string
+	Casks        []string
+	Requirements []string
+}
+
+// setDepends fills the cask's dependency fields from its parts. DependsOn is
+// the formulae and casks together, for callers that want one list.
+func (c *Cask) setDepends(d caskDepends) {
+	c.DependsOnFormulae = d.Formulae
+	c.DependsOnCasks = d.Casks
+	c.Requirements = d.Requirements
+	c.DependsOn = append(append([]string{}, d.Formulae...), d.Casks...)
+}
+
+// parseCaskDepends reads brew's depends_on. The object shape is
+// {"formula": [...], "cask": [...], "macos": {...}, "arch": [...]}, and a
+// plain list of formula names is read as formulae. Any other shape reads as
+// no dependencies, so one odd cask cannot fail the whole list.
+func parseCaskDepends(raw json.RawMessage) caskDepends {
+	var d caskDepends
+	if len(raw) == 0 {
+		return d
+	}
+	var obj struct {
+		Formula []string        `json:"formula"`
+		Cask    []string        `json:"cask"`
+		Macos   json.RawMessage `json:"macos"`
+		Arch    json.RawMessage `json:"arch"`
+	}
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		var names flexStrings
+		if json.Unmarshal(raw, &names) == nil {
+			d.Formulae = names
+		}
+		return d
+	}
+	d.Formulae = obj.Formula
+	d.Casks = obj.Cask
+	d.Requirements = append(macosRequirements(obj.Macos), archRequirements(obj.Arch)...)
+	return d
+}
+
+// macosRequirements reads brew's macOS requirement: a map of comparisons such
+// as {">=": ["13"]}, or a plain list of releases.
+func macosRequirements(raw json.RawMessage) []string {
+	var bounds map[string][]string
+	if err := json.Unmarshal(raw, &bounds); err == nil {
+		ops := make([]string, 0, len(bounds))
+		for op := range bounds {
+			ops = append(ops, op)
+		}
+		sort.Strings(ops)
+		var out []string
+		for _, op := range ops {
+			for _, release := range bounds[op] {
+				out = append(out, "macOS "+comparison(op)+" "+release)
+			}
+		}
+		return out
+	}
+	var releases []string
+	if err := json.Unmarshal(raw, &releases); err == nil && len(releases) > 0 {
+		return []string{"macOS " + strings.Join(releases, " or ")}
+	}
+	return nil
+}
+
+// comparison is the symbol a macOS requirement's operator reads as.
+func comparison(op string) string {
+	switch op {
+	case ">=":
+		return "≥"
+	case "<=":
+		return "≤"
+	case "==", "=":
+		return "="
+	default:
+		return op
+	}
+}
+
+// archRequirements reads brew's arch requirement: a list of strings, or of
+// {"type": "arm", "bits": 64} objects, which read as arm64 and x86_64.
+func archRequirements(raw json.RawMessage) []string {
+	var items []json.RawMessage
+	if err := json.Unmarshal(raw, &items); err != nil || len(items) == 0 {
+		return nil
+	}
+	var names []string
+	for _, item := range items {
+		var name string
+		if json.Unmarshal(item, &name) == nil {
+			names = append(names, name)
+			continue
+		}
+		var arch struct {
+			Type string `json:"type"`
+			Bits int    `json:"bits"`
+		}
+		if json.Unmarshal(item, &arch) != nil || arch.Type == "" {
+			continue
+		}
+		switch {
+		case arch.Type == "arm" && arch.Bits == 64:
+			names = append(names, "arm64")
+		case arch.Type == "intel" && arch.Bits == 64:
+			names = append(names, "x86_64")
+		default:
+			names = append(names, arch.Type)
+		}
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	return []string{"arch " + strings.Join(names, " or ")}
 }
