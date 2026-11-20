@@ -7,19 +7,23 @@ import (
 )
 
 type InputModal struct {
+	action    string
 	prompt    string
 	input     textinput.Model
 	done      bool
 	cancelled bool
 }
 
-func NewInputModal(prompt string) *InputModal {
+// NewInputModal opens a text prompt for action (its name, the chip) with the
+// question prompt, which wraps inside the box.
+func NewInputModal(action, prompt string) *InputModal {
 	ti := textinput.New()
 	ti.Placeholder = "type here..."
 	ti.Focus()
 	ti.SetWidth(40)
 
 	return &InputModal{
+		action: action,
 		prompt: prompt,
 		input:  ti,
 	}
@@ -49,11 +53,12 @@ func (m *InputModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *InputModal) View() tea.View {
-	keys := keyLine(
+	keys := fitLine(keyLine(
 		keyHint(style.AccentColor, "enter", "submit"),
 		keyHint(style.AccentColor, "esc", "cancel"),
-	)
-	return tea.NewView(dialog(style.AccentColor, m.prompt, formWidth, m.input.View(), "", keys))
+	), formWidth)
+	prompt := style.NormalItem.Render(wrapProse(m.prompt, formWidth))
+	return tea.NewView(dialog(style.AccentColor, m.action, formWidth, []string{prompt, "", m.input.View()}, keys))
 }
 
 func (m *InputModal) Done() bool      { return m.done }

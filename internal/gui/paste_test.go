@@ -41,7 +41,7 @@ func TestPasteOnSearchPanelStartsSearchInput(t *testing.T) {
 func TestPasteReachesOpenInputModal(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
-	m.activeModal = modal.NewInputModal("Tap repository (user/repo):")
+	m.activeModal = modal.NewInputModal("Add tap", "Tap repository (user/repo):")
 
 	m = updateModel(m, tea.PasteMsg{Content: "homebrew/cask"})
 	if m.activeModal == nil {

@@ -30,7 +30,7 @@ func TestModalFloatsOverFrame(t *testing.T) {
 		new  func() modal.Modal
 	}{
 		{"confirm", func() modal.Modal { return modal.NewConfirmModal(modal.ActionDanger, "Uninstall bash", "Remove bash?") }},
-		{"input", func() modal.Modal { return modal.NewInputModal("Tap name") }},
+		{"input", func() modal.Modal { return modal.NewInputModal("Add tap", "Tap name") }},
 		{"menu", func() modal.Modal { return modal.NewMenuModal("Trust", []string{"Trust tap", "Cancel"}) }},
 	}
 	for _, sz := range [][2]int{{140, 40}, {80, 24}, {200, 60}} {

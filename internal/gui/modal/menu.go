@@ -65,16 +65,16 @@ func (m *MenuModal) View() tea.View {
 			itemStyle = style.SelectedItem
 		}
 		shortcut := style.SubtleText.Render(strconv.Itoa(i) + ": ")
-		lines = append(lines, itemStyle.Render(shortcut+prefix+item))
+		lines = append(lines, fitLine(itemStyle.Render(shortcut+prefix+item), formWidth))
 	}
 
-	keys := keyLine(
+	keys := fitLine(keyLine(
 		keyHint(style.AccentColor, "↑↓", "move"),
 		keyHint(style.AccentColor, "enter", "choose"),
 		keyHint(style.AccentColor, "esc", "cancel"),
-	)
+	), formWidth)
 	list := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return tea.NewView(dialog(style.AccentColor, m.title, formWidth, list, "", keys))
+	return tea.NewView(dialog(style.AccentColor, m.title, formWidth, []string{list}, keys))
 }
 
 func (m *MenuModal) Done() bool      { return m.done }
