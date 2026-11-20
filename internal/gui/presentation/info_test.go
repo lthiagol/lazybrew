@@ -71,3 +71,31 @@ func TestInfoKeepsTheFieldOrderInOneColumn(t *testing.T) {
 		t.Fatalf("the single column should keep the listed order, got:\n%s", out)
 	}
 }
+
+// TestFormulaInfoStillSplitsAt87 (v2-09 F-r4-01): the Description is prose, so a
+// Formulae Info at 87 cells still splits, with the description beside the name.
+func TestFormulaInfoStillSplitsAt87(t *testing.T) {
+	f := brew.Formula{Name: "bash", Version: "5.3.20", Tap: "homebrew/core", Description: "GNU Bourne-Again SHell"}
+	first := strings.Split(ansi.Strip(FormatFormulaInfo(f, 87, style.UnicodeIcons)), "\n")[0]
+	if !strings.Contains(first, "Name:") || !strings.Contains(first, "Description:") {
+		t.Fatalf("at 87 cells the Formulae Info should split, first row %q", first)
+	}
+}
+
+// TestInfoFallsBackWhenAPathWouldBreak (v2-09 F-r4-01): a non-prose value whose
+// word is wider than the right column would break mid-token, so the view keeps
+// its single column and the path is whole on one row.
+func TestInfoFallsBackWhenAPathWouldBreak(t *testing.T) {
+	const path = "/home/linuxbrew/.linuxbrew/opt/some-long-formula/bin/some-long-formula"
+	fields := []Field{
+		{Label: "Name", Value: "a"},
+		{Label: "Path", Value: path, Right: true},
+	}
+	out := ansi.Strip(Info(fields, 100))
+	if !strings.Contains(out, path) {
+		t.Fatalf("the path should be whole on one row, got:\n%s", out)
+	}
+	if first := strings.Split(out, "\n")[0]; strings.Contains(first, "Name:") && strings.Contains(first, "Path:") {
+		t.Fatalf("the view should keep its single column, first row %q", first)
+	}
+}
