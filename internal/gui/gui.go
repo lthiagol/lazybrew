@@ -44,9 +44,12 @@ type Model struct {
 	toasts []*modal.Toast
 	// toastTicking is set while the dismissal tick is in flight, so a stack
 	// has one tick chain, not one per toast.
-	toastTicking   bool
-	batch          *batchState
-	showHelp       bool
+	toastTicking bool
+	batch        *batchState
+	showHelp     bool
+	// helpScroll is how far the help text is scrolled, in rows. It starts at
+	// the top each time help opens.
+	helpScroll     int
 	tabContent     map[string]string
 	pendingAction  string
 	pendingMutType mutationType
@@ -658,6 +661,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+		// While help is open its own keys scroll it or close it; the rest
+		// pass through as they always have.
+		if m.showHelp {
+			if next, handled := m.helpKey(msg.String()); handled {
+				return next, nil
+			}
+		}
+
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
@@ -818,6 +829,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "?":
 			m.showHelp = !m.showHelp
+			m.helpScroll = 0
 			return m, nil
 
 		case "i":
@@ -1000,22 +1012,7 @@ func (m Model) render() string {
 	}
 
 	if m.showHelp {
-		// The help box takes the screen above its close hint. Width and
-		// Height count the border and padding (v2), so the text area is
-		// 6 cells narrower and 5 rows shorter than the box. The text is cut
-		// to that area so the border and the hint always show.
-		helpContent := fitBox(renderHelp(m.width), m.width-6, m.height-5)
-		helpView := lipgloss.NewStyle().
-			Width(m.width).
-			Height(m.height-1).
-			Padding(1, 2).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(style.AccentColor).
-			Render(helpContent)
-
-		// The help screen's last row is the footer, showing help's keys.
-		helpView += "\n" + m.renderBottomBar()
-		return fitFrame(helpView, m.width, m.height)
+		return m.renderHelpScreen()
 	}
 
 	sidebar := m.renderSidebar()
