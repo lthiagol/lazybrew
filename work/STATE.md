@@ -9,14 +9,12 @@ learn what is done, what is in flight, and where to pick up.
 v2-05s) and the user's follow-ups (v2-07 … v2-11, ruling `Q-v2-next`) are all
 closed `ok`, pushed, `wip-ci` green (with `-race`). No agent is running.
 
-**Next, in order.**
-1. **User:** run the human smoke — `SMOKE-CHECKLIST.md`, *Run 2* (LB-05). Fill
-   in its Result table.
-2. If the smoke finds problems: a new slice per problem (brief → builder →
-   reviewer, `work/README.md` runbook), then back to 1.
-3. On the user's go-ahead: open the PR `wip` → `stable` (`gh pr create --base
-   stable --head wip`). Never push to `stable` directly. Then the release
-   procedure in `AGENTS.md` (tag, tap formula).
+**Next, in order** (user ruling `Q-backlog-next`, 2026-11-20 — LB-05 smoke
+deferred, backlog first, LB-11 deferred).
+1. Slice `lb04-lb10-small-fixes` (LB-04 + LB-10) — in flight.
+2. LB-09 Services logs: put its design questions to the user, then brief.
+3. Then the LB-05 smoke and, on the user's go-ahead, the PR `wip` → `stable`
+   (`gh pr create --base stable --head wip`). Never push to `stable` directly.
 
 **Read before acting.** `work/README.md` (lane flow + herdr runbook: Haiku 5.5
 high builder, Opus 5.5 medium reviewer, fresh pair per slice, ≤ 5 review
@@ -53,6 +51,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | v2-09-main-layout | fd1bde3, 12a3b1b, 95766a6, 539a515, 7f6e93b, 801054e, 77f0e2c, d2b31bd, e8bde9a, b2ac4f6, 5d22e50, 5d04885, a3d3d93 | closed | ok |
 | v2-10-tap-actions | 5f91936, 1e91fad, a4eaf97, 6d5c46a, d1ee781, f05b443, 9c4afce, 8dd6f81 | closed | ok |
 | v2-11-cancel-and-test-speed | d76b8de, f11d2a6, 02e9cac, 74c4438, 1872c96, 5174d37 | closed | ok |
+| lb04-lb10-small-fixes | — | briefed | builder running |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
