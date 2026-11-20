@@ -134,8 +134,35 @@ func dashboardCards(msg DataLoadedMsg) string {
 
 // healthWords is the Health card's text with its line breaks joined, so a line
 // the card wraps still reads as one phrase.
-func healthWords(msg DataLoadedMsg) string {
+func healthWords(s statusSummary) string {
 	m := newTestModel()
-	m.status = msg.Summary
+	m.status = s
 	return strings.Join(strings.Fields(ansi.Strip(m.healthBody())), " ")
+}
+
+// TestStackedCardsPutHealthNearTheTop (v2-05 fix F-r1-04): when the cards stack
+// at 80 columns, Health is the second card, so a problem shows without scrolling.
+func TestStackedCardsPutHealthNearTheTop(t *testing.T) {
+	m := newTestModel()
+	m.status = statusSummary{DoctorErr: "brew doctor exited with code 2", Problems: []string{"⚠ taps: brew tap-info timed out after 1s"}}
+	rows := strings.Split(ansi.Strip(m.renderDashboard(50)), "\n")
+	health, packages := -1, -1
+	for i, row := range rows {
+		if health < 0 && strings.Contains(row, "Health") {
+			health = i
+		}
+		if packages < 0 && strings.Contains(row, "Packages") {
+			packages = i
+		}
+	}
+	if health < 0 || packages < 0 || health > packages {
+		t.Fatalf("Health should come before Packages when stacked, rows: Health=%d Packages=%d", health, packages)
+	}
+	// Homebrew is four rows, so Health's title is row four: on screen at 80x24.
+	if health > 4 {
+		t.Fatalf("Health's title should be on the first screen (row ≤ 4), is on row %d", health)
+	}
+	if words := healthWords(m.status); !strings.Contains(words, "doctor unavailable: brew doctor exited with code 2") {
+		t.Fatalf("a failed doctor reads as unavailable with its reason, got %q", words)
+	}
 }

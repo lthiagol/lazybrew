@@ -2,15 +2,15 @@
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Status › Dashboard ────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                 ││  Dashboard    Config    Doctor                                                          │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━━━━━━                                                                            │
-│  Formulae  125                                ││╭─ Homebrew ───────────────────────╮╭─ Packages ───────────────────────╮                 │
-│  Casks     2                                  │││Version:  7.0.15-36-g1f335ae      ││Formulae:  125 installed          │                 │
-│  Taps      3                                  │││Prefix:   /home/linuxbrew/.linuxb…││Casks:     2 installed            │                 │
-│  Services  3                                  ││╰──────────────────────────────────╯│Outdated:  not loaded — press R   │                 │
-│                                               ││                                    ╰──────────────────────────────────╯                 │
-│                                               ││╭─ Taps ───────────────────────────╮╭─ Services ───────────────────────╮                 │
-│                                               │││Total:        3                   ││Running:  ▶ 1                     │                 │
-│                                               │││Official:     0                   ││Stopped:  ■ 2                     │                 │
-╰───────────────────────────────────────────────╯││Third-party:  3                   │╰──────────────────────────────────╯                 │
+│  Formulae  125                                ││╭─ Homebrew ───────────────────────╮╭─ Health ─────────────────────────╮                 │
+│  Casks     2                                  │││Version:  7.0.15-36-g1f335ae      ││✓ ready to brew                   │                 │
+│  Taps      3                                  │││Prefix:   /home/linuxbrew/.linuxb…│╰──────────────────────────────────╯                 │
+│  Services  3                                  ││╰──────────────────────────────────╯                                                     │
+│                                               ││╭─ Packages ───────────────────────╮╭─ Taps ───────────────────────────╮                 │
+│                                               │││Formulae:  125 installed          ││Total:        3                   │                 │
+│                                               │││Casks:     2 installed            ││Official:     0                   │                 │
+│                                               │││Outdated:  not loaded — press R   ││Third-party:  3                   │                 │
+╰───────────────────────────────────────────────╯│╰──────────────────────────────────╯╰──────────────────────────────────╯                 │
 ╭─ 2 ∘ Formulae ────────────────────────── 12┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                            │
 │  ✓ alsa-lib                         1.2.16.┃                                                ┃                                            │
 │▸ ✓ bash                                 5.3┃                    BREWFILE                    ┃                                            │

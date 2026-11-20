@@ -105,7 +105,7 @@ func TestFetchStatusDataTimesOut(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	if health := healthWords(dMsg); !strings.Contains(health, "brew list timed out after 50ms") {
+	if health := healthWords(dMsg.Summary); !strings.Contains(health, "brew list timed out after 50ms") {
 		t.Errorf("Health does not report the timed-out read:\n%s", health)
 	}
 
@@ -143,7 +143,7 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected DataLoadedMsg, got %T", msg)
 	}
-	if healthWords(dMsg) == "" {
+	if healthWords(dMsg.Summary) == "" {
 		t.Error("expected the dashboard to render despite every read hanging")
 	}
 
