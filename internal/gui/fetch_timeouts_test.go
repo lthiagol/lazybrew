@@ -111,7 +111,7 @@ func TestFetchStatusDataTimesOut(t *testing.T) {
 	}
 
 	// The typed error behind that line.
-	items, errs := statusDashboard(client, false)
+	items, _, errs := statusDashboard(client, false)
 	if len(errs) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}
@@ -155,7 +155,7 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 		t.Errorf("fetchStatusData took %s — the sum of the per-read caps, not the total budget", elapsed)
 	}
 
-	_, errs := statusDashboard(client, false)
+	_, _, errs := statusDashboard(client, false)
 	if len(errs) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}

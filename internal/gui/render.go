@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
@@ -97,7 +96,7 @@ type screenLayout struct {
 }
 
 func (m Model) screenLayout() screenLayout {
-	bodyH := max(0, m.height-bottomBarRows)
+	bodyH := max(0, m.height-headerRows-bottomBarRows)
 	sideW := sidebarWidth(m.cfg, m.width)
 	logH := bodyH / 5
 	// The Log box needs a border top and bottom plus one body row; below
@@ -555,10 +554,6 @@ func (m Model) renderBottomBar() string {
 	for _, h := range globalHints {
 		globalParts = append(globalParts, styleHint(h.key, h.desc))
 	}
-	updateStatus := m.updateStatusText()
-	if updateStatus != "" {
-		globalParts = append(globalParts, style.SubtleText.Render("│"), updateStatus)
-	}
 	line1 := lipgloss.JoinHorizontal(lipgloss.Top, globalParts...)
 
 	line2 := ""
@@ -576,24 +571,4 @@ func (m Model) renderBottomBar() string {
 		lipgloss.NewStyle().Width(barWidth).Padding(0, 1).Render(line2),
 	)
 	return fitBox(combined, m.width, bottomBarRows)
-}
-
-func (m Model) updateStatusText() string {
-	if m.opState != nil && m.opState.Running() {
-		return style.AccentText.Render("⟳ " + m.opState.Title)
-	}
-	if m.refreshing > 0 {
-		return style.SubtleText.Render("⟳ Refreshing...")
-	}
-	if m.isUpdating {
-		return style.SubtleText.Render("⟳ Updating...")
-	}
-	if !m.lastUpdate.IsZero() {
-		ago := time.Since(m.lastUpdate).Round(time.Second)
-		return style.SubtleText.Render(fmt.Sprintf("⟳ Updated %s ago", ago))
-	}
-	if m.cfg.Brew.UpdateOnStart {
-		return style.SubtleText.Render("⟳ Never updated")
-	}
-	return ""
 }

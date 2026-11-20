@@ -89,6 +89,9 @@ type Model struct {
 
 	// icons is the glyph set every renderer draws with; resolved once in New.
 	icons style.Icons
+	// brewVersion is the Homebrew version from the last status load, shown in
+	// the header. Empty until the dashboard has said what it is.
+	brewVersion string
 
 	// lastKeyAt tracks the last time the user pressed a key. The auto
 	// refresh tick consults this to pause refreshes during interaction
@@ -519,6 +522,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.casks = msg.Casks
 				p.taps = msg.Taps
 				p.services = msg.Services
+				if msg.PanelID == PanelStatus {
+					m.brewVersion = msg.BrewVersion
+				}
 			}
 			p.normalize()
 		}
@@ -1003,7 +1009,7 @@ func (m Model) render() string {
 	bottomBar := m.renderBottomBar()
 
 	body := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainContent)
-	base := fitFrame(lipgloss.JoinVertical(lipgloss.Top, body, bottomBar), m.width, m.height)
+	base := fitFrame(lipgloss.JoinVertical(lipgloss.Top, m.renderHeader(), body, bottomBar), m.width, m.height)
 
 	// Overlays float over the finished frame, in stacking order: the toast
 	// on the last body row, then the modal centred above it. Neither adds

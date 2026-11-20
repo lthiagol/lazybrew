@@ -3,6 +3,7 @@ package gui
 import (
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -168,15 +169,145 @@ func TestSidebarBorderClicks(t *testing.T) {
 	m.cfg.GUI.Mouse = true
 	heights := m.computeContentHeights()
 
-	formulaeTop := heights[0] + 2
+	formulaeTop := headerRows + heights[0] + 2
 	nm, _ := m.Update(tea.MouseClickMsg{X: 3, Y: formulaeTop, Button: tea.MouseLeft})
 	if got := nm.(Model).activePanel; got != PanelFormulae {
 		t.Fatalf("click on Formulae's top border activated %v, want Formulae", got)
 	}
 
-	statusBottom := heights[0] + 1
+	statusBottom := headerRows + heights[0] + 1
 	nm, _ = m.Update(tea.MouseClickMsg{X: 3, Y: statusBottom, Button: tea.MouseLeft})
 	if got := nm.(Model).activePanel; got != PanelStatus {
 		t.Fatalf("click on Status's bottom border activated %v, want Status", got)
+	}
+}
+
+// TestHeaderIsOneFullWidthRow: row 0 is the header, exactly the frame's width,
+// with the name at the left and nothing shown for values not yet known.
+func TestHeaderIsOneFullWidthRow(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	head := m.renderHeader()
+	if lipgloss.Height(head) != 1 || lipgloss.Width(head) != 140 {
+		t.Fatalf("header is %d rows of %d cells, want 1 row of 140", lipgloss.Height(head), lipgloss.Width(head))
+	}
+	plain := plainLine(head)
+	if !strings.HasPrefix(plain, "◆ lazybrew") {
+		t.Fatalf("header should open with the app icon and name, got %q", plain)
+	}
+	for _, unknown := range []string{"formulae", "casks", "outdated", "Homebrew", "updated", "never updated", "0 "} {
+		if strings.Contains(plain, unknown) {
+			t.Errorf("unknown value shown in the header: %q in %q", unknown, plain)
+		}
+	}
+	if top := strings.Split(m.View().Content, "\n")[0]; !strings.Contains(top, "lazybrew") {
+		t.Fatalf("the frame's first row should be the header, got %q", top)
+	}
+}
+
+// TestHeaderShowsKnownCountsAndBadges: counts appear once loaded, outdated
+// only when there are some, and the version when the dashboard has it.
+func TestHeaderShowsKnownCountsAndBadges(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Items: []string{"Homebrew 4.5.2"}, BrewVersion: "4.5.2"})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: []brew.Formula{{Name: "a"}, {Name: "b"}}, Items: []string{"a", "b"}})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: []brew.Cask{{Name: "c"}}, Items: []string{"c"}})
+
+	plain := plainLine(m.renderHeader())
+	for _, want := range []string{"Homebrew 4.5.2", "2 formulae", "1 casks"} {
+		if !strings.Contains(plain, want) {
+			t.Errorf("header missing %q: %q", want, plain)
+		}
+	}
+	if strings.Contains(plain, "outdated") {
+		t.Fatalf("no outdated badge without outdated packages: %q", plain)
+	}
+
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"x 1 -> 2", "y 1 -> 2"}})
+	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "2 outdated") {
+		t.Fatalf("header should show the outdated count once known: %q", plain)
+	}
+	if m.brewVersion != "4.5.2" {
+		t.Fatalf("the dashboard's version should reach the model, got %q", m.brewVersion)
+	}
+}
+
+// TestHeaderUpdateBadge: the update status moved here from the bottom bar.
+func TestHeaderUpdateBadge(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m.cfg.Brew.UpdateOnStart = true
+	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "never updated") {
+		t.Fatalf("update_on_start with no update yet should say never updated: %q", plain)
+	}
+	m.lastUpdate = time.Now().Add(-150 * time.Second)
+	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "updated 2m ago") {
+		t.Fatalf("header should say updated 2m ago: %q", plain)
+	}
+	m.isUpdating = true
+	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "updating…") {
+		t.Fatalf("header should say updating while brew update runs: %q", plain)
+	}
+	if plain := plainLine(m.renderBottomBar()); strings.Contains(plain, "updat") {
+		t.Fatalf("the bottom bar should no longer carry the update status: %q", plain)
+	}
+}
+
+// TestAgoTextUnits pins the one-unit form the update badge uses.
+func TestAgoTextUnits(t *testing.T) {
+	for d, want := range map[time.Duration]string{
+		5 * time.Second:              "5s ago",
+		150 * time.Second:            "2m ago",
+		3*time.Hour + 20*time.Minute: "3h ago",
+	} {
+		if got := agoText(d); got != want {
+			t.Errorf("agoText(%v) = %q, want %q", d, got, want)
+		}
+	}
+}
+
+// TestHeaderOperationInTheMiddle: a running operation sits between the name
+// and the badges, and an idle header has nothing there.
+func TestHeaderOperationInTheMiddle(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	if plain := plainLine(m.renderHeader()); strings.Contains(plain, "⟳") {
+		t.Fatalf("idle header should show no operation: %q", plain)
+	}
+	m.opState = &Operation{Title: "upgrading curl", Status: opRunning}
+	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "⟳ upgrading curl") {
+		t.Fatalf("running operation should show in the header: %q", plain)
+	}
+	if plain := plainLine(m.renderHeader()); lipgloss.Width(plain) != 140 {
+		t.Fatalf("header with an operation is %d cells, want 140", lipgloss.Width(plain))
+	}
+}
+
+// TestHeaderDropsBadgesNotTheName: at the narrowest frame the badges drop
+// from the left and the app name stays, and the header keeps its width.
+func TestHeaderDropsBadgesNotTheName(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
+	m.cfg.Brew.UpdateOnStart = true
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, BrewVersion: "4.5.2-123-gabcdef"})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 12345), Items: make([]string, 12345)})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"a", "b", "c"}})
+	m.lastUpdate = time.Now().Add(-5 * time.Minute)
+
+	// The name, the version and the three rightmost badges need 75 cells;
+	// the formulae badge is the one that does not fit.
+	head := m.renderHeader()
+	plain := plainLine(head)
+	if !strings.HasPrefix(plain, "◆ lazybrew") {
+		t.Fatalf("the name must stay at 80 columns, got %q", plain)
+	}
+	if lipgloss.Width(head) != 80 {
+		t.Fatalf("header is %d cells, want 80", lipgloss.Width(head))
+	}
+	if strings.Contains(plain, "formulae") {
+		t.Fatalf("the leftmost badge should drop first at 80 columns: %q", plain)
+	}
+	if !strings.Contains(plain, "16 casks") {
+		t.Fatalf("the badges after the dropped one should stay: %q", plain)
+	}
+	if !strings.Contains(plain, "updated 5m ago") {
+		t.Fatalf("the rightmost badge should survive at 80 columns: %q", plain)
 	}
 }

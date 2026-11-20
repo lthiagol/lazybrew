@@ -77,8 +77,11 @@ func (m Model) handleMouseWheel(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleMouseClick(x, y int) (tea.Model, tea.Cmd) {
-	// Bottom bar occupies the last rows of the view.
-	if y >= m.height-bottomBarRows {
+	// The header and the bottom bar are not clickable. Below the header, y
+	// counts from the top of the body, where the body is the screen layout's
+	// rows.
+	y -= headerRows
+	if y < 0 || y >= m.screenLayout().bodyH {
 		return m, nil
 	}
 
