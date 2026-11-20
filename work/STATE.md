@@ -15,6 +15,12 @@ deferred, backlog first, LB-11 deferred).
 2. ~~`lb09-service-logs`~~ closed `ok` r2. No agent is running.
 3. Then the LB-05 smoke and, on the user's go-ahead, the PR `wip` → `stable`
    (`gh pr create --base stable --head wip`). Never push to `stable` directly.
+4. Code-review slices (2026-11-20, source `code-review.md`, user chose 5
+   briefs with Low items included): `cr1-correctness` → `cr2-brew-cache` →
+   `cr3-render-perf` → `cr4-gui-dedup` → `cr5-dead-code`, strictly in order;
+   shared rules in `work/briefs/cr-common.md`. Orchestrator reviews each
+   receipt (revert-the-fix check on every regression test, `make ci`,
+   deadcode/staticcheck) and writes `fix-<slice>-rN.md` if needed.
 
 **Read before acting.** `work/README.md` (lane flow + herdr runbook: Haiku 5.5
 high builder, Opus 5.5 medium reviewer, fresh pair per slice, ≤ 5 review
