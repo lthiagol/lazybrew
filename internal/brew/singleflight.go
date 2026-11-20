@@ -4,14 +4,15 @@ import "sync"
 
 // singleflight coalesces concurrent calls to the same key into a single
 // underlying invocation. The first caller executes fn(); concurrent callers
-// for the same key wait on the same call and receive its result. This is
-// the M9 primitive that prevents a stampede when both the GUI's
-// `fetchPanelData(PanelOutdated)` and `fetchStatusData` race to fetch
-// outdated results.
+// for the same key wait on the same call and receive its result. It lives on
+// Cache and serves every reader through cached, so each brew read runs once
+// per key however many callers ask at the same time. It is the M9 primitive
+// that stops the GUI's `fetchPanelData(PanelOutdated)` and `fetchStatusData`
+// from both running `brew outdated` when they race.
 //
 // We intentionally avoid golang.org/x/sync/singleflight to keep the
-// dependency surface small — the lazy Outdated fetch path only needs Do
-// and shared/first-caller semantics.
+// dependency surface small — the readers need only Do and shared/first-caller
+// semantics.
 type singleflight struct {
 	mu       sync.Mutex
 	inflight map[string]*sfCall
