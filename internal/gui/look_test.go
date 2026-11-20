@@ -107,8 +107,8 @@ func TestSidebarLabelStates(t *testing.T) {
 		t.Fatalf("never-loaded label = %q, want not loaded", got)
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{}})
-	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "(empty)" {
-		t.Fatalf("loaded-empty label = %q, want (empty)", got)
+	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "0" {
+		t.Fatalf("loaded-empty label = %q, want 0", got)
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{"a", "b"}})
 	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "2" {
@@ -526,7 +526,7 @@ func TestStatusBoxLabelShowsNoCount(t *testing.T) {
 
 // TestSidebarLabelsAtEightyColumns (F-orch-02): at 80x24 the sidebar box is 24
 // cells, so a label may not fit whole. Not loaded shows as the short dash, a
-// count is never cut, a label with no room is left out, and the loading
+// count (0 included) is never cut, a label with no room is left out, and the loading
 // spinner and the error mark stay.
 func TestSidebarLabelsAtEightyColumns(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
@@ -552,8 +552,8 @@ func TestSidebarLabelsAtEightyColumns(t *testing.T) {
 	if got := top("5 ⊕ Taps"); !strings.HasSuffix(got, " 3 ─╮") {
 		t.Errorf("the Taps count must show in full, got %q", got)
 	}
-	if got := top("6 ◎ Services"); strings.Contains(got, "(e") {
-		t.Errorf("an empty label with no room must be left out, not cut: %q", got)
+	if got := top("6 ◎ Services"); !strings.HasSuffix(got, " 0 ─╮") {
+		t.Errorf("an empty panel shows 0 in full at 80 columns, got %q", got)
 	}
 	if got := top("4 ↑ Outdated"); !strings.HasSuffix(got, " "+plainLine(m.spinner.View())+" ─╮") {
 		t.Errorf("the loading spinner should stay at 80 columns, got %q", got)
