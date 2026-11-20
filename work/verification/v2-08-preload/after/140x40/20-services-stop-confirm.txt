@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                    125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Services › Info ───────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                 ││  Info                                                                                   │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━                                                                                 │
@@ -15,7 +15,7 @@
 │                                               ││                                                                                         │
 ╰─────────────────────────────────┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                 │
 ╭─ 4 ↑ Outdated ──────────────────┃                                                                      ┃                                 │
-│                                 ┃                                 STOP                                 ┃                                 │
+│▸ ↑ git-delta                   0┃                                 STOP                                 ┃                                 │
 │                                 ┃                                                                      ┃                                 │
 ╰─────────────────────────────────┃                           Stop moshi-hook?                           ┃                                 │
 ╭─ 5 ⊕ Taps ──────────────────────┃             The service stops until you start it again.              ┃                                 │

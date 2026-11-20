@@ -1,15 +1,15 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ─────────────╮╭─ Outdated › Info ────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f…││  Info    Versions                                │
 ╰──────────────────────────╯│━━━━━━━━                                          │
-╭─ 2 ∘ Formulae ───── 125 ─╮│No selection                                      │
-│  ✓ alsa-lib    1.2.16.1_1││                                                  │
-╰──────────────────────────╯│                                                  │
-╭─ 3 ▣ Casks ────────── 2 ─╮│                                                  │
+╭─ 2 ∘ Formulae ───── 125 ─╮│Name:     git-delta                               │
+│  ✓ alsa-lib    1.2.16.1_1││Version:  0.21.1                                  │
+╰──────────────────────────╯│Status:   ↑ outdated 0.21.1 → 0.21.2              │
+╭─ 3 ▣ Casks ────────── 2 ─╮│Bottled:  no                                      │
 │▸ ✓ Claude Code    2.1.311││                                                  │
 ╰──────────────────────────╯│                                                  │
-╭─ 4 ↑ Outdated ─────── 0 ─╮│                                                  │
-│                          ││                                                  │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│                                                  │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││                                                  │
 │                          ││                                                  │
 ╰──────────────────────────╯│                                                  │
 ╭─ 5 ⊕ Taps ─────────── 3 ─╮│                                                  │

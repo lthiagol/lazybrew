@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ─────────────╮╭─ Status › Dashboard ─────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f…││  Dashboard    Config    Doctor                   │
 │  Prefix    /home/linuxbr…││━━━━━━━━━━━━━                                     │
@@ -10,7 +10,7 @@
 │▸ ✓ Claude Cod┃   0: ▸ Export to Brewfile (brew bundle dump)   ┃              │
 ╰──────────────┃   1:   Install from Brewfile (brew bundle i…   ┃              │
 ╭─ 4 ↑ Outdated┃   2:   Cleanup (brew bundle cleanup)           ┃              │
-│              ┃   3:   Check (brew bundle check)               ┃              │
+│▸ ↑ git-d… 0.2┃   3:   Check (brew bundle check)               ┃              │
 ╰──────────────┃   4:   List entries (brew bundle list)         ┃              │
 ╭─ 5 ⊕ Taps ───┃                                                ┃──────────────╮
 │▸ homebrew/cas┃      ↑↓ move   enter choose   esc cancel       ┃ash completed │

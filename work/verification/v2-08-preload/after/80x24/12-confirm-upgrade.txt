@@ -1,4 +1,4 @@
-◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
 ╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Info ────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f…││  Info    Deps    Used By    Caveats    Files     │
 ╰──────────────────────────╯│━━━━━━━━                                          │
@@ -10,7 +10,7 @@
 │▸ ✓┃                               UPGRADE                                ┃/  │
 ╰───┃                                                                      ┃   │
 ╭─ 4┃                            Upgrade bash?                             ┃d  │
-│   ┃                 Installs the newest version of bash.                 ┃   │
+│▸ ↑┃                 Installs the newest version of bash.                 ┃   │
 ╰───┃                                                                      ┃   │
 ╭─ 5┃                      [y]es   [n]o   esc cancel                       ┃   │
 │▸ ⚠┃                                                                      ┃   │
