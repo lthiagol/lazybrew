@@ -58,8 +58,13 @@ type SearchInfoLoadedMsg struct {
 // install/uninstall paths, task completion) leaves it false, so those
 // refreshes read the outdated entries from the cache only and the dashboard
 // never triggers a `brew outdated` call on its own.
+//
+// ReloadDiagnostics works the same way for `brew doctor` and `brew config`,
+// the slowest reads: only the R key sets it. Other refreshes reuse the cached
+// results.
 type RefreshMsg struct {
-	LoadOutdated bool
+	LoadOutdated      bool
+	ReloadDiagnostics bool
 }
 
 // servicesReloadMsg reloads the Services panel alone, after a services task

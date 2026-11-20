@@ -717,6 +717,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Bust cache for force-refreshed classes so per-class TTLs do
 		// not short-circuit the shell (AC-04).
 		m.invalidatePanelCache(PanelStatus)
+		if msg.ReloadDiagnostics {
+			m.invalidateCacheGroup("diagnostics")
+		}
 
 		m.panels[PanelStatus].loading = true
 		cmds := []tea.Cmd{fetchStatusData(m.client, msg.LoadOutdated)}
@@ -857,12 +860,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// would also load the count at startup (M9).
 				return m, tea.Batch(
 					m.startBrewUpdate(),
-					func() tea.Msg { return RefreshMsg{LoadOutdated: true} },
+					func() tea.Msg { return RefreshMsg{LoadOutdated: true, ReloadDiagnostics: true} },
 				)
 			}
 			// R is the only path allowed to shell out to `brew outdated`:
 			// the dashboard's outdated count is loaded on demand.
-			return m, func() tea.Msg { return RefreshMsg{LoadOutdated: true} }
+			return m, func() tea.Msg { return RefreshMsg{LoadOutdated: true, ReloadDiagnostics: true} }
 
 		case "C":
 			m.logCollapsed = !m.logCollapsed
@@ -1276,36 +1279,33 @@ func (m *Model) startBrewUpdate() tea.Cmd {
 	return m.tasks.RunNext()
 }
 
-// invalidatePanelCache drops brew cache entries for a panel so the next
+// panelCacheGroups names the brew cache group each panel reads. The groups are
+// brew's (see brew.Cache.InvalidateFor), so the keys are kept in one place.
+//
+// The status group does not include the outdated entries: the dashboard only
+// reads them, and invalidating them here would throw away a valid 30-minute
+// result. The Outdated panel and the mutation-level invalidations own them.
+var panelCacheGroups = map[PanelID]string{
+	PanelFormulae: "formulae",
+	PanelCasks:    "casks",
+	PanelOutdated: "outdated",
+	PanelTaps:     "taps",
+	PanelServices: "services",
+	PanelStatus:   "status",
+}
+
+// invalidatePanelCache drops the brew cache group a panel reads, so the next
 // fetch re-shells even when the per-class TTL has not expired (AC-04 R).
 func (m *Model) invalidatePanelCache(id PanelID) {
+	m.invalidateCacheGroup(panelCacheGroups[id])
+}
+
+// invalidateCacheGroup drops the brew cache keys of one group.
+func (m *Model) invalidateCacheGroup(group string) {
 	if m.client == nil || m.client.Cache == nil {
 		return
 	}
-	c := m.client.Cache
-	switch id {
-	case PanelFormulae:
-		c.Invalidate(brew.KeyFormulaeList)
-	case PanelCasks:
-		c.Invalidate(brew.KeyCasksList)
-	case PanelOutdated:
-		c.Invalidate(brew.KeyOutdatedFormulae, brew.KeyOutdatedCasks)
-	case PanelTaps:
-		c.Invalidate(brew.KeyTapsList)
-	case PanelServices:
-		c.Invalidate(brew.KeyServicesList, brew.KeyServicesInfo)
-	case PanelStatus:
-		// Status dashboard reads formulae/casks/taps/services/doctor from
-		// the cache. It does not own the outdated class: the dashboard
-		// reads the outdated entries from the cache, so invalidating them
-		// here would throw away a valid 30-minute result. The Outdated
-		// panel and the mutation-level invalidations still own them.
-		c.Invalidate(
-			brew.KeyFormulaeList, brew.KeyCasksList,
-			brew.KeyTapsList, brew.KeyServicesList,
-			brew.KeyDoctorResult, brew.KeyConfig,
-		)
-	}
+	m.client.Cache.InvalidateFor(group)
 }
 
 // lazyLoadPanel returns fetchPanelData(id) iff the panel is empty, not

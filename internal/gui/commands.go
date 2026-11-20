@@ -1755,6 +1755,21 @@ func formatConfig(cfg *brew.BrewConfig) string {
 	}, 0)
 }
 
+// runConcurrently runs each read in its own goroutine and returns when they
+// have all finished. The reads only fill in the caller's local variables, as
+// in statusDashboard; no Bubble Tea state is touched from them.
+func runConcurrently(reads ...func()) {
+	var wg sync.WaitGroup
+	for _, read := range reads {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			read()
+		}()
+	}
+	wg.Wait()
+}
+
 func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 	return func() tea.Msg {
 		switch panel {
@@ -1783,9 +1798,18 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 
 		case PanelOutdated:
 			// Each outdated read gets its own deadline: one slow source
-			// must not eat the whole budget of the other.
-			formulae, fErr := boundedRead(brewReadTimeout, "outdated", client.Formulae.Outdated)
-			casks, cErr := boundedRead(brewReadTimeout, "outdated", client.Casks.Outdated)
+			// must not eat the whole budget of the other. The two reads run
+			// at the same time.
+			var (
+				formulae []brew.Formula
+				casks    []brew.Cask
+				fErr     error
+				cErr     error
+			)
+			runConcurrently(
+				func() { formulae, fErr = boundedRead(brewReadTimeout, "outdated", client.Formulae.Outdated) },
+				func() { casks, cErr = boundedRead(brewReadTimeout, "outdated", client.Casks.Outdated) },
+			)
 			if fErr != nil {
 				return DataLoadedMsg{PanelID: panel, Err: fErr}
 			}
@@ -1813,7 +1837,18 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Taps: list.Taps, TrustUnknown: list.TrustUnknown}
 
 		case PanelServices:
-			services, err := boundedRead(brewReadTimeout, "services", client.Services.List)
+			var (
+				services []brew.Service
+				info     []brew.ServiceInfo
+				err      error
+			)
+			runConcurrently(
+				func() { services, err = boundedRead(brewReadTimeout, "services", client.Services.List) },
+				// A failed info read is not a failed panel: the Info view
+				// falls back to the list's fields (AC-02.3), so its error is
+				// dropped.
+				func() { info, _ = boundedRead(brewReadTimeout, "services", client.Services.Info) },
+			)
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
@@ -1821,9 +1856,6 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			for i, s := range services {
 				items[i] = presentation.FormatService(s, 0)
 			}
-			// A failed info read is not a failed panel: the Info view falls
-			// back to the list's fields (AC-02.3), so its error is dropped.
-			info, _ := boundedRead(brewReadTimeout, "services", client.Services.Info)
 			return DataLoadedMsg{PanelID: panel, Items: items, Services: services, ServiceInfo: info}
 
 		default:

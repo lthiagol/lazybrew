@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -18,9 +19,13 @@ import (
 // preloadRunner is a mock runner that logs every brew read it answers. A read
 // whose command line contains failArg fails.
 func preloadRunner(calls *[]string, failArg string) *brew.MockRunner {
+	// A panel's reads run at the same time, so the log is locked.
+	var mu sync.Mutex
 	read := func(args []string) ([]byte, error) {
 		line := strings.Join(args, " ")
+		mu.Lock()
 		*calls = append(*calls, line)
+		mu.Unlock()
 		if failArg != "" && strings.Contains(line, failArg) {
 			return nil, errors.New("brew " + line + ": boom")
 		}
