@@ -49,7 +49,7 @@ func TestUntapConfirmShowsWarning(t *testing.T) {
 	view := sgr.ReplaceAllString(nm.(Model).activeModal.View().Content, "")
 	// The box border is a column of ┃ on wrapped rows; it is not text.
 	text := strings.Join(strings.Fields(strings.ReplaceAll(view, "┃", " ")), " ")
-	for _, want := range []string{"Remove tap user/tap?", "Installed formulae from this tap will become unavailable for updates."} {
+	for _, want := range []string{"Untap user/tap?", "The tap's formulae and casks are no longer available."} {
 		if !strings.Contains(text, want) {
 			t.Errorf("untap dialog lacks %q:\n%s", want, view)
 		}

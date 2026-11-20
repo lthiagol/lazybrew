@@ -481,7 +481,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.Err != nil && !errors.Is(msg.Err, context.Canceled) {
 			return m, tea.Batch(
-				m.setToast(failureText(msg.Title, msg.Err), modal.ToastError),
+				m.setToast(failureText(msg.ID, msg.Title, msg.Err), modal.ToastError),
 				m.tasks.RunNext(),
 				serviceReload(msg.ID),
 			)
