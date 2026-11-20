@@ -58,11 +58,14 @@ func NewCache(ttl time.Duration) *Cache {
 	}
 }
 
+// Get returns a fresh entry. An expired entry is a miss and stays in the map:
+// Set overwrites it, and deleting it here would drop a fresh Set that landed
+// between the read and a second lock.
 func (c *Cache) Get(key CacheKey) (any, bool) {
 	c.mu.RLock()
+	defer c.mu.RUnlock()
 	entry, ok := c.entries[key]
 	if !ok {
-		c.mu.RUnlock()
 		return nil, false
 	}
 	ttl := entry.ttl
@@ -70,15 +73,9 @@ func (c *Cache) Get(key CacheKey) (any, bool) {
 		ttl = c.defaultTTL
 	}
 	if c.now().Sub(entry.timestamp) > ttl {
-		c.mu.RUnlock()
-		c.mu.Lock()
-		delete(c.entries, key)
-		c.mu.Unlock()
 		return nil, false
 	}
-	data := entry.data
-	c.mu.RUnlock()
-	return data, true
+	return entry.data, true
 }
 
 func (c *Cache) Set(key CacheKey, data any) {

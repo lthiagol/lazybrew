@@ -1,6 +1,8 @@
 package brew
 
 import (
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -245,6 +247,42 @@ func TestCacheSetWithTTLAllKeys(t *testing.T) {
 		}
 		if s, _ := v.(string); s != want {
 			t.Errorf("%s: got %q, want %q", key, s, want)
+		}
+	}
+}
+
+// TestCacheExpiredGetKeepsConcurrentSet is a stress test. Get used to find an
+// expired entry under the read lock, drop the lock, and delete the key under
+// the write lock without checking again, so a fresh Set that landed in between
+// was deleted with the old entry.
+func TestCacheExpiredGetKeepsConcurrentSet(t *testing.T) {
+	var nowNanos atomic.Int64
+	nowNanos.Store(time.Now().UnixNano())
+	c := NewCache(time.Minute)
+	c.now = func() time.Time { return time.Unix(0, nowNanos.Load()) }
+
+	for i := 0; i < 20000; i++ {
+		c.Set(KeyFormulaeList, "old")
+		nowNanos.Add(int64(2 * time.Minute)) // the "old" entry is now expired
+
+		start := make(chan struct{})
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			<-start
+			c.Get(KeyFormulaeList)
+		}()
+		go func() {
+			defer wg.Done()
+			<-start
+			c.Set(KeyFormulaeList, "new")
+		}()
+		close(start)
+		wg.Wait()
+
+		if v, ok := c.Get(KeyFormulaeList); !ok || v != "new" {
+			t.Fatalf("iteration %d: fresh Set was lost (got %v, ok=%v)", i, v, ok)
 		}
 	}
 }
