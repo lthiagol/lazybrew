@@ -2,13 +2,13 @@
 ╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Taps › Tap Info ───────────────────────────────────────────────────────────────────────╮
 │▸ Homebrew  7.0.15-36-g1f335ae                 ││  Tap Info    Trust    Formulae                                                          │
 │  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━━━━━                                                                             │
-│  Formulae  125                                ││No custom taps                                                                           │
+│  Formulae  125                                ││1 taps · 1 official · 1 trusted · 0 untrusted                                            │
 ╰───────────────────────────────────────────────╯│                                                                                         │
-╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│                                                                                         │
-│  ✓ alsa-lib                         1.2.16.1_1││                                                                                         │
-│▸ ✓ bash                                 5.3.20││                                                                                         │
-│  ✓ bat                                  0.26.1││                                                                                         │
-╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│Tap:       homebrew/cask-versions                                                        │
+│  ✓ alsa-lib                         1.2.16.1_1││Trusted:   trusted                                                                       │
+│▸ ✓ bash                                 5.3.20││Official:  yes                                                                           │
+│  ✓ bat                                  0.26.1││Formulae:  0                                                                             │
+╰───────────────────────────────────────────────╯│Casks:     0                                                                             │
 ╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│                                                                                         │
 │▸ ✓ Claude Code                         2.1.311││                                                                                         │
 │  ✓ Google Cloud CLI                    594.0.0││                                                                                         │
@@ -19,7 +19,7 @@
 │                                               ││                                                                                         │
 ╰───────────────────────────────────────────────╯│                                                                                         │
 ╭─ 5 ⊕ Taps ──────────────────────────────── 1 ─╮│                                                                                         │
-│▸ homebrew/cask-versions  official             ││                                                                                         │
+│▸ ✓ homebrew/cask-versions             official││                                                                                         │
 │                                               ││                                                                                         │
 │                                               ││                                                                                         │
 │                                               ││                                                                                         │

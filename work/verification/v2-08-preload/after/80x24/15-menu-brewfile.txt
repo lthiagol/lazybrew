@@ -4,7 +4,7 @@
 │  Prefix    /home/linuxbr…││━━━━━━━━━━━━━                                     │
 ╰──────────────────────────╯│╭─ Homebrew ───────────────────────╮              │
 ╭─ 2 ∘ Formulae┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓              │
-│  ✓ alsa-lib  ┃                                                ┃              │
+│▸ ✓ bash      ┃                                                ┃              │
 ╰──────────────┃                    BREWFILE                    ┃              │
 ╭─ 3 ▣ Casks ──┃                                                ┃              │
 │▸ ✓ Claude Cod┃   0: ▸ Export to Brewfile (brew bundle dump)   ┃              │
@@ -12,13 +12,13 @@
 ╭─ 4 ↑ Outdated┃   2:   Cleanup (brew bundle cleanup)           ┃              │
 │▸ ↑ git-d… 0.2┃   3:   Check (brew bundle check)               ┃              │
 ╰──────────────┃   4:   List entries (brew bundle list)         ┃              │
-╭─ 5 ⊕ Taps ───┃                                                ┃──────────────╮
-│▸ homebrew/cas┃      ↑↓ move   enter choose   esc cancel       ┃ash completed │
-╰──────────────┃                                                ┃──────────────╯
-╭─ 6 ◎ Services┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛──────────────╮
-│▸ dbus                none│╰────────────│ ✗ Upgrade bash: brew upgrade failed │
-╰──────────────────────────╯╭─ Log ──────╰─────────────────────────────────────╯
-╭─ 7 ⌕ Search ───────── – ─╮│No commands execute╭──────────────────────────────╮
-│                          ││                   │ ⚠ Cannot untap official taps │
-╰──────────────────────────╯╰───────────────────╰──────────────────────────────╯
+╭─ 5 ⊕ Taps ───┃                                                ┃              │
+│▸ ⚠ danielfoeh┃      ↑↓ move   enter choose   esc cancel       ┃              │
+╰──────────────┃                                                ┃              │
+╭─ 6 ◎ Services┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛              │
+│▸ dbus                none│╰──────────────────────────────────────────────────╯
+╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ───────── – ─╮│No commands executed yet                          │
+│                          ││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
  ↑↓ move  enter choose  esc cancel                                              

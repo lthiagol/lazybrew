@@ -19,8 +19,8 @@
 │                                 ┃                                                                      ┃                                 │
 ╰─────────────────────────────────┃                           Stop moshi-hook?                           ┃                                 │
 ╭─ 5 ⊕ Taps ──────────────────────┃             The service stops until you start it again.              ┃                                 │
-│▸ homebrew/cask-versions  officia┃                                                                      ┃                                 │
-│                                 ┃                      [y]es   [n]o   esc cancel                       ┃                                 │
+│▸ ⚠ danielfoehrkn/switch         ┃                                                                      ┃                                 │
+│  ✓ lthiagol/tap                 ┃                      [y]es   [n]o   esc cancel                       ┃                                 │
 ╰─────────────────────────────────┃                                                                      ┃                                 │
 ╭─ 6 ◎ Services ──────────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                                 │
 │  dbus                                     none││                                                                                         │
