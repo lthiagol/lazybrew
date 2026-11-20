@@ -42,19 +42,26 @@ func NewDefaultRunnerWithPath(brewPath string) (*DefaultRunner, error) {
 	return &DefaultRunner{brewPath: brewPath}, nil
 }
 
-func findBrewPath() (string, error) {
-	candidates := []string{
-		os.Getenv("HOMEBREW_PREFIX") + "/bin/brew",
+// brewCandidates are the places findBrewPath looks for brew, in order. The
+// HOMEBREW_PREFIX candidate is there only when the variable is set.
+func brewCandidates() []string {
+	var candidates []string
+	if prefix := os.Getenv("HOMEBREW_PREFIX"); prefix != "" {
+		candidates = append(candidates, prefix+"/bin/brew")
+	}
+	return append(candidates,
 		"/opt/homebrew/bin/brew",
 		"/usr/local/bin/brew",
 		"/home/linuxbrew/.linuxbrew/bin/brew",
-	}
+	)
+}
+
+func findBrewPath() (string, error) {
+	candidates := brewCandidates()
 
 	for _, c := range candidates {
-		if c != "/bin/brew" {
-			if _, err := os.Stat(c); err == nil {
-				return c, nil
-			}
+		if _, err := os.Stat(c); err == nil {
+			return c, nil
 		}
 	}
 
@@ -69,18 +76,26 @@ func (r *DefaultRunner) BrewPath() string {
 	return r.brewPath
 }
 
-func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, error) {
+// newCmd is the brew command for args. Every run sets it up the same way: the
+// environment, an empty stdin, and its own process group.
+func (r *DefaultRunner) newCmd(ctx context.Context, args []string) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, r.brewPath, args...)
 	cmd.Env = append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1")
 	cmd.Stdin = bytes.NewReader(nil)
 	setProcessGroup(cmd)
+	return cmd
+}
+
+func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, error) {
+	cmd := r.newCmd(ctx, args)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	cmdLine := strings.Join(args, " ")
 	start := time.Now()
-	Logger().Debug("brew exec", "args", strings.Join(args, " "))
+	Logger().Debug("brew exec", "args", cmdLine)
 
 	err := finishErr(cmd.Run())
 	duration := time.Since(start)
@@ -91,15 +106,15 @@ func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, er
 			exitCode = exitErr.ExitCode()
 		}
 		stderrStr := strings.TrimSpace(stderr.String())
-		Logger().Warn("brew failed", "args", strings.Join(args, " "), "exit", exitCode, "duration", duration)
+		Logger().Warn("brew failed", "args", cmdLine, "exit", exitCode, "duration", duration)
 		return stdout.Bytes(), &BrewExitError{
-			Command:  strings.Join(args, " "),
+			Command:  cmdLine,
 			ExitCode: exitCode,
 			Stderr:   stderrStr,
 		}
 	}
 
-	Logger().Debug("brew ok", "args", strings.Join(args, " "), "duration", duration)
+	Logger().Debug("brew ok", "args", cmdLine, "duration", duration)
 	return stdout.Bytes(), nil
 }
 
@@ -109,9 +124,10 @@ func (r *DefaultRunner) ExecuteJSON(ctx context.Context, result any, args ...str
 		return err
 	}
 	if err := json.Unmarshal(stdout, result); err != nil {
-		Logger().Warn("json parse failed", "args", strings.Join(args, " "), "cause", err.Error(), "raw", string(stdout)[:min(len(stdout), 200)])
+		cmdLine := strings.Join(args, " ")
+		Logger().Warn("json parse failed", "args", cmdLine, "cause", err.Error(), "raw", string(stdout)[:min(len(stdout), 200)])
 		return &JSONParseError{
-			Command:   strings.Join(args, " "),
+			Command:   cmdLine,
 			Cause:     err,
 			RawOutput: stdout,
 		}
@@ -155,10 +171,7 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 			})
 		}
 
-		cmd := exec.CommandContext(ctx, r.brewPath, args...)
-		cmd.Env = append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1")
-		cmd.Stdin = bytes.NewReader(nil)
-		setProcessGroup(cmd)
+		cmd := r.newCmd(ctx, args)
 
 		// Stdout and stderr are writers, not pipes, so cmd.Wait owns both
 		// copies and waits for them itself, bounded by WaitDelay: a stray
@@ -193,38 +206,74 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 }
 
 // lineWriter splits brew's stdout into lines and sends each one to out. A
-// send blocks until the consumer takes the line or ctx is done, in which case
-// Write fails and the copy stops.
+// line ends at \n, at \r (brew's progress bars redraw with \r), or at \r\n,
+// which is one break. A send blocks until the consumer takes the line or ctx
+// is done, in which case Write fails and the copy stops.
 type lineWriter struct {
-	ctx     context.Context
-	out     chan<- string
-	partial string
+	ctx context.Context
+	out chan<- string
+	buf bytes.Buffer
+	// afterCR is set when the last byte written ended a line with \r. A \n
+	// that follows is the rest of the same \r\n break.
+	afterCR bool
 }
 
 func (w *lineWriter) Write(p []byte) (int, error) {
-	data := w.partial + string(p)
-	lines := strings.Split(data, "\n")
-	w.partial = lines[len(lines)-1]
-	for _, line := range lines[:len(lines)-1] {
-		select {
-		case w.out <- line:
-		case <-w.ctx.Done():
-			return 0, w.ctx.Err()
+	n := len(p)
+	for len(p) > 0 {
+		if w.afterCR && p[0] == '\n' {
+			p = p[1:]
+			w.afterCR = false
+			continue
 		}
+		w.afterCR = false
+		end := lineEnd(p)
+		if end < 0 {
+			w.buf.Write(p)
+			break
+		}
+		w.buf.Write(p[:end])
+		if err := w.emit(); err != nil {
+			return n - len(p), err
+		}
+		w.afterCR = p[end] == '\r'
+		p = p[end+1:]
 	}
-	return len(p), nil
+	return n, nil
+}
+
+// lineEnd is the index of the first \r or \n in p, or -1 when p has neither.
+// It scans p with bytes.IndexByte: once for \n, then for \r only up to it.
+func lineEnd(p []byte) int {
+	nl := bytes.IndexByte(p, '\n')
+	stop := nl
+	if nl < 0 {
+		stop = len(p)
+	}
+	if cr := bytes.IndexByte(p[:stop], '\r'); cr >= 0 {
+		return cr
+	}
+	return nl
+}
+
+// emit sends the buffered line and empties the buffer.
+func (w *lineWriter) emit() error {
+	line := w.buf.String()
+	w.buf.Reset()
+	select {
+	case w.out <- line:
+		return nil
+	case <-w.ctx.Done():
+		return w.ctx.Err()
+	}
 }
 
 // flush sends the unterminated last line, if any, once the output has ended.
 func (w *lineWriter) flush() {
-	if w.partial == "" {
+	if w.buf.Len() == 0 {
 		return
 	}
-	select {
-	case w.out <- w.partial:
-	case <-w.ctx.Done():
-	}
-	w.partial = ""
+	_ = w.emit()
 }
 
 // finishErr is the error of a finished brew process. exec.ErrWaitDelay means
