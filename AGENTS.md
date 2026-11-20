@@ -11,9 +11,10 @@
 ```bash
 git clone https://github.com/lthiagol/lazybrew
 cd lazybrew
-make build      # produces bin/lazybrew
-make test       # unit tests + race detector
-make run        # launch TUI with default config
+make run        # build bin/lazybrew, then launch the TUI
+make test       # unit tests + race detector (sets CGO_ENABLED=1)
+make test-fast  # unit tests without -race; PKG=./internal/gui/... narrows it
+make ci         # the full gate: gofmt check, vet, test -race, coverage floors, build
 ```
 
 Run integration tests (requires real Homebrew):
@@ -61,7 +62,7 @@ All GUI state mutation must go through the Bubble Tea `Update(msg tea.Msg)` loop
 1. **Zero `program.Send` in production code.** If you find `program.Send`, replace it with a `tea.Cmd` that returns a message.
 2. **All write operations through `task.Manager`.** Install, uninstall, reinstall, upgrade, pin, tap, untap, trust, service start/stop, repair, cleanup, autoremove, and `brew update` must be enqueued via `m.tasks.Enqueue`.
 3. **No raw goroutines in handlers.** Use `tea.Cmd` closures or the TaskManager streaming pattern.
-4. **The Operation overlay owns streaming output.** `TaskOutputMsg` lines are appended to the active `Operation` (`m.opState`); `TaskCompletedMsg` marks it done (`opSuccess`/`opError`/`opCancelled`) and shows a toast. (The old `ProgressModal` was removed; there is no progress modal anymore.)
+4. **The Operation overlay owns streaming output.** `TaskOutputMsg` lines are appended to the active `Operation` (`m.opState`); `TaskCompletedMsg` marks it done (`opSuccess`/`opError`/`opCancelled`) and shows a toast. A successful run closes itself after 2 s; failed and cancelled runs stay until Esc or a panel switch. (The old `ProgressModal` was removed; there is no progress modal anymore.)
 5. **Model fields are the source of truth.** Do not read from `m.program` to infer state.
 
 ---
@@ -105,8 +106,11 @@ Planning runs through the herdr lane flow under `work/`:
 
 1. **One commit per acceptance criterion**, in AC order, staged by name — never
    `git add -A`, never `git add .`.
-2. **The gate must pass before a lane reports**: `make build`, `make lint`,
-   `go test ./... -race -count=1`, `make cover-check`.
+2. **The gate must pass before a lane reports**: `make ci` (gofmt check,
+   `go vet`, `go test ./... -race -count=1` with `CGO_ENABLED=1`,
+   `make cover-check`, build). **Per commit**, the lighter check is enough:
+   `make test-fast PKG=<touched packages>` (no `-race`) — ruling
+   `Q-v2-builder-speed` in `work/questions.md`.
 3. **A lane reports by writing `work/inbox/<lane>-<slice>.md`, committing it,
    then nudging the orchestrator.** The file is the record; the nudge is the bell.
 4. **The slice's row in `work/STATE.md` is the resume record** and is updated in
@@ -130,17 +134,17 @@ Planning runs through the herdr lane flow under `work/`:
 Run these before declaring any milestone step done:
 
 ```bash
-go test -race ./...
-go vet ./...
-make lint
-make cover-check
+make ci
 ```
+
+`make ci` runs what `.github/workflows/wip-ci.yml` runs (gofmt check, vet,
+race tests, build) plus the coverage floors. This machine has cgo off by
+default; the Makefile sets `CGO_ENABLED=1` for the race detector.
 
 For release readiness:
 
 ```bash
-go test -race ./...
-make cover-check
+make ci
 make test-integration   # requires Homebrew
 ./bin/lazybrew --version
 ```
@@ -154,7 +158,7 @@ Before v0.2.0 tag:
 - [x] M18.8 AGENTS.md done (this file)
 - [x] M17.3 update summary toast done
 - [x] M21.2 ≥8 teatest flows done
-- [ ] M22.1b CI green on push/PR
+- [x] M22.1b CI green on push/PR (wip-ci, with `-race` since v2-11)
 - [x] M22.2 integration workflow file exists
 - [ ] M22.4 release checklist signed off
 

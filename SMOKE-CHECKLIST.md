@@ -7,6 +7,71 @@
 
 ---
 
+## Run 2 — v2 overhaul (LB-05, before the `wip` → `stable` PR)
+
+> **Status:** open — **human, interactive**, in a real terminal. Covers LB-08
+> (v2-01 … v2-11). Run 1 (M08, hybrid) is kept below for history.
+> Build: `git pull && make run`. Tick each box; note anything odd under Result.
+
+| Field | Value |
+|---|---|
+| Date | |
+| Tester | |
+| lazybrew commit | `git rev-parse --short HEAD` |
+| brew version | |
+| Terminal / size | |
+| OS | |
+
+### Look and startup
+- [ ] Starts without error; header, sidebar boxes, main area and footer fill the terminal
+- [ ] Every sidebar box loads by itself after Status (spinner, then rows and a count) — no `not loaded` (v2-08)
+- [ ] Status dashboard shows Outdated and the other counts without pressing `R`
+- [ ] Keys work while panels are still loading
+- [ ] `LAZYBREW_ICONS=unicode make run` looks right; `theme: light` in config looks right
+- [ ] Motion feels short and subtle (tabs `[` `]`, focus moves, a dialog opening); `LAZYBREW_ANIMATIONS=0` turns it off
+
+### Navigation and main area (v2-03b, v2-09)
+- [ ] Tab / Shift+Tab, `1`–`7`, `[` `]`, mouse click on boxes / rows / tabs, wheel scroll
+- [ ] Main area has padding; nothing touches the border
+- [ ] Formulae → Info at your usual width: two columns when wide enough, nothing cut mid-word
+- [ ] Formulae → Deps / Used By: full-width table, long descriptions end with `…`
+- [ ] Log box is small when idle and grows while something runs
+- [ ] `?` help scrolls (`j`/`k`, PgUp/PgDn); `esc` closes; paste into Search (`/`) works
+
+### Operations (live — use a small, unneeded formula, e.g. `hello`)
+- [ ] Search → install `hello` (`i`): steps stream, `✓ Completed in …`, then the view **closes itself after ~2 s** (v2-07)
+- [ ] Uninstall it (`x`): confirm names the consequence; completes and closes
+- [ ] Start a longer install/upgrade and press **Esc** mid-run: it shows `Cancelled · Esc to close` promptly (v2-11 — no waiting for a download to finish)
+- [ ] A failed operation stays on screen with `Esc to close`; switching panel closes it
+- [ ] (optional) Batch upgrade in Outdated (`space`, `u`): progress bar `n/total`
+
+### Services (v2-05s)
+- [ ] Services → Info shows status, PID, paths, and the actions that apply
+- [ ] `r` restart on a service → confirm → completes → main area returns to Info by itself (the bug you hit)
+- [ ] `s` on a running service / `S` on a stopped one → info toast, nothing runs
+
+### Taps (v2-10)
+- [ ] Tap Info shows the actions that apply: untrusted `t trust`, trusted `t untrust`, official `r repair` only
+- [ ] `t` on an untrusted tap trusts it at once; `t` again opens the **untrust confirm** → confirm → back to untrusted
+- [ ] `T` opens the per-formula / per-cask trust menu
+- [ ] `x` on a tap opens the untap confirm with its consequence (and installed packages, if any) — `esc` unless you mean it
+- [ ] After a tap action the cursor stays on the same tap
+
+### Exit
+- [ ] `q` quits cleanly; terminal is restored
+
+### Result (Run 2)
+
+| | |
+|---|---|
+| **Pass / Fail** | |
+| **Blocking issues** | |
+| **Notes** | |
+
+---
+
+# Run 1 — M08 (history)
+
 ## Environment
 
 | Field | Value |

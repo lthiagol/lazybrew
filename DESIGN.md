@@ -80,6 +80,9 @@ cmd/lazybrew/main.go
 3. **No raw goroutines** — every concurrent operation returns a `tea.Cmd` that Bubble Tea schedules
 4. **No `program.Send`** — all state updates happen through `Update()` message handlers; `program.Send` is forbidden in production code
 5. **TaskManager serializes** — one task runs at a time; queue is FIFO with max 10
+6. **brew runs in its own session** (`Setsid`, Unix): a cancel kills the whole process group (brew and the curl/git/ruby it started), with a 2 s `WaitDelay`; brew has no controlling terminal, so a step that asks for a password (macOS `.pkg` casks via sudo) fails at once with a needs-sudo message instead of hanging
+7. **Startup preload** — with `gui.preload` on, Status loads first, then Formulae → Outdated → Casks → Taps → Services as ordinary bounded reads, at most two in flight, driven by messages in `Update`
+8. **The Operation view's lifecycle** — a successful run closes itself after 2 s (a tick that names its operation; never mid-batch); failed and cancelled runs stay until Esc or a panel switch
 
 ## Configuration Schema
 
@@ -122,3 +125,5 @@ See the config ADR topic (configuration schema decisions).
 | 2026-08-01 | Manual `stable-ci.yml` tap-update path is canonical; `.goreleaser.yml` removed | M07. Goreleaser was considered but rejected: the manual path (sed + tap PR) was just used successfully for v1.0.0-rc1, release cadence is low (rc1 then occasional bugfixes), and goreleaser-brews would have replaced the working flow with a more complex secret+formula integration. If release cadence grows, revisit. |
 | 2026-10-31 | Detached the mp/master-plan planning workflow; planning now runs through the herdr lane flow in work/ (briefs, inbox, state row). master-plan/ is kept locally as a frozen archive and is no longer tracked by git. | Slice detach-master-plan |
 | 2026-11-19 | Moved to the Charm v2 stack (charm.land bubbletea/lipgloss/bubbles v2) — prerequisite for overlay compositing and animation in the visual overhaul. | Slice v2-01-charm-v2 |
+| 2026-11-20 | Visual overhaul closed (LB-08: v2-01 … v2-06, v2-05s) and user follow-ups v2-07 … v2-11: finished operations auto-close, startup preload, main-area layout (padding, tables, two-column Info), tap actions, process-group cancel, fast tests, CI with `-race`. | Rulings `Q-v2-*` in `work/questions.md` |
+| 2026-11-20 | brew runs with `Setsid`; tty prompts (sudo, git credentials) fail fast with a needs-sudo message. Suspending the TUI for them (`tea.ExecProcess`) is parked as LB-11 — the user ruled the message is enough. | Slice v2-11, `Q-v2-11-b` |

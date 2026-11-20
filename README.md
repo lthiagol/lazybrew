@@ -117,13 +117,15 @@ Run `./check_dependencies.sh` to verify all dependencies are met.
 | Command | Description |
 |---------|-------------|
 | `make build` | Build binary to `bin/lazybrew` |
-| `make run` | Run directly |
-| `make test` | Run unit tests (with `-race`) |
+| `make run` | Build, then launch lazybrew |
+| `make test` | All unit tests with the race detector (sets `CGO_ENABLED=1`) |
+| `make test-fast` | Unit tests without `-race`; `PKG=./internal/gui/...` narrows it |
+| `make ci` | Everything CI runs — gofmt check, `go vet`, `make test`, build — plus the coverage floors |
 | `make test-integration` | Run integration tests (requires Homebrew) |
 | `make lint` | Run `go vet` |
-| `make fmt` | Format code |
+| `make fmt` | Format code (`make fmt-check` only reports) |
 | `make clean` | Remove build artifacts |
-| `make cover` | Test coverage report |
+| `make cover` | Test coverage report (`make cover-check` enforces the floors) |
 
 ### Project Structure
 
