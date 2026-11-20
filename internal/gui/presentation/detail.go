@@ -18,6 +18,42 @@ type Field struct {
 	Value string
 	Role  color.Color
 	Prose bool
+	// Right moves the field to the right column of a wide Info view (see Info).
+	Right bool
+}
+
+// splitWidth is the content width from which an Info view splits into two
+// columns. The main box's inner width is 100 at this content width: its
+// padding takes one cell either side.
+const splitWidth = 98
+
+// infoGap is the space between the two columns of a split Info view.
+const infoGap = 4
+
+// Info draws an Info view within width cells. Narrower than splitWidth it is
+// one column, the fields in order. Wider, the fields not marked Right sit in a
+// left column and the Right ones (prose and lists, which wrap) in a right
+// column, each keeping its order.
+func Info(fields []Field, width int) string {
+	if width < splitWidth {
+		return Detail(fields, width)
+	}
+	var left, right []Field
+	for _, f := range fields {
+		if f.Right {
+			// The right column is prose and lists: its values wrap, never cut.
+			f.Prose = true
+			right = append(right, f)
+		} else {
+			left = append(left, f)
+		}
+	}
+	leftW := width * 2 / 5
+	rightW := width - leftW - infoGap
+	return lipgloss.JoinHorizontal(lipgloss.Top,
+		lipgloss.NewStyle().Width(leftW).Render(Detail(left, leftW)),
+		lipgloss.NewStyle().Width(infoGap).Render(""),
+		lipgloss.NewStyle().Width(rightW).Render(Detail(right, rightW)))
 }
 
 // Detail draws the fields of one detail view within width cells, one row per

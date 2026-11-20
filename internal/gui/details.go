@@ -58,13 +58,13 @@ func tapDetails(t *brew.Tap, width int) string {
 	if t.Trusted || t.IsOfficial {
 		trusted = "trusted"
 	}
-	return presentation.Detail([]presentation.Field{
+	return presentation.Info([]presentation.Field{
 		{Label: "Tap", Value: t.Name},
 		{Label: "Trusted", Value: trusted},
 		{Label: "Official", Value: boolStr(t.IsOfficial)},
 		{Label: "Remote", Value: t.Remote, Role: style.InfoColor},
-		{Label: "Formulae", Value: strconv.Itoa(t.FormulaCount)},
-		{Label: "Casks", Value: strconv.Itoa(t.CaskCount)},
+		{Label: "Formulae", Value: strconv.Itoa(t.FormulaCount), Right: true},
+		{Label: "Casks", Value: strconv.Itoa(t.CaskCount), Right: true},
 	}, width)
 }
 
@@ -161,19 +161,19 @@ func serviceInfoDetail(s brew.ServiceInfo, width int, icons style.Icons) string 
 		{Label: "Loaded", Value: boolStr(s.Loaded)},
 		{Label: "Registered", Value: boolStr(s.Registered)},
 		{Label: "Unit file", Value: s.File},
-		{Label: "Command", Value: s.Command},
-		{Label: "Working dir", Value: s.WorkingDir},
-		{Label: "Log", Value: s.LogPath},
+		{Label: "Command", Value: s.Command, Right: true},
+		{Label: "Working dir", Value: s.WorkingDir, Right: true},
+		{Label: "Log", Value: s.LogPath, Right: true},
 	}
 	if s.ErrorLogPath != s.LogPath {
-		fields = append(fields, presentation.Field{Label: "Error log", Value: s.ErrorLogPath})
+		fields = append(fields, presentation.Field{Label: "Error log", Value: s.ErrorLogPath, Right: true})
 	}
 	fields = append(fields,
 		presentation.Field{Label: "Exit code", Value: optionalInt(s.ExitCode)},
 		presentation.Field{Label: "Interval", Value: intervalString(s.Interval)},
 		presentation.Field{Label: "Cron", Value: cronString(s.Cron)},
 	)
-	return presentation.Detail(fields, width)
+	return presentation.Info(fields, width)
 }
 
 // serviceRunning is whether a service runs now: brew's started status, which
