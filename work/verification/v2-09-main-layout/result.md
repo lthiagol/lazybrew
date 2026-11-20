@@ -4,16 +4,32 @@ The main area uses its space: one column of padding either side, full-width
 tables, two-column Info when wide, and a Log box that gives its rows back when
 idle. The sidebar, header, footer, modals, toasts and keys are unchanged.
 
-## Commits (one per AC, in order)
+## Commits
 
-| AC | commit | subject |
-|---|---|---|
-| AC-01 | fd1bde3 | feat(gui): main area keeps one column of padding either side (v2-09 AC-01) |
-| AC-02 | 12a3b1b | feat(gui): lists become full-width tables (v2-09 AC-02) |
-| AC-03 | 95766a6 | feat(gui): wide Info views split into fields and prose columns (v2-09 AC-03) |
-| AC-03 (refinement) | 7f6e93b | feat(gui): the Info left column is as wide as its fields (v2-09 AC-03) |
-| AC-04 | 539a515 | feat(gui): the Log box gives its space back when idle (v2-09 AC-04) |
-| AC-05 | see the receipt | evidence, this file, STATE row, question Q-v2-09-a |
+Listed in git order, oldest first (`git log --reverse`). One commit per AC was the
+rule, and this slice breaks it once: the AC-03 refinement (7f6e93b) landed after
+AC-04 (539a515). It was a fix to AC-03's left column found while checking the
+AC-04 work, and it was committed as a new commit, not by amending or rebasing,
+since the git rules forbid both. The AC-03 and AC-04 order breach is recorded here
+and is not undone.
+
+| # | AC | commit | subject |
+|---|---|---|---|
+| 1 | AC-01 | fd1bde3 | feat(gui): main area keeps one column of padding either side (v2-09 AC-01) |
+| 2 | AC-02 | 12a3b1b | feat(gui): lists become full-width tables (v2-09 AC-02) |
+| 3 | AC-03 | 95766a6 | feat(gui): wide Info views split into fields and prose columns (v2-09 AC-03) |
+| 4 | AC-04 | 539a515 | feat(gui): the Log box gives its space back when idle (v2-09 AC-04) |
+| 5 | AC-03 refinement (out of order) | 7f6e93b | feat(gui): the Info left column is as wide as its fields (v2-09 AC-03) |
+| 6 | AC-05 | d61ea76 | docs(plan): v2-09 main layout evidence, result, STATE row, Q-v2-09-a (v2-09 AC-05) |
+| 7 | receipt | 228b145 | inbox: runner receipt for v2-09-main-layout |
+
+Fix round r1 (`work/briefs/fix-v2-09-main-layout-r1.md`), after the receipt above:
+
+| # | Finding | commit | subject |
+|---|---|---|---|
+| 8 | F-r1-01 | 801054e | fix(gui): a long description is cut with … instead of dropped (v2-09 F-r1-01) |
+
+The F-r1-02 and F-r1-03 commits are listed in `work/inbox/runner-v2-09-main-layout-fix-r1.md`.
 
 ## Gate
 
