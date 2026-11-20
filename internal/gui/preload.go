@@ -75,6 +75,19 @@ func (m *Model) nextPreloadReads() []tea.Cmd {
 	return cmds
 }
 
+// absorbPreload puts a landed preload read's count into the Status dashboard,
+// and the Status sidebar's rows with it. A failed read adds nothing: its count
+// stays unknown, and its error shows on its own panel alone (AC-02.2).
+func (m *Model) absorbPreload(msg DataLoadedMsg) {
+	if msg.Err != nil {
+		return
+	}
+	m.status.absorbPanel(msg.PanelID, msg)
+	status := m.panels[PanelStatus]
+	status.items = statusRows(m.status)
+	status.normalize()
+}
+
 // promotePreload moves a queued panel to the front of the queue, so the read the
 // user's switch needs starts as soon as a slot frees. It reports whether the
 // panel was queued; a panel in flight or not queued is left alone.

@@ -56,7 +56,7 @@ func (m Model) packagesBody(inner int) string {
 	body := presentation.Detail([]presentation.Field{
 		countField("Formulae", s.Formulae, "installed"),
 		countField("Casks", s.Casks, "installed"),
-		outdatedField(s.Outdated),
+		outdatedField(s.Outdated, m.outdatedPending()),
 	}, inner)
 	if !s.Outdated.Known {
 		return body
@@ -141,9 +141,20 @@ func countField(label string, c knownCount, noun string) presentation.Field {
 	return presentation.Field{Label: label, Value: fmt.Sprintf("%d %s", c.N, noun)}
 }
 
-// outdatedField is the Outdated row. Unknown is said so, never shown as 0.
-func outdatedField(c knownCount) presentation.Field {
+// outdatedPending reports whether the Outdated count is on its way: the preload
+// has that read queued or in flight. Without the preload, or once its read has
+// failed, the count is not loaded and R is how to load it.
+func (m Model) outdatedPending() bool {
+	p := m.panels[PanelOutdated]
+	return m.cfg.GUI.Preload && !p.loaded && p.err == nil
+}
+
+// outdatedField is the Outdated row. Unknown is said so, never shown as 0: as
+// loading while its preload read is on its way, else as not loaded.
+func outdatedField(c knownCount, pending bool) presentation.Field {
 	switch {
+	case !c.Known && pending:
+		return presentation.Field{Label: "Outdated", Value: "loading…", Role: style.SubtleColor}
 	case !c.Known:
 		return presentation.Field{Label: "Outdated", Value: "not loaded — press R", Role: style.SubtleColor}
 	case c.N > 0:

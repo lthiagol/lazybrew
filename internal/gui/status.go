@@ -1,6 +1,10 @@
 package gui
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/lthiagol/lazybrew/internal/brew"
+)
 
 // statusSummary is what the status dashboard read, typed. The dashboard load
 // carries it into the model, so the Status sidebar and the header show counts
@@ -23,6 +27,36 @@ type statusSummary struct {
 	// Problems are the sources other than doctor that failed or timed out,
 	// as ⚠ lines.
 	Problems []string
+}
+
+// absorbPanel carries one panel's read into the summary, so its count shows on
+// the dashboard as the panel lands, with no second run of the dashboard's reads.
+// It counts what statusDashboard counts, from the panel's own data.
+func (s *statusSummary) absorbPanel(id PanelID, msg DataLoadedMsg) {
+	switch id {
+	case PanelFormulae:
+		s.Formulae = knownCount{N: len(msg.Formulae), Known: true}
+	case PanelCasks:
+		s.Casks = knownCount{N: len(msg.Casks), Known: true}
+	case PanelOutdated:
+		s.Outdated = knownCount{N: len(msg.Formulae) + len(msg.Casks), Known: true}
+	case PanelTaps:
+		s.Taps = knownCount{N: len(msg.Taps), Known: true}
+		s.OfficialTaps = 0
+		for _, t := range msg.Taps {
+			if t.IsOfficial {
+				s.OfficialTaps++
+			}
+		}
+	case PanelServices:
+		s.Services = knownCount{N: len(msg.Services), Known: true}
+		s.ServicesStarted = 0
+		for _, svc := range msg.Services {
+			if svc.Status == brew.ServiceStarted {
+				s.ServicesStarted++
+			}
+		}
+	}
 }
 
 // knownCount is a count and whether its source answered. An unknown count is
