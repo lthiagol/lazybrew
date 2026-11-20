@@ -195,13 +195,24 @@ func sameError(a, b error) bool {
 	return a.Error() == b.Error()
 }
 
+// logsNote is whether the Logs tab says that stderr and stdout share a file. It
+// says so only while it shows that file's lines.
+func (m Model) logsNote() bool {
+	return m.logs.stream == stderrStream && m.logsSameFile() && m.logs.loaded && m.logs.err == nil
+}
+
 // contentHead is the header of the main content that stays on screen while the
-// content scrolls: the Logs tab's stream and file. It is "" on other tabs.
+// content scrolls: the Logs tab's stream and file, and the shared-file note when
+// it applies. It is "" on other tabs.
 func (m Model) contentHead(width int) string {
 	if !m.onLogsTab() {
 		return ""
 	}
-	return style.SubtleText.Render(logHeader(m.logs.stream, m.logPath(), width))
+	head := style.SubtleText.Render(logHeader(m.logs.stream, m.logPath(), width))
+	if m.logsNote() {
+		head += "\n" + style.SubtleText.Render("stderr goes to the same file as stdout")
+	}
+	return cutLines(head, width)
 }
 
 // renderServiceLogs is the Logs tab of Services, below its header: the last
@@ -220,9 +231,6 @@ func (m Model) renderServiceLogs(width int) string {
 	case m.logs.err != nil:
 		rows = append(rows, style.SubtleText.Render(m.logs.err.Error()))
 	default:
-		if m.logs.stream == stderrStream && m.logsSameFile() {
-			rows = append(rows, style.SubtleText.Render("stderr goes to the same file as stdout"))
-		}
 		rows = append(rows, m.logs.lines...)
 	}
 	return cutLines(strings.Join(rows, "\n"), width)
