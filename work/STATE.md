@@ -21,7 +21,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-07-op-dismiss | 0dfd9ff, ede3959, 21b3b21, 21fb1a1 | closed | ok |
 | v2-08-preload | 1471c38, 2237be9, fd55e63, a8a1c38, 253c3ba, e3c4e08, b23a9d8, 3eed39a, f6107b4, 39f34d2 | closed | ok |
 | v2-09-main-layout | fd1bde3, 12a3b1b, 95766a6, 539a515, 7f6e93b, 801054e, 77f0e2c, d2b31bd, e8bde9a, b2ac4f6, 5d22e50, 5d04885, a3d3d93 | closed | ok |
-| v2-11-cancel-and-test-speed | — | implemented | awaiting reviewer |
+| v2-11-cancel-and-test-speed | d76b8de, f11d2a6, 02e9cac, 74c4438, 1872c96, 5174d37 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -324,3 +324,13 @@ Review: r1 a long description dropped the whole column, commit order, per-row
 map; r2 a kept column could shrink to `G…`; r3 ok → orchestrator ruling
 Q-v2-09-a lowered the split threshold (100 never fired at 140x40) and padded
 the Log; r4 split broke paths mid-token; r5 `ok`.
+
+**v2-11-cancel-and-test-speed — closed (r2 `ok`).** brew runs in its own
+session (`Setsid`), so a cancel kills its whole process tree (Esc on an
+install no longer waits for curl/git) and a step that wants a sudo password
+fails at once with `needs sudo — run "brew …" in a terminal` instead of
+hanging. Tests no longer wait on the wall clock (race run 38.9 s → 20.8 s);
+CI runs `-race`. Review: r1 `ok` with an observation (sudo prompt would stop
+silently under `Setpgid`) → orchestrator ruling Q-v2-11-b; r2 `ok`.
+Accepted trade-off: any tty prompt brew triggers (sudo, git credentials) fails
+fast instead of drawing over the TUI.
