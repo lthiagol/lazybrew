@@ -93,8 +93,9 @@ func buildHelp() []helpPage {
 				{
 					items: []helpItem{
 						{"a", "Add tap"},
-						{"x", "Remove tap"},
-						{"t", "Trust config"},
+						{"x", "Untap"},
+						{"t", "Trust or untrust tap"},
+						{"T", "Trust a formula or cask"},
 						{"r", "Repair tap"},
 					},
 				},

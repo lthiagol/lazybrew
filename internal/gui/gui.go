@@ -977,6 +977,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "t":
 			if m.activePanel == PanelTaps {
+				m, cmd := m.toggleTrust()
+				return m, cmd
+			}
+		case "T":
+			if m.activePanel == PanelTaps {
 				m, cmd := m.startTrustMenu()
 				return m, cmd
 			}

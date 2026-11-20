@@ -162,6 +162,10 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 				return m.batchUpgrade()
 			case "untap":
 				return m.executeUntap()
+			case "untrust":
+				m.pendingAction = ""
+				cmd := m.executeTrustAction(1)
+				return *m, cmd
 			case "repair":
 				return m.executeRepair()
 			case "cleanup":
@@ -206,8 +210,10 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 
 func (m *Model) executeMenuAction(selectedIndex int) tea.Cmd {
 	switch {
-	case m.activePanel == PanelTaps && selectedIndex >= 0 && selectedIndex <= 1:
-		return m.executeTrustAction(selectedIndex)
+	case m.activePanel == PanelTaps && selectedIndex == 1:
+		return m.openUntrustConfirm()
+	case m.activePanel == PanelTaps && selectedIndex == 0:
+		return m.executeTrustAction(0)
 	default:
 		return m.executeBrewfileAction(selectedIndex)
 	}
@@ -231,7 +237,8 @@ func (m *Model) executeTrustMenuAction(index int) tea.Cmd {
 	case index == 0:
 		return m.executeTrustAction(0)
 	case index == 1:
-		return m.executeTrustAction(1)
+		// Untrust is always confirmed, here as on t (v2-10 AC-02.1).
+		return m.openUntrustConfirm()
 	case index == formulaIdx && formulaIdx >= 0:
 		if tap != nil && len(tap.FormulaNames) > 0 {
 			menuModal := modal.NewMenuModal("Trust formula in "+tapName, tap.FormulaNames)
@@ -783,10 +790,54 @@ func (m Model) executeTapAdd(name string) (tea.Model, tea.Cmd) {
 // not known (v2-10 AC-00.2).
 const trustStateMissingToast = "trust state not loaded — press R"
 
+// officialTrustToast says an official tap needs no trust. Trust is refused on
+// it, and t and T say so rather than act (v2-10 AC-02.1).
+func officialTrustToast(name string) string {
+	return name + " is official — no trust needed"
+}
+
+// toggleTrust is t on the Taps list (v2-10 AC-02.1): an untrusted tap is trusted
+// at once, a trusted one is untrusted after a confirm, and an official one needs
+// no trust, so it enqueues nothing.
+func (m *Model) toggleTrust() (tea.Model, tea.Cmd) {
+	panel := m.panels[PanelTaps]
+	if panel.trustUnknown {
+		toast := m.setToast(trustStateMissingToast, modal.ToastInfo)
+		return m, toast
+	}
+	tap := panel.selectedTap()
+	if tap == nil {
+		return m, nil
+	}
+	switch {
+	case tap.IsOfficial:
+		toast := m.setToast(officialTrustToast(tap.Name), modal.ToastInfo)
+		return m, toast
+	case tap.Trusted:
+		return m, m.openUntrustConfirm()
+	default:
+		return m, m.executeTrustAction(0)
+	}
+}
+
+// openUntrustConfirm asks before a tap is untrusted. The confirm acts on the
+// tap the cursor is on, as the untap confirm does.
+func (m *Model) openUntrustConfirm() tea.Cmd {
+	name := extractPackageName(m.panels[PanelTaps].selectedItem())
+	m.pendingAction = "untrust"
+	m.activeModal = modal.NewConfirmModal(modal.ActionUpgrade, "Untrust", "Untrust "+name+"?").
+		WithDetail("Homebrew will refuse to load its formulae and casks until you trust it again.")
+	return m.activeModal.Init()
+}
+
 func (m *Model) startTrustMenu() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
 	if panel.trustUnknown {
 		toast := m.setToast(trustStateMissingToast, modal.ToastInfo)
+		return m, toast
+	}
+	if tap := panel.selectedTap(); tap != nil && tap.IsOfficial {
+		toast := m.setToast(officialTrustToast(tap.Name), modal.ToastInfo)
 		return m, toast
 	}
 	if panel.selected >= len(panel.items) {
