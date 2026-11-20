@@ -705,3 +705,27 @@ tested packages not at all (logtail, task, style, anim, config, app).
 **Ruling:** every package with tests gets a floor = measured rounded down,
 less 2 points of headroom; a new package gets its floor in the slice that adds
 it. Done by the orchestrator directly (one commit, `make ci` green).
+
+## Questions raised — slice `cr1-correctness` (runner lane)
+
+### Q-cr1-cask-name — cask rows show brew's display name, not the token
+
+- **Evidence.** `brew info --json=v2 --cask --installed` on this machine gives
+  `"token": "claude-code"` and `"name": ["Claude Code"]`. `parseCask` reads
+  `name` (the first list element), so `Cask.Name` is `Claude Code`. Checked by
+  parsing the real payload with `parseCask` (not kept in the tree).
+- **Effect.** The Casks list and every cask action (uninstall, upgrade,
+  reinstall, pin, batch) send `Claude Code` where brew needs `claude-code`.
+- **Not fixed in cr1.** It is outside the cr1 acceptance criteria. The search
+  info shows the same wrong name.
+- **Proposed.** A follow-up slice: `parseCask` reads `token` (falls back to
+  `name`), with a fixture in the current brew shape. Owner: the orchestrator's
+  ruling.
+
+### Q-cr1-init-autorefresh — Init now arms auto-refresh under update_on_start
+
+- **Decision made in cr1 AC-05.** Before, `Init` armed the auto-refresh tick
+  only when `update_on_start` was off. Auto-refresh was then started by
+  `RefreshMsg`, which AC-05 stops doing. `Init` now arms it in both branches.
+- **Ask.** Confirm that auto-refresh should run with update_on_start on. The
+  default is `auto_refresh_seconds: 0`, so the default setup is unchanged.
