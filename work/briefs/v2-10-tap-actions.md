@@ -33,6 +33,19 @@ never submit the add-tap input.
 One commit per criterion, in order, staged by name. Every commit builds and
 passes the tests; `TestEveryFrameIsTerminalSize` passes at every commit.
 
+### AC-00 — a Taps list read without trust state says so (Q-v2-08-b)
+
+1. When `brew tap-info` times out or fails, `tapsReader.List` returns a
+   name-only list today, silently (no error, `0 trusted`). Make that state
+   explicit: the list carries a flag (e.g. `Degraded`/`TrustUnknown`) from
+   `internal/brew`, and the GUI shows it — the Taps box's right label and Tap
+   Info say `trust unknown — press R` (Warning role), rows show no trusted /
+   untrusted word.
+2. While trust is unknown, `t`/`T` enqueue nothing and show an info toast
+   (`trust state not loaded — press R`). `x`, `r`, `a` still work.
+3. Tests in `internal/brew` (mock runner: tap-info error/timeout → flagged
+   list, not cached) and in the GUI (View asserts, refused `t`).
+
 ### AC-01 — Tap Info shows the actions that apply now
 
 1. Below the Tap Info fields, a key line of the actions that apply to the
@@ -86,7 +99,7 @@ passes the tests; `TestEveryFrameIsTerminalSize` passes at every commit.
 - No change to how other panels work. Only key change: `T` for the per-item
   trust menu (AC-02.2).
 - Every write through `task.Manager`; no new brew command beyond those
-  already wired.
+  already wired. `internal/brew/**` changes limited to AC-00.
 - Every frame exactly the terminal size. No test deleted, skipped or
   weakened; changed expectations named. Coverage floors unchanged. No new
   dependencies.

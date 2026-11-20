@@ -500,3 +500,13 @@ orchestrator can redirect either.
   (as the other reads do), or stay a silent fallback? Changing it touches
   `internal/brew/**`, which this slice does not.
 - **Raised by:** runner lane (slice `v2-08-preload`).
+
+### Orchestrator rulings on the v2-08 runner questions (2026-11-20)
+
+- **Q-v2-08-a:** accepted — a failed preloaded panel keeps the existing retry
+  on switch.
+- **Q-v2-08-b:** not a silent fallback any more, but not in v2-08. The slow
+  read came from a network outage this morning; brew is back to 0.9 s. It moves
+  to `v2-10-tap-actions` (new AC-00 there), because the trust toggle must not
+  act on a trust state that was never read: a name-only Taps list must say so
+  in the panel and refuse `t`/`T` until a full read lands.
