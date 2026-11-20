@@ -17,6 +17,7 @@ learn what is done, what is in flight, and where to pick up.
 | v2-04-overlays-styled | f8a8b10, 54fe613, aa432d6, b8c110d, 6b01ecb, 215aadd, 23dbb79, 40588cf, f6807c4, f4b4127, 64bc9d8 | closed | ok |
 | v2-05-content-polish | 1192a40, ca14a11, c1b4b07, dfb79fb, 158e76e, f818b81, 0a03277, 7f8d584, 730c6ce, 0831cd8, da7d80e | closed | ok |
 | v2-05s-services | e8add34, a4bc483, 421c0ba, 7d8b51c, befbf7e, a97a13a | closed | ok |
+| v2-06-animations | — | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,

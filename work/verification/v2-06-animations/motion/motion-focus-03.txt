@@ -1,0 +1,40 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                                                                                125 formulae  2 casks
+╭─ 1 ◉ Status ──────────────────────────────────╮╭─ Formulae › Info ───────────────────────────────────────────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f335ae                 ││  Info    Deps    Used By    Caveats    Files                                            │
+│  Prefix    /home/linuxbrew/.linuxbrew         ││━━━━━━━━                                                                                 │
+│  Formulae  125                                ││Name:         alsa-lib                                                                   │
+╰───────────────────────────────────────────────╯│Version:      1.2.16.1_1                                                                 │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│Tap:          homebrew/core                                                              │
+│▸ ✓ alsa-lib                         1.2.16.1_1││Status:       ✓ installed                                                                │
+│  ✓ bash                                 5.3.20││License:      LGPL-2.1-or-later AND GPL-2.0-or-later                                     │
+│  ✓ bat                                  0.26.1││Homepage:     https://www.alsa-project.org/                                              │
+│  ✓ brotli                                1.2.1││Bottled:      yes                                                                        │
+│  ✓ btop                                  1.4.8││Description:  Provides audio and MIDI functionality to the Linux operating system        │
+│  ✓ bzip2                                 1.0.8││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 3 ▣ Casks ────────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 4 ↑ Outdated ─────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 5 ⊕ Taps ──────────────────────────────── 3 ─╮│                                                                                         │
+│▸ ⚠ danielfoehrkn/switch              untrusted││                                                                                         │
+│  ✓ lthiagol/tap                        trusted││                                                                                         │
+│  ✓ rjyo/moshi                          trusted││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 6 ◎ Services ─────────────────── not loaded ─╮╰─────────────────────────────────────────────────────────────────────────────────────────╯
+│                                               │╭─ Log ───────────────────────────────────────────────────────────────────────────────────╮
+│                                               ││No commands executed yet                                                                 │
+╰───────────────────────────────────────────────╯│                                                                                         │
+╭─ 7 ⌕ Search ───────────────────── not loaded ─╮│                                                                                         │
+│                                               ││                                                                                         │
+│                                               ││                                                                                         │
+╰───────────────────────────────────────────────╯╰─────────────────────────────────────────────────────────────────────────────────────────╯
+ j/k navigate  [ ] tabs  i install  x remove  r reinstall  u upgrade  U upgrade all  p pin  L leaves  F fetch  Tab next  S-Tab prev  ? more 

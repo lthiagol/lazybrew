@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                    125 formulae  2 casks
+╭─ 1 ◉ Status ─────────────╮╭─ Services › Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Info                                            │
+╰──────────────────────────╯│━━━━━━━━                                          │
+╭─ 2 ∘ Formulae ───── 125 ─╮│Name:         moshi-hook                          │
+│  ✓ alsa-lib    1.2.16.1_1││Status:       ▶ running                           │
+╰──────────────────────────╯│PID:          800                                 │
+╭─ 3 ▣ Casks ────────── 2 ─╮│User:         agent                               │
+│▸ ✓ Claude Code    2.1.311││Loaded:       yes                                 │
+╰──────────────────────────╯│Registered:   yes                                 │
+╭─ 4 ↑ Outdated ─────── 0 ─╮│Unit file:    /home/agent/.config/systemd/user/sh…│
+│                          ││Command:      /home/linuxbrew/.linuxbrew/opt/mosh…│
+╰──────────────────────────╯│Working dir:  /home/linuxbrew/.linuxbrew/var      │
+╭─ 5 ⊕ Taps ─────────── 1 ─╮│Log:          /home/linuxbrew/.linuxbrew/var/log/…│
+│▸ homebrew/cask-versions …││                                                  │
+╰──────────────────────────╯│ S stop  r restart  c cleanup                     │
+╭─ 6 ◎ Services ─────── 3 ─╮│                                                  │
+│  dbus                none││                                                  │
+│▸ ▶ moshi-hook     started│╰──────────────────────────────────────────────────╯
+╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ───────── – ─╮│No commands executed yet                          │
+│                          ││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ S stop  r restart  j/k navigate  c cleanup  Tab next  S-Tab prev  ? more       
