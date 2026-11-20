@@ -26,15 +26,6 @@ func iconSet(cfg *config.Config) style.Icons {
 	return icons
 }
 
-// withIcon prefixes text with its glyph and a space. An empty glyph, as with
-// show_icons: false, leaves the text alone, with no stray leading space.
-func withIcon(icon, text string) string {
-	if icon == "" {
-		return text
-	}
-	return icon + " " + text
-}
-
 // panelIcon is the glyph a panel's sidebar title carries.
 func (m Model) panelIcon(id PanelID) string {
 	switch id {

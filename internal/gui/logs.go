@@ -10,8 +10,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 	"github.com/lthiagol/lazybrew/internal/logtail"
 )
 
@@ -288,5 +288,5 @@ func elidePath(path string, w int) string {
 			return cand
 		}
 	}
-	return ansi.Truncate(path, max(0, w), "…")
+	return textutil.Clip(path, w)
 }

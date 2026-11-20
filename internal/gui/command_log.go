@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
+	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -155,7 +156,7 @@ func (cl *CommandLog) View(width, height int) string {
 			glyph = icons.Error
 			cmdStyle = style.ErrorBadge
 		}
-		line := withIcon(glyph, "brew "+e.Command)
+		line := presentation.WithIcon(glyph, "brew "+e.Command)
 		lines = append(lines, cmdStyle.Render(line))
 	}
 

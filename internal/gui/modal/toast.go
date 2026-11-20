@@ -10,6 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 type ToastType int
@@ -115,13 +116,13 @@ const toastMaxRows = 3
 // toastMaxRows rows.
 func toastRows(msg string, width int) []string {
 	if width < 1 {
-		return []string{ansi.Truncate(msg, width, "…")}
+		return []string{textutil.Clip(msg, width)}
 	}
 	all := strings.Split(ansi.Wrap(msg, width, ""), "\n")
 	if len(all) <= toastMaxRows {
 		return all
 	}
-	last := ansi.Truncate(strings.Join(all[toastMaxRows-1:], " "), width, "…")
+	last := textutil.Clip(strings.Join(all[toastMaxRows-1:], " "), width)
 	return append(all[:toastMaxRows-1:toastMaxRows-1], last)
 }
 

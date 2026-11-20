@@ -5,8 +5,6 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
-	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // handleMouse routes mouse input when gui.mouse is enabled.
@@ -76,7 +74,7 @@ func (m Model) handleMouseWheel(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 
 	y := mouse.Y - headerRows
 	l := m.screenLayout()
-	if mouse.X >= sidebarWidth(m.cfg, m.width) {
+	if mouse.X >= l.sideW {
 		// The Log box is below the main panel; a notch there scrolls nothing.
 		if y < 0 || y >= l.mainH {
 			return m, nil
@@ -201,13 +199,7 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 func (m Model) handleTabBarClick(ix int) (tea.Model, tea.Cmd) {
 	x := 0
 	for i, tab := range m.tabs {
-		label := " " + tab.name + " "
-		var w int
-		if i == m.activeTab {
-			w = lipgloss.Width(style.TabActive.Render(label))
-		} else {
-			w = lipgloss.Width(style.TabInactive.Render(label))
-		}
+		w := tabWidth(tab.name)
 		if ix >= x && ix < x+w {
 			if i == m.activeTab {
 				return m, nil

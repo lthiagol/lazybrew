@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
+	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 // headerRows is the height of the bar across the top of the screen.
@@ -21,7 +23,7 @@ const headerGap = "  "
 // shown as 0. The name always stays; badges drop from the left when the bar
 // is short.
 func (m Model) renderHeader() string {
-	left := style.AccentText.Render(withIcon(m.icons.App, "lazybrew"))
+	left := style.AccentText.Render(presentation.WithIcon(m.icons.App, "lazybrew"))
 	if m.status.Version != "" {
 		left += headerGap + style.SubtleText.Render("Homebrew "+m.status.Version)
 	}
@@ -44,7 +46,7 @@ func (m Model) renderHeader() string {
 	room := m.width - lipgloss.Width(left) - lipgloss.Width(right) - reserve
 	middle := ""
 	if op != "" && room > lipgloss.Width(headerGap) {
-		middle = headerGap + clipLine(op, room-lipgloss.Width(headerGap))
+		middle = headerGap + textutil.Clip(op, room-lipgloss.Width(headerGap))
 	}
 	spaces := max(0, m.width-lipgloss.Width(left)-lipgloss.Width(middle)-lipgloss.Width(right))
 	line := left + middle + strings.Repeat(" ", spaces) + right
@@ -56,9 +58,9 @@ func (m Model) renderHeader() string {
 func (m Model) headerOperation() string {
 	switch {
 	case m.opState != nil && m.opState.Running():
-		return style.AccentText.Render(withIcon(m.icons.Refresh, m.opState.Title))
+		return style.AccentText.Render(presentation.WithIcon(m.icons.Refresh, m.opState.Title))
 	case m.refreshing > 0:
-		return style.SubtleText.Render(withIcon(m.icons.Refresh, "refreshing…"))
+		return style.SubtleText.Render(presentation.WithIcon(m.icons.Refresh, "refreshing…"))
 	}
 	return ""
 }

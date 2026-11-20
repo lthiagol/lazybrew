@@ -100,7 +100,7 @@ func FormatFormulaInfo(f brew.Formula, width int, icons style.Icons) string {
 		{Label: "Status", Value: status, Role: role},
 		{Label: "License", Value: f.License},
 		{Label: "Homepage", Value: f.Homepage, Role: style.InfoColor},
-		{Label: "Bottled", Value: yesNo(f.Bottled)},
+		{Label: "Bottled", Value: YesNo(f.Bottled)},
 		{Label: "Description", Value: f.Description, Prose: true, Right: true},
 	}, width)
 }
@@ -143,24 +143,25 @@ func caskStatus(c brew.Cask, icons style.Icons) (string, color.Color) {
 func installedStatus(icons style.Icons, pinned, outdated bool, version, newVersion string) (string, color.Color) {
 	switch {
 	case pinned:
-		return withIcon(icons.Pinned, "pinned"), style.SecondaryColor
+		return WithIcon(icons.Pinned, "pinned"), style.SecondaryColor
 	case outdated:
-		return withIcon(icons.Outdated, fmt.Sprintf("outdated %s → %s", version, newVersion)), style.WarningColor
+		return WithIcon(icons.Outdated, fmt.Sprintf("outdated %s → %s", version, newVersion)), style.WarningColor
 	default:
-		return withIcon(icons.Installed, "installed"), style.SuccessColor
+		return WithIcon(icons.Installed, "installed"), style.SuccessColor
 	}
 }
 
-// withIcon prefixes text with its glyph and a space; an empty glyph leaves the
+// WithIcon prefixes text with its glyph and a space; an empty glyph leaves the
 // text alone, as the icon set does when icons are off.
-func withIcon(icon, text string) string {
+func WithIcon(icon, text string) string {
 	if icon == "" {
 		return text
 	}
 	return icon + " " + text
 }
 
-func yesNo(b bool) string {
+// YesNo is the text of a yes/no field.
+func YesNo(b bool) string {
 	if b {
 		return "yes"
 	}

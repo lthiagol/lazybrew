@@ -89,8 +89,8 @@ func (m Model) servicesBody(inner int) string {
 	}
 	stopped := s.Services.N - s.ServicesStarted
 	return presentation.Detail([]presentation.Field{
-		{Label: "Running", Value: withIcon(m.icons.Running, fmt.Sprint(s.ServicesStarted)), Role: style.SuccessColor},
-		{Label: "Stopped", Value: withIcon(m.icons.Stopped, fmt.Sprint(stopped)), Role: style.MutedColor},
+		{Label: "Running", Value: presentation.WithIcon(m.icons.Running, fmt.Sprint(s.ServicesStarted)), Role: style.SuccessColor},
+		{Label: "Stopped", Value: presentation.WithIcon(m.icons.Stopped, fmt.Sprint(stopped)), Role: style.MutedColor},
 	}, inner)
 }
 
@@ -103,15 +103,15 @@ func (m Model) healthBody() string {
 	var rows []string
 	switch {
 	case s.DoctorErr != "":
-		rows = append(rows, warningLines(withIcon(m.icons.Warn, "doctor unavailable: "+s.DoctorErr))...)
+		rows = append(rows, warningLines(presentation.WithIcon(m.icons.Warn, "doctor unavailable: "+s.DoctorErr))...)
 	case !s.Doctor.Known:
 		rows = append(rows, style.SubtleText.Render("press d to run doctor"))
 	case s.Doctor.N == 0:
 		rows = append(rows, style.SuccessText.
-			Render(withIcon(m.icons.OK, "ready to brew")))
+			Render(presentation.WithIcon(m.icons.OK, "ready to brew")))
 	default:
 		rows = append(rows, style.WarningText.
-			Render(withIcon(m.icons.Warn, fmt.Sprintf("%d %s", s.Doctor.N, plural(s.Doctor.N, "warning", "warnings")))))
+			Render(presentation.WithIcon(m.icons.Warn, fmt.Sprintf("%d %s", s.Doctor.N, plural(s.Doctor.N, "warning", "warnings")))))
 	}
 	for _, p := range s.Problems {
 		rows = append(rows, warningLines(p)...)
@@ -195,11 +195,11 @@ func valueOr(s, fallback string) string {
 func doctorView(warnings []brew.DoctorWarning, icons style.Icons) string {
 	if len(warnings) == 0 {
 		return style.SuccessText.
-			Render(withIcon(icons.OK, "Your system is ready to brew."))
+			Render(presentation.WithIcon(icons.OK, "Your system is ready to brew."))
 	}
 	blocks := make([]string, 0, len(warnings))
 	for _, w := range warnings {
-		heading := style.WarningText.Render(withIcon(icons.Warn, w.Title))
+		heading := style.WarningText.Render(presentation.WithIcon(icons.Warn, w.Title))
 		blocks = append(blocks, heading+"\n"+style.NormalItem.Render(strings.TrimRight(w.Details, "\n")))
 	}
 	return strings.Join(blocks, "\n\n")

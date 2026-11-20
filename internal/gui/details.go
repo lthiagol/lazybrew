@@ -2,16 +2,15 @@ package gui
 
 import (
 	"fmt"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/presentation"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 	"image/color"
 	"maps"
 	"slices"
 	"strconv"
 	"strings"
-
-	"github.com/charmbracelet/x/ansi"
-	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/gui/presentation"
-	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // The tab indices of the panels whose sidebar list is the list (v2-03b). Their
@@ -75,7 +74,7 @@ func tapDetails(t *brew.Tap, trustKnown bool, width int) string {
 	return presentation.Info([]presentation.Field{
 		{Label: "Tap", Value: t.Name},
 		trustField,
-		{Label: "Official", Value: boolStr(t.IsOfficial)},
+		{Label: "Official", Value: presentation.YesNo(t.IsOfficial)},
 		{Label: "Remote", Value: t.Remote, Role: style.InfoColor, Right: true},
 		{Label: "Formulae", Value: strconv.Itoa(t.FormulaCount), Right: true},
 		{Label: "Casks", Value: strconv.Itoa(t.CaskCount), Right: true},
@@ -189,8 +188,8 @@ func serviceInfoDetail(s brew.ServiceInfo, width int, icons style.Icons) string 
 		{Label: "Status", Value: status, Role: role},
 		{Label: "PID", Value: optionalInt(s.PID)},
 		{Label: "User", Value: s.User},
-		{Label: "Loaded", Value: boolStr(s.Loaded)},
-		{Label: "Registered", Value: boolStr(s.Registered)},
+		{Label: "Loaded", Value: presentation.YesNo(s.Loaded)},
+		{Label: "Registered", Value: presentation.YesNo(s.Registered)},
 		{Label: "Unit file", Value: s.File, Right: true},
 		{Label: "Command", Value: s.Command, Right: true},
 		{Label: "Working dir", Value: s.WorkingDir, Right: true},
@@ -231,13 +230,13 @@ func serviceStoppable(s brew.Service) bool {
 func serviceStatus(status brew.ServiceStatus, icons style.Icons) (string, color.Color) {
 	switch status {
 	case brew.ServiceStarted:
-		return withIcon(icons.Running, "running"), style.SuccessColor
+		return presentation.WithIcon(icons.Running, "running"), style.SuccessColor
 	case brew.ServiceStopped:
-		return withIcon(icons.Stopped, "stopped"), style.MutedColor
+		return presentation.WithIcon(icons.Stopped, "stopped"), style.MutedColor
 	case brew.ServiceError:
-		return withIcon(icons.Error, "error"), style.ErrorColor
+		return presentation.WithIcon(icons.Error, "error"), style.ErrorColor
 	case brew.ServiceScheduled:
-		return withIcon(icons.Scheduled, "scheduled"), style.InfoColor
+		return presentation.WithIcon(icons.Scheduled, "scheduled"), style.InfoColor
 	case "":
 		return "none", style.MutedColor
 	default:
@@ -292,7 +291,7 @@ func renderOutdatedVersions(p *panelData, batch map[int]bool, width int) string 
 			{Label: "Name", Value: f.Name},
 			{Label: "Installed", Value: f.Version},
 			{Label: "Latest", Value: f.NewVersion},
-			{Label: "Pinned", Value: boolStr(f.Pinned)},
+			{Label: "Pinned", Value: presentation.YesNo(f.Pinned)},
 		}, width)
 	case p.selectedOutdatedCask() != nil:
 		c := p.selectedOutdatedCask()
@@ -318,7 +317,7 @@ func renderOutdatedVersions(p *panelData, batch map[int]bool, width int) string 
 func cutLines(s string, width int) string {
 	lines := strings.Split(s, "\n")
 	for i, line := range lines {
-		lines[i] = ansi.Truncate(line, width, "…")
+		lines[i] = textutil.Clip(line, width)
 	}
 	return strings.Join(lines, "\n")
 }

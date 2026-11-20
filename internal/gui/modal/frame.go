@@ -7,6 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 // Widths of the modal frames. A confirm dialog is min(frame-8, 72) wide; the
@@ -58,12 +59,6 @@ func leftBlock(lines []string) []string {
 	return out
 }
 
-// fitLine cuts a single-line part (a chip, a key line, a menu item) to the text
-// width of a box, ending it with an ellipsis when it does not fit.
-func fitLine(s string, width int) string {
-	return ansi.Truncate(s, innerWidth(width), "…")
-}
-
 // cutRow is the ellipsis that replaces the last body row a dialog cannot hold.
 // It keeps that row's indent and is padded to its width, so when each row is
 // centred on its own it lands in the column of the row it replaces, not alone
@@ -84,7 +79,7 @@ func dialog(accent color.Color, label string, width int, body []string, keys str
 		Bold(true).
 		Foreground(style.BgColor).
 		Background(accent).
-		Render(fitLine(" "+strings.ToUpper(label)+" ", width))
+		Render(textutil.Clip(" "+strings.ToUpper(label)+" ", innerWidth(width)))
 
 	lines := strings.Split(strings.Join(body, "\n"), "\n")
 	// The chip, two blank rows and the key line take 4 rows; with the border

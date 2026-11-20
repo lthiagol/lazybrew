@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 // tableCol is one column of a main-area table. drop orders the columns that
@@ -51,7 +51,7 @@ func renderTable(cols []tableCol, rows []tableRow, w int) string {
 	for _, r := range rows {
 		switch {
 		case r.heading != "":
-			out = append(out, style.SubtleText.Render(cutCell(r.heading, w)))
+			out = append(out, style.SubtleText.Render(textutil.Clip(r.heading, w)))
 		case len(r.cells) == 0:
 			out = append(out, "")
 		default:
@@ -189,16 +189,8 @@ func tableLine(cells []string, widths []int, paint func(string) string) string {
 		if i < len(cells) {
 			cell = cells[i]
 		}
-		cut := cutCell(cell, w)
+		cut := textutil.Clip(cell, w)
 		parts = append(parts, paint(cut)+strings.Repeat(" ", w-lipgloss.Width(cut)))
 	}
 	return strings.Join(parts, strings.Repeat(" ", tableGap))
-}
-
-// cutCell cuts s to w cells with …. Styles survive the cut.
-func cutCell(s string, w int) string {
-	if w <= 0 {
-		return ""
-	}
-	return ansi.Truncate(s, w, "…")
 }

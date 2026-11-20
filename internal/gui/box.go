@@ -5,6 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
+	"github.com/lthiagol/lazybrew/internal/gui/textutil"
 )
 
 // borderTitle is a box's title in two forms: full, with the panel's icon, and
@@ -53,13 +54,13 @@ func panel(title borderTitle, label borderLabel, body string, w, h int, focused 
 	// The side edge is the same glyph on every row: it is drawn once (cr3 AC-06).
 	side := edge.Render("│")
 	rows := make([]string, 0, h)
-	rows = append(rows, fitLine(top, w))
+	rows = append(rows, textutil.Fit(top, w))
 	for i := 0; i < h-2; i++ {
 		line := ""
 		if i < len(lines) {
 			line = lines[i]
 		}
-		rows = append(rows, side+fitLine(line, inner)+side)
+		rows = append(rows, side+textutil.Fit(line, inner)+side)
 	}
 	rows = append(rows, edge.Render("╰"+strings.Repeat("─", inner)+"╯"))
 	return strings.Join(rows, "\n")
@@ -74,7 +75,7 @@ func panel(title borderTitle, label borderLabel, body string, w, h int, focused 
 // and shows its full form when that fits, else its short form, else nothing.
 func borderHead(title borderTitle, label borderLabel, w int) (name, tail string) {
 	if label.full == "" {
-		return clipLine(title.full, w-7), ""
+		return textutil.Clip(title.full, w-7), ""
 	}
 	if label.count {
 		labelW := lipgloss.Width(label.full) + 2
@@ -83,9 +84,9 @@ func borderHead(title borderTitle, label borderLabel, w int) (name, tail string)
 				return n, " " + label.full + " "
 			}
 		}
-		return clipLine(title.bare, w-7-labelW), " " + label.full + " "
+		return textutil.Clip(title.bare, w-7-labelW), " " + label.full + " "
 	}
-	name = clipLine(title.full, w-7)
+	name = textutil.Clip(title.full, w-7)
 	room := w - 9 - lipgloss.Width(name)
 	switch {
 	case lipgloss.Width(label.full) <= room:
@@ -94,26 +95,4 @@ func borderHead(title borderTitle, label borderLabel, w int) (name, tail string)
 		return name, " " + label.short + " "
 	}
 	return name, ""
-}
-
-// clipLine cuts s to at most w cells, ending a cut line with an ellipsis.
-// Styles survive the cut, and nothing is padded.
-func clipLine(s string, w int) string {
-	if w <= 0 {
-		return ""
-	}
-	if lipgloss.Width(s) <= w {
-		return s
-	}
-	if w == 1 {
-		return "…"
-	}
-	return lipgloss.NewStyle().MaxWidth(w-1).Render(s) + "…"
-}
-
-// fitLine makes s exactly w cells: cut with an ellipsis when it is wider,
-// padded with spaces when it is narrower.
-func fitLine(s string, w int) string {
-	s = clipLine(s, w)
-	return s + strings.Repeat(" ", max(0, w-lipgloss.Width(s)))
 }
