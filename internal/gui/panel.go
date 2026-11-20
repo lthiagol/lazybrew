@@ -56,12 +56,12 @@ const (
 )
 
 var panelTabs = map[PanelID][]tabInfo{
-	PanelStatus:   {{"Dashboard", 0}, {"Config", 1}, {"Doctor", 2}},
+	PanelStatus:   {{"Dashboard", statusDashboardTab}, {"Config", statusConfigTab}, {"Doctor", statusDoctorTab}},
 	PanelFormulae: {{"Info", formulaInfoTab}, {"Deps", formulaDepsTab}, {"Used By", formulaUsesTab}, {"Caveats", formulaCaveatsTab}, {"Files", formulaFilesTab}},
 	PanelCasks:    {{"Info", 0}, {"Deps", 1}, {"Caveats", 2}},
-	PanelOutdated: {{"Info", 0}, {"Versions", 1}},
-	PanelTaps:     {{"Tap Info", 0}, {"Trust", 1}, {"Formulae", 2}},
-	PanelServices: {{"Status", 0}},
+	PanelOutdated: {{"Info", outdatedInfoTab}, {"Versions", outdatedVersionsTab}},
+	PanelTaps:     {{"Tap Info", tapInfoTab}, {"Trust", tapTrustTab}, {"Formulae", tapFormulaeTab}},
+	PanelServices: {{"Status", serviceStatusTab}},
 	PanelSearch:   {},
 }
 
@@ -86,7 +86,10 @@ type panelData struct {
 	casks              []brew.Cask
 	taps               []brew.Tap
 	services           []brew.Service
-	visibleRows        int
+	// dashboard is the Status dashboard's text, for its Dashboard tab. The
+	// sidebar rows for Status are built from the typed summary instead.
+	dashboard   []string
+	visibleRows int
 	// loaded is set once a fetch result has landed for this panel, error or
 	// not. It tells "never fetched" (not loaded) from "fetched, nothing
 	// there" (empty), which items alone cannot.
@@ -252,65 +255,6 @@ func (p *panelData) selectedService() *brew.Service {
 		return &p.services[p.selected]
 	}
 	return nil
-}
-
-func (p *panelData) renderList(width, height int, batch map[int]bool) string {
-	if p.loading {
-		return lipgloss.NewStyle().Width(width).Height(height).Render(style.SubtleText.Render("Loading..."))
-	}
-
-	if p.err != nil {
-		return lipgloss.NewStyle().Width(width).Height(height).Render(style.ErrorBadge.Render("Error: " + p.err.Error()))
-	}
-
-	// The list fills the main panel it is drawn in, and its window is
-	// derived from the cursor at render time. It must not use p.offset,
-	// which belongs to the sidebar box's window.
-	visible := max(1, height)
-	start := listWindow(p.selected, len(p.items), visible)
-	end := min(start+visible, len(p.items))
-	items := p.items[start:end]
-
-	lines := make([]string, 0, len(items))
-	for i, item := range items {
-		idx := start + i
-		prefix := "  "
-		if batch != nil && batch[idx] {
-			prefix = "● "
-		}
-		itemStyle := style.NormalItem
-		if idx == p.selected {
-			prefix = "▸ "
-			itemStyle = style.SelectedItem
-		}
-		if batch != nil && batch[idx] && idx == p.selected {
-			prefix = "▸●"
-			itemStyle = style.SelectedItem
-		}
-		rendered := lipgloss.NewStyle().Width(width).MaxWidth(width).Render(prefix + item)
-		lines = append(lines, itemStyle.Render(rendered))
-	}
-
-	if len(lines) == 0 {
-		return lipgloss.NewStyle().Width(width).Height(height).Render(style.SubtleText.Render(emptyMessage(p.id)))
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Top, lines...)
-}
-
-// listWindow returns the first row of a window of height rows over count
-// rows that keeps the cursor inside it. Rows above the cursor stay in view
-// while they fit. It is pure: rendering derives the window, never stores it.
-func listWindow(selected, count, height int) int {
-	if count == 0 {
-		return 0
-	}
-	sel := min(max(selected, 0), count-1)
-	start := 0
-	if sel >= height {
-		start = sel - height + 1
-	}
-	return max(0, min(start, count-height))
 }
 
 func emptyPanel(width, height int) string {

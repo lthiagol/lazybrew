@@ -22,8 +22,8 @@ const headerGap = "  "
 // is short.
 func (m Model) renderHeader() string {
 	left := style.AccentText.Render(withIcon(m.icons.App, "lazybrew"))
-	if m.brewVersion != "" {
-		left += headerGap + style.SubtleText.Render("Homebrew "+m.brewVersion)
+	if m.status.Version != "" {
+		left += headerGap + style.SubtleText.Render("Homebrew "+m.status.Version)
 	}
 
 	// The operation outranks the badges: badges drop first, from the left, and
@@ -67,19 +67,44 @@ func (m Model) headerOperation() string {
 // short the leftmost go first. A count is shown only once it is known.
 func (m Model) headerBadges() []string {
 	var badges []string
-	if p := m.panels[PanelFormulae]; p.loaded && p.err == nil {
-		badges = append(badges, style.SubtleText.Render(fmt.Sprintf("%d formulae", len(p.formulae))))
+	if n, ok := m.headerCount(PanelFormulae); ok {
+		badges = append(badges, style.SubtleText.Render(fmt.Sprintf("%d formulae", n)))
 	}
-	if p := m.panels[PanelCasks]; p.loaded && p.err == nil {
-		badges = append(badges, style.SubtleText.Render(fmt.Sprintf("%d casks", len(p.casks))))
+	if n, ok := m.headerCount(PanelCasks); ok {
+		badges = append(badges, style.SubtleText.Render(fmt.Sprintf("%d casks", n)))
 	}
-	if p := m.panels[PanelOutdated]; p.loaded && p.err == nil && len(p.items) > 0 {
-		badges = append(badges, style.OutdatedBadge.Render(fmt.Sprintf("%d outdated", len(p.items))))
+	if n, ok := m.headerCount(PanelOutdated); ok && n > 0 {
+		badges = append(badges, style.OutdatedBadge.Render(fmt.Sprintf("%d outdated", n)))
 	}
 	if status := m.updateStatusText(); status != "" {
 		badges = append(badges, style.SubtleText.Render(status))
 	}
 	return badges
+}
+
+// headerCount is the count a badge shows: the panel's own once its list has
+// loaded, else the status dashboard's, else nothing. An unknown count is left
+// out, never shown as 0.
+func (m Model) headerCount(id PanelID) (int, bool) {
+	if p := m.panels[id]; p.loaded && p.err == nil {
+		switch id {
+		case PanelFormulae:
+			return len(p.formulae), true
+		case PanelCasks:
+			return len(p.casks), true
+		case PanelOutdated:
+			return len(p.items), true
+		}
+	}
+	switch id {
+	case PanelFormulae:
+		return m.status.Formulae.N, m.status.Formulae.Known
+	case PanelCasks:
+		return m.status.Casks.N, m.status.Casks.Known
+	case PanelOutdated:
+		return m.status.Outdated.N, m.status.Outdated.Known
+	}
+	return 0, false
 }
 
 // updateStatusText is the update badge: updating…, updated 2m ago, or never

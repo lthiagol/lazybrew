@@ -352,16 +352,16 @@ func (m Model) renderContent(width, height int) string {
 
 	case PanelStatus:
 		switch m.activeTab {
-		case 0:
-			return panel.renderList(width, height, nil)
-		case 1, 2:
+		case statusDashboardTab:
+			return dashboardText(panel)
+		case statusConfigTab, statusDoctorTab:
 			// Config/Doctor fetch from the loaded dashboard; before the
 			// dashboard has loaded there is nothing to fetch, and the old
 			// code left a permanent spinner (r1 finding 28).
-			if selectedItemName(panel) == "" {
+			itemName := tabItemName(panel)
+			if itemName == "" {
 				return style.SubtleText.Render("Status dashboard not loaded yet — press R to refresh")
 			}
-			itemName := selectedItemName(panel)
 			key := tabKey(m.activePanel, m.activeTab, itemName)
 			if content, ok := m.tabContent[key]; ok {
 				return m.renderContentInViewport(content, width, height)
@@ -371,39 +371,15 @@ func (m Model) renderContent(width, height int) string {
 
 	case PanelTaps:
 		switch m.activeTab {
-		case 0:
-			if panel.taps != nil && len(panel.taps) > 0 {
-				official := 0
-				trusted := 0
-				for _, t := range panel.taps {
-					if t.IsOfficial {
-						official++
-					}
-					if t.Trusted || t.IsOfficial {
-						trusted++
-					}
-				}
-				header := fmt.Sprintf("%d taps  |  %d official  %d trusted  %d untrusted",
-					len(panel.taps), official, trusted, len(panel.taps)-trusted)
-				return style.SubtleText.Render(header) + "\n" + panel.renderList(width, height-1, nil)
-			}
-			return panel.renderList(width, height, nil)
-		case 1:
+		case tapInfoTab:
+			return renderTapInfo(panel)
+		case tapTrustTab:
 			t := panel.selectedTap()
 			if t == nil {
 				return style.SubtleText.Render("No tap selected")
 			}
-			trusted := "untrusted"
-			if t.Trusted || t.IsOfficial {
-				trusted = "trusted"
-			}
-			return style.NormalItem.Render("Tap: " + t.Name + "\n" +
-				"Trusted: " + trusted + "\n" +
-				"Official: " + boolStr(t.IsOfficial) + "\n" +
-				"Remote: " + t.Remote + "\n" +
-				"Formulae: " + strconv.Itoa(t.FormulaCount) + "\n" +
-				"Casks: " + strconv.Itoa(t.CaskCount) + "\n")
-		case 2:
+			return style.NormalItem.Render(tapDetails(t))
+		case tapFormulaeTab:
 			t := panel.selectedTap()
 			if t == nil || len(t.FormulaNames) == 0 {
 				return style.SubtleText.Render("No formulae in this tap")
@@ -416,11 +392,11 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelServices:
-		return panel.renderList(width, height, nil)
+		return renderServiceStatus(panel)
 
 	case PanelOutdated:
 		switch m.activeTab {
-		case 0:
+		case outdatedInfoTab:
 			// The outdated panel mixes formulae and casks in one item
 			// list; cask rows are indexed past the formulae, so the cask
 			// lookup must subtract len(formulae) — indexing selectedCask()
@@ -435,8 +411,8 @@ func (m Model) renderContent(width, height int) string {
 				return style.NormalItem.Render(info)
 			}
 			return emptyPanel(width, height)
-		default:
-			return panel.renderList(width, height, m.batch.selected)
+		case outdatedVersionsTab:
+			return renderOutdatedVersions(panel, m.batch.selected)
 		}
 
 	case PanelSearch:
@@ -457,7 +433,7 @@ func (m Model) renderContent(width, height int) string {
 		return top + "\n" + style.SubtleText.Render("Select a result to see details")
 	}
 
-	return panel.renderList(width, height, nil)
+	return emptyPanel(width, height)
 }
 
 func (m Model) renderSearchInfo(width, height int) string {

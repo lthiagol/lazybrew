@@ -89,9 +89,9 @@ type Model struct {
 
 	// icons is the glyph set every renderer draws with; resolved once in New.
 	icons style.Icons
-	// brewVersion is the Homebrew version from the last status load, shown in
-	// the header. Empty until the dashboard has said what it is.
-	brewVersion string
+	// status is what the last dashboard load read: the header's version and
+	// counts, and the Status sidebar's rows. Empty until the dashboard loads.
+	status statusSummary
 
 	// lastKeyAt tracks the last time the user pressed a key. The auto
 	// refresh tick consults this to pause refreshes during interaction
@@ -536,7 +536,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.taps = msg.Taps
 				p.services = msg.Services
 				if msg.PanelID == PanelStatus {
-					m.brewVersion = msg.BrewVersion
+					m.status = msg.Summary
+					p.dashboard = msg.Dashboard
 				}
 			}
 			p.normalize()
@@ -1168,7 +1169,7 @@ func tabKey(panel PanelID, tab int, itemName string) string {
 
 func needsTabFetch(panelID PanelID, tabIdx int) bool {
 	needsFetch := map[PanelID]map[int]bool{
-		PanelStatus:   {1: true, 2: true},
+		PanelStatus:   {statusConfigTab: true, statusDoctorTab: true},
 		PanelFormulae: {formulaDepsTab: true, formulaUsesTab: true, formulaFilesTab: true},
 	}
 	return needsFetch[panelID] != nil && needsFetch[panelID][tabIdx]

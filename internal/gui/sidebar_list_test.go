@@ -1,0 +1,114 @@
+package gui
+
+import (
+	"fmt"
+	"strings"
+	"testing"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/brew"
+)
+
+// TestSidebarListFillsItsBox (replaces TestMainListFillsMainPanel): the list is
+// in the sidebar now, so its rows fill the box the sidebar gives it, down to the
+// last row the box has.
+func TestSidebarListFillsItsBox(t *testing.T) {
+	for _, sz := range [][2]int{{80, 24}, {140, 40}} {
+		t.Run(fmt.Sprintf("%dx%d", sz[0], sz[1]), func(t *testing.T) {
+			m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+			var rows []string
+			for i := 0; i < 30; i++ {
+				rows = append(rows, fmt.Sprintf("row-%02d", i))
+			}
+			m.panels[PanelStatus].items = rows
+
+			shown := strings.Count(m.renderSidebar(), "row-")
+			if want := m.panels[PanelStatus].visibleRows; shown != want {
+				t.Fatalf("the sidebar box shows %d rows, want its %d", shown, want)
+			}
+		})
+	}
+}
+
+// TestSidebarListScrollsWithCursor (replaces TestMainListScrollsWithCursor): the
+// sidebar keeps the cursor in its window, and the main panel never draws the
+// list again: it shows the selected item's details.
+func TestSidebarListScrollsWithCursor(t *testing.T) {
+	for _, sz := range [][2]int{{80, 24}, {140, 40}} {
+		t.Run(fmt.Sprintf("%dx%d", sz[0], sz[1]), func(t *testing.T) {
+			m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+			var rows []string
+			for i := 0; i < 30; i++ {
+				rows = append(rows, fmt.Sprintf("row-%02d", i))
+			}
+			m.panels[PanelStatus].items = rows
+
+			for i := 0; i < 6; i++ {
+				m = sendKey(m, "j")
+			}
+			if main := m.renderMainPanel(); strings.Contains(main, "row-0") {
+				t.Fatal("the main panel must not redraw the sidebar's list")
+			}
+
+			target := m.panels[PanelStatus].visibleCount() + 2
+			for m.panels[PanelStatus].selected < target {
+				m = sendKey(m, "j")
+			}
+			want := fmt.Sprintf("row-%02d", m.panels[PanelStatus].selected)
+			if side := sgr.ReplaceAllString(m.renderSidebar(), ""); !strings.Contains(side, want) {
+				t.Fatalf("sidebar should scroll to %q", want)
+			}
+		})
+	}
+}
+
+// TestMainAreaShowsDetailsNotTheList (AC-03.1): the Services, Taps and Outdated
+// main tabs describe the selected item. The other items' rows are not drawn.
+func TestMainAreaShowsDetailsNotTheList(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+
+	m = sendKey(m, "6")
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{"alpha", "bravo", "charlie"},
+		Services: []brew.Service{{Name: "alpha"}, {Name: "bravo"}, {Name: "charlie"}}})
+	m = sendKey(m, "j")
+	if out := m.renderContent(60, 20); !strings.Contains(out, "bravo") || strings.Contains(out, "charlie") {
+		t.Fatalf("Services Status should show the selected bravo only, got:\n%s", out)
+	}
+
+	m = sendKey(m, "5")
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Items: []string{"aa/one", "bb/two", "cc/three"},
+		Taps: []brew.Tap{{Name: "aa/one"}, {Name: "bb/two"}, {Name: "cc/three"}}})
+	m = sendKey(m, "j")
+	if out := m.renderContent(60, 20); !strings.Contains(out, "3 taps") || !strings.Contains(out, "bb/two") || strings.Contains(out, "cc/three") {
+		t.Fatalf("Tap Info should show the summary and the selected tap only, got:\n%s", out)
+	}
+
+	m = sendKey(m, "4")
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"alpha 1 → 2", "bravo 3 → 4"},
+		Formulae: []brew.Formula{{Name: "alpha", Version: "1", NewVersion: "2"}, {Name: "bravo", Version: "3", NewVersion: "4"}}})
+	m = sendKey(m, "j")
+	m = sendKey(m, "]")
+	out := m.renderContent(60, 20)
+	if !strings.Contains(out, "bravo") || !strings.Contains(out, "Installed:") || strings.Contains(out, "alpha") {
+		t.Fatalf("Versions should show the selected bravo's versions only, got:\n%s", out)
+	}
+	if !strings.Contains(out, "none selected") {
+		t.Fatalf("Versions should show the batch summary, got:\n%s", out)
+	}
+}
+
+// TestOutdatedVersionsShowsBatchSummary (AC-03.2): the batch selected from the
+// sidebar is counted on the Versions tab, with the keys that act on it.
+func TestOutdatedVersionsShowsBatchSummary(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = sendKey(m, "4")
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"alpha", "bravo"},
+		Formulae: []brew.Formula{{Name: "alpha", Version: "1", NewVersion: "2"}, {Name: "bravo", Version: "3", NewVersion: "4"}}})
+	m = sendKey(m, "]")
+	m = sendKey(m, " ")
+	m = sendKey(m, "j")
+	m = sendKey(m, " ")
+	if out := m.renderContent(60, 20); !strings.Contains(out, "2 selected — u to upgrade, U all") {
+		t.Fatalf("Versions should count the batch, got:\n%s", out)
+	}
+}
