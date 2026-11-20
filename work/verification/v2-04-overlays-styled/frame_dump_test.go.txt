@@ -1,0 +1,137 @@
+package dump
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/config"
+	"github.com/lthiagol/lazybrew/internal/gui"
+)
+
+// drain runs cmds synchronously, skipping anything that takes > 3s (ticks).
+func drain(m tea.Model, cmd tea.Cmd, depth int) tea.Model {
+	if cmd == nil || depth > 6 {
+		return m
+	}
+	ch := make(chan tea.Msg, 1)
+	go func() { ch <- cmd() }()
+	var msg tea.Msg
+	select {
+	case msg = <-ch:
+	case <-time.After(20 * time.Second):
+		return m
+	}
+	if msg == nil {
+		return m
+	}
+	if b, ok := msg.(tea.BatchMsg); ok {
+		for _, c := range b {
+			m = drain(m, c, depth+1)
+		}
+		return m
+	}
+	if reflect.TypeOf(msg).String() == "tea.sequenceMsg" {
+		v := reflect.ValueOf(msg)
+		for i := 0; i < v.Len(); i++ {
+			c := v.Index(i).Interface().(tea.Cmd)
+			m = drain(m, c, depth+1)
+		}
+		return m
+	}
+	nm, nc := m.Update(msg)
+	return drain(nm, nc, depth+1)
+}
+
+func key(m tea.Model, k tea.KeyPressMsg) tea.Model {
+	nm, c := m.Update(k)
+	return drain(nm, c, 0)
+}
+
+func runes(s string) tea.KeyPressMsg { return tea.KeyPressMsg{Code: []rune(s)[0], Text: s} }
+
+func TestDump(t *testing.T) {
+	// The Unicode icon set, so the frames read as plain text (AC-02.4).
+	os.Setenv(config.IconsEnv, config.IconsUnicode)
+	r, err := brew.NewDefaultRunner()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, sz := range [][2]int{{140, 40}, {80, 24}} {
+		var m tea.Model = gui.New(brew.NewClient(r), config.Default())
+		m = drain(m, m.Init(), 0)
+		nm, c := m.Update(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+		m = drain(nm, c, 0)
+		out := fmt.Sprintf("%s/%dx%d", os.Getenv("DUMP_DIR"), sz[0], sz[1])
+		os.MkdirAll(out, 0o755)
+		shot := func(name string) {
+			v := m.View().Content
+			os.WriteFile(out+"/"+name+".ansi", []byte(v), 0o644)
+			os.WriteFile(out+"/"+name+".txt", []byte(ansi.Strip(v)), 0o644)
+		}
+		shot("01-status")
+		m = key(m, runes("2"))
+		shot("02-formulae")
+		m = key(m, runes("j"))
+		shot("03-formulae-info")
+		m = key(m, runes("]"))
+		shot("04-formulae-deps")
+		m = key(m, runes("4"))
+		shot("05-outdated")
+		m = key(m, runes("5"))
+		shot("06-taps")
+		m = key(m, runes("2"))
+		m = key(m, runes("x"))
+		shot("07-confirm-modal")
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+		m = key(m, runes("?"))
+		shot("08-help")
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+		m = key(m, runes("7"))
+		shot("09-search")
+		// New in v2-02. Search takes focus when it opens, so Esc first.
+		// The cursor on Formulae is still on bash (the second row, after
+		// the j above), so Deps is bash's dependency list.
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+		m = key(m, runes("2"))
+		m = key(m, runes("]"))
+		shot("11-deps-bash")
+		// A toast over the Formulae list. TaskCompletedMsg sets the toast
+		// synchronously; its dismissal tick is deliberately not drained, so
+		// the toast is still on screen when the frame is taken.
+		m = key(m, runes("2"))
+		nm, _ = m.Update(gui.TaskCompletedMsg{ID: "harness-toast", Title: "Install bash"})
+		m = nm
+		shot("10-toast")
+		// New in v2-04. The upgrade confirm opens on the bash row the cursor
+		// is on; Esc cancels it. Nothing is run: 'u' only opens the dialog.
+		m = key(m, runes("2"))
+		m = key(m, runes("u"))
+		shot("12-confirm-upgrade")
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+		// The input modal for adding a tap. Esc cancels; no tap is added.
+		m = key(m, runes("5"))
+		m = key(m, runes("a"))
+		shot("14-input-modal")
+		m = key(m, tea.KeyPressMsg{Code: tea.KeyEsc})
+		// Three toasts of different types, oldest first: success, error and
+		// warning. The warning is "Cannot untap official taps", which needs an
+		// official tap on the Taps list; this machine has none, so one is
+		// injected as a list entry. Nothing runs: the untap is refused.
+		nm, _ = m.Update(gui.TaskCompletedMsg{ID: "harness-ok", Title: "Install bash"})
+		m = nm
+		nm, _ = m.Update(gui.TaskCompletedMsg{ID: "harness-err", Title: "Upgrade bash", Err: errors.New("brew upgrade failed")})
+		m = nm
+		nm, _ = m.Update(gui.DataLoadedMsg{PanelID: gui.PanelTaps, Items: []string{"homebrew/cask-versions  official"}})
+		m = nm
+		m = key(m, runes("x"))
+		shot("13-toast-stack")
+	}
+	fmt.Println("ok")
+}

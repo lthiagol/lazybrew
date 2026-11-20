@@ -1,0 +1,24 @@
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Global                   Formulae                 Casks                     │
+│  Navigation                  i   Install selected     i   Install            │
+│     Tab   Next panel         x   Uninstall selected   x   Uninstall          │
+│     Shift+Tab   Previous     r   Reinstall selected   X   Zap uninstall      │
+│  panel                       u   Upgrade selected     r   Reinstall          │
+│     1-7   Jump to panel      U   Upgrade all          u   Upgrade            │
+│     j/k   Scroll list        p   Pin/Unpin selected   U   Upgrade all        │
+│     PgUp/PgDn   Scroll       L   Toggle leaves        F   Fetch              │
+│  content by a page        filter                                             │
+│     Home/End   Top/bottom    F   Fetch selected                              │
+│  (g/G outside Search)                                                        │
+│     [/]   Switch tabs                                                        │
+│  Actions                                                                     │
+│     R   Refresh all data                                                     │
+│     /   Search packages                                                      │
+│     C   Toggle command log                                                   │
+│     q   Quit lazybrew                                                        │
+│     ?   This help                                                            │
+│  Taps                     Services                 Outdated                  │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ ?/esc close                                                                    
