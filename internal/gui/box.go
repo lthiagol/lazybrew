@@ -8,12 +8,11 @@ import (
 )
 
 // panel draws one bordered box, w by h cells outer size, border included.
-// The title sits inside the top border at the left, and label (already
-// styled, possibly empty) at the right. A body line is cut to the inner width
+// The title sits inside the top border at the left, and label at the right. A body line is cut to the inner width
 // with an ellipsis, never wrapped; rows past the height are dropped. A
 // focused panel has the accent border and title, an unfocused one the Border
 // role and the subtext title.
-func panel(title, label, body string, w, h int, focused bool) string {
+func panel(title string, label borderLabel, body string, w, h int, focused bool) string {
 	if w < 2 || h < 2 {
 		return fitBox("", max(0, w), max(0, h))
 	}
@@ -25,12 +24,18 @@ func panel(title, label, body string, w, h int, focused bool) string {
 	}
 
 	// The top row reads ╭─ title ───── label ─╮. The title has priority and
-	// keeps its whole name when it can; the label gets the room that is left
-	// and is cut to fit. A box too narrow for even one label cell drops it.
+	// keeps its whole name when it can. The label is the full form when that
+	// fits the room left, else the short form, else it is left out: a label is
+	// never cut.
 	name := clipLine(title, w-7)
 	tail := ""
-	if room := w - 9 - lipgloss.Width(name); label != "" && room >= 1 {
-		tail = " " + clipLine(label, room) + " "
+	if room := w - 9 - lipgloss.Width(name); room >= 1 {
+		switch {
+		case label.full != "" && lipgloss.Width(label.full) <= room:
+			tail = " " + label.full + " "
+		case label.short != "" && lipgloss.Width(label.short) <= room:
+			tail = " " + label.short + " "
+		}
 	}
 	dashes := max(0, w-6-lipgloss.Width(name)-lipgloss.Width(tail))
 	top := edge.Render("╭─") + titleStyle.Render(" "+name+" ") +
@@ -71,4 +76,11 @@ func clipLine(s string, w int) string {
 func fitLine(s string, w int) string {
 	s = clipLine(s, w)
 	return s + strings.Repeat(" ", max(0, w-lipgloss.Width(s)))
+}
+
+// borderLabel is a box's right-hand label, both forms already styled. The
+// full form is used when it fits the border; otherwise the short form; an empty
+// short form means the label is left out rather than cut.
+type borderLabel struct {
+	full, short string
 }

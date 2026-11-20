@@ -40,20 +40,24 @@ func (m Model) renderSidebar() string {
 // fetch is pending or has failed, otherwise the item count. The Status box
 // shows no count: its items are dashboard lines, not things that can be
 // counted.
-func (m Model) sidebarLabel(p *panelData) string {
+func (m Model) sidebarLabel(p *panelData) borderLabel {
 	switch {
 	case p.loading:
-		return m.spinner.View()
+		return borderLabel{full: m.spinner.View(), short: "…"}
 	case p.err != nil:
-		return style.ErrorBadge.Render("!")
+		badge := style.ErrorBadge.Render("!")
+		return borderLabel{full: badge, short: badge}
 	case !p.loaded:
-		return style.SubtleText.Render("not loaded")
+		return borderLabel{
+			full:  style.SubtleText.Render("not loaded"),
+			short: lipgloss.NewStyle().Foreground(style.MutedColor).Render("–"),
+		}
 	case p.id == PanelStatus:
-		return ""
+		return borderLabel{}
 	case p.itemCount() == 0:
-		return style.SubtleText.Render("(empty)")
+		return borderLabel{full: style.SubtleText.Render("(empty)")}
 	default:
-		return style.SubtleText.Render(strconv.Itoa(p.itemCount()))
+		return borderLabel{full: style.SubtleText.Render(strconv.Itoa(p.itemCount()))}
 	}
 }
 
@@ -76,7 +80,7 @@ func (m Model) renderMainPanel() string {
 	content := fitBox(m.renderContent(innerW, l.contentH), innerW, l.contentH)
 	body := lipgloss.JoinVertical(lipgloss.Top, tabBar, content)
 
-	box := panel(title, "", body, l.mainW, l.mainH, true)
+	box := panel(title, borderLabel{}, body, l.mainW, l.mainH, true)
 	if l.logH == 0 {
 		return box
 	}
@@ -189,7 +193,7 @@ func (m Model) renderCommandLogBox(width, height int) string {
 	if m.logBusy() && m.opState != nil {
 		label = style.SubtleText.Render(m.opState.Title)
 	}
-	return panel("Log", label, body, width, height, m.logBusy())
+	return panel("Log", borderLabel{full: label}, body, width, height, m.logBusy())
 }
 
 func (m Model) renderTabBar(width int) string {
