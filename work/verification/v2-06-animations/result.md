@@ -51,3 +51,34 @@ positions, not wall-clock samples. Every frame is checked to be exactly 140×40.
   not by a live session.
 - A batch progress bar on a real upgrade: covered by unit tests only; no brew
   write was run, so no batch ran here.
+
+## Commit history deviation (review r1, F-r1-03)
+
+The brief asks for one commit per AC, and every commit passing the tests. One
+commit does not pass:
+
+- `7c79a51` (AC-03, sidebar boxes) fails `TestMovingValueTicksUntilItSettles`
+  with `settled at 0; want exactly 10`. The test read the value from the model
+  it started from, not from the model the last update returned. From `7c79a51`
+  on, each update works on its own copy of the animated values (the copy is
+  what keeps a model kept from before an update unmoved), so that read was
+  stale.
+- The fix is `0ebc253`, the next commit, also AC-03 (`test(gui): read the settled
+  value from the model the update returned`). The test edit was left unstaged
+  in `7c79a51` and went into `0ebc253`.
+
+The history is not rewritten (the brief forbids amend and rebase). `7c79a51` is
+the only commit in the slice that fails a test; every other commit passes the
+gate. The reviewer reproduced the failure at `7c79a51` in a worktree.
+
+## Fix round r1
+
+- F-r1-01 `ee7d782`: `testutil` helpers build still models (`NewModel`, with
+  `WithoutMotion`); tests fail if a helper-built model would animate (testutil,
+  flows). The app tests point HOME at a temp directory and run with animations off.
+- F-r1-02 `789caf6`: with the motion off, `Update` does no motion work. The
+  tab-bar height and tab width are computed without a render; the toast slots
+  are laid out only when the stack or the window changes. Benchmark numbers are
+  in that commit message. Resting frames re-checked: identical to v2-05s.
+- F-r1-04 `7a66ae2`: the modal fade starts at the subtle role, on a 0..100
+  scale. The modal frames in `motion/` are re-dumped. Resting frames unchanged.
