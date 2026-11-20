@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae                             125 formulae
+╭─ 1 ◉ Status ──── 16 ─╮╭─ Search ─────────────────────────────────────────────╮
+│▸ Homebrew 7.0.15-3...││                                                      │
+╰──────────────────────╯│/ > Search packages...                                │
+╭─ 2 ∘ Formulae ─ 125 ─╮│  Enter to search  |  Esc to clear                    │
+│  alsa-lib         ...││                                                      │
+╰──────────────────────╯│Search for Homebrew packages...                       │
+╭─ 3 ▣ Casks ─ not l… ─╮│                                                      │
+│                      ││                                                      │
+╰──────────────────────╯│                                                      │
+╭─ 4 ↑ Outdated ─ (e… ─╮│                                                      │
+│                      ││                                                      │
+╰──────────────────────╯│                                                      │
+╭─ 5 ⊕ Taps ─────── 3 ─╮│                                                      │
+│▸ danielfoehrkn/swi...││                                                      │
+╰──────────────────────╯│                                                      │
+╭─ 6 ◎ Services ─ no… ─╮│                                                      │
+│                      ││                                                      │
+╰──────────────────────╯╰──────────────────────────────────────────────────────╯
+╭─ 7 ⌕ Search ─ not … ─╮╭─ Log ────────────────────────────────────────────────╮
+│                      ││No commands executed yet                              │
+│                      ││                                                      │
+╰──────────────────────╯╰──────────────────────────────────────────────────────╯
+ j/k navigate  Enter search  i install  I install  F fetch  Tab next  ? more    

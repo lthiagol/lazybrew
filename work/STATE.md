@@ -12,6 +12,7 @@ learn what is done, what is in flight, and where to pick up.
 | lb07-bound-remaining-reads | bd6dfd7, b5c1cc5, ea71699, 7b21fc0 | closed | ok |
 | v2-01-charm-v2 | 1861585, 0a89f8e, 0f65ba6, 10aade4, 6eec052, 7f32f2f | closed | ok |
 | v2-02-layout-bugs | 2611e00, a9ccbbe, a56fd8e, 2498d26, 23a031c, 5525dfd, 9046165, 8d9af6b, 690e5dd, 4a649cf | closed | ok |
+| v2-03-look-foundation | — | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
