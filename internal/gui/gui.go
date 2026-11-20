@@ -1038,7 +1038,8 @@ func (m Model) render() string {
 
 	// Overlays float over the finished frame, in stacking order: the toast
 	// on the last body row, then the modal centred above it. Neither adds
-	// a row, so the screen behind them keeps its size and position.
+	// a row, so the screen behind them keeps its size and position. While a
+	// modal is open the frame behind it is muted first (dimBackdrop).
 	var overlays []*lipgloss.Layer
 	if m.toast != nil {
 		if toastView := m.toast.View(); toastView != "" {
@@ -1046,6 +1047,7 @@ func (m Model) render() string {
 		}
 	}
 	if m.activeModal != nil {
+		base = dimBackdrop(base)
 		overlays = append(overlays, centred(m.activeModal.View().Content, m.width, m.height))
 	}
 	if len(overlays) == 0 {
