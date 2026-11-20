@@ -401,12 +401,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.ID {
 		case "cleanup-preview":
 			m.pendingAction = "cleanup"
-			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Confirm Cleanup",
+			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup",
 				"Run brew cleanup?").WithDetail("This will remove old versions.")
 			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
 		case "autoremove-preview":
 			m.pendingAction = "autoremove"
-			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Confirm Autoremove",
+			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Autoremove",
 				"Remove orphaned dependencies?").
 				WithDetail("Removes dependencies that no installed package needs any more.")
 			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init())
@@ -476,7 +476,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case DepCheckMsg:
 		m.pendingAction = "uninstall"
 		m.pendingMutType = msg.MutType
-		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Label+" "+msg.Name, msg.Message).WithDetail(msg.Detail)
+		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Label, msg.Message).WithDetail(msg.Detail)
 		return m, m.activeModal.Init()
 
 	case TabContentMsg:

@@ -36,7 +36,7 @@ func (k ActionKind) accent() color.Color {
 
 type ConfirmModal struct {
 	kind      ActionKind
-	title     string
+	action    string
 	message   string
 	detail    string
 	selected  int
@@ -45,17 +45,22 @@ type ConfirmModal struct {
 	result    bool
 }
 
-func NewConfirmModal(kind ActionKind, title, message string) *ConfirmModal {
+// NewConfirmModal opens a confirm for action (its name, shown in the chip, such
+// as "Uninstall") with the question message, which names the package or tap.
+func NewConfirmModal(kind ActionKind, action, message string) *ConfirmModal {
 	return &ConfirmModal{
 		kind:     kind,
-		title:    title,
+		action:   action,
 		message:  message,
 		selected: 1,
 	}
 }
 
-// Kind reports the action the dialog confirms.
+// Kind reports the kind of action the dialog confirms.
 func (m *ConfirmModal) Kind() ActionKind { return m.kind }
+
+// Action is the action's name, as the chip shows it.
+func (m *ConfirmModal) Action() string { return m.action }
 
 // Detail is the subtle consequence line under the question; empty if none.
 func (m *ConfirmModal) Detail() string { return m.detail }
@@ -110,7 +115,7 @@ func (m *ConfirmModal) View() tea.View {
 	}
 	parts = append(parts, "", m.choices(accent))
 
-	return tea.NewView(dialog(accent, strings.ToUpper(m.title), confirmWidth, parts...))
+	return tea.NewView(dialog(accent, strings.ToUpper(m.action), confirmWidth, parts...))
 }
 
 // choices is the key line: [y]es and [n]o, the selected one reversed, then esc.
