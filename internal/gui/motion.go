@@ -81,21 +81,17 @@ func (m Model) stepMotion(at time.Time) (Model, tea.Cmd) {
 	return m, tea.Batch(cmd, anim.Tick())
 }
 
-// The names of the animated modal values: how far above its resting row the
-// modal sits, in cells, and how far the backdrop has faded in, in percent. The
-// fade is in percent so that the settle threshold, half a cell, is half a
-// percent of the fade.
-const (
-	modalDrop = "modal:drop"
-	modalFade = "modal:fade"
-	// modalDropRows is how many rows above its resting place a new modal
-	// starts; it springs down onto it.
-	modalDropRows = 3
-)
+// modalDrop is the animated value of how many rows the modal sits above its
+// resting place, in cells. A new modal starts modalDropRows up and springs
+// down onto its place.
+const modalDrop = "modal:drop"
+
+// modalDropRows is how many rows above its resting place a new modal starts.
+const modalDropRows = 3
 
 // motionModal starts the entrance of a modal that has just opened: it springs
-// down from modalDropRows above its place, and the backdrop fades in. Closing
-// needs no motion: the modal is gone at once.
+// down from modalDropRows above its place. Closing needs no motion: the modal
+// is gone at once. The backdrop is dimmed at once too (dimBackdrop).
 func (m *Model) motionModal() {
 	if m.activeModal == nil {
 		m.motionShown = nil
@@ -106,9 +102,7 @@ func (m *Model) motionModal() {
 	}
 	m.motionShown = m.activeModal
 	m.motion.Snap(modalDrop, modalDropRows)
-	m.motion.Snap(modalFade, 0)
 	m.setMotionTarget(modalDrop, 0)
-	m.setMotionTarget(modalFade, 100)
 }
 
 // modalDropAt is how many rows the open modal still sits above its place.
@@ -118,19 +112,6 @@ func (m Model) modalDropAt() int {
 	}
 	v, _ := m.motion.Get(modalDrop)
 	return int(math.Round(v))
-}
-
-// backdropFadeAt is how far the backdrop has faded to the muted role: 0 is the
-// frame's own text role, 1 is the muted role, the resting backdrop.
-func (m Model) backdropFadeAt() float64 {
-	if !m.motionOn {
-		return 1
-	}
-	v, ok := m.motion.Get(modalFade)
-	if !ok {
-		return 1
-	}
-	return v / 100
 }
 
 // The names of a toast's animated values. A toast is named by its pointer, so

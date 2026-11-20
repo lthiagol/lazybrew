@@ -173,43 +173,18 @@ func compose(base string, w, h int, overlays ...*lipgloss.Layer) string {
 	return fitFrame(canvas.Render(), w, h)
 }
 
-// backdropFadeSteps is how many colours the backdrop fades through, from the
-// frame's text role to the muted role.
-const backdropFadeSteps = 3
-
 // dimBackdrop mutes the base frame behind an open modal: every row but the
 // last (the footer, which shows the modal's keys) is drawn in the muted role.
-// Only the style changes; the text of every cell stays as it was.
+// Only the style changes; the text of every cell stays as it was. It is drawn
+// at once: a fade through the frame's own colours would brighten the dim cells
+// (the inactive borders are darker than the muted role) before they settle.
 func dimBackdrop(base string) string {
-	return fadeBackdrop(base, 1)
-}
-
-// fadeBackdrop is dimBackdrop part way through its fade-in: fade is 0 for the
-// text role and 1 for the muted role, and a value between is one of the blend
-// steps from one to the other.
-func fadeBackdrop(base string, fade float64) string {
 	rows := strings.Split(base, "\n")
-	muted := lipgloss.NewStyle().Foreground(backdropColor(fade))
+	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
 	for i := 0; i < len(rows)-1; i++ {
 		rows[i] = muted.Render(ansi.Strip(rows[i]))
 	}
 	return strings.Join(rows, "\n")
-}
-
-// backdropColor is the colour the backdrop is drawn in at fade. It starts at
-// the subtle role and ends at the muted role, the resting backdrop. The subtle
-// role lies between the text role and the muted role in both themes, so the
-// fade never starts from the brightest role and only moves towards the muted
-// one (TestBackdropFadeNeverBrightens).
-func backdropColor(fade float64) color.Color {
-	if fade >= 1 {
-		return style.MutedColor
-	}
-	if fade <= 0 {
-		return style.SubtleColor
-	}
-	steps := lipgloss.Blend1D(backdropFadeSteps+1, style.SubtleColor, style.MutedColor)
-	return steps[int(fade*backdropFadeSteps)]
 }
 
 // bottomRightOrigin is where content goes to sit flush right with its last
