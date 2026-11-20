@@ -129,3 +129,8 @@ resolved.
 - **Question:** The Charm v2 modules require Go 1.26 (`go 1.26.0` now in `go.mod`), but `.github/workflows/wip-ci.yml` and `.github/workflows/stable-ci.yml` pin `go-version: '1.24'`. CI will not build the v2 port until the workflows are bumped. The brief does not name the CI files, so the slice leaves them unchanged. Which Go version should CI pin, and should the bump land with v2-01-charm-v2 or as its own change?
 - **Raised by:** runner lane (slice `v2-01-charm-v2`).
 - **Owner:** the orchestrator.
+- **Orchestrator ruling (appended):** CI must build what `go.mod` declares. Both
+  workflows switch from the pinned `go-version: '1.24'` to
+  `go-version-file: go.mod`, so the next toolchain bump cannot drift again. It
+  lands **inside `v2-01-charm-v2`**, as a fix-round commit: a slice whose CI
+  cannot build it is not done. Closed.
