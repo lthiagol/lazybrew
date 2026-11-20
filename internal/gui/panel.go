@@ -249,10 +249,10 @@ func (p *panelData) renderList(width, height int, batch map[int]bool) string {
 		return lipgloss.NewStyle().Width(width).Height(height).Render(style.ErrorBadge.Render("Error: " + p.err.Error()))
 	}
 
-	visible := min(p.visibleCount(), height)
-	if visible < 1 {
-		visible = 1
-	}
+	// The list fills the main panel it is drawn in. visibleCount is the
+	// sidebar box's window and must not cap it: at 80x24 that cap left the
+	// Status dashboard one row tall.
+	visible := max(1, height)
 	end := min(p.offset+visible, len(p.items))
 	items := p.items[p.offset:end]
 

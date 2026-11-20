@@ -974,9 +974,11 @@ func (m Model) render() string {
 	}
 
 	if m.showHelp {
-		helpContent := renderHelp(m.width)
-		// Width and Height count the border (v2); v1 added it on top, so
-		// the box is 2 cells wider and taller than the bare numbers.
+		// The help box takes the screen above its close hint. Width and
+		// Height count the border and padding (v2), so the text area is
+		// 6 cells narrower and 5 rows shorter than the box. The text is cut
+		// to that area so the border and the hint always show.
+		helpContent := fitBox(renderHelp(m.width), m.width-6, m.height-5)
 		helpView := lipgloss.NewStyle().
 			Width(m.width).
 			Height(m.height-1).
