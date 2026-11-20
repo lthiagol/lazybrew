@@ -12,7 +12,7 @@ closed `ok`, pushed, `wip-ci` green (with `-race`). No agent is running.
 **Next, in order** (user ruling `Q-backlog-next`, 2026-11-20 — LB-05 smoke
 deferred, backlog first, LB-11 deferred).
 1. ~~`lb04-lb10-small-fixes`~~ closed `ok` r1.
-2. Slice `lb09-service-logs` (LB-09, design `Q-lb09-design`) — in flight.
+2. ~~`lb09-service-logs`~~ closed `ok` r2. No agent is running.
 3. Then the LB-05 smoke and, on the user's go-ahead, the PR `wip` → `stable`
    (`gh pr create --base stable --head wip`). Never push to `stable` directly.
 
@@ -52,7 +52,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | v2-10-tap-actions | 5f91936, 1e91fad, a4eaf97, 6d5c46a, d1ee781, f05b443, 9c4afce, 8dd6f81 | closed | ok |
 | v2-11-cancel-and-test-speed | d76b8de, f11d2a6, 02e9cac, 74c4438, 1872c96, 5174d37 | closed | ok |
 | lb04-lb10-small-fixes | 920887d, ac065b8, e6ec90e | closed | ok |
-| lb09-service-logs | — | implemented | awaiting reviewer |
+| lb09-service-logs | 952fde9, 0530f68, 9967789, 5327df8, ec7f5d6, 409ee9d, b9a586d, 608f031 | closed | ok |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
@@ -387,3 +387,14 @@ names into chunks bounded by `tapInfoChunkMax` (100) and `tapInfoChunkBytes`
 the list column (`cutRow`). Reviewer mutation-checked both. Receipts:
 `work/inbox/runner-lb04-lb10-small-fixes.md`,
 `work/inbox/reviewer-lb04-lb10-small-fixes-r1.md`.
+
+**lb09-service-logs, closed (r2 ok).** Services has a Logs tab: the last 200
+lines of the selected service's stdout log (`e` toggles stderr), followed every
+1 s via `tea.Tick` with a generation guard (new package `internal/logtail`,
+bounded 256 KiB tail read). Ruling `Q-lb09-slide`: a scrolled-up view
+re-anchors as the window slides. r1 found a return that relied on unspecified
+evaluation order (F-r1-01); the fix hoisted the mutating call in all 60 such
+returns in `internal/gui` (reviewer proved the rewrite order-only) and added
+the two-service stale-read test (F-r1-02). gui coverage 86.2 → 85.6 % from the
+extra statements only (floor unchanged). Receipts: `work/inbox/runner-lb09-service-logs*.md`,
+`work/inbox/reviewer-lb09-service-logs-r{1,2}.md`.
