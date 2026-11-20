@@ -120,8 +120,8 @@ To-do (one commit each, in this order):
 1. `cmd/lazybrew/main.go`: `var version = ""`. When it is empty, fall back
    to `debug.ReadBuildInfo()`, then to `"dev"`. The repeated `"1.0.0-rc1"`
    literal is gone. Check that the Makefile's `-ldflags -X` still targets the
-   variable. **Read the Makefile only; don't edit it**: it has uncommitted
-   user edits. If it would need a change, file a question.
+   variable. If the Makefile would need a change, make it in this AC's
+   commit and say so in the receipt.
 2. Test or check: `./bin/lazybrew --version` prints something sensible with
    and without ldflags.
 

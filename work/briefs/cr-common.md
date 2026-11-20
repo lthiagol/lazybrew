@@ -59,9 +59,8 @@ navigation.
 - Coverage floors stay as they are (`make cover-check`). Don't lower any. If
   removing dead code raises a package's coverage, leave the floor alone too.
 - No new dependencies in `go.mod`.
-- The worktree has **uncommitted user edits to `AGENTS.md` and `Makefile`**.
-  Never stage, commit, revert or reformat them. Stage only by name. Never use
-  `git add -A` or `git add .`.
+- Stage only by name; never `git add -A` or `git add .`. If the worktree
+  holds changes you did not make, leave them alone and never stage them.
 - One commit per AC, in AC order. The subject starts with the slice and AC
   (`cr1 AC-02: …`) and ends with the finding ids in brackets
   (`[C2]`). No amend, rebase, revert or push.
