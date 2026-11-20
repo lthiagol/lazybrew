@@ -561,3 +561,9 @@ point. New rule: Info views split when the main box's **inner width ≥ 84**
 (140x40 splits; 120 columns and 80x24 stay single-column). The sidebar default
 stays. Also (the r3 note): the Log box gets the same one-column padding as the
 main box, for a consistent right column.
+
+### Q-v2-builder-speed — amendment (user, 2026-11-20)
+
+Per-commit runs drop `-race`: each commit builds and passes plain
+`go test -count=1` for the packages it touches. `-race` stays in the full gate
+(once, before the receipt) and in CI on every push.
