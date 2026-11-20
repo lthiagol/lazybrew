@@ -26,20 +26,28 @@ func (m Model) renderHeader() string {
 		left += headerGap + style.SubtleText.Render("Homebrew "+m.brewVersion)
 	}
 
+	// The operation outranks the badges: badges drop first, from the left, and
+	// the operation is cut only once every badge is gone.
+	op := m.headerOperation()
 	badges := m.headerBadges()
-	for len(badges) > 0 && lipgloss.Width(left)+lipgloss.Width(headerGap)+joinedWidth(badges) > m.width {
+	for len(badges) > 0 && lipgloss.Width(left)+opSpan(op)+badgesSpan(badges) > m.width {
 		badges = badges[1:]
 	}
 	right := strings.Join(badges, headerGap)
 
 	// The operation takes the room between the name and the badges, keeping
-	// a gap on each side, and is cut to fit.
-	room := m.width - lipgloss.Width(left) - lipgloss.Width(right)
-	middle := ""
-	if op := m.headerOperation(); op != "" && room-2*len(headerGap) >= 1 {
-		middle = headerGap + clipLine(op, room-2*len(headerGap))
+	// the gap before the badges, and is cut to fit.
+	reserve := 0
+	if right != "" {
+		reserve = lipgloss.Width(headerGap)
 	}
-	line := left + middle + strings.Repeat(" ", max(0, room-lipgloss.Width(middle))) + right
+	room := m.width - lipgloss.Width(left) - lipgloss.Width(right) - reserve
+	middle := ""
+	if op != "" && room > lipgloss.Width(headerGap) {
+		middle = headerGap + clipLine(op, room-lipgloss.Width(headerGap))
+	}
+	spaces := max(0, m.width-lipgloss.Width(left)-lipgloss.Width(middle)-lipgloss.Width(right))
+	line := left + middle + strings.Repeat(" ", spaces) + right
 	return fitFrame(line, m.width, headerRows)
 }
 
@@ -104,4 +112,22 @@ func agoText(d time.Duration) string {
 // joinedWidth is the width of badges laid end to end with headerGap between.
 func joinedWidth(badges []string) int {
 	return lipgloss.Width(strings.Join(badges, headerGap))
+}
+
+// opSpan is the width the operation takes in the header, its leading gap
+// included; zero when nothing runs.
+func opSpan(op string) int {
+	if op == "" {
+		return 0
+	}
+	return lipgloss.Width(headerGap) + lipgloss.Width(op)
+}
+
+// badgesSpan is the width the badges take, the gap before them included; zero
+// when there are none.
+func badgesSpan(badges []string) int {
+	if len(badges) == 0 {
+		return 0
+	}
+	return lipgloss.Width(headerGap) + joinedWidth(badges)
 }

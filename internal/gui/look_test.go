@@ -466,3 +466,43 @@ func TestHeaderKeepsAGapBeforeBadges(t *testing.T) {
 		}
 	}
 }
+
+// TestHeaderOperationOutranksBadges (F-orch-03): at 80 columns with an
+// operation running, the badges drop first, from the left, and the operation
+// stays whole. Only when no badge is left is the operation cut with an ellipsis.
+func TestHeaderOperationOutranksBadges(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
+	m.cfg.Brew.UpdateOnStart = true
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, BrewVersion: "4.5.2"})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 125), Items: make([]string, 125)})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"a", "b"}})
+	m.lastUpdate = time.Now().Add(-2 * time.Minute)
+	m.opState = &Operation{Title: "upgrading curl", Status: opRunning}
+
+	head := m.renderHeader()
+	plain := plainLine(head)
+	if lipgloss.Width(head) != 80 || !strings.HasPrefix(plain, "◆ lazybrew") {
+		t.Fatalf("header must be 80 cells with the name first, got %d cells: %q", lipgloss.Width(head), plain)
+	}
+	if !strings.Contains(plain, "⟳ upgrading curl") {
+		t.Fatalf("the operation should stay whole at 80 columns: %q", plain)
+	}
+	if strings.Contains(plain, "formulae") || strings.Contains(plain, "casks") {
+		t.Fatalf("the leftmost badges should drop first: %q", plain)
+	}
+	if !strings.Contains(plain, "updated 2m ago") {
+		t.Fatalf("the rightmost badge should survive while the operation fits: %q", plain)
+	}
+
+	// An operation too long for the bar takes every badge with it, and is cut.
+	m.opState.Title = strings.Repeat("reinstalling ", 10)
+	head = m.renderHeader()
+	plain = plainLine(head)
+	if lipgloss.Width(head) != 80 || !strings.HasPrefix(plain, "◆ lazybrew") {
+		t.Fatalf("a long operation must keep the bar at 80 cells with the name: %q", plain)
+	}
+	if !strings.Contains(plain, "…") || strings.Contains(plain, "updated") {
+		t.Fatalf("a long operation should be cut once the badges are gone: %q", plain)
+	}
+}
