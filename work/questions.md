@@ -357,3 +357,18 @@ criterion; the code is as described and the orchestrator can redirect it.
   The keys the viewport used to receive without content (PgUp and similar) now
   reach nothing. Confirm this reading.
 - **Raised by:** runner lane (slice `v2-03b-sidebar-lists`).
+
+### Orchestrator rulings on Q-v2-03b-a..d (2026-11-19)
+
+- **Q-v2-03b-a:** fix it — batch markers are drawn only on the Outdated list.
+  v2-03b fix round, F-orch-01 (with a test: a batch on Outdated leaves the
+  Formulae rows at the same indices unmarked).
+- **Q-v2-03b-b:** accepted — unknown Status counts are left out.
+- **Q-v2-03b-c:** `Trust` shows only the trust story for the selected tap:
+  trusted / untrusted / official, what that means for its formulae and casks,
+  and the `t` key hint. `Tap Info` keeps the details. Fix round, F-orch-02.
+- **Q-v2-03b-d:** accepted — the viewport goes; the per-item scroll offset is
+  the model state. Keys that reached the empty viewport must now do what a
+  user expects: `PgUp`/`PgDn` scroll the main content by a page,
+  `Home`/`End` (`g`/`G` only if not already bound) to top/bottom. Fix round,
+  F-orch-03, with tests; help documents them.
