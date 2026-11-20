@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Info    Deps    Used By    Caveats    Files     │
+╰──────────────────────────╯│━━━━━━━━                                          │
+╭─ 2 ∘ Formulae ───── 125 ─╮│Name:         alsa-lib                            │
+│▸ ✓ alsa-lib    1.2.16.1_1││Version:      1.2.16.1_1                          │
+│  ✓ bash            5.3.20││Tap:          homebrew/core                       │
+╰──────────────────────────╯│Status:       ✓ installed                         │
+╭─ 3 ▣ Casks ────────── 2 ─╮│License:      LGPL-2.1-or-later AND GPL-2.0-or-la…│
+│▸ ✓ Claude Code    2.1.311││Homepage:     https://www.alsa-project.org/       │
+╰──────────────────────────╯│Bottled:      yes                                 │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│Description:  Provides audio and MIDI             │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││              functionality to the Linux operating│
+╰──────────────────────────╯│              system                              │
+╭─ 5 ⊕ Taps ─────────── 3 ─╮│                                                  │
+│▸ ⚠ danielfoehr… untrusted││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 6 ◎ Services ─────── 3 ─╮│                                                  │
+│▸ dbus                none│╰──────────────────────────────────────────────────╯
+╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ───────── – ─╮│No commands executed yet                          │
+│                          ││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ j/k navigate  [ ] tabs  i install  x remove  r reinstall  u upgrade  ? more    

@@ -1,0 +1,40 @@
+╭─ Help ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 1–37 of 40 ─╮
+│  Global                                                               Taps                                                               │
+│                                                                                                                                          │
+│  Navigation                                                           a  Add tap                                                         │
+│  Tab        Next panel                                                x  Remove tap                                                      │
+│  Shift+Tab  Previous panel                                            t  Trust config                                                    │
+│  1-7        Jump to panel                                             r  Repair tap                                                      │
+│  j/k        Scroll list                                                                                                                  │
+│  PgUp/PgDn  Scroll content by a page                                  Services                                                           │
+│  Home/End   Top/bottom (g/G outside Search)                                                                                              │
+│  [/]        Switch tabs                                               s  Start                                                           │
+│                                                                       S  Stop                                                            │
+│  Actions                                                              r  Restart                                                         │
+│  R  Refresh all data                                                  f  Run (foreground)                                                │
+│  /  Search packages                                                   c  Cleanup stale services                                          │
+│  C  Toggle command log                                                                                                                   │
+│  q  Quit lazybrew                                                     Outdated                                                           │
+│  ?  This help                                                                                                                            │
+│                                                                       u      Upgrade selected                                            │
+│  Formulae                                                             U      Upgrade all                                                 │
+│                                                                       Space  Toggle selection                                            │
+│  i  Install selected                                                  a      Select/deselect all                                         │
+│  x  Uninstall selected                                                                                                                   │
+│  r  Reinstall selected                                                Status                                                             │
+│  u  Upgrade selected                                                                                                                     │
+│  U  Upgrade all                                                       R    Refresh all data                                              │
+│  p  Pin/Unpin selected                                                c    Run brew cleanup                                              │
+│  L  Toggle leaves filter                                              d    Run brew doctor                                               │
+│  F  Fetch selected                                                    A    Run brew autoremove                                           │
+│                                                                       B    Brewfile actions                                              │
+│  Casks                                                                v    Vulnerability check                                           │
+│                                                                       m    Missing dependencies                                          │
+│  i  Install                                                           [ ]  Switch tabs                                                   │
+│  x  Uninstall                                                                                                                            │
+│  X  Zap uninstall                                                     Search                                                             │
+│  r  Reinstall                                                                                                                            │
+│  u  Upgrade                                                           Actions                                                            │
+│  U  Upgrade all                                                       /      Type search query                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ ?/esc close                                                                                                                                

@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Taps › Tap Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Tap Info    Trust    Formulae                   │
+╰──────────────────────────╯│━━━━━━━━━━━━                                      │
+╭─ 2 ∘ Formulae ───── 125 ─╮│3 taps · 0 official · 2 trusted · 1 untrusted     │
+│  ✓ alsa-lib    1.2.16.1_1││                                                  │
+╰──────────────┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓              │
+╭─ 3 ▣ Casks ──┃                                                ┃              │
+│▸ ✓ Claude Cod┃                    ADD TAP                     ┃              │
+╰──────────────┃                                                ┃foehrkn/homeb…│
+╭─ 4 ↑ Outdated┃          Tap repository (user/repo):           ┃              │
+│▸ ↑ git-d… 0.2┃                                                ┃              │
+╰──────────────┃       > type here...                           ┃              │
+╭─ 5 ⊕ Taps ───┃                                                ┃              │
+│▸ ⚠ danielfoeh┃           enter submit   esc cancel            ┃              │
+│  ✓ lthiagol/t┃                                                ┃              │
+╰──────────────┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛              │
+╭─ 6 ◎ Services ─────── 3 ─╮│                                                  │
+│▸ dbus                none│╰──────────────────────────────────────────────────╯
+╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ───────── – ─╮│No commands executed ye╭──────────────────────────╮
+│                          ││                       │ ✓ Install bash completed │
+╰──────────────────────────╯╰───────────────────────╰──────────────────────────╯
+ enter submit  esc cancel                                                       

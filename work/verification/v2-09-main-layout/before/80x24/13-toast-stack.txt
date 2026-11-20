@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Taps › Tap Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Tap Info    Trust    Formulae                   │
+╰──────────────────────────╯│━━━━━━━━━━━━                                      │
+╭─ 2 ∘ Formulae ───── 125 ─╮│1 taps · 1 official · 1 trusted · 0 untrusted     │
+│  ✓ alsa-lib    1.2.16.1_1││                                                  │
+╰──────────────────────────╯│Tap:       homebrew/cask-versions                 │
+╭─ 3 ▣ Casks ────────── 2 ─╮│Trusted:   trusted                                │
+│▸ ✓ Claude Code    2.1.311││Official:  yes                                    │
+╰──────────────────────────╯│Formulae:  0                                      │
+╭─ 4 ↑ Outdated ─────── 1 ─╮│Casks:     0                                      │
+│▸ ↑ git-d… 0.21.1 → 0.21.2││                                                  │
+╰──────────────────────────╯│                                                  │
+╭─ 5 ⊕ Taps ─────────── 1 ─╮│                                                  │
+│▸ ✓ homebrew/cas… official││                       ╭──────────────────────────╮
+│                          ││                       │ ✓ Install bash completed │
+╰──────────────────────────╯│                       ╰──────────────────────────╯
+╭─ 6 ◎ Services ─────── 3 ─╮│            ╭─────────────────────────────────────╮
+│▸ dbus                none│╰────────────│ ✗ Upgrade bash: brew upgrade failed │
+╰──────────────────────────╯╭─ Log ──────╰─────────────────────────────────────╯
+╭─ 7 ⌕ Search ───────── – ─╮│No commands execute╭──────────────────────────────╮
+│                          ││                   │ ⚠ Cannot untap official taps │
+╰──────────────────────────╯╰───────────────────╰──────────────────────────────╯
+ j/k navigate  a add  x remove  t trust  r repair  Tab next  S-Tab prev  ? more 

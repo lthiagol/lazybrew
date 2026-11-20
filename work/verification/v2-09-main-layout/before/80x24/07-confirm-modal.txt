@@ -1,0 +1,24 @@
+◆ lazybrew  Homebrew 7.0.15-36-g1f335ae        125 formulae  2 casks  1 outdated
+╭─ 1 ◉ Status ─────────────╮╭─ Formulae › Info ────────────────────────────────╮
+│▸ Homebrew  7.0.15-36-g1f…││  Info    Deps    Used By    Caveats    Files     │
+╰──────────────────────────╯│━━━━━━━━                                          │
+╭─ 2 ∘ Formulae ───── 125 ─╮│Name:         bash                                │
+│  ✓┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   │
+│▸ ✓┃                                                                      ┃   │
+╰───┃                              UNINSTALL                               ┃   │
+╭─ 3┃                                                                      ┃   │
+│▸ ✓┃                Uninstall bash? This cannot be undone.                ┃/  │
+╰───┃                removes bash; 1 package depends on it                 ┃   │
+╭─ 4┃                                                                      ┃d  │
+│▸ ↑┃                                                                      ┃   │
+╰───┃                    The following depend on bash:                     ┃   │
+╭─ 5┃                      direnv                                          ┃   │
+│▸ ⚠┃                                                                      ┃   │
+╰───┃                      [y]es   [n]o   esc cancel                       ┃   │
+╭─ 6┃                                                                      ┃   │
+│▸ d┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛───╯
+╰──────────────────────────╯╭─ Log ────────────────────────────────────────────╮
+╭─ 7 ⌕ Search ───────── – ─╮│No commands executed yet                          │
+│                          ││                                                  │
+╰──────────────────────────╯╰──────────────────────────────────────────────────╯
+ y yes  n no  esc cancel                                                        

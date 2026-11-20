@@ -510,3 +510,18 @@ orchestrator can redirect either.
   to `v2-10-tap-actions` (new AC-00 there), because the trust toggle must not
   act on a trust state that was never read: a name-only Taps list must say so
   in the panel and refuse `t`/`T` until a full read lands.
+
+## Q-v2-09-a — the Info split threshold never fires at 140x40 (runner lane)
+
+- **Asked:** AC-03.1 of `work/briefs/v2-09-main-layout.md` splits the Info views
+  when the main area's inner width is ≥ 100 columns.
+- **Found:** at 140x40 with the default `sidebar_width` 35 the sidebar is 49
+  cells, so the main box's inner width is 89. No Info view splits at the 140x40
+  size the brief names for the frames. The split shows at 200x60 (inner 128),
+  captured as an extra screen set in `work/verification/v2-09-main-layout/after/200x60/`.
+- **Done meanwhile:** the rule is implemented as written (content width ≥ 98,
+  which is box inner ≥ 100). The 140x40 frames show today's single column.
+- **Decision needed:** keep 100 on the box's inner width (the 140x40 frames never
+  split), or lower the threshold, or change the sidebar default so 140 columns
+  splits.
+- **Raised by:** runner lane (slice `v2-09-main-layout`).
