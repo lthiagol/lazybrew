@@ -2,6 +2,7 @@ package modal
 
 import (
 	"image/color"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -37,6 +38,7 @@ type ConfirmModal struct {
 	kind      ActionKind
 	title     string
 	message   string
+	detail    string
 	selected  int
 	done      bool
 	cancelled bool
@@ -54,6 +56,12 @@ func NewConfirmModal(kind ActionKind, title, message string) *ConfirmModal {
 
 // Kind reports the action the dialog confirms.
 func (m *ConfirmModal) Kind() ActionKind { return m.kind }
+
+// WithDetail sets the subtle line under the question: what the action will do.
+func (m *ConfirmModal) WithDetail(detail string) *ConfirmModal {
+	m.detail = detail
+	return m
+}
 
 func (m *ConfirmModal) Init() tea.Cmd {
 	return nil
@@ -83,40 +91,40 @@ func (m *ConfirmModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View draws the dialog: the first line of the message is the bold question,
+// the detail follows in subtle text, and the rest of the message is body text.
+// The key line shows the Yes/No selection and the keys that answer it.
 func (m *ConfirmModal) View() tea.View {
-	width := 50
-	title := style.AccentText.Render(m.title)
-	message := style.NormalItem.Render(m.message)
+	accent := m.kind.accent()
+	question, body, hasBody := strings.Cut(m.message, "\n")
 
-	yesStyle := style.NormalItem
-	noStyle := style.NormalItem
-	if m.selected == 0 {
-		yesStyle = style.SelectedItem
-	} else {
-		noStyle = style.SelectedItem
+	parts := []string{lipgloss.NewStyle().Bold(true).Render(question)}
+	if m.detail != "" {
+		parts = append(parts, style.SubtleText.Render(m.detail))
 	}
+	if hasBody {
+		parts = append(parts, "", style.NormalItem.Render(body))
+	}
+	parts = append(parts, "", m.choices(accent))
 
-	buttons := lipgloss.JoinHorizontal(lipgloss.Center,
-		yesStyle.Render(" [Yes] "),
-		style.SubtleText.Render("  "),
-		noStyle.Render(" [No] "),
+	return tea.NewView(dialog(accent, strings.ToUpper(m.title), confirmWidth, parts...))
+}
+
+// choices is the key line: [y]es and [n]o, the selected one reversed, then esc.
+func (m *ConfirmModal) choices(accent color.Color) string {
+	return keyLine(
+		choice(accent, "[y]", "es", m.selected == 0),
+		choice(accent, "[n]", "o", m.selected == 1),
+		keyHint(accent, "esc", "cancel"),
 	)
+}
 
-	content := lipgloss.JoinVertical(lipgloss.Center,
-		title,
-		"",
-		message,
-		"",
-		buttons,
-	)
-
-	// Width counts the border in v2; add it back so the box is the v1 size.
-	return tea.NewView(lipgloss.NewStyle().
-		Width(width + 2).
-		Align(lipgloss.Center).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.kind.accent()).
-		Render(content))
+func choice(accent color.Color, key, rest string, selected bool) string {
+	word := style.NormalItem
+	if selected {
+		word = style.SelectedItem.Reverse(true)
+	}
+	return lipgloss.NewStyle().Foreground(accent).Bold(true).Render(key) + word.Render(rest)
 }
 
 func (m *ConfirmModal) Done() bool      { return m.done }

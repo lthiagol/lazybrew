@@ -8,7 +8,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
-	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 var sgr = regexp.MustCompile("\x1b\\[[0-9;:]*m")
@@ -41,7 +40,7 @@ func TestModalFloatsOverFrame(t *testing.T) {
 				withModal := updateModel(newTestModel(), tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
 				withModal.activeModal = md.new()
 
-				overlay := plainRows(style.ActiveBorder.Render(md.new().View().Content))
+				overlay := plainRows(md.new().View().Content)
 				oh := len(overlay)
 				ow := len(overlay[0])
 				x := (sz[0] - ow) / 2
