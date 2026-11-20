@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -102,7 +101,7 @@ func TestStatusRefreshKeepsOutdatedCache(t *testing.T) {
 		}
 		found = true
 		joined := dashboardCards(dMsg)
-		if !strings.Contains(joined, "Outdated:  1 package") {
+		if !oneOutdated.MatchString(joined) {
 			t.Errorf("the dashboard must still render the cached count, got:\n%s", joined)
 		}
 	}
