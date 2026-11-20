@@ -1004,13 +1004,14 @@ func (m Model) render() string {
 		full = lipgloss.JoinVertical(lipgloss.Top, body, bottomBar)
 	}
 
-	if m.activeModal != nil {
-		modalView := m.activeModal.View().Content
-		overlay := style.ActiveBorder.Render(modalView)
-		full = lipgloss.JoinVertical(lipgloss.Center, full, "  ", overlay)
+	base := fitFrame(full, m.width, m.height)
+	if m.activeModal == nil {
+		return base
 	}
-
-	return fitFrame(full, m.width, m.height)
+	// The modal floats over the finished frame: it never adds rows, so the
+	// screen behind it keeps its size and position.
+	overlay := style.ActiveBorder.Render(m.activeModal.View().Content)
+	return compose(base, m.width, m.height, centred(overlay, m.width, m.height))
 }
 
 // invalidatePanelCache drops brew cache entries for a panel so the next
