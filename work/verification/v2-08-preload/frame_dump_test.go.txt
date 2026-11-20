@@ -188,10 +188,27 @@ func TestDump(t *testing.T) {
 		m = nm
 		nm, _ = m.Update(gui.TaskCompletedMsg{ID: "harness-err", Title: "Upgrade bash", Err: errors.New("brew upgrade failed")})
 		m = nm
-		nm, _ = m.Update(gui.DataLoadedMsg{PanelID: gui.PanelTaps, Items: []string{"homebrew/cask-versions  official"}})
+		// The landing has the shape a production load sends: Taps is the list
+		// Items is built from (F-r2-01 of v2-08 r2). It is the harness's own
+		// one-tap list, so the Taps count on the dashboard is 1 here, not the
+		// machine's three taps.
+		nm, _ = m.Update(gui.DataLoadedMsg{
+			PanelID: gui.PanelTaps,
+			Items:   []string{"homebrew/cask-versions  official"},
+			Taps:    []brew.Tap{{Name: "homebrew/cask-versions", IsOfficial: true, Installed: true}},
+		})
 		m = nm
 		m = key(m, runes("x"))
 		shot("13-toast-stack")
+		// The injected one-tap Taps list is the setup of frame 13 only. Here the
+		// real Taps read lands again: a refresh reads the loaded panels and the
+		// status (reads only), so the machine's own taps come back for frames 15
+		// on. Its toasts are dropped the same way as before frame 19.
+		nm, c = m.Update(gui.RefreshMsg{})
+		m = settle(nm, c, 0)
+		time.Sleep(7 * time.Second)
+		nm, c = m.Update(modal.ToastTickMsg{})
+		m = settle(nm, c, 0)
 		// New in v2-04 r3: the Brewfile menu, for the menu frame. Only opened
 		// and closed: Enter would run a brew bundle action, so it is not sent.
 		m = key(m, runes("1"))

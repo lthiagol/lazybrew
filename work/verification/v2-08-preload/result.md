@@ -124,11 +124,47 @@ the sidebar.
 - `05-outdated` (both sizes): the Outdated list now has `git-delta`, and its
   Info tab shows it. Data change only; the preload did not alter the panel.
 - `15-menu-brewfile` (140x40 only): the Brewfile menu covers part of the
-  dashboard, and the rows it leaves show `Outdated: 1 package` as in `01`. At 80x24
-  the menu covers that row, so no main change.
+  dashboard, and the rows it leaves show `Outdated: 1 package` as in `01`, and,
+  since F-r2-01, the dashboard's Taps counts (3 taps; see the recapture below).
+  At 80x24 the menu covers the dashboard, so no dashboard row changes there.
 
 `06-taps` and `14-input-modal` no longer differ in the main area: the Taps header
 reads `2 trusted · 1 untrusted` and the selected tap shows its remote, as in v2-07.
+
+### Recapture after F-r2-01 (the injected Taps landing)
+
+The harness's step 13 injects a Taps landing for the untap refusal. It had no
+`Taps` slice, a shape production never sends, so frames 15 and 18 showed
+`Taps 0` beside a Taps box of one tap (r2 finding). Two changes to the harness:
+
+1. The injected landing carries `Taps` consistent with `Items` (one official tap,
+   `homebrew/cask-versions`), the shape production sends.
+2. After frame 13, `gui.RefreshMsg{}` is sent and settled, and its toasts are
+   dropped the same way as before frame 19. The refresh reads the loaded panels
+   and the status (reads only), so the machine's own three taps return for
+   frames 15 on. Frame 13 is the only frame that shows the injected tap.
+
+Frames regenerated with the same harness (`DUMP_DIR` as before; `ok`, 48 s). Against
+the committed frames of e3c4e08, 18 files changed. Each is named here, and
+nothing else changed:
+
+- `13-toast-stack` (both sizes): the injected tap now has its production shape,
+  so the Taps details (trust, official, formula and cask counts) show where the
+  committed frame said `No custom taps`. Harness setup only.
+- `15-menu-brewfile`, `18-doctor` (140x40): the dashboard's Taps counts read `3`,
+  with the machine's real Total, Official and Third-party, where the committed
+  frames read `0` (the r2 finding). The Taps box reads `3`.
+- `17-cask-info`, `19-services-info`, `20-services-stop-confirm` (140x40): the
+  Taps box lists the machine's three taps with their real trust states, not the
+  injected one.
+- `15`, `17`, `18`, `19`, `20` (80x24): the Taps box and its rows are the three
+  taps, as above. In 15, 17 and 18 the inactive Formulae box shows its cursor row
+  (bash) differently: behind the overlay in 15, and at a different scroll offset
+  in 17 and 18. The selection is the same item (bash, as in `03`); only the
+  visible window of the box moved after the refresh.
+
+Remaining changes in 15 and 18 relative to v2-07 are the Outdated count, as before,
+and now the machine's three taps, which v2-07 also showed.
 
 ## Environment: the first capture ran with brew slow
 
