@@ -991,27 +991,26 @@ func (m Model) render() string {
 	mainContent := m.renderMainPanel()
 	bottomBar := m.renderBottomBar()
 
-	toastView := ""
-	if m.toast != nil {
-		toastView = m.toast.View()
-	}
-
 	body := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainContent)
-	var full string
-	if toastView != "" {
-		full = lipgloss.JoinVertical(lipgloss.Top, body, bottomBar, toastView)
-	} else {
-		full = lipgloss.JoinVertical(lipgloss.Top, body, bottomBar)
-	}
+	base := fitFrame(lipgloss.JoinVertical(lipgloss.Top, body, bottomBar), m.width, m.height)
 
-	base := fitFrame(full, m.width, m.height)
-	if m.activeModal == nil {
+	// Overlays float over the finished frame, in stacking order: the toast
+	// on the last body row, then the modal centred above it. Neither adds
+	// a row, so the screen behind them keeps its size and position.
+	var overlays []*lipgloss.Layer
+	if m.toast != nil {
+		if toastView := m.toast.View(); toastView != "" {
+			overlays = append(overlays, bottomRight(toastView, m.width, m.height))
+		}
+	}
+	if m.activeModal != nil {
+		overlay := style.ActiveBorder.Render(m.activeModal.View().Content)
+		overlays = append(overlays, centred(overlay, m.width, m.height))
+	}
+	if len(overlays) == 0 {
 		return base
 	}
-	// The modal floats over the finished frame: it never adds rows, so the
-	// screen behind it keeps its size and position.
-	overlay := style.ActiveBorder.Render(m.activeModal.View().Content)
-	return compose(base, m.width, m.height, centred(overlay, m.width, m.height))
+	return compose(base, m.width, m.height, overlays...)
 }
 
 // invalidatePanelCache drops brew cache entries for a panel so the next
