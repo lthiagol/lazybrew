@@ -79,6 +79,33 @@ func tapDetails(t *brew.Tap) string {
 	}, "\n") + "\n"
 }
 
+// tapTrustStory is the Trust tab: what the selected tap's trust state means for
+// its formulae and casks, and the key that changes it. Homebrew loads the
+// formulae and casks of a non-official tap only once the tap is trusted.
+func tapTrustStory(t *brew.Tap) string {
+	var state, meaning string
+	switch {
+	case t.IsOfficial:
+		state = "official"
+		meaning = "Official taps (homebrew/*) are always trusted: their formulae and casks load without a trust step."
+	case t.Trusted:
+		state = "trusted"
+		meaning = "Homebrew may load this tap's formulae and casks."
+	default:
+		state = "untrusted"
+		meaning = "Homebrew may not load this tap's formulae and casks until the tap is trusted."
+	}
+	return strings.Join([]string{
+		detailLine("Tap", t.Name),
+		detailLine("Trust", state),
+		"",
+		meaning,
+		fmt.Sprintf("Its %d formulae and %d casks follow that state.", t.FormulaCount, t.CaskCount),
+		"",
+		"Press t to trust or untrust the tap, or one of its formulae or casks.",
+	}, "\n") + "\n"
+}
+
 // renderTapInfo is the Tap Info tab: the summary of every tap, then the
 // selected tap's details.
 func renderTapInfo(p *panelData) string {
