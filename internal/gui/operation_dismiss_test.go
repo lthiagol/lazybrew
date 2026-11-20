@@ -225,3 +225,111 @@ func TestFinishedOperationFooterStartsWithEscClose(t *testing.T) {
 		t.Fatalf("a running operation shows no close hint in the footer")
 	}
 }
+
+// finishedServicesRun is the Services panel with a successful stop shown: the
+// run is done and its operation is on screen.
+func finishedServicesRun(t *testing.T) *Model {
+	t.Helper()
+	m := sizedServicesModel(t)
+	m = startOp(m, "service-stop:moshi-hook", "stop moshi-hook")
+	return finishOp(m, "service-stop:moshi-hook", "stop moshi-hook", nil)
+}
+
+// TestMovingAwayClosesAFinishedOperation (v2-07 AC-03.1): Tab, Shift+Tab, a
+// panel number and a click on another sidebar box each clear a finished
+// operation, and the panel moved to shows in the main area.
+func TestMovingAwayClosesAFinishedOperation(t *testing.T) {
+	moves := map[string]func(m *Model) *Model{
+		"tab": func(m *Model) *Model {
+			return updateModel(m, tea.KeyPressMsg{Code: tea.KeyTab})
+		},
+		"shift+tab": func(m *Model) *Model {
+			return updateModel(m, tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
+		},
+		"1": func(m *Model) *Model { return sendKey(m, "1") },
+		"click": func(m *Model) *Model {
+			m.cfg.GUI.Mouse = true
+			y := m.computeContentHeights()[0] + 2 + 1
+			return updateModel(m, tea.MouseClickMsg{X: 2, Y: y, Button: tea.MouseLeft})
+		},
+	}
+	for name, move := range moves {
+		t.Run(name, func(t *testing.T) {
+			m := finishedServicesRun(t)
+			if !strings.Contains(screenText(m), "Completed in") {
+				t.Fatalf("the finished run should show before the move")
+			}
+			before := m.activePanel
+			m = move(m)
+			if m.activePanel == before {
+				t.Fatalf("the move did not change panel")
+			}
+			if m.opState != nil || strings.Contains(screenText(m), "Completed in") {
+				t.Fatalf("moving away should clear the finished run, got:\n%s", screenText(m))
+			}
+		})
+	}
+}
+
+// TestMovingAwayLeavesARunningOperation (v2-07 AC-03.1): a running operation is
+// not cleared by moving; it keeps its view until it ends.
+func TestMovingAwayLeavesARunningOperation(t *testing.T) {
+	m := sizedServicesModel(t)
+	m = startOp(m, "service-stop:moshi-hook", "stop moshi-hook")
+	m = sendKey(m, "1")
+	if m.opState == nil || !m.opState.Running() {
+		t.Fatal("moving away cleared a running operation")
+	}
+	if !strings.Contains(screenText(m), "Running") {
+		t.Fatalf("the running view should stay on screen, got:\n%s", screenText(m))
+	}
+}
+
+// A key on the panel already shown is not a move, so the finished run stays.
+func TestKeyOnTheCurrentPanelKeepsTheFinishedOperation(t *testing.T) {
+	m := finishedServicesRun(t)
+	m = sendKey(m, "6")
+	if m.opState == nil {
+		t.Fatal("pressing the current panel's number cleared the finished run")
+	}
+}
+
+// infoStatusRow is the Status row of the Services Info in the main area. The
+// sidebar's own Status box is above it, so the search starts at the Info's title.
+func infoStatusRow(m *Model) string {
+	text := screenText(m)
+	i := strings.Index(text, "Services › Info")
+	if i < 0 {
+		return ""
+	}
+	for _, line := range strings.Split(text[i:], "\n") {
+		if strings.Contains(line, "Status") {
+			return line
+		}
+	}
+	return ""
+}
+
+// TestServicesInfoDrawsTheReloadOnceTheRunCloses (v2-07 AC-03.2): the stop's
+// completion reloads the Services panel, and when the run closes the Info shows
+// the reloaded state.
+func TestServicesInfoDrawsTheReloadOnceTheRunCloses(t *testing.T) {
+	m := finishedServicesRun(t)
+	stopped, _ := serviceStatus(brew.ServiceNone, style.UnicodeIcons)
+
+	m = updateModel(m, RefreshMsg{})
+	m = updateModel(m, dataLoaded([]brew.Service{stoppedService("moshi-hook")}))
+	m = updateModel(m, opAutoCloseMsg{op: m.opState})
+	if m.opState != nil {
+		t.Fatal("the run should have closed")
+	}
+	if !strings.Contains(screenText(m), "Services › Info") {
+		t.Fatalf("the Services Info should be in the main area, got:\n%s", screenText(m))
+	}
+	if row := infoStatusRow(m); !strings.Contains(row, stopped) {
+		t.Fatalf("the Info's Status row = %q, want the reloaded %q", row, stopped)
+	}
+	if strings.Contains(screenText(m), "Loading...") {
+		t.Fatalf("the reload has landed, the Info should not still be loading:\n%s", screenText(m))
+	}
+}

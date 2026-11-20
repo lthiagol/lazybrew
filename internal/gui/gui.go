@@ -1220,6 +1220,12 @@ func (m *Model) switchPanel(id PanelID) tea.Cmd {
 	if int(id) >= len(m.panels) {
 		return nil
 	}
+	// Moving to another panel clears a finished operation, whose view covers the
+	// main area. A running one stays. A key or click on the panel already shown
+	// is not a move, so it clears nothing.
+	if id != m.activePanel && m.opState != nil && m.opState.Done() {
+		m.opState = nil
+	}
 	m.panels[m.activePanel].active = false
 	m.activePanel = id
 	m.panels[m.activePanel].active = true
