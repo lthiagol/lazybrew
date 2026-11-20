@@ -463,3 +463,10 @@ Rulings, all answered with the orchestrator's recommendation:
 - **Decision needed:** accept "identical except the live PID row" as the AC-04.1
   evidence, or pin the services frames to a fixed PID in the harness so the
   diff is empty.
+
+### Orchestrator ruling on Q-v2-07-pid (2026-11-20)
+
+Accepted. The user restarted `moshi-hook` from lazybrew before this slice
+(that restart is the bug v2-07 fixes), so its PID changed from 800 to 1332457.
+A frame that differs from `v2-06-animations/after/` only in that live PID row
+satisfies AC-04.1. Later slices compare against `v2-07-op-dismiss/after/`.
