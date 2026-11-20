@@ -1,0 +1,47 @@
+╭──────────────────────╮╭─────────────────────────────────────────────────────  
+│1 Status  16          │──╮                                                     
+│                      ││Formulae › List                                        
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│  List    Info    Deps    Used By    Caveats    Files  
+│2 Formulae  125       ││                                                       
+│                      ││━━━━━━━━                                               
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│Name            Version          Status     Tap        
+│3 Casks               ││                                                       
+│(empty)               ││────────────────────────────────────────────────────   
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│alsa-lib        1.2.16.1_1       installed  hb/c       
+│4 Outdated            ││                                                       
+│(empty)               ││bash            5.3.20           installed  hb/c       
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│bat             0.26.1           installed  hb/c       
+│5 Taps                ││                                                       
+│(empty)               ││brotli          1.2.1            installed  hb/c       
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│btop            1.4.8            installed  hb/c       
+│6 Services            ││                                                       
+│(empty)               ││bzip2           1.0.8            installed  hb/c       
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│ca-certificate… 2026-11-05       installed  hb/c       
+│7 Search              ││                                                       
+│(empty)               ││curl            8.23.0           installed  hb/c       
+╰──────────────────────╯│                                                       
+                        │cyrus-sasl      2.1.28_4         installed  hb/c       
+                        │                                                       
+                        │dav1d           1.5.5            installed  hb/c       
+                        │                                                       
+                        │dbus            1.16.4           installed  hb/c       
+                        │                                                       
+                        │╭──────────────────────────────────────────────────╮   
+                        │                                                       
+                        ││Log                                               │   
+                        │                                                       
+                        ││No commands executed yet                          │   
+                        │                                                       
+                        │╰──────────────────────────────────────────────────╯   
+                        │                                                       
+                        ╰─────────────────────────────────────────────────────  
+                        ──╯                                                     
+  Tab  next S-Tab  prev 1-7  jump /  search ?  help R  refresh C  log q  quit   
+  j/k  navigate [ ]  tabs i  install x  remove r  reinstall u  upgrade U        
+ upgrade all p  pin L  leaves F  fetch                                          

@@ -1,0 +1,47 @@
+╭──────────────────────╮╭─────────────────────────────────────────────────────  
+│1 Status  16          │──╮                                                     
+│                      ││Formulae › Info                                        
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│  List    Info    Deps    Used By    Caveats    Files  
+│2 Formulae  125       ││                                                       
+│                      ││        ━━━━━━━━                                       
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│Name:        bash                                      
+│3 Casks               ││                                                       
+│(empty)               ││Version:     5.3.20                                    
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│Tap:         homebrew/core                             
+│4 Outdated            ││                                                       
+│(empty)               ││Status:      installed                                 
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│License:     GPL-3.0-or-later                          
+│5 Taps                ││                                                       
+│(empty)               ││Homepage:    https://www.gnu.org/software/bash/        
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│Bottled:     yes                                       
+│6 Services            ││                                                       
+│(empty)               ││Description: Bourne-Again SHell, a UNIX command in…    
+╰──────────────────────╯│                                                       
+╭──────────────────────╮│                                                       
+│7 Search              ││                                                       
+│(empty)               ││                                                       
+╰──────────────────────╯│                                                       
+                        │                                                       
+                        │                                                       
+                        │                                                       
+                        │                                                       
+                        │                                                       
+                        │                                                       
+                        │╭──────────────────────────────────────────────────╮   
+                        │                                                       
+                        ││Log                                               │   
+                        │                                                       
+                        ││No commands executed yet                          │   
+                        │                                                       
+                        │╰──────────────────────────────────────────────────╯   
+                        │                                                       
+                        ╰─────────────────────────────────────────────────────  
+                        ──╯                                                     
+  Tab  next S-Tab  prev 1-7  jump /  search ?  help R  refresh C  log q  quit   
+  j/k  navigate [ ]  tabs i  install x  remove r  reinstall u  upgrade U        
+ upgrade all p  pin L  leaves F  fetch                                          
