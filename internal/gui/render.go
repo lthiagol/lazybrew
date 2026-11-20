@@ -146,6 +146,27 @@ func fitFrame(s string, w, h int) string {
 	return fitBox(lipgloss.NewStyle().MaxWidth(w).Render(s), w, h)
 }
 
+// compose draws overlays on top of the base frame and returns the result at
+// exactly w cells by h rows. Each overlay is a layer with a higher z than
+// the one before it, so the order of the arguments is the stacking order.
+// Cells no overlay covers are the base frame's own.
+func compose(base string, w, h int, overlays ...*lipgloss.Layer) string {
+	layers := []*lipgloss.Layer{lipgloss.NewLayer(base).Z(0)}
+	for i, o := range overlays {
+		layers = append(layers, o.Z(i+1))
+	}
+	canvas := lipgloss.NewCanvas(w, h)
+	canvas.Compose(lipgloss.NewCompositor(layers...))
+	return fitFrame(canvas.Render(), w, h)
+}
+
+// centred places content in the middle of a w x h frame.
+func centred(content string, w, h int) *lipgloss.Layer {
+	x := max(0, (w-lipgloss.Width(content))/2)
+	y := max(0, (h-lipgloss.Height(content))/2)
+	return lipgloss.NewLayer(content).X(x).Y(y)
+}
+
 // logBusy reports whether the log pane should use the Accent border.
 func (m Model) logBusy() bool {
 	return m.tasks.IsRunning() || m.opState != nil
