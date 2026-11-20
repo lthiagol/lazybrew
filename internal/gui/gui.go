@@ -481,12 +481,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.terminalTooSmall = msg.Width < minTerminalWidth || msg.Height < minTerminalHeight
+		// The scroll viewport shows the main content area, so it takes
+		// the layout's content size, not the terminal's.
+		l := m.screenLayout()
 		if !m.ready {
-			m.viewport = viewport.New(viewport.WithWidth(max(10, msg.Width-4)), viewport.WithHeight(max(10, msg.Height-6)))
+			m.viewport = viewport.New(viewport.WithWidth(max(10, l.mainW-2)), viewport.WithHeight(max(10, l.contentH)))
 			m.ready = true
 		} else {
-			m.viewport.SetWidth(max(10, msg.Width-4))
-			m.viewport.SetHeight(max(10, msg.Height-6))
+			m.viewport.SetWidth(max(10, l.mainW-2))
+			m.viewport.SetHeight(max(10, l.contentH))
 		}
 		// Re-derive the per-panel viewport heights once per resize, then
 		// clamp cursor/offset per panel here in the Update loop instead
@@ -719,7 +722,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// smaller of the sidebar and main-list windows, which the
 			// shared offset must satisfy (r3 finding R3-4).
 			vc := m.panels[m.activePanel].visibleCount()
-			_, mainH := m.logLayoutHeights(m.height - 4)
+			mainH := m.screenLayout().contentH
 			m.panels[m.activePanel].normalizeToHeight(min(vc, mainH))
 			return m, nil
 
@@ -973,15 +976,15 @@ func (m Model) render() string {
 		// Width and Height count the border (v2); v1 added it on top, so
 		// the box is 2 cells wider and taller than the bare numbers.
 		helpView := lipgloss.NewStyle().
-			Width(m.width-2).
-			Height(m.height-2).
+			Width(m.width).
+			Height(m.height-1).
 			Padding(1, 2).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(style.AccentColor).
 			Render(helpContent)
 
 		helpView += "\n" + style.SubtleText.Render("  Press ? or Esc to close")
-		return helpView
+		return fitFrame(helpView, m.width, m.height)
 	}
 
 	sidebar := m.renderSidebar()
@@ -1007,7 +1010,7 @@ func (m Model) render() string {
 		full = lipgloss.JoinVertical(lipgloss.Center, full, "  ", overlay)
 	}
 
-	return full
+	return fitFrame(full, m.width, m.height)
 }
 
 // invalidatePanelCache drops brew cache entries for a panel so the next

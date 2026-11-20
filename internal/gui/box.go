@@ -17,5 +17,5 @@ func renderBox(content string, width, height int, active bool) string {
 		Height(height + 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(borderColor).
-		Render(content)
+		Render(fitBox(content, width, height))
 }

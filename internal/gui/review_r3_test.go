@@ -195,7 +195,7 @@ func TestBatchOverlayTitleShowsProgress(t *testing.T) {
 // leave offset+visible excluding the selected row until the next
 // normalize-triggering event. At height 24 the sidebar is in the cramped
 // branch (visibleRows falls back), so the main list height is the binding
-// window: 16 rows collapsed, 13 expanded.
+// window: 17 rows collapsed, 13 expanded.
 func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 24})
@@ -215,7 +215,7 @@ func TestCommandLogToggleKeepsCursorVisible(t *testing.T) {
 	if m.logCollapsed {
 		t.Fatal("C must expand the command log")
 	}
-	_, mainH := m.logLayoutHeights(m.height - 4)
+	mainH := m.screenLayout().contentH
 	if mainH != 13 {
 		t.Fatalf("expected main content height 13 with the log expanded, got %d", mainH)
 	}
