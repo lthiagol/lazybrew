@@ -51,9 +51,10 @@ skipped. Expectations that moved are listed under each AC below.
   underline move with the content.
 - `scroll.go`: `contentLast` and the scroll window use the padded width.
 - `mouse.go`: a tab click subtracts `mainPadX`, so clicks land on the drawn tab.
-- Not padded: the Log box. The brief scopes AC-01 to main-area views, and the Log
-  is a separate box. Its text still touches its left border (`No commands executed
-  yet` sits in column 0). This is a judgement call; the reviewer may want it too.
+- The Log box is padded too (review r3, the orchestrator's ruling): the same one
+  column either side, from `mainPadX`. The first AC-01 commit left it unpadded, as a
+  separate box outside the brief's "main-area views". Its text no longer touches its
+  border. See "Log padding" below.
 - Test: `main_padding_test.go` checks that every body row of the main box has a
   blank column at both inner edges, for every panel state at 140x40 and 80x24.
 
@@ -171,6 +172,14 @@ split; its Tap Info, Services Info and the overlays over them (06, 14, 19, 20) c
 only because the Remote and the Unit file moved to the right column.
 
 
+### Log padding (review r3)
+
+The Log box has the same one column of padding left and right as the main box.
+`renderCommandLogBox` gives the log text a width of `width-2-2*mainPadX` and pads it,
+so `No commands executed yet` and the command lines start at column 2 of the box.
+Test: `TestLogBoxHasInnerPadding` (empty and with lines, at 140x40 and 80x24). Every
+frame with a Log box changes in its Log rows; the rest of each frame is unchanged.
+
 ## AC-04 — the Log box gives the space back when idle
 
 `render.go` `logHeight` (outer rows, border included), read by `screenLayout`, so
@@ -223,7 +232,8 @@ fill the body) and `TestLogBoxHeightChangesAtOnce`.
 
 Frames 08 and 16 (help) are identical: the help overlay covers the whole main area.
 For the other screens, the 140x40 and 80x24 frames differ by the one-column padding
-and the Log box, plus the table or the Info change named below.
+and the Log box (now padded: every screen with a Log box changes in its Log rows,
+see "Log padding"), plus the table or the Info change named below.
 
 | Screen | 140x40 | 80x24 | Why |
 |---|---|---|---|
@@ -265,7 +275,7 @@ right), 17 (cask Description right), 06 (Formulae count right of the Tap row) an
 
 ## What the next session must know
 
-- The Log box is not padded: its text touches its left border.
+- The Log box is padded one column either side, like the main box (`mainPadX`).
 - The split threshold is one constant, `splitWidth` in `presentation/detail.go`
   (82 content cells = box inner 84).
 - The Deps tab no longer uses `tabContent`. Anything that expects a stored Deps

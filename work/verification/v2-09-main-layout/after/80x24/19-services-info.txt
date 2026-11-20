@@ -19,6 +19,6 @@
 │▸ ▶ moshi-hook     started││                                                  │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
 ╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
-│                          ││No commands executed yet                          │
+│                          ││ No commands executed yet                         │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
  S stop  r restart  j/k navigate  c cleanup  Tab next  S-Tab prev  ? more       

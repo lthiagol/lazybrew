@@ -19,6 +19,6 @@
 │▸ dbus                none││ │Total:        3                   │             │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
 ╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
-│                          ││No commands executed yet                          │
+│                          ││ No commands executed yet                         │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
  R refresh  c cleanup  d doctor  A autoremove  B brewfile  v vulns  ? more      

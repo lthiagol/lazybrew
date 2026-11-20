@@ -19,6 +19,6 @@
 │▸ dbus                none││                                                  │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
 ╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ─────────────────╭──────────────────────────╮
-│                          ││No commands executed ye│ ✓ Install bash completed │
+│                          ││ No commands executed y│ ✓ Install bash completed │
 ╰──────────────────────────╯╰───────────────────────╰──────────────────────────╯
  enter submit  esc cancel                                                       

@@ -19,6 +19,6 @@
 │▸ dbus                none││                                                  │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
 ╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ────────────────────────────────────────────╮
-│                          ││No commands executed yet                          │
+│                          ││ No commands executed yet                         │
 ╰──────────────────────────╯╰──────────────────────────────────────────────────╯
  j/k navigate  a add  x remove  t trust  r repair  Tab next  S-Tab prev  ? more 

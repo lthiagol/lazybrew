@@ -102,8 +102,8 @@ func (m Model) renderMainPanel() string {
 // bottomBarRows is the height of the key-hint bar pinned under the body.
 const bottomBarRows = 1
 
-// mainPadX is the blank column either side of the main area's content, inside
-// its border, so text never touches the frame.
+// mainPadX is the blank column either side of the main area's content and the
+// Log box's, inside their borders, so text never touches the frame.
 const mainPadX = 1
 
 // mainContentWidth is the width the main content is laid out to: the main box
@@ -256,8 +256,10 @@ func (m Model) renderCommandLogBox(width, height int) string {
 	// height is the full vertical budget for the log section, border
 	// included, so the body is two rows shorter than the box.
 	bodyH := max(0, height-2)
-	bodyW := max(1, width-2)
-	body := m.commandLog.View(bodyW, bodyH)
+	// The log text is padded one column either side, as the main area's is.
+	bodyW := max(1, width-2-2*mainPadX)
+	body := fitFrame(lipgloss.NewStyle().PaddingLeft(mainPadX).Render(
+		m.commandLog.View(bodyW, bodyH)), width-2, bodyH)
 	label := ""
 	if m.logBusy() && m.opState != nil {
 		label = style.SubtleText.Render(m.opState.Title)

@@ -19,6 +19,6 @@
 │▸ dbus                none││            │ ✗ Upgrade bash: brew upgrade failed │
 ╰──────────────────────────╯╰────────────╰─────────────────────────────────────╯
 ╭─ 7 ⌕ Search ───────── – ─╮╭─ Log ─────────────╭──────────────────────────────╮
-│                          ││No commands execute│ ⚠ Cannot untap official taps │
+│                          ││ No commands execut│ ⚠ Cannot untap official taps │
 ╰──────────────────────────╯╰───────────────────╰──────────────────────────────╯
  j/k navigate  a add  x remove  t trust  r repair  Tab next  S-Tab prev  ? more 
