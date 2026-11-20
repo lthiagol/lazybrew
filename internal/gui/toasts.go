@@ -88,6 +88,17 @@ type toastPlacement struct {
 // body row, flush right, the newest lowest. Each box keeps its own width, so
 // a narrow toast does not pad out to the widest one.
 func (m Model) toastPlacements() []toastPlacement {
+	out := m.restingToastPlacements()
+	for i := range out {
+		t := m.toasts[i]
+		out[i].x += m.toastOffset(t, "dx")
+		out[i].y += m.toastOffset(t, "dy")
+	}
+	return out
+}
+
+// restingToastPlacements is toastPlacements with every toast in its slot.
+func (m Model) restingToastPlacements() []toastPlacement {
 	boxes := m.toastBoxes()
 	stack := lipgloss.JoinVertical(lipgloss.Right, boxes...)
 	left, top := bottomRightOrigin(stack, m.width, m.height)

@@ -1,14 +1,17 @@
 package gui
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/anim"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
 // animationsOn reports whether the screen moves. gui.animations is the default;
@@ -64,6 +67,115 @@ func (m Model) stepMotion(at time.Time) (Model, tea.Cmd) {
 	return m, anim.Tick()
 }
 
+// The names of the animated modal values: how far above its resting row the
+// modal sits, and how much of the muted backdrop has faded in (0 to 1).
+const (
+	modalDrop = "modal:drop"
+	modalFade = "modal:fade"
+	// modalDropRows is how many rows above its resting place a new modal
+	// starts; it springs down onto it.
+	modalDropRows = 3
+)
+
+// motionModal starts the entrance of a modal that has just opened: it springs
+// down from modalDropRows above its place, and the backdrop fades in. Closing
+// needs no motion: the modal is gone at once.
+func (m *Model) motionModal() {
+	if m.activeModal == nil {
+		m.motionShown = nil
+		return
+	}
+	if m.activeModal == m.motionShown {
+		return
+	}
+	m.motionShown = m.activeModal
+	m.motion.Snap(modalDrop, modalDropRows)
+	m.motion.Snap(modalFade, 0)
+	m.setMotionTarget(modalDrop, 0)
+	m.setMotionTarget(modalFade, 1)
+}
+
+// modalDropAt is how many rows the open modal still sits above its place.
+func (m Model) modalDropAt() int {
+	if !m.motionOn {
+		return 0
+	}
+	v, _ := m.motion.Get(modalDrop)
+	return int(math.Round(v))
+}
+
+// backdropFadeAt is how far the backdrop has faded to the muted role: 0 is the
+// frame's own text role, 1 is the muted role, the resting backdrop.
+func (m Model) backdropFadeAt() float64 {
+	if !m.motionOn {
+		return 1
+	}
+	v, ok := m.motion.Get(modalFade)
+	if !ok {
+		return 1
+	}
+	return v
+}
+
+// The names of a toast's animated values. A toast is named by its pointer, so
+// a toast the stack has dropped leaves names no live toast owns.
+//
+// dx and dy are how far the toast is drawn from its slot, in cells: a new toast
+// starts at the right edge (dx), and a toast whose slot moved starts from the
+// slot it left (dy). slot is the row the toast last rested on.
+func toastKey(t *modal.Toast) string {
+	return fmt.Sprintf("toast:%p", t)
+}
+
+func toastName(t *modal.Toast, part string) string {
+	return toastKey(t) + ":" + part
+}
+
+// motionToasts springs the toast stack. A new toast slides in from the right
+// edge into its slot. A toast whose slot moved, because the stack grew or
+// lost one, springs from where it was. A resize snaps the stack, and a toast
+// that has left the stack is forgotten.
+func (m *Model) motionToasts(resized bool) {
+	alive := make(map[string]bool, len(m.toasts))
+	for i, p := range m.restingToastPlacements() {
+		t := m.toasts[i]
+		alive[toastKey(t)] = true
+		slot := toastName(t, "slot")
+		dy := toastName(t, "dy")
+		last, seen := m.motion.Get(slot)
+		switch {
+		case !seen:
+			m.motion.Snap(toastName(t, "dx"), float64(m.width-p.x))
+			m.setMotionTarget(toastName(t, "dx"), 0)
+		case resized:
+			m.motion.Snap(dy, 0)
+		case int(last) != p.y:
+			// Keep the offset the toast is drawn at now, so the move is
+			// continuous when it is retargeted mid-flight.
+			now, _ := m.motion.Get(dy)
+			m.motion.Snap(dy, now+last-float64(p.y))
+			m.setMotionTarget(dy, 0)
+		}
+		m.motion.Snap(slot, float64(p.y))
+	}
+	for _, name := range m.motion.Names() {
+		i := strings.LastIndex(name, ":")
+		if i < 0 {
+			continue
+		}
+		if key := name[:i]; strings.HasPrefix(key, "toast:") && !alive[key] {
+			m.motion.Remove(name)
+		}
+	}
+}
+
+// toastOffset is how far a toast is drawn from its slot, in cells, along one
+// axis: dx or dy. A toast with no offset is drawn in its slot.
+func (m Model) toastOffset(t *modal.Toast, part string) int {
+	v, _ := m.motion.Get(toastName(t, part))
+	return int(math.Round(v))
+}
+
 // motionStep is the time one frame advances: the gap since the last frame,
 // capped at anim.MaxStep. The first frame of a run has no last frame, so it
 // advances one frame interval.
@@ -77,8 +189,12 @@ func (m Model) motionStep(at time.Time) time.Duration {
 // motionTargets sets where every animated value is going, from the model's
 // state. Each animated feature adds its targets here.
 func (m *Model) motionTargets() {
+	resized := m.motionSize != [2]int{m.width, m.height}
+	m.motionSize = [2]int{m.width, m.height}
 	m.motionTabs()
-	m.motionSidebar()
+	m.motionSidebar(resized)
+	m.motionModal()
+	m.motionToasts(resized)
 }
 
 // The names of the animated sidebar boxes: one value per panel, by index.
@@ -89,20 +205,18 @@ func sidebarName(i int) string {
 // motionSidebar aims each sidebar box at its resting height. A resize snaps
 // the boxes, since the total height changes with the window; a focus change
 // springs them. The list windows follow the boxes (followSidebar).
-func (m *Model) motionSidebar() {
+func (m *Model) motionSidebar(resized bool) {
 	if !m.ready {
 		return
 	}
-	snap := m.motionSize != [2]int{m.width, m.height}
-	m.motionSize = [2]int{m.width, m.height}
 	for i, h := range m.restingContentHeights() {
-		if snap {
+		if resized {
 			m.motion.Snap(sidebarName(i), float64(h))
 		} else {
 			m.setMotionTarget(sidebarName(i), float64(h))
 		}
 	}
-	if snap {
+	if resized {
 		m.followSidebar()
 	}
 }

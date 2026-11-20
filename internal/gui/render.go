@@ -171,16 +171,40 @@ func compose(base string, w, h int, overlays ...*lipgloss.Layer) string {
 	return fitFrame(canvas.Render(), w, h)
 }
 
+// backdropFadeSteps is how many colours the backdrop fades through, from the
+// frame's text role to the muted role.
+const backdropFadeSteps = 3
+
 // dimBackdrop mutes the base frame behind an open modal: every row but the
 // last (the footer, which shows the modal's keys) is drawn in the muted role.
 // Only the style changes; the text of every cell stays as it was.
 func dimBackdrop(base string) string {
+	return fadeBackdrop(base, 1)
+}
+
+// fadeBackdrop is dimBackdrop part way through its fade-in: fade is 0 for the
+// text role and 1 for the muted role, and a value between is one of the blend
+// steps from one to the other.
+func fadeBackdrop(base string, fade float64) string {
 	rows := strings.Split(base, "\n")
-	muted := lipgloss.NewStyle().Foreground(style.MutedColor)
+	muted := lipgloss.NewStyle().Foreground(backdropColor(fade))
 	for i := 0; i < len(rows)-1; i++ {
 		rows[i] = muted.Render(ansi.Strip(rows[i]))
 	}
 	return strings.Join(rows, "\n")
+}
+
+// backdropColor is the colour the backdrop is drawn in at fade. The resting
+// backdrop is exactly the muted role.
+func backdropColor(fade float64) color.Color {
+	if fade >= 1 {
+		return style.MutedColor
+	}
+	if fade <= 0 {
+		return style.TextColor
+	}
+	steps := lipgloss.Blend1D(backdropFadeSteps+1, style.TextColor, style.MutedColor)
+	return steps[int(fade*backdropFadeSteps)]
 }
 
 // bottomRightOrigin is where content goes to sit flush right with its last
@@ -192,10 +216,11 @@ func bottomRightOrigin(content string, w, h int) (x, y int) {
 	return x, y
 }
 
-// centred places content in the middle of a w x h frame.
-func centred(content string, w, h int) *lipgloss.Layer {
+// centred places content in the middle of a w x h frame, drop rows higher up
+// (an entrance that has not yet come down to its place).
+func centred(content string, w, h, drop int) *lipgloss.Layer {
 	x := max(0, (w-lipgloss.Width(content))/2)
-	y := max(0, (h-lipgloss.Height(content))/2)
+	y := max(0, (h-lipgloss.Height(content))/2-drop)
 	return lipgloss.NewLayer(content).X(x).Y(y)
 }
 

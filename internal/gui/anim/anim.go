@@ -103,6 +103,15 @@ func (s *Set) Get(name string) (float64, bool) {
 	return v.pos, true
 }
 
+// Names lists the names of every value in the set, in no particular order.
+func (s *Set) Names() []string {
+	names := make([]string, 0, len(s.values))
+	for name := range s.values {
+		names = append(names, name)
+	}
+	return names
+}
+
 // Remove forgets the named value.
 func (s *Set) Remove(name string) {
 	delete(s.values, name)
