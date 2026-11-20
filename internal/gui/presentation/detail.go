@@ -48,7 +48,9 @@ func Info(fields []Field, width int) string {
 			left = append(left, f)
 		}
 	}
-	leftW := width * 2 / 5
+	// The left column is as wide as its fields need, between two and three
+	// fifths of the width; the right column takes the rest.
+	leftW := min(max(width*2/5, lipgloss.Width(Detail(left, 0))), width*3/5)
 	rightW := width - leftW - infoGap
 	return lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().Width(leftW).Render(Detail(left, leftW)),
