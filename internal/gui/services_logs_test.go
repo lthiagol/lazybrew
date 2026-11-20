@@ -326,3 +326,21 @@ func TestLogsReadStartsOnEachVisit(t *testing.T) {
 		t.Errorf("the Logs tab lost its lines:\n%s", plainView(m))
 	}
 }
+
+// The help lists e under Services, where it acts on the Logs tab.
+func TestLogsHelpListsStreamKeyUnderServices(t *testing.T) {
+	for _, page := range buildHelp() {
+		if page.title != "Services" {
+			continue
+		}
+		for _, sec := range page.sections {
+			for _, item := range sec.items {
+				if item.key == "e" {
+					return
+				}
+			}
+		}
+		t.Fatal("the Services help page has no e entry")
+	}
+	t.Fatal("there is no Services help page")
+}
