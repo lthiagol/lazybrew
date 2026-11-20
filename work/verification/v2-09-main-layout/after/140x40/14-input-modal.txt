@@ -4,12 +4,12 @@
 │  Prefix    /home/linuxbrew/.linuxbrew         ││ ━━━━━━━━━━━━                                                                            │
 │  Formulae  125                                ││ 3 taps · 0 official · 2 trusted · 1 untrusted                                           │
 ╰───────────────────────────────────────────────╯│                                                                                         │
-╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:       danielfoehrkn/switch       Remote:    https://github.com/danielfoehrkn/homeb │
-│  ✓ alsa-lib                         1.2.16.1_1││ Trusted:   untrusted                             rew-switch                             │
-│▸ ✓ bash                                 5.3.20││ Official:  no                         Formulae:  0                                      │
-│  ✓ bat                                  0.26.1││                                       Casks:     0                                      │
-╰───────────────────────────────────────────────╯│                                                                                         │
-╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│                                                                                         │
+╭─ 2 ∘ Formulae ────────────────────────── 125 ─╮│ Tap:       danielfoehrkn/switch                                                         │
+│  ✓ alsa-lib                         1.2.16.1_1││ Trusted:   untrusted                                                                    │
+│▸ ✓ bash                                 5.3.20││ Official:  no                                                                           │
+│  ✓ bat                                  0.26.1││ Remote:    https://github.com/danielfoehrkn/homebrew-switch                             │
+╰───────────────────────────────────────────────╯│ Formulae:  0                                                                            │
+╭─ 3 ▣ Casks ─────────────────────────────── 2 ─╮│ Casks:     0                                                                            │
 │▸ ✓ Claude Code                         2.1.311││                                                                                         │
 │  ✓ Google Cloud CLI                    594.0.0││                                                                                         │
 │                                            ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                            │

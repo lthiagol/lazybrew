@@ -36,8 +36,9 @@ const infoMinRight = 26
 
 // Info draws an Info view within width cells. Narrower than splitWidth it is
 // one column, the fields in order. Wider, the fields not marked Right sit in a
-// left column and the Right ones (prose and lists, which wrap) in a right
-// column, each keeping its order.
+// left column and the Right ones in a right column, each keeping its order. A
+// view splits only when every non-prose value in the right column fits that
+// column whole (F-r4-01); otherwise it keeps the single column.
 func Info(fields []Field, width int) string {
 	if width < splitWidth {
 		return Detail(fields, width)
@@ -45,8 +46,6 @@ func Info(fields []Field, width int) string {
 	var left, right []Field
 	for _, f := range fields {
 		if f.Right {
-			// The right column is prose and lists: its values wrap, never cut.
-			f.Prose = true
 			right = append(right, f)
 		} else {
 			left = append(left, f)
@@ -56,10 +55,43 @@ func Info(fields []Field, width int) string {
 	// the width, and it leaves the right column infoMinRight cells.
 	leftW := min(max(width*2/5, lipgloss.Width(Detail(left, 0))), width-infoGap-infoMinRight)
 	rightW := width - leftW - infoGap
+	if !fitsWhole(right, rightW) {
+		return Detail(fields, width)
+	}
+	// The right column is prose and lists: its values wrap, never cut.
+	for i := range right {
+		right[i].Prose = true
+	}
 	return lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().Width(leftW).Render(Detail(left, leftW)),
 		lipgloss.NewStyle().Width(infoGap).Render(""),
 		lipgloss.NewStyle().Width(rightW).Render(Detail(right, rightW)))
+}
+
+// fitsWhole is whether every non-prose value of fields fits a column of width
+// cells whole: no word of it is wider than the value column the labels leave.
+// A path, a URL or a command is one such word, and a word that does not fit
+// would break mid-token when drawn. Prose (Field.Prose) wraps at spaces, so it
+// is not checked.
+func fitsWhole(fields []Field, width int) bool {
+	labelW := 0
+	for _, f := range fields {
+		if f.Value != "" {
+			labelW = max(labelW, lipgloss.Width(f.Label+":"))
+		}
+	}
+	valueW := width - (labelW + 2)
+	for _, f := range fields {
+		if f.Prose || f.Value == "" {
+			continue
+		}
+		for _, word := range strings.Fields(f.Value) {
+			if lipgloss.Width(word) > valueW {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // Detail draws the fields of one detail view within width cells, one row per

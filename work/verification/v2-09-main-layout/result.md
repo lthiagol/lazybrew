@@ -147,18 +147,48 @@ fixed 2/5, which cut the Unit file path. The refinement commit 7f6e93b used up t
 values wrap with the v2-05 hanging indent and are never cut.
 
 Revision r3 moved the Unit file (Services) and the Remote (Tap Info) to the right
-column: they are paths and URLs, the long values that the 140x40 split squeezed.
-Paths have no spaces, so a long path breaks mid-word at the column edge; that is
-the wrap, not a cut.
+column. Revision r4 (F-r4-01) then changed the rule for splitting; see below.
 
-Expectation change: `services_view_test.go` at width 100 expects the log path to
-wrap (`/home/linuxbrew/.linuxbrew/var/log/moshi-` then `hook.log`). The test used to
-look for the whole path on one line. It now checks both halves.
+**The split rule (r4, F-r4-01):** a view splits only when every non-prose value in
+its right column fits that column whole: no space-free word (a path, a URL, a
+command) is wider than the value column. Otherwise the view keeps today's single
+column. Prose (the Description) still wraps at spaces, and it is not checked.
+`presentation.fitsWhole` is the check; `Info` calls it. The first r3 version split
+at 140x40 and broke long paths and URLs mid-token in Tap Info and Services Info, and
+the reviewer rejected it. With the rule, Formulae Info and Cask Info still split at
+140x40; Tap Info and Services Info keep the single column there, where every value
+shows whole.
 
-Tests: `presentation/info_test.go` (split at the constant, one column one cell below,
-wrap, order), `info_split_test.go` (Tap Info split at 82 and one column at 81; the
-140x40 Formulae Info splits, `TestInfoSplitsAt140x40`). The Tap Info test now checks
-the counts sit past the left column, because the Remote is on the right above them.
+Expectation changes:
+
+- `services_view_test.go` (`TestServiceInfoShowsDetailAndRunningActions`): at width
+  100 the log path is longer than the right column, so the view is one column and
+  the path is whole on one row. The r3 test checked for a wrapped half-path.
+- `info_split_test.go`: `TestTapInfoSplitsWhenWide` is now `TestTapInfoSplitsWhenItFits`
+  (a short remote splits at 82, and at 81 it is one column). The r3 test measured the
+  column of `Formulae:` against everything before it on the whole output, so it
+  passed for any layout. It now measures the column within the line.
+
+New tests (F-r4-01): `TestTapInfoKeepsARemoteWhole` and `TestServicesInfoKeepsPathsWhole`
+(87 cells; fixtures with long paths and a remote; no path or URL breaks across rows;
+the single column is kept), `TestFormulaInfoStillSplitsAt87` (prose still splits),
+and `TestInfoFallsBackWhenAPathWouldBreak` (presentation).
+
+### Changed by r4 (F-r4-01): 140x40 Tap Info and Services Info
+
+With the whole-token rule, 140x40 changes on four screens, all in their text frames
+and `.ansi`:
+
+- 06 taps (Tap Info): single column. The remote is whole on its row
+  (`https://github.com/danielfoehrkn/homebrew-switch`). It was split in r3.
+- 19 services info: single column. The Unit file, Command and log paths are whole.
+  It was split in r3, with the paths broken mid-word.
+- 14 input modal and 20 services stop confirm: the overlays over 06 and 19, changed
+  only by what is behind them.
+
+Unchanged: 02 and 03 (Formulae Info) and 17 (Cask Info) still split at 140x40; 80x24
+and 200x60 are byte-identical to r3 (at 200x60 the values fit, so 06 and 19 still
+split there).
 
 ### Changed by r3 (Q-v2-09-a): the 140x40 screens
 
@@ -242,7 +272,7 @@ see "Log padding"), plus the table or the Info change named below.
 | 03 formulae info | padded, split: Description on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
 | 04 formulae deps | Deps table: Name/Version/Description, groups as heading rows | Deps table: Description kept and cut with `…`, Version kept | AC-02, AC-01 |
 | 05 outdated | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
-| 06 taps (Tap Info) | padded, split: counts on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
+| 06 taps (Tap Info) | padded, single column (r4: remote whole; was split in r3), Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
 | 07 confirm modal | backdrop padded, Log 3 rows | same | AC-01, AC-04 |
 | 08 help | unchanged | unchanged | help covers the main area |
 | 09 search | padded, Log 3 rows | padded, Log 3 rows | AC-01, AC-04 |
@@ -250,13 +280,13 @@ see "Log padding"), plus the table or the Info change named below.
 | 11 deps (bash) | Deps table | Deps table, Description kept and cut with `…` | AC-02 |
 | 12 confirm upgrade | padded, Log 3 rows | same | AC-01, AC-04 |
 | 13 toast stack | padded; toasts over the Log | same | AC-01, AC-04 |
-| 14 input modal | padded, Log 3 rows | same | AC-01, AC-04 |
+| 14 input modal | padded, Log 3 rows, over the single-column Tap Info (r4) | same | AC-01, AC-04 |
 | 15 menu brewfile | padded, Log 3 rows | padded | AC-01, AC-04 |
 | 16 help scrolled | unchanged | unchanged | help covers the main area |
 | 17 cask info | padded, split: Description on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
 | 18 doctor | padded, Log 3 rows | same | AC-01, AC-04 |
-| 19 services info | padded, split: paths on the right, Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
-| 20 services stop confirm | padded, Log 3 rows | same | AC-01, AC-04 |
+| 19 services info | padded, single column (r4: paths whole; was split in r3), Log 3 rows | same, single column | AC-01, AC-03, AC-04 |
+| 20 services stop confirm | padded, Log 3 rows, over the single-column Services Info (r4) | same | AC-01, AC-04 |
 
 The 200x60 set shows the AC-03 split on the Info screens: 03 (formula Description
 right), 17 (cask Description right), 06 (Formulae count right of the Tap row) and
