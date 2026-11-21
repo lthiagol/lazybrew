@@ -26,6 +26,8 @@ func buildVersion() string {
 func main() {
 	showVersion := flag.Bool("version", false, "Print version and exit")
 	configPath := flag.String("config", "", "Path to config file")
+	configSample := flag.Bool("config-sample", false, "Print a documented sample config and exit")
+	configCreate := flag.Bool("config-create", false, "Write the sample config to the config path and exit; never overwrites")
 	enableDebug := flag.Bool("debug", false, "Enable debug logging")
 	flag.Parse()
 
@@ -36,6 +38,11 @@ func main() {
 	if *showVersion {
 		fmt.Printf("lazybrew %s\n", version)
 		return
+	}
+
+	// The config flags exit before the app is built, so they never touch brew.
+	if *configSample || *configCreate {
+		os.Exit(runConfigFlags(*configSample, *configCreate, *configPath, os.Stdout, os.Stderr))
 	}
 
 	m, err := app.New(app.Options{

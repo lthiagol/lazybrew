@@ -195,15 +195,23 @@ func validIcons(name string) bool {
 	return name == IconsNerd || name == IconsUnicode
 }
 
+// DefaultPath is the config file read when no --config path is given.
+func DefaultPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".config", "lazybrew", "config.yml"), nil
+}
+
 func loadFile(path string) (*Config, error) {
 	cfg := Default()
 
 	if path == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
+		var err error
+		if path, err = DefaultPath(); err != nil {
 			return cfg, nil
 		}
-		path = filepath.Join(home, ".config", "lazybrew", "config.yml")
 	}
 
 	data, err := os.ReadFile(path)
