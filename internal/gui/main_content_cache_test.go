@@ -40,11 +40,11 @@ func TestMainRowsMatchTheUncachedRender(t *testing.T) {
 		if got := m.mainRows(contentWidthIn(m.screenLayout()), 30); strings.Join(got, "\n") != strings.Join(want, "\n") {
 			t.Fatalf("pass %d: cached rows differ from the uncached render", i)
 		}
-		m = sendSpecial(m, tea.KeyPgDown)
+		m = wheelDown(m)
 	}
 }
 
-// TestScrollingFilesTabRendersOnce (cr3 AC-04): PgDn, the wheel and G over a
+// TestScrollingFilesTabRendersOnce (cr3 AC-04): the wheel and G over a
 // Files tab of 5000 files render and wrap it once, not once per key.
 func TestScrollingFilesTabRendersOnce(t *testing.T) {
 	m := filesTabModel(t, 5000)
@@ -54,7 +54,7 @@ func TestScrollingFilesTabRendersOnce(t *testing.T) {
 		t.Fatal("the first frame should render the tab once")
 	}
 	for i := 0; i < 50; i++ {
-		m = sendSpecial(m, tea.KeyPgDown)
+		m = wheelDown(m)
 		m.View()
 	}
 	m = sendKey(m, "G")

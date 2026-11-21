@@ -13,8 +13,8 @@ import (
 func TestTabsFlow(t *testing.T) {
 	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
 	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
-	tm.Send(tea.KeyPressMsg{Code: ']', Text: "]"})
-	tm.Send(tea.KeyPressMsg{Code: ']', Text: "]"})
+	tm.Send(tea.KeyPressMsg{Code: 'l', Text: "l"})
+	tm.Send(tea.KeyPressMsg{Code: 'l', Text: "l"})
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
 	out := readOutput(t, tm.FinalOutput(t))

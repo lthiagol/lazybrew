@@ -40,7 +40,7 @@ func formulaWithDeps(t *testing.T) *Model {
 // carries an installed or not-installed icon, under Runtime and Build headings.
 func TestFormulaDepsShowInstalledState(t *testing.T) {
 	m := formulaWithDeps(t)
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	out := ansi.Strip(m.renderContent(70, 20))
 	for _, want := range []string{"Runtime", "Build"} {
 		if !strings.Contains(out, want) {
@@ -68,7 +68,7 @@ func TestDepIconsWaitForTheInstalledList(t *testing.T) {
 	p.loading, p.loaded = false, false
 	p.items = []string{"bash"}
 	p.formulae = []brew.Formula{{Name: "bash", Dependencies: []string{"ncurses"}}}
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	out := ansi.Strip(m.renderContent(70, 20))
 	if strings.Contains(out, "✓") || strings.Contains(out, "○") {
 		t.Fatalf("no icon should show until the installed list loads, got:\n%s", out)
@@ -83,7 +83,7 @@ func TestDepIconsWaitForTheInstalledList(t *testing.T) {
 func TestDepIconsWriteTheStateWhenIconsAreOff(t *testing.T) {
 	m := formulaWithDeps(t)
 	m.icons = style.Icons{}
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	out := ansi.Strip(m.renderContent(70, 20))
 	if !strings.Contains(out, "ncurses (installed)") || !strings.Contains(out, "cmake (not installed)") {
 		t.Fatalf("with icons off the state should be written out, got:\n%s", out)
@@ -106,7 +106,7 @@ func TestCaskDepsGroupFormulaeCasksAndRequirements(t *testing.T) {
 			DependsOnCasks:    []string{"docker"},
 			Requirements:      []string{"macOS ≥ 13"},
 		}}})
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	out := ansi.Strip(m.renderContent(70, 20))
 	for _, want := range []string{"Formulae", "Casks", "Requirements", "macOS ≥ 13"} {
 		if !strings.Contains(out, want) {
@@ -123,8 +123,8 @@ func TestCaskDepsGroupFormulaeCasksAndRequirements(t *testing.T) {
 
 func TestUsedByListsInstalledDependents(t *testing.T) {
 	m := formulaWithDeps(t)
-	m = sendKey(m, "]")
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
+	m = sendKey(m, "l")
 	m.tabContent[tabKey(PanelFormulae, formulaUsesTab, "bash")] = "ncurses\n"
 	if out := ansi.Strip(m.renderContent(70, 20)); !hasRow(out, "✓", "ncurses") {
 		t.Fatalf("the Used By tab should list the installed dependent, got:\n%s", out)

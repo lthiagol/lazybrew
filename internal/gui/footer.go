@@ -11,7 +11,7 @@ import (
 // globalHints are the keys every panel answers to, listed after the panel's
 // own in the footer.
 var globalHints = []keyHint{
-	keyNext, keyPrev, keyJump, keySearch, keyHelp, keyRefresh, keyLog, keyQuit, keyPage,
+	keyNext, keyPrev, keyJump, keySearch, keyHelp, keyRefresh, keyLog, keyQuit,
 }
 
 // footerHints is the key row the footer shows: the keys of the open modal,

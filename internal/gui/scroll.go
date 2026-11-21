@@ -123,11 +123,6 @@ func (m Model) contentLast() int {
 	return max(0, len(m.mainRows(cw, h))-h)
 }
 
-// pageRows is how far a page key moves the main content: one scrolled area.
-func (m Model) pageRows() int {
-	return max(1, m.scrollRows(m.screenLayout().contentH))
-}
-
 // scrollContentTo sets the main content's scroll offset to row, held between the
 // first row and the last one that fills the content area.
 func (m Model) scrollContentTo(row int) Model {

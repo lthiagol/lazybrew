@@ -66,7 +66,7 @@ Launch the interactive TUI. Available flags:
 | `Tab` / `Shift+Tab` | Next / previous panel |
 | `1`–`7` | Jump to panel |
 | `j`/`k` | Scroll list |
-| `[`/`]` | Switch tabs |
+| `h`/`l` or `←`/`→` | Switch tabs |
 | `R` | Refresh all data |
 | `/` | Search packages |
 | `q` | Quit |

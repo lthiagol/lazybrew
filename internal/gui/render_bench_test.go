@@ -45,10 +45,10 @@ func BenchmarkOperationRenderPerLine(b *testing.B) {
 	}
 }
 
-// BenchmarkFilesTabPageDown is the Files tab of a formula with 5000 installed
-// files, PgDn pressed and the view drawn after each press, at 140x40 (cr3
-// AC-04).
-func BenchmarkFilesTabPageDown(b *testing.B) {
+// BenchmarkFilesTabWheelDown is the Files tab of a formula with 5000 installed
+// files, a wheel notch down and the view drawn after each notch, at 140x40 (cr3
+// AC-04; the page keys went in lb19 AC-03).
+func BenchmarkFilesTabWheelDown(b *testing.B) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"bash"},
 		Formulae: []brew.Formula{{Name: "bash", Version: "5.2"}}})
@@ -62,7 +62,7 @@ func BenchmarkFilesTabPageDown(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m = sendSpecial(m, tea.KeyPgDown)
+		m = wheelDown(m)
 		_ = m.View()
 	}
 }

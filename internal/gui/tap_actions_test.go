@@ -120,7 +120,7 @@ func TestTapTrustTabNamesTheKeysThatAct(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			m := tapsModel([]brew.Tap{c.tap}, c.trustKnown)
-			m = sendKey(m, "]")
+			m = sendKey(m, "l")
 			out := ansi.Strip(m.View().Content)
 			if !strings.Contains(out, "Trust:") {
 				t.Fatalf("the Trust tab is not on screen:\n%s", out)

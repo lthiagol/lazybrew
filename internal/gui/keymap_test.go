@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
@@ -383,12 +384,12 @@ func TestPanelKeysAreOnFooterAndHelp(t *testing.T) {
 // being changed. A listed key is checked on the help only. Each entry says why.
 var footerExempt = map[PanelID]map[string]bool{
 	// Status shows j/k as keyScroll and its tabs as stTabs, both help-only.
-	PanelStatus: {"j": true, "k": true, "down": true, "up": true, "[": true, "]": true, "left": true, "right": true},
+	PanelStatus: {"j": true, "k": true, "down": true, "up": true, "h": true, "l": true, "left": true, "right": true},
 	// Outdated and Taps have tabs, which the Global help page lists as keyTabs.
-	PanelOutdated: {"[": true, "]": true, "left": true, "right": true},
-	PanelTaps:     {"[": true, "]": true, "left": true, "right": true},
-	// Search has no tabs, so [ ] do nothing there.
-	PanelSearch: {"[": true, "]": true, "left": true, "right": true},
+	PanelOutdated: {"h": true, "l": true, "left": true, "right": true},
+	PanelTaps:     {"h": true, "l": true, "left": true, "right": true},
+	// Search has no tabs: h and l type there, and the arrows do nothing.
+	PanelSearch: {"left": true, "right": true},
 }
 
 // onFooterAndHelp reports whether k is shown on the footer and on the help. The
@@ -535,7 +536,7 @@ func TestModalHintsMatchUpdate(t *testing.T) {
 // keyTable lists every entry of the key tables in keybindings.go. The tests
 // walk it: a new entry goes here too, or the tests cannot see it.
 var keyTable = []keyHint{
-	keyNext, keyPrev, keyJump, keyScroll, keyPage, keyEnds, keyTabs, keySearch,
+	keyNext, keyPrev, keyJump, keyScroll, keyEnds, keyTabs, keySearch,
 	keyHelp, keyRefresh, keyLog, keyQuit, keyClose, keyHelpOff,
 	keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll,
 	fInstall, fRemove, fReinstall, fPin, fLeaves, fFetch,
@@ -545,4 +546,25 @@ var keyTable = []keyHint{
 	svStart, svStop, svRestart, svRun, svCleanup, svLogStream,
 	stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, stTabs,
 	sExecute, sType, sInstall, sInstallCap, sFetch,
+}
+
+// TestRetiredTabAndPageKeysDoNothing (lb19 AC-03): [ and ] switch no tab, and
+// PgUp and PgDn scroll nothing, on a panel that has tabs and content to scroll.
+func TestRetiredTabAndPageKeysDoNothing(t *testing.T) {
+	m := scrollFixture(t)
+	tab, panel := m.activeTab, m.activePanel
+	scroll := m.contentScroll[m.contentKey()]
+
+	for _, key := range []string{"[", "]"} {
+		m = sendKey(m, key)
+	}
+	m = sendSpecial(m, tea.KeyPgDown)
+	m = sendSpecial(m, tea.KeyPgUp)
+
+	if m.activeTab != tab || m.activePanel != panel {
+		t.Errorf("[ ] switched the tab or panel: tab %d->%d panel %v->%v", tab, m.activeTab, panel, m.activePanel)
+	}
+	if got := m.contentScroll[m.contentKey()]; got != scroll {
+		t.Errorf("PgUp/PgDn scrolled the content: offset %d->%d", scroll, got)
+	}
 }

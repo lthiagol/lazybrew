@@ -151,7 +151,7 @@ func TestMainBorderTitleIsBreadcrumb(t *testing.T) {
 	if top := plainLine(strings.Split(m.renderMainPanelIn(m.screenLayout()), "\n")[0]); !strings.Contains(top, "Formulae › Info") {
 		t.Fatalf("main title should be the breadcrumb Formulae › Info, got %q", top)
 	}
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	if top := plainLine(strings.Split(m.renderMainPanelIn(m.screenLayout()), "\n")[0]); !strings.Contains(top, "Formulae › Deps") {
 		t.Fatalf("after ] the breadcrumb should follow the tab to Formulae › Deps, got %q", top)
 	}

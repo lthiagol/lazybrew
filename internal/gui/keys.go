@@ -141,10 +141,6 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case "pgup":
-		return m.scrollContent(-m.pageRows()), nil
-	case "pgdown":
-		return m.scrollContent(m.pageRows()), nil
 	case "home":
 		return m.scrollContentTo(0), nil
 	case "end":
@@ -159,10 +155,21 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m.scrollContentTo(m.contentLast()), nil
 		}
 
-	case "[", "left":
+	case "h":
+		// Search has no tabs, and h types into its box, so it falls through.
+		if m.activePanel != PanelSearch {
+			c := m.prevTab()
+			return m, c
+		}
+	case "left":
 		c := m.prevTab()
 		return m, c
-	case "]", "right":
+	case "l":
+		if m.activePanel != PanelSearch {
+			c := m.nextTab()
+			return m, c
+		}
+	case "right":
 		c := m.nextTab()
 		return m, c
 

@@ -22,7 +22,7 @@ type frameState struct {
 var frameStates = []frameState{
 	{"status", func(m *Model) *Model { return m }},
 	{"formulae", func(m *Model) *Model { return sendKey(m, "2") }},
-	{"formulae info tab", func(m *Model) *Model { return sendKey(sendKey(m, "2"), "]") }},
+	{"formulae info tab", func(m *Model) *Model { return sendKey(sendKey(m, "2"), "l") }},
 	{"casks", func(m *Model) *Model { return sendKey(m, "3") }},
 	{"outdated", func(m *Model) *Model { return sendKey(m, "4") }},
 	{"taps", func(m *Model) *Model { return sendKey(m, "5") }},

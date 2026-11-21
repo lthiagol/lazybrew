@@ -124,7 +124,7 @@ func TestLogsLeavingTabStopsReads(t *testing.T) {
 	m := logsModel(t, 140, 40, path, path)
 	reads := countReads(m)
 
-	m = pressKey(m, "[")
+	m = pressKey(m, "h")
 	_, cmd := stepMsg(m, logsTickMsg{gen: m.logs.gen})
 	if cmd != nil {
 		t.Errorf("a tick on another tab started a command")
@@ -140,7 +140,7 @@ func TestLogsLateReadAfterLeavingSchedulesNothing(t *testing.T) {
 	path := writeLog(t, "moshi-hook.log", "one")
 	m := logsModel(t, 140, 40, path, path)
 	gen := m.logs.gen
-	m = pressKey(m, "[")
+	m = pressKey(m, "h")
 
 	m, cmd := stepMsg(m, logsReadMsg{gen: gen, path: path, tail: logtail.Tail{Lines: []string{"late"}}})
 	if cmd != nil {

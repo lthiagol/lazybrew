@@ -28,15 +28,15 @@
 - [ ] Status dashboard shows Outdated and the other counts without pressing `R`
 - [ ] Keys work while panels are still loading
 - [ ] `LAZYBREW_ICONS=unicode make run` looks right; `theme: light` in config looks right
-- [ ] Motion feels short and subtle (tabs `[` `]`, focus moves, a dialog opening); `LAZYBREW_ANIMATIONS=0` turns it off
+- [ ] Motion feels short and subtle (tabs `h` `l`, focus moves, a dialog opening); `LAZYBREW_ANIMATIONS=0` turns it off
 
 ### Navigation and main area (v2-03b, v2-09)
-- [ ] Tab / Shift+Tab, `1`–`7`, `[` `]`, mouse click on boxes / rows / tabs, wheel scroll
+- [ ] Tab / Shift+Tab, `1`–`7`, `h` `l`, mouse click on boxes / rows / tabs, wheel scroll
 - [ ] Main area has padding; nothing touches the border
 - [ ] Formulae → Info at your usual width: two columns when wide enough, nothing cut mid-word
 - [ ] Formulae → Deps / Used By: full-width table, long descriptions end with `…`
 - [ ] Log box is small when idle and grows while something runs
-- [ ] `?` help scrolls (`j`/`k`, PgUp/PgDn); `esc` closes; paste into Search (`/`) works
+- [ ] `?` help scrolls (`j`/`k`); `esc` closes; paste into Search (`/`) works
 
 ### Operations (live — use a small, unneeded formula, e.g. `hello`)
 - [ ] Search → install `hello` (`i`): steps stream, `✓ Completed in …`, then the view **closes itself after ~2 s** (v2-07)
@@ -66,7 +66,7 @@
 |---|---|
 | **Pass / Fail** | **PASS** (human, partial: items below not reported) |
 | **Blocking issues** | None. |
-| **Notes** | Passed: startup and loading, header update badge, casks as tokens, counts match brew (2 casks, 3 outdated, 3 taps), `Tab`/`Shift+Tab`/digits, mouse, main-area layout, Info/Deps, `?` help, install and uninstall `hello`, cancel mid-run (`hunk`), failed uninstall stays with Esc, Services restart (`moshi-hook`) and start/stop (`pulseaudio`), Taps trust/untrust/untap, `q`. **Bugs found and parked as lb19:** `Tab` stuck on Search (focused input), search rows all `unknown`/never `installed`. **Decision:** `[` `]` and PgUp/PgDn are being removed; tabs switch with arrows and `h`/`l`. **Not reported (not run):** `LAZYBREW_ICONS=unicode` and light theme, `LAZYBREW_ANIMATIONS=0`, batch upgrade, `s`/`S` info toast, the stale-launch `touch` check. The `wip` → `stable` PR is not planned: work stays on `wip`. |
+| **Notes** | Passed: startup and loading, header update badge, casks as tokens, counts match brew (2 casks, 3 outdated, 3 taps), `Tab`/`Shift+Tab`/digits, mouse, main-area layout, Info/Deps, `?` help, install and uninstall `hello`, cancel mid-run (`hunk`), failed uninstall stays with Esc, Services restart (`moshi-hook`) and start/stop (`pulseaudio`), Taps trust/untrust/untap, `q`. **Bugs found and parked as lb19:** `Tab` stuck on Search (focused input), search rows all `unknown`/never `installed`. **Decision:** `[` `]` and PgUp/PgDn are removed (lb19 AC-03); tabs switch with arrows and `h`/`l`. **Not reported (not run):** `LAZYBREW_ICONS=unicode` and light theme, `LAZYBREW_ANIMATIONS=0`, batch upgrade, `s`/`S` info toast, the stale-launch `touch` check. The `wip` → `stable` PR is not planned: work stays on `wip`. |
 
 ---
 
@@ -91,7 +91,7 @@
 - [x] Sidebar panels available (M12 lazy-load: Status on start; others on first visit within normal use) — `TestNewModel`, `TestInitDoesNotFetchOutdated`, `TestSwitchToOutdatedLazyFetchesOnFirstVisit`
 - [x] Tab / Shift+Tab cycles panels — `TestPanelNavigation` (Tab + Shift+Tab)
 - [x] Keys 1–7 jump to correct panel — `TestPanelJump` (all 1–7)
-- [x] `[` / `]` switch tabs within panel — `TestTabSwitching`
+- [x] `h` / `l` (and arrows) switch tabs within panel — `TestTabSwitching`
 - [x] `?` help opens; Esc closes — `TestHelpToggle`, `TestHelpEscClose`, `flows.TestHelpFlow`
 
 ---

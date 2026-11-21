@@ -87,7 +87,7 @@ func TestMainAreaShowsDetailsNotTheList(t *testing.T) {
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"alpha 1 → 2", "bravo 3 → 4"},
 		Formulae: []brew.Formula{{Name: "alpha", Version: "1", NewVersion: "2"}, {Name: "bravo", Version: "3", NewVersion: "4"}}})
 	m = sendKey(m, "j")
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	out := m.renderContent(60, 20)
 	if !strings.Contains(out, "bravo") || !strings.Contains(out, "Installed:") || strings.Contains(out, "alpha") {
 		t.Fatalf("Versions should show the selected bravo's versions only, got:\n%s", out)
@@ -104,7 +104,7 @@ func TestOutdatedVersionsShowsBatchSummary(t *testing.T) {
 	m = sendKey(m, "4")
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"alpha", "bravo"},
 		Formulae: []brew.Formula{{Name: "alpha", Version: "1", NewVersion: "2"}, {Name: "bravo", Version: "3", NewVersion: "4"}}})
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	m = sendKey(m, " ")
 	m = sendKey(m, "j")
 	m = sendKey(m, " ")
@@ -165,7 +165,7 @@ func TestTapTrustTabShowsTheTrustStory(t *testing.T) {
 			{Name: "aa/one", FormulaCount: 2, CaskCount: 1},
 			{Name: "bb/two", FormulaCount: 4, CaskCount: 0, Trusted: true, Remote: "https://example.test/bb/homebrew-two"},
 		}})
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	out := sgr.ReplaceAllString(m.renderContent(70, 20), "")
 	for _, want := range []string{"Trust:", "untrusted", "may not load", "Its 2 formulae and 1 cask", "Press t"} {
 		if !strings.Contains(out, want) {
@@ -181,7 +181,7 @@ func TestTapTrustTabShowsTheTrustStory(t *testing.T) {
 		t.Fatalf("a trusted tap should say Homebrew may load it, got:\n%s", out)
 	}
 
-	m = sendKey(m, "[")
+	m = sendKey(m, "h")
 	if out := sgr.ReplaceAllString(m.renderContent(70, 20), ""); !strings.Contains(out, "Remote:") {
 		t.Fatalf("Tap Info keeps the details, got:\n%s", out)
 	}
