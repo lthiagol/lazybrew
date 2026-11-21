@@ -113,7 +113,7 @@ the `light` goldens, if the user finds light mode hard to read. Raised by lb28 (
 
 ## Planned — user requests, 2026-11-21 (after the macOS smoke)
 
-**LB-28 (planned, slice lb30-taps-and-trust)** — the Taps pane becomes `Taps & Trust`: beside the
+**LB-28 (closed, lb30-taps-and-trust)** — the Taps pane becomes `Taps & Trust`: beside the
 taps it lists the individually trusted formulae, casks and commands (`brew trust --json=v1`),
 with an Info tab and `t` to untrust one. Fix the stale `ListTrusted` JSON shape. User ruling:
 name `Taps & Trust`, commands shown too.
