@@ -180,21 +180,24 @@ func (s *diagnosticsReader) parseMissingOutput(text string) []MissingDep {
 }
 
 // VulnsReport is brew vulns' report, read from its JSON. brew vulns exits 1 when
-// it finds vulnerabilities and prints the report on stdout, so exit 1 with a
-// report is a result. Exit 1 with no report, or with an Error: line on stderr, is
-// a failure: brew did not run the check (an unknown command, a network error).
+// it finds vulnerabilities and prints the JSON report on stdout, so exit 1 with a
+// JSON report is a result. Exit 1 with no JSON, or with an Error: line on stderr,
+// is a failure: brew did not run the check (an unknown command, a network error).
+// Exit 0 with output that is not JSON falls back to its text.
 func (s *diagnosticsReader) VulnsReport(ctx context.Context) (VulnReport, error) {
 	output, err := s.runner.Execute(ctx, "vulns", "--json", "--max-summary", "0")
-	if err != nil {
-		var exit *BrewExitError
-		if !errors.As(err, &exit) || exit.ExitCode != 1 {
-			return VulnReport{}, err
-		}
-		if strings.TrimSpace(string(output)) == "" || hasErrorLine(exit.Stderr) {
-			return VulnReport{}, err
-		}
+	if err == nil {
+		return parseVulnReport(output), nil
 	}
-	return parseVulnReport(output), nil
+	var exit *BrewExitError
+	if !errors.As(err, &exit) || exit.ExitCode != 1 {
+		return VulnReport{}, err
+	}
+	report := parseVulnReport(output)
+	if !report.Parsed || hasErrorLine(exit.Stderr) {
+		return VulnReport{}, err
+	}
+	return report, nil
 }
 
 // hasErrorLine reports whether a line of stderr starts with Error:.

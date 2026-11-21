@@ -170,13 +170,23 @@ func vulnsOnce(t *testing.T, out string, err error) (VulnReport, error) {
 }
 
 func TestDiagnosticsVulnsExitCode1WithReportIsResult(t *testing.T) {
-	// brew vulns exits 1 when it finds vulnerabilities and prints them.
-	report, err := vulnsOnce(t, "CVE-2026-1: openssl@3\n", &BrewExitError{Command: "vulns", ExitCode: 1})
+	// brew vulns exits 1 when it finds vulnerabilities and prints its JSON report.
+	out := `{"findings":[{"formula":"openssl@3","version":"3.0","vulnerabilities":[{"id":"CVE-2026-1","severity":"HIGH","summary":"s"}],"patched":[]}],"skipped_formulae":[],"checked":1,"complete":true}`
+	report, err := vulnsOnce(t, out, &BrewExitError{Command: "vulns", ExitCode: 1})
 	if err != nil {
-		t.Fatalf("exit 1 with a report is a result, got error %v", err)
+		t.Fatalf("exit 1 with a JSON report is a result, got error %v", err)
 	}
-	if report.Parsed || report.Text != "CVE-2026-1: openssl@3\n" {
-		t.Fatalf("a text report should fall back to its text, got %+v", report)
+	if !report.Parsed || len(report.Findings) != 1 {
+		t.Fatalf("the JSON report should be read, got %+v", report)
+	}
+}
+
+func TestDiagnosticsVulnsExitCode1WithTextIsError(t *testing.T) {
+	// Regression F-r1-01: exit 1 with stdout that is not JSON, and no Error: line,
+	// is still a failure. Only exit 0 may fall back to brew's text.
+	_, err := vulnsOnce(t, "CVE-2026-1: openssl@3\n", &BrewExitError{Command: "vulns", ExitCode: 1})
+	if !IsExitCode(err, 1) {
+		t.Fatalf("expected the exit 1 error for text on exit 1, got %v", err)
 	}
 }
 
