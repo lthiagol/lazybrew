@@ -64,3 +64,19 @@ failure toasts `install foo: exited with status 3` and leaves the op as it was.
 3. Enter: the TUI suspends; brew's output and sudo's password prompt appear.
 4. Success: toast `<name> completed`, overlay closes after 2 s, cask shows installed.
 5. Wrong password or Ctrl-C: toast `…: exited with status N`; Esc closes the overlay.
+
+## Fix r2 (F-r1-01, F-r1-02, F-r1-03)
+
+Commits: F-r1-01 `a3284a2` · F-r1-03 `266cf69` · this receipt.
+
+- **F-r1-01 (zap):** before the fix, `TestEnterDoesNothingForOtherCommands` fails:
+  `terminal_retry_test.go:118: ["uninstall" "--zap" "--cask" "foo"]: Enter ran [...] in the terminal`.
+  Fix: `terminalRetry` refuses any args containing `--zap`. Positive case
+  `TestEnterRunsAnUninstallInTheTerminal` (`uninstall --cask foo`) passes. `Q-lb23-execprocess`
+  has a correction line (appended). README names no zap, so it is unchanged.
+- **F-r1-03 (status leg):** `TestEnterDoesNothingUnlessTheOperationFailed` (opRunning, opCancelled)
+  passes. With `|| m.opState.Status != opError` removed (mutant, restored after) it fails:
+  `status 0: Enter ran ["/fake/brew" "install" "--cask" "foo"] in the terminal`, and status 3 likewise.
+- **Gate:** `make test-fast PKG=./internal/gui/...` ok on each commit. `make ci` exit 0 (fmt-check,
+  vet, race tests, floors, build). Floors: brew 88.8≥78, gui 90.9≥83, task 96.3≥93. One `make ci`
+  run printed task 93.9; reruns print 96.3, and this fix does not touch `internal/gui/task`.
