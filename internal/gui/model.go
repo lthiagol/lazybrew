@@ -100,6 +100,9 @@ type Model struct {
 	searchInfo    *pkgInfo
 	searchInfoErr error
 	searchInput   textinput.Model
+	// filterInput is the `/` filter's input on Formulae and Casks (filter.go).
+	// Only one input has focus at a time, and it belongs to the active panel.
+	filterInput textinput.Model
 
 	tasks      *task.Manager
 	commandLog *CommandLog
@@ -189,6 +192,11 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	ti.Placeholder = "Search packages..."
 	ti.SetWidth(40)
 	ti.SetStyles(searchStyles())
+	fi := textinput.New()
+	fi.Prompt = ""
+	fi.Placeholder = "filter"
+	fi.SetWidth(20)
+	fi.SetStyles(searchStyles())
 	icons := iconSet(cfg)
 	cl.SetIcons(icons)
 	m := &Model{
@@ -204,6 +212,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		commandLog:    cl,
 		spinner:       s,
 		searchInput:   ti,
+		filterInput:   fi,
 		icons:         icons,
 		contentScroll: make(map[string]int),
 		wrap:          newWrapCache(),

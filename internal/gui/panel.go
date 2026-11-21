@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"fmt"
+
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
@@ -338,6 +340,10 @@ func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool,
 	}
 	count := len(p.items)
 	if count == 0 {
+		if p.query != "" {
+			msg := fmt.Sprintf(`No matches for "%s"`, p.query)
+			return style.SubtleText.Render(ansi.Truncate(msg, width, "..."))
+		}
 		return ""
 	}
 	// Cursor/offset clamping happens in normalize() from the Update loop;

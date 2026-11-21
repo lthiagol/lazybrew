@@ -155,7 +155,12 @@ func (m Model) handleSidebarClick(y int) (tea.Model, tea.Cmd) {
 	if innerY >= h {
 		return m, cmd
 	}
-	idx := p.offset + innerY
+	// The filter row sits above the list and selects nothing.
+	row := innerY - m.filterRows(p)
+	if row < 0 {
+		return m, cmd
+	}
+	idx := p.offset + row
 	if idx >= 0 && idx < len(p.items) {
 		p.selectIndex(idx)
 		c := tea.Batch(cmd, m.loadTabContent())

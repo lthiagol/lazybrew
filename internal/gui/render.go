@@ -32,7 +32,7 @@ func (m Model) renderSidebar() string {
 		// that have not seen a WindowSizeMsg yet, without assigning back.
 		rows := p.visibleRows
 		if rows <= 0 {
-			rows = heights[i]
+			rows = heights[i] - m.filterRows(p)
 		}
 		// The batch is a set of Outdated rows. Only that list draws its marks.
 		var batch map[int]bool
@@ -40,6 +40,9 @@ func (m Model) renderSidebar() string {
 			batch = m.batch.selected
 		}
 		body := p.renderSidebarContent(sw-2, rows, batch, m.icons, active)
+		if line := m.filterLine(p); line != "" {
+			body = line + "\n" + body
+		}
 		boxes = append(boxes, panel(title, m.sidebarLabel(p), body, sw, heights[i]+2, active))
 	}
 
@@ -64,6 +67,10 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 		}
 	case p.id == PanelStatus:
 		return borderLabel{}
+	case p.query != "" && p.canFilter():
+		// The matches against the rows the query narrows.
+		label := strconv.Itoa(p.itemCount()) + "/" + strconv.Itoa(p.totalRows())
+		return borderLabel{full: style.SubtleText.Render(label), count: true}
 	case p.id == PanelTaps && p.trustUnknown:
 		// The count gives way to the warning: the rows carry no trust word.
 		return borderLabel{full: style.OutdatedBadge.Render(trustUnknownText), short: style.OutdatedBadge.Render("?")}
