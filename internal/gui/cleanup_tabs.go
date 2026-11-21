@@ -266,9 +266,15 @@ func shortPath(path, home, prefix string) string {
 	return path
 }
 
+// cutSnap is how far, in cells, a cut may move to reach a "/". Farther than that
+// the cut falls where the width ends, so the room is used and not thrown away.
+const cutSnap = 4
+
 // cutMiddle cuts s to w cells with … in the middle, keeping its start and end. The
-// cut falls on a "/" where one is near, so a path keeps whole segments at each
-// end. A string that fits is returned as it is.
+// cut moves to a "/" only when one is within cutSnap cells, so a path keeps whole
+// segments at each end without losing the room it has. A cut that already falls
+// after a "/" keeps the segment that follows it. A string that fits is returned as
+// it is.
 func cutMiddle(s string, w int) string {
 	r := []rune(s)
 	if len(r) <= w {
@@ -282,12 +288,12 @@ func cutMiddle(s string, w int) string {
 	tailN := keep - headN
 
 	head := r[:headN]
-	if i := lastRune(head, '/'); i > 0 {
+	if i := lastRune(head, '/'); i > 0 && headN-(i+1) <= cutSnap {
 		head = head[:i+1]
 	}
 	tailStart := len(r) - tailN
 	tail := r[tailStart:]
-	if i := firstRune(tail, '/'); i >= 0 {
+	if i := firstRune(tail, '/'); i >= 0 && i <= cutSnap && r[tailStart-1] != '/' {
 		tail = tail[i:]
 	}
 	return string(head) + "…" + string(tail)
