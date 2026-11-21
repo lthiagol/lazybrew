@@ -111,7 +111,7 @@ func (m Model) headerCount(id PanelID) (int, bool) {
 }
 
 // updateStatusText is the update badge: updating…, updated 2m ago, or never
-// updated when update_on_start is set and no update has run yet. It is empty
+// updated when update_on_start is true and no update has run yet. It is empty
 // when there is nothing to say.
 func (m Model) updateStatusText() string {
 	switch {
