@@ -786,3 +786,11 @@ user; parked in `work/backlog.md` as LB-13.
   the outdated count there (`ReloadDiagnostics: false`)? Recommended: keep it as
   the brief says, since `brew doctor` after an update is the reason `R` does it
   too.
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb16-r-key-auto:** yes. `R` runs
+`brew update` under `auto` as well as `true` (`!= config.UpdateNever`): it is an
+explicit request, and the user wants to manage brew from the TUI alone. Done in
+`fix-lb16-update-when-stale-r1`.
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb16-true-launch-diagnostics:** accepted
+as the brief says; `brew doctor` after an update is the reason `R` reloads it.
