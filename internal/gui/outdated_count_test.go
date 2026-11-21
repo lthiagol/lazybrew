@@ -22,9 +22,9 @@ func collectRefreshMsgs(cmd tea.Cmd) []RefreshMsg {
 	return out
 }
 
-// TestNonRRefreshEmittersStayCacheOnly pins M9's invariant: only an explicit
-// R may load the outdated count. The install, uninstall and task-completion
-// emitters must emit a *plain* refresh.
+// TestNonRRefreshEmittersStayCacheOnly pins M9's invariant: the install,
+// uninstall and mutation emitters must emit a *plain* refresh. Only R and the
+// brew-update completion load the outdated count.
 //
 // The assertion is on the emitted message (LoadOutdated == false), not on the
 // absence of a brew call, so the test bites exactly when an emitter is

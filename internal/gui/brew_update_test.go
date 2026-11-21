@@ -2,13 +2,13 @@ package gui
 
 import (
 	"context"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
+	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 // TestBrewUpdateEntryPointsUseDiagnosticsUpdate: the startup update and the R
