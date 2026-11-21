@@ -29,7 +29,7 @@ func TestFooterFlowStatusAt140(t *testing.T) {
 	got := footerRowAt140(t, tm)
 	for _, want := range []string{
 		" R refresh · c cleanup · d doctor · A autoremove  │  ",
-		"←↑↓→ navigate · Tab next · 1-7 jump · / search · R refresh · C log · q quit · ? more",
+		"←↑↓→ navigate · tab next · 1-7 jump · / search · R refresh · C log · q quit · ? more",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("Status footer at 140 columns = %q, want it to contain %q", got, want)
@@ -45,7 +45,7 @@ func TestFooterFlowFormulaeAt140(t *testing.T) {
 	got := footerRowAt140(t, tm)
 	for _, want := range []string{
 		" i install · x remove · r reinstall · u upgrade  │  ",
-		"←↑↓→ navigate · Tab next · 1-7 jump · / filter · R refresh · C log · q quit · ? more",
+		"←↑↓→ navigate · tab next · 1-7 jump · / filter · R refresh · C log · q quit · ? more",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("Formulae footer at 140 columns = %q, want it to contain %q", got, want)

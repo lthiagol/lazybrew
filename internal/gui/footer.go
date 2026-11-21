@@ -95,7 +95,7 @@ func (m Model) renderBottomBar() string {
 
 // footerDropOrder is the global keys in the order they leave a row too narrow
 // for all of them: the first goes first. The arrow hint and ? help never go.
-var footerDropOrder = []string{"C", "R", "1-7", "Tab", "/", "q"}
+var footerDropOrder = []string{"C", "R", "1-7", "tab", "/", "q"}
 
 // footerMinPanel is the fewest panel actions a row keeps while a global key from
 // footerDropOrder is still shown.

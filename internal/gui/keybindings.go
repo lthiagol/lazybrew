@@ -32,7 +32,7 @@ func (h keyHint) helpKeyText() string {
 // Keys every panel answers to.
 var (
 	keyArrows  = keyHint{key: "←↑↓→", keys: "up down left right", desc: "navigate"}
-	keyNext    = keyHint{key: "Tab", keys: "tab", desc: "next", help: "Next panel"}
+	keyNext    = keyHint{key: "tab", helpKey: "Tab", keys: "tab", desc: "next", help: "Next panel"}
 	keyPrev    = keyHint{key: "S-Tab", helpKey: "Shift+Tab", keys: "shift+tab", help: "Previous panel"}
 	keyJump    = keyHint{key: "1-7", keys: "1 2 3 4 5 6 7", desc: "jump", help: "Jump to panel"}
 	keyScroll  = keyHint{key: "j/k", helpKey: "j/k ↑↓", keys: "j k down up", help: "Scroll list"}
