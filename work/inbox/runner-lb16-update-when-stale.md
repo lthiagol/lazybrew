@@ -50,3 +50,18 @@ Brief: `work/briefs/fix-lb16-update-when-stale-r1.md`; ruling `Q-lb16-r-key-auto
 - `make ci` → exit 0: vet, `-race` tests, all coverage floors met (gui 90.0≥83, config 88.5≥85, brew 87.1≥78, others ok), build.
   Log: /tmp/claude-1000/-home-agent-coding-lazybrew/eb0d39e2-09a6-4ce1-8bc1-babfee76080a/scratchpad/make-ci-r1.log
 - No brew write command run. `STATE.md` not touched (the fix brief does not ask for it).
+
+## Fix r2 — the review's five findings
+
+Brief: `work/briefs/fix-lb16-update-when-stale-r2.md`. One commit per finding, in order.
+
+- `fdd4f41` F-r1-01: the launch read is dropped only after the completion's refresh is issued (`updateRefreshed`). Failing before: `TestLaunchStatusLandingDuringStaleUpdateShowsDashboard` ("dropped while the stale update ran") and `TestLaunchStatusLandingAfterFailedEnqueueIsApplied` ("dropped after a refused update"). Both pass after; `TestLaunchReadLandingAfterStaleUpdateIsDropped` still passes.
+- `b957e94` F-r1-02: quoted `"true"`/`"false"` map like the bools. Failing before: `unknown value "true"`. The `TestUpdateOnStartValues` subtests pass after.
+- `e5340ea` F-r1-03: config import moved into the module group in four files. `make fmt` is `gofmt -s`, which does not move imports across groups, so this was by hand.
+- `b3a399f` F-r1-04: the two stale comments in `outdated_count_test.go` reworded.
+- `cd32462` F-r1-05: unit `TestStaleUpdateShowsEveryOutdatedPackage` and flow `TestLaunchCheckStaleFlow`. The runner reports 1 before the update and 2 after. The flow asserts `2 outdated` and the `wget` row after key 4, in `View()`. The Outdated panel loads lazily, so the unit test opens it first, as a user does. Revert check: a plain completion refresh fails the unit test, `TestBrewUpdateCompletionLoadsOutdated`, `TestLaunchCheckStaleRunsOneUpdateAndReloadsOutdated` and the flow. `gui.go` was restored from git.
+- Gate: `make ci` exit 0 (vet, `-race` tests, all coverage floors, build). Log: `/tmp/claude-1000/-home-agent-coding-lazybrew/93428fe2-a201-4fd7-9b39-5cd21527ba06/scratchpad/make-ci-r2.log`. Per commit: `make test-fast` on the touched packages, ok.
+- Goldens: none changed.
+- No brew write command run. `make test-integration` not run.
+
+**Seen, not done.** The r1 item "a refused stale enqueue leaves the preload waiting for the next Status load" should now clear, since the applied launch read starts the preload. Not tested.
