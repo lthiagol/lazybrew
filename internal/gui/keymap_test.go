@@ -388,8 +388,9 @@ var footerExempt = map[PanelID]map[string]bool{
 	// Outdated and Taps have tabs, which the Global help page lists as keyTabs.
 	PanelOutdated: {"h": true, "l": true, "left": true, "right": true},
 	PanelTaps:     {"h": true, "l": true, "left": true, "right": true},
-	// Search has no tabs: h and l type there, and the arrows do nothing.
-	PanelSearch: {"left": true, "right": true},
+	// Search has no tabs: h and l type there, and the arrows do nothing. X zaps
+	// an installed cask row; its footer word is left out, and its help line shows it.
+	PanelSearch: {"left": true, "right": true, "X": true},
 }
 
 // onFooterAndHelp reports whether k is shown on the footer and on the help. The
@@ -545,7 +546,7 @@ var keyTable = []keyHint{
 	tAdd, tUntap, tTrust, tUntrust, tTrustItem, tRepair,
 	svStart, svStop, svRestart, svRun, svCleanup, svLogStream,
 	stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, stTabs,
-	sExecute, sType, sInstall, sInstallCap, sFetch,
+	sExecute, sType, sInstall, sInstallCap, sUninstall, sZap, sFetch,
 }
 
 // TestRetiredTabAndPageKeysDoNothing (lb19 AC-03): [ and ] switch no tab, and

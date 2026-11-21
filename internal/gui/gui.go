@@ -259,6 +259,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := m.switchPanel(PanelSearch)
 		return m, cmd
 
+	case SearchMarksMsg:
+		// Rows are matched by name, so marks read for an earlier search do not
+		// land on the rows of a newer one.
+		for i, r := range msg.Results {
+			if i < len(m.searchResults) && m.searchResults[i].Name == r.Name {
+				m.searchResults[i].Installed = r.Installed
+			}
+		}
+		p := m.panels[PanelSearch]
+		p.results = m.searchResults
+		p.items = searchItems(m.searchResults)
+		return m, nil
+
 	case SearchInfoLoadedMsg:
 		m.searchInfo, m.searchInfoErr = nil, msg.Err
 		if msg.Err == nil && msg.Content != "" {
@@ -434,6 +447,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tasks.RunNext(),
 			func() tea.Msg { return RefreshMsg{} },
 			closeCmd,
+			// A write changes which rows are installed, so the Search marks
+			// are read again from the lists the write invalidated.
+			m.remarkSearch(),
 		}
 		if toastTick != nil {
 			cmds = append(cmds, toastTick)

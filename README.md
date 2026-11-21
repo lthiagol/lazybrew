@@ -74,6 +74,9 @@ Launch the interactive TUI. Available flags:
 
 Per-panel actions appear in the bottom bar and `?` help screen.
 
+On Search, `i` installs a result that is not installed, `x` uninstalls one that is,
+and `X` zaps an installed cask. Installed results are marked `installed`.
+
 ## Configuration
 
 Config file at `~/.config/lazybrew/config.yml`. The file is optional: without it
