@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 // they expect; a preload or a `brew update` running behind them would add reads
 // to every count. The preload tests turn the preload on by hand, the launch
 // tests set update_on_start themselves, and TestProductionDefaultPreloads and
-// TestProductionDefaultUpdatesOnLaunch pin the production defaults.
+// TestProductionDefaultUpdatesOnEveryLaunch pin the production defaults.
 func testConfig() *config.Config {
 	cfg := config.Default()
 	cfg.GUI.Preload = false
