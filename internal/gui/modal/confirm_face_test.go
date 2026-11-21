@@ -114,6 +114,22 @@ func TestConfirmFaceKeyLine(t *testing.T) {
 	}
 }
 
+// TestModalKeyLineUsesTheDotSeparator (lb29 r2 F-r1-03): a dialog's key row puts
+// the muted · between its keys, as the footer does, on every theme.
+func TestModalKeyLineUsesTheDotSeparator(t *testing.T) {
+	defer style.ApplyTheme(style.DarkTheme())
+	for _, th := range []*style.Theme{style.DarkTheme(), style.LightTheme()} {
+		style.ApplyTheme(th)
+		view := NewConfirmModal(ActionUpgrade, "Confirm Upgrade", "Upgrade bash?").View().Content
+		if joined := strings.Join(plainLines(view), "\n"); !strings.Contains(joined, "[y]es · [n]o · esc cancel") {
+			t.Errorf("key row is not dot-separated:\n%s", joined)
+		}
+		if !strings.Contains(view, style.MutedText.Render("·")) {
+			t.Errorf("the key row's dot is not in the muted role")
+		}
+	}
+}
+
 // TestConfirmFaceWidth locks AC-02.5: the box is 72 cells wide, every row is
 // exactly that wide, and long text wraps inside the box instead of past it.
 func TestConfirmFaceWidth(t *testing.T) {
