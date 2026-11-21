@@ -5,7 +5,7 @@ learn what is done, what is in flight, and where to pick up.
 
 ## ▶ Dev build
 
-`v1.1.0-rc2` is tagged and `lazybrew-dev` in the tap points at it (2026-11-21); rc1 was `fd1a037`. No PR to `stable`: work stays on `wip`.
+`v1.1.0-rc3` is tagged and `lazybrew-dev` in the tap points at it (2026-11-21); rc1 was `fd1a037`. No PR to `stable`: work stays on `wip`.
 
 ## ▶ Resume here (2026-11-20, end of the orchestrator session)
 
@@ -81,6 +81,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | lb26-list-filter | 5abd469, 44d7475, c298ca6, 381ac43, 2596040, 7489dd6 | closed | ok (r1 + fix r2, orchestrator-verified) |
 | lb27-status-tabs | 6ab7914, cdbcb03, 3310921, f535d23, b548db4, b450312, 05f7aa5, d99091e, 1610d81 | closed | ok (r2) |
 | lb28-themes | ca32bac, 12413b2, 0961c05, 42efc88, 1a58d2a | closed | ok (r1 + doc fixes, orchestrator-verified; palettes verified vs upstream by the reviewer) |
+| lb29-footer-redesign | a918265, 0d87daa, 5379050, 5f0cd94, 4ddfaa5, 3d7883a, cf112f3 | closed | ok (r1 + fix r2, orchestrator-verified) |
 | lb29-footer-redesign | a918265, 0d87daa, 5379050; fix r2: 5f0cd94, 4ddfaa5, 3d7883a, cf112f3 | implemented | awaiting reviewer |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
 | lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |
