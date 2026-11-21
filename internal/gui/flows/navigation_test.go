@@ -69,3 +69,19 @@ func TestModalFlow(t *testing.T) {
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
 }
+
+// TestSearchTabCycleFlow (lb19 AC-01): Tab and Shift+Tab keep moving between
+// panels with the Search input focused, and the View shows each panel's name.
+func TestSearchTabCycleFlow(t *testing.T) {
+	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
+	tm.Send(tea.KeyPressMsg{Code: '/', Text: "/"})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
+	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
+	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+	out := readOutput(t, tm.FinalOutput(t))
+	if !strings.Contains(out, "Services") {
+		t.Error("Shift+Tab from Status should reach Services; the View never showed it")
+	}
+}

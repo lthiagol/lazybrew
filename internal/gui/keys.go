@@ -33,6 +33,11 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	if m.searchInput.Focused() {
 		switch msg.String() {
+		case "tab":
+			// Tab moves on even while the box has focus; switchPanel blurs it.
+			return m, m.nextPanel()
+		case "shift+tab":
+			return m, m.prevPanel()
 		case "esc":
 			m.searchInput.Blur()
 			return m, nil
