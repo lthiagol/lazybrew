@@ -250,3 +250,16 @@ func TestFilterClickMapsToFilteredRows(t *testing.T) {
 		t.Fatalf("a click on the second filtered row selected %q, want rip-tool", got)
 	}
 }
+
+// TestHeaderBadgeCountsTheFullListWhileFiltered: the header badge shows the
+// installed total, not the rows a query narrows the list to.
+func TestHeaderBadgeCountsTheFullListWhileFiltered(t *testing.T) {
+	m := typeText(sendKey(filterModel(t, 120, 40, "ripgrep", "wget", "rip-tool", "jq", "fzf"), "/"), "rip")
+	if n := len(m.panels[PanelFormulae].items); n != 2 {
+		t.Fatalf("query rip should narrow to 2 rows, got %d", n)
+	}
+	header := strings.SplitN(screenText(m), "\n", 2)[0]
+	if !strings.Contains(header, "5 formulae") {
+		t.Fatalf("header should count the 5 installed formulae while filtered, got %q", header)
+	}
+}

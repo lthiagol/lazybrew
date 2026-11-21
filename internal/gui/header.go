@@ -92,9 +92,9 @@ func (m Model) headerCount(id PanelID) (int, bool) {
 	if p := m.panels[id]; p.loaded && p.err == nil {
 		switch id {
 		case PanelFormulae:
-			return len(p.formulae), true
+			return len(p.fullFormulae()), true
 		case PanelCasks:
-			return len(p.casks), true
+			return len(p.fullCasks()), true
 		case PanelOutdated:
 			return len(p.items), true
 		}
