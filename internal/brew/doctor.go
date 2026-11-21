@@ -2,7 +2,12 @@ package brew
 
 import (
 	"context"
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -11,6 +16,7 @@ type DiagnosticsReader interface {
 	Missing(ctx context.Context) ([]MissingDep, error)
 	Vulns(ctx context.Context) (string, error)
 	Config(ctx context.Context) (*BrewConfig, error)
+	LastUpdate(ctx context.Context) (time.Time, error)
 	SetCacheTTLs(ttls CacheTTLs)
 }
 
@@ -29,6 +35,9 @@ type diagnosticsReader struct {
 	runner    Runner
 	cache     *Cache
 	doctorTTL time.Duration
+
+	repoMu sync.Mutex
+	repo   string // brew --repository, read once by repository()
 }
 
 type diagnosticsWriter struct {
@@ -60,6 +69,44 @@ func (s *diagnosticsReader) Doctor(ctx context.Context) ([]DoctorWarning, error)
 		}
 		return parseDoctorWarnings(text), true, nil
 	})
+}
+
+// LastUpdate is when brew last updated its taps: the mtime of
+// $(brew --repository)/.git/FETCH_HEAD. A brew with no FETCH_HEAD yet gives the
+// zero time. The file is read directly; git is not run.
+func (s *diagnosticsReader) LastUpdate(ctx context.Context) (time.Time, error) {
+	repo, err := s.repository(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	info, err := os.Stat(filepath.Join(repo, ".git", "FETCH_HEAD"))
+	if errors.Is(err, fs.ErrNotExist) {
+		return time.Time{}, nil
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return info.ModTime(), nil
+}
+
+// repository is brew --repository. It is read once; a failed read is not kept,
+// so the next call tries again.
+func (s *diagnosticsReader) repository(ctx context.Context) (string, error) {
+	s.repoMu.Lock()
+	defer s.repoMu.Unlock()
+	if s.repo != "" {
+		return s.repo, nil
+	}
+	output, err := s.runner.Execute(ctx, "--repository")
+	if err != nil {
+		return "", err
+	}
+	repo := strings.TrimSpace(string(output))
+	if repo == "" {
+		return "", errors.New("brew --repository printed no path")
+	}
+	s.repo = repo
+	return repo, nil
 }
 
 // SetCacheTTLs configures the cache TTL for `brew doctor` results. A zero TTL
