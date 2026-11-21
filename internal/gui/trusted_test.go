@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -27,6 +28,10 @@ var trustedFixtureItems = []string{
 	"octo/tools/cmd",
 }
 
+// callMu guards the call logs of the helpers below: the Taps read runs its taps
+// and trust reads at the same time, so both append to a log at once.
+var callMu sync.Mutex
+
 // tapsReadModel is the Taps panel read through fetchPanelData, so the test covers
 // the real read: `brew tap`, `brew tap-info` and `brew trust --json=v1`, answered by
 // the mock. tapInfo is the tap-info JSON; trust is what the trust read returns.
@@ -35,7 +40,9 @@ func tapsReadModel(t *testing.T, tapInfo, trust string, trustErr error, calls *[
 	t.Helper()
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		callMu.Lock()
 		*calls = append(*calls, args)
+		callMu.Unlock()
 		switch args[0] {
 		case "tap":
 			return []byte("octo/tools\nacme/fonts"), nil
@@ -88,7 +95,9 @@ func tapsMsg(taps []brew.Tap, trusted []brew.TrustEntry) DataLoadedMsg {
 func recordingRunner(calls *[][]string) *brewtest.MockRunner {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		callMu.Lock()
 		*calls = append(*calls, args)
+		callMu.Unlock()
 		return []byte(""), nil
 	}
 	return r
