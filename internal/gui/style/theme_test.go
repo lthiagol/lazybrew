@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"charm.land/lipgloss/v2"
+	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 // The official Catppuccin hex for every token, per flavour. The palette must
@@ -339,9 +340,18 @@ func roleSet(t *Theme) map[string]color.Color {
 	}
 }
 
+// registryNames lists the names in the registry, in order.
+func registryNames() []string {
+	names := make([]string, len(themes))
+	for i, t := range themes {
+		names[i] = t.name
+	}
+	return names
+}
+
 // TestEveryThemeSetsEveryRole: each registered theme has all 13 roles non-nil.
 func TestEveryThemeSetsEveryRole(t *testing.T) {
-	for _, name := range ThemeNames() {
+	for _, name := range registryNames() {
 		th, ok := ThemeByName(name)
 		if !ok {
 			t.Fatalf("ThemeByName(%q) not found", name)
@@ -362,8 +372,8 @@ func TestThemeRegistryNames(t *testing.T) {
 		"catppuccin-mocha", "catppuccin-macchiato", "catppuccin-frappe", "catppuccin-latte",
 		"dracula", "nord",
 	}
-	if got := ThemeNames(); strings.Join(got, ",") != strings.Join(want, ",") {
-		t.Fatalf("ThemeNames() = %v, want %v", got, want)
+	if got := registryNames(); strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("registry names = %v, want %v", got, want)
 	}
 	for _, name := range want {
 		if _, ok := ThemeByName(name); !ok {
@@ -375,6 +385,14 @@ func TestThemeRegistryNames(t *testing.T) {
 	}
 	if _, ok := ThemeByName("solarized"); ok {
 		t.Error("ThemeByName(solarized) should not be found")
+	}
+}
+
+// TestRegistryMatchesConfig: the names gui.theme accepts (config) and the
+// names the registry resolves are the same list, in the same order.
+func TestRegistryMatchesConfig(t *testing.T) {
+	if got, want := strings.Join(registryNames(), ","), strings.Join(config.ThemeNames(), ","); got != want {
+		t.Errorf("registry names = %s, want config's %s", got, want)
 	}
 }
 

@@ -57,7 +57,7 @@ var latteBelow = map[string]float64{
 // TestEveryThemeMeetsItsContrastFloor: each role's contrast with the theme's
 // background meets its floor, except the Latte roles recorded above.
 func TestEveryThemeMeetsItsContrastFloor(t *testing.T) {
-	for _, name := range ThemeNames() {
+	for _, name := range registryNames() {
 		th, _ := ThemeByName(name)
 		roles := roleSet(th)
 		for role, floor := range contrastFloor {

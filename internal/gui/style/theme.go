@@ -177,9 +177,9 @@ func NordTheme() *Theme {
 	}
 }
 
-// themes is the one place the names gui.theme accepts live, in the order
-// ThemeNames lists them. Each name maps to a constructor, so every lookup
-// gets its own copy of the theme.
+// themes is the one place the theme names live. The names gui.theme accepts
+// are config's list (config.ThemeNames); a test checks the two agree. Each
+// name maps to a constructor, so every lookup gets its own copy of the theme.
 var themes = []struct {
 	name  string
 	theme func() *Theme
@@ -192,15 +192,6 @@ var themes = []struct {
 	{"catppuccin-latte", LightTheme},
 	{"dracula", DraculaTheme},
 	{"nord", NordTheme},
-}
-
-// ThemeNames lists every name ThemeByName accepts.
-func ThemeNames() []string {
-	names := make([]string, len(themes))
-	for i, t := range themes {
-		names[i] = t.name
-	}
-	return names
 }
 
 // ThemeByName returns the theme for a name, matched without regard to case.

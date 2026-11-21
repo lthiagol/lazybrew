@@ -151,12 +151,17 @@ const (
 )
 
 // themeNames are the names gui.theme accepts, in the order the errors list
-// them. The GUI's registry (style.ThemeNames) must match: a test in this
-// package checks it, so config does not import the GUI.
+// them. The GUI's registry must match: a test in the style package checks it,
+// so config does not import the GUI.
 var themeNames = []string{
 	"dark", "light",
 	"catppuccin-mocha", "catppuccin-macchiato", "catppuccin-frappe", "catppuccin-latte",
 	"dracula", "nord",
+}
+
+// ThemeNames lists the names gui.theme accepts, in display order.
+func ThemeNames() []string {
+	return append([]string(nil), themeNames...)
 }
 
 // Load reads the config file and then applies LAZYBREW_ICONS, LAZYBREW_ANIMATIONS
@@ -173,7 +178,7 @@ func Load(path string) (*Config, error) {
 	}
 	if !validTheme(cfg.GUI.Theme) {
 		return nil, fmt.Errorf("gui.theme: unknown value %q (want one of %s)",
-			cfg.GUI.Theme, strings.Join(themeNames, ", "))
+			cfg.GUI.Theme, strings.Join(ThemeNames(), ", "))
 	}
 	if v := os.Getenv(IconsEnv); v != "" {
 		if !validIcons(v) {

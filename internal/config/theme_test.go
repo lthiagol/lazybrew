@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // TestThemeEveryNameLoads: each name gui.theme accepts loads as itself.
@@ -46,14 +44,6 @@ func TestThemeUnknownIsAnErrorListingTheNames(t *testing.T) {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error = %q, want it to list %q", err, name)
 		}
-	}
-}
-
-// TestThemeNamesMatchTheGUIRegistry: the config's list and the GUI's registry
-// name the same themes, so a name the config accepts always resolves.
-func TestThemeNamesMatchTheGUIRegistry(t *testing.T) {
-	if got, want := strings.Join(themeNames, ","), strings.Join(style.ThemeNames(), ","); got != want {
-		t.Errorf("config themeNames = %s, want the GUI registry's %s", got, want)
 	}
 }
 
