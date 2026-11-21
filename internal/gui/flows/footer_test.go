@@ -22,13 +22,13 @@ func footerRowAt140(t *testing.T, tm *teatest.TestModel) string {
 	return strings.TrimRight(rows[len(rows)-1], " ")
 }
 
-// TestFooterFlowStatusAt140 (lb29 AC-03): Status at 140 columns shows its own keys,
-// the dim rule, then the global keys with / search.
+// TestFooterFlowStatusAt140 (lb29 AC-03, r2 F-r1-04): Status at 140 columns shows
+// its own keys, the dim rule, then the global keys with / search and R refresh once.
 func TestFooterFlowStatusAt140(t *testing.T) {
 	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(140, 40))
 	got := footerRowAt140(t, tm)
 	for _, want := range []string{
-		" R refresh · c cleanup · d doctor · A autoremove  │  ",
+		" c cleanup · d doctor · A autoremove · B brewfile  │  ",
 		"←↑↓→ navigate · tab next · 1-7 jump · / search · R refresh · C log · q quit · ? more",
 	} {
 		if !strings.Contains(got, want) {
