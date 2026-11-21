@@ -19,7 +19,7 @@ decision). The source is provenance, not a spec.
 | LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slices v2-01..v2-06 + v2-05s closed 2026-11-20; checkpoint passed 2026-11-20; follow-up slices v2-07..v2-11 (Q-v2-next) closed 2026-11-20; code-complete; human smoke passed 2026-11-21 | orchestrator review 2026-11-19 | medium | closed |
 | LB-09 | Services Logs tab: tail a service's stdout/stderr log files from lazybrew — slice `lb09-service-logs` | user, 2026-11-19 | low | closed |
 | LB-10 | Confirm dialog: when a long dependents list is cut, the closing `…` row is centred instead of placed in the list column (`dialogMaxRows` cut in `modal/frame.go`, > ~12 body rows) — slice `lb04-lb10-small-fixes` | reviewer v2-04 r4 | low | closed |
-| LB-11 | Run brew steps that need a terminal (macOS `.pkg` casks asking for sudo) with the TUI suspended (`tea.ExecProcess`), so the user can type the password; today they fail fast with the needs-sudo text — the user ruled that message is enough for now (2026-11-20) | orchestrator + user, 2026-11-20 (Q-v2-11-b) | low | deferred (`Q-backlog-next`) |
+| LB-11 | Run brew steps that need a terminal (macOS `.pkg` casks asking for sudo) with the TUI suspended (`tea.ExecProcess`), so the user can type the password; today they fail fast with the needs-sudo text — the user ruled that message is enough for now (2026-11-20) | orchestrator + user, 2026-11-20 (Q-v2-11-b) | low | closed (lb23-sudo-in-terminal r2; macOS manual test pending) |
 | LB-DROP-01 | Dead header fix in the `master-plan-bkp` directory | B-01 | n/a | dropped |
 
 **LB-DROP-01 reason:** the target directory does not exist on this machine —
