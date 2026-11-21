@@ -105,7 +105,7 @@ func TestFilterUpDownMoveTheCursorOnly(t *testing.T) {
 	if p.selectedName() != "rip-tool" || p.query != "r" {
 		t.Fatalf("down: cursor on %q, query %q; want rip-tool, r", p.selectedName(), p.query)
 	}
-	m = sendSpecial(m, tea.KeyUp)
+	sendSpecial(m, tea.KeyUp)
 	if p.selectedName() != "ripgrep" || p.query != "r" {
 		t.Fatalf("up: cursor on %q, query %q; want ripgrep, r", p.selectedName(), p.query)
 	}
