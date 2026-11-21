@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"github.com/lthiagol/lazybrew/internal/config"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -118,7 +119,7 @@ func TestStatusRefreshKeepsOutdatedCache(t *testing.T) {
 // handler also serves the Init path and must stay plain.
 func TestRKeyLoadsOutdatedWhenUpdateOnStart(t *testing.T) {
 	m := newTestModel()
-	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 	m.cfg.GUI.AutoRefreshSeconds = 0
 
 	_, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
@@ -155,7 +156,7 @@ func TestRKeyLoadsOutdatedWhenUpdateOnStart(t *testing.T) {
 // the count would be loaded at startup, which M9 forbids.
 func TestBrewUpdateCompletionStaysPlain(t *testing.T) {
 	m := newTestModel()
-	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 
 	_, cmd := m.Update(TaskCompletedMsg{ID: "brew-update", Title: "brew update"})
 	if cmd == nil {

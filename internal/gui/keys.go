@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -80,7 +81,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case "R":
-		if m.cfg.Brew.UpdateOnStart && !m.isUpdating {
+		if m.cfg.Brew.UpdateOnStart == config.UpdateAlways && !m.isUpdating {
 			m.isUpdating = true
 			m.updateOutput = nil
 			// The update task and the load-flagged refresh travel

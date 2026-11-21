@@ -24,7 +24,7 @@ const (
 
 func (m Model) Init() tea.Cmd {
 	var cmds []tea.Cmd
-	if m.cfg.Brew.UpdateOnStart {
+	if m.cfg.Brew.UpdateOnStart == config.UpdateAlways {
 		cmds = append(cmds,
 			func() tea.Msg { return StartUpdateMsg{} },
 			m.updateTickerCmd(),
@@ -255,7 +255,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, arm
 
 	case StartUpdateMsg:
-		if m.isUpdating || !m.cfg.Brew.UpdateOnStart {
+		if m.isUpdating || m.cfg.Brew.UpdateOnStart != config.UpdateAlways {
 			return m, nil
 		}
 		m.isUpdating = true

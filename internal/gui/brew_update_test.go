@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 	"testing"
 
@@ -48,7 +49,7 @@ func TestBrewUpdateEntryPointsUseDiagnosticsUpdate(t *testing.T) {
 			}
 
 			m := New(client, testConfig())
-			m.cfg.Brew.UpdateOnStart = true
+			m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 			drainCmds(e.start(m))
 			// The start command only announces the task. The task manager
 			// reads the stream one chunk at a time, when the app asks for

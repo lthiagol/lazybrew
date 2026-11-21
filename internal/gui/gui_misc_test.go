@@ -5,6 +5,7 @@ package gui
 
 import (
 	"context"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 	"testing"
 	"time"
@@ -209,7 +210,7 @@ func TestEnqueueQueuedOutcomeToastsQueueing(t *testing.T) {
 
 func TestBrewUpdateEnqueueFailureResetsIsUpdating(t *testing.T) {
 	m := newTestModel()
-	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 
 	// Fill the queue to force ErrQueueFull.
 	for i := 0; i < task.DefaultMaxQueue; i++ {

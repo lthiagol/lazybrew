@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"errors"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -1763,7 +1764,7 @@ func TestInitDoesNotFetchOutdated(t *testing.T) {
 		return []byte(`{"formulae":[],"casks":[]}`), nil
 	}
 	cfg := testConfig()
-	cfg.Brew.UpdateOnStart = false
+	cfg.Brew.UpdateOnStart = config.UpdateNever
 	m := New(brew.NewClient(r), cfg)
 
 	cmd := m.Init()

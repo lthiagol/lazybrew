@@ -39,14 +39,50 @@ const DefaultAutoRefreshPause = 500 * time.Millisecond
 // more frequent). Setting any TTL to <= 0 keeps the cache default (30s),
 // preserving pre-M12 behavior for that class.
 type BrewConfig struct {
-	Path          string        `yaml:"path"`
-	UpdateOnStart bool          `yaml:"update_on_start"`
-	FormulaeTTL   time.Duration `yaml:"formulae_ttl"`
-	CasksTTL      time.Duration `yaml:"casks_ttl"`
-	OutdatedTTL   time.Duration `yaml:"outdated_ttl"`
-	TapsTTL       time.Duration `yaml:"taps_ttl"`
-	ServicesTTL   time.Duration `yaml:"services_ttl"`
-	DoctorTTL     time.Duration `yaml:"doctor_ttl"`
+	Path          string     `yaml:"path"`
+	UpdateOnStart UpdateMode `yaml:"update_on_start"`
+	// UpdateStaleHours is how old brew's last update may be before auto
+	// mode runs `brew update` at launch.
+	UpdateStaleHours int           `yaml:"update_stale_hours"`
+	FormulaeTTL      time.Duration `yaml:"formulae_ttl"`
+	CasksTTL         time.Duration `yaml:"casks_ttl"`
+	OutdatedTTL      time.Duration `yaml:"outdated_ttl"`
+	TapsTTL          time.Duration `yaml:"taps_ttl"`
+	ServicesTTL      time.Duration `yaml:"services_ttl"`
+	DoctorTTL        time.Duration `yaml:"doctor_ttl"`
+}
+
+// UpdateMode is brew.update_on_start. never (false) leaves brew's metadata as it
+// is; always (true) runs `brew update` at every launch; auto runs it at launch
+// only when brew's last update is older than brew.update_stale_hours.
+type UpdateMode string
+
+const (
+	UpdateNever  UpdateMode = "false"
+	UpdateAlways UpdateMode = "true"
+	UpdateAuto   UpdateMode = "auto"
+)
+
+// DefaultUpdateStaleHours is how old brew's last update may be before auto mode
+// runs `brew update` at launch.
+const DefaultUpdateStaleHours = 6
+
+// UnmarshalYAML reads true, false or auto. A YAML bool decodes as it always
+// did, so `update_on_start: true` and `false` keep their meaning.
+func (u *UpdateMode) UnmarshalYAML(node *yaml.Node) error {
+	var on bool
+	if err := node.Decode(&on); err == nil {
+		*u = UpdateNever
+		if on {
+			*u = UpdateAlways
+		}
+		return nil
+	}
+	if node.Value == string(UpdateAuto) {
+		*u = UpdateAuto
+		return nil
+	}
+	return fmt.Errorf("brew.update_on_start: unknown value %q (want true, false or auto)", node.Value)
 }
 
 const (
@@ -72,14 +108,15 @@ func Default() *Config {
 			AutoRefreshPause:   DefaultAutoRefreshPause,
 		},
 		Brew: BrewConfig{
-			Path:          "",
-			UpdateOnStart: false,
-			FormulaeTTL:   DefaultFormulaeTTL,
-			CasksTTL:      DefaultCasksTTL,
-			OutdatedTTL:   DefaultOutdatedTTL,
-			TapsTTL:       DefaultTapsTTL,
-			ServicesTTL:   DefaultServicesTTL,
-			DoctorTTL:     DefaultDoctorTTL,
+			Path:             "",
+			UpdateOnStart:    UpdateAuto,
+			UpdateStaleHours: DefaultUpdateStaleHours,
+			FormulaeTTL:      DefaultFormulaeTTL,
+			CasksTTL:         DefaultCasksTTL,
+			OutdatedTTL:      DefaultOutdatedTTL,
+			TapsTTL:          DefaultTapsTTL,
+			ServicesTTL:      DefaultServicesTTL,
+			DoctorTTL:        DefaultDoctorTTL,
 		},
 	}
 }
@@ -187,6 +224,9 @@ func loadFile(path string) (*Config, error) {
 		if *ttl.value <= 0 {
 			*ttl.value = ttl.def
 		}
+	}
+	if cfg.Brew.UpdateStaleHours < 1 {
+		return nil, fmt.Errorf("brew.update_stale_hours: %d is below 1", cfg.Brew.UpdateStaleHours)
 	}
 	if cfg.GUI.AutoRefreshPause < 0 {
 		cfg.GUI.AutoRefreshPause = DefaultAutoRefreshPause

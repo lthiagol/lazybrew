@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"github.com/lthiagol/lazybrew/internal/config"
 	"testing"
 	"time"
 
@@ -85,7 +86,7 @@ func TestAutoRefreshKeepsOneTickChain(t *testing.T) {
 // brew update runs must not each add a 10 s ticker.
 func TestUpdateTickerKeepsOneChainAcrossRPresses(t *testing.T) {
 	m := newTestModel()
-	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 
 	pending := countPending(m.Init())
 	for i := 0; i < 3; i++ {
