@@ -158,6 +158,26 @@ func TestEnterDoesNothingWhileTasksAreQueuedOrABatchRuns(t *testing.T) {
 	}
 }
 
+// The retry runs only from a failed operation. One still running, or cancelled,
+// that carries a sudo refusal keeps Enter and its status row as they are.
+func TestEnterDoesNothingUnlessTheOperationFailed(t *testing.T) {
+	for _, status := range []opStatus{opRunning, opCancelled} {
+		m := sudoFailedModel("install", "--cask", "foo")
+		m.opState.Status = status
+		m.opState.Started = time.Now()
+		cmds := captureExec(m)
+
+		m = updateModel(m, enterKey)
+
+		if len(*cmds) != 0 {
+			t.Errorf("status %v: Enter ran %q in the terminal", status, (*cmds)[0].Args)
+		}
+		if got := ansi.Strip(m.renderOperation(80, 10)); strings.Contains(got, "run in this terminal") {
+			t.Errorf("status %v: overlay shows the retry hint:\n%s", status, got)
+		}
+	}
+}
+
 // The failed overlay names the retry on its status row, at both widths, only
 // when Enter would run it. Esc closes it as before.
 func TestFailedOverlayShowsTheRetryOnlyWhenItRuns(t *testing.T) {
