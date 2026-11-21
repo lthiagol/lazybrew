@@ -135,3 +135,24 @@ func TestNonTapFailureTextIsUnchanged(t *testing.T) {
 		t.Fatalf("non-tap failure text changed: %q", got)
 	}
 }
+
+// TestUntapConfirmListsInstalledCaskFromBrewPayload (LB-17): a cask that user/tap
+// owns, read from brew's installed payload (full_token, no full_name), is named
+// in the untap confirm.
+func TestUntapConfirmListsInstalledCaskFromBrewPayload(t *testing.T) {
+	payload := `{"casks":[{"token":"gcloud","full_token":"user/tap/gcloud","tap":"user/tap","name":["gcloud"],"installed":"1.0"}]}`
+	_, casks, err := brew.ParseInfo([]byte(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := untapModel(nil, casks)
+
+	nm, _ := m.confirmUntap()
+	mm := nm.(Model)
+	view := confirmView(t, &mm)
+	for _, want := range []string{"brew will refuse to untap while they are installed", "gcloud"} {
+		if !strings.Contains(view, want) {
+			t.Errorf("confirm lacks %q:\n%s", want, view)
+		}
+	}
+}
