@@ -21,6 +21,15 @@ const (
 	PanelSearch
 )
 
+// Title is the name the panel's sidebar box and its help page show. It is String
+// except where the panel does more than its identifier says.
+func (p PanelID) Title() string {
+	if p == PanelTaps {
+		return "Taps & Trust"
+	}
+	return p.String()
+}
+
 func (p PanelID) String() string {
 	switch p {
 	case PanelStatus:
@@ -99,6 +108,12 @@ type panelData struct {
 	// trustUnknown is set when the taps were read without tap-info: the rows
 	// and the Tap Info say so, and t and T refuse until a full read lands.
 	trustUnknown bool
+	// trusted is the Taps list's trusted formulae, casks and commands: the rows
+	// after the taps, in trustedRows order.
+	trusted []brew.TrustEntry
+	// trustFailed is set when the last trust read failed: the failure is toasted
+	// once, not again on every refresh that repeats it.
+	trustFailed bool
 }
 
 func (p *panelData) itemCount() int {
@@ -234,6 +249,9 @@ func (p *panelData) nameAt(i int) string {
 		if i < len(p.taps) {
 			return p.taps[i].Name
 		}
+		if j := i - len(p.taps); j < len(p.trusted) {
+			return p.trusted[j].Name
+		}
 	case PanelServices:
 		if i < len(p.services) {
 			return p.services[i].Name
@@ -249,6 +267,15 @@ func (p *panelData) nameAt(i int) string {
 // selectedName is the real name of the selected row; see nameAt.
 func (p *panelData) selectedName() string {
 	return p.nameAt(p.selected)
+}
+
+// selectedTrusted is the trusted item under the cursor on the Taps list, nil on a
+// tap row.
+func (p *panelData) selectedTrusted() *brew.TrustEntry {
+	if i := p.selected - len(p.taps); p.selected >= 0 && i >= 0 && i < len(p.trusted) {
+		return &p.trusted[i]
+	}
+	return nil
 }
 
 func (p *panelData) selectedFormula() *brew.Formula {
@@ -389,7 +416,7 @@ func initPanels() []*panelData {
 		// loads on first switchPanel via lazyLoadPanel(). RefreshMsg
 		// sets loading=true on the panels it re-fetches.
 		id := PanelID(i)
-		panels[i] = &panelData{id: id, title: id.String()}
+		panels[i] = &panelData{id: id, title: id.Title()}
 	}
 	return panels
 }

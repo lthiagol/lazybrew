@@ -559,8 +559,10 @@ func TestSidebarLabelsAtEightyColumns(t *testing.T) {
 	if got := top("3 ▣ Casks"); !strings.HasSuffix(got, " – ─╮") {
 		t.Errorf("unloaded Casks at 80 columns should show the short dash, got %q", got)
 	}
-	if got := top("5 ⊕ Taps"); !strings.HasSuffix(got, " 3 ─╮") {
-		t.Errorf("the Taps count must show in full, got %q", got)
+	// The title is Taps & Trust (lb30): at this 24-cell width its icon gives way,
+	// and the count still shows in full.
+	if got := top("Taps & Trust"); !strings.HasSuffix(got, " 3 ─╮") {
+		t.Errorf("the Taps & Trust count must show in full, got %q", got)
 	}
 	if got := top("6 ◎ Services"); !strings.HasSuffix(got, " 0 ─╮") {
 		t.Errorf("an empty panel shows 0 in full at 80 columns, got %q", got)

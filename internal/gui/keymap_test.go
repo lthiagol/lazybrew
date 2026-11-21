@@ -319,6 +319,12 @@ func footerOn(id PanelID) []keyHint {
 				})
 			}
 		}
+		// A trusted item under the cursor: the footer leads with its untrust.
+		show(func(m *Model) {
+			m.panels[PanelTaps].taps = []brew.Tap{{Name: "a/b", Installed: true}}
+			m.panels[PanelTaps].trusted = []brew.TrustEntry{{Name: "a/b/c", Type: brew.TrustTypeFormula, Tap: "a/b"}}
+			m.panels[PanelTaps].selected = 1
+		})
 	}
 	return out
 }
@@ -328,7 +334,7 @@ func footerOn(id PanelID) []keyHint {
 func helpOn(id PanelID) []keyHint {
 	var out []keyHint
 	for _, page := range buildHelp() {
-		if page.title != "Global" && page.title != id.String() {
+		if page.title != "Global" && page.title != id.Title() {
 			continue
 		}
 		for _, sec := range page.sections {

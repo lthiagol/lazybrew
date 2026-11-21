@@ -18,10 +18,13 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 		if s := p.selectedService(); msg.PanelID == PanelServices && s != nil {
 			selectedService = s.Name
 		}
-		// A reload keeps the cursor on the same tap by name (v2-10 AC-04.1).
-		selectedTap := ""
-		if t := p.selectedTap(); msg.PanelID == PanelTaps && t != nil {
-			selectedTap = t.Name
+		// A reload keeps the cursor on the same tap, or trusted item, by name
+		// (v2-10 AC-04.1, lb30 AC-02).
+		selectedRow := ""
+		onTrusted := false
+		if msg.PanelID == PanelTaps {
+			selectedRow = p.selectedName()
+			onTrusted = p.selectedTrusted() != nil
 		}
 		p.loading = false
 		p.loaded = true
@@ -42,6 +45,7 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 			}
 			p.taps = msg.Taps
 			p.trustUnknown = msg.TrustUnknown
+			p.trusted = msg.Trusted
 			p.services = msg.Services
 			p.serviceInfo = msg.ServiceInfo
 			if msg.PanelID == PanelStatus {
@@ -52,7 +56,9 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 				}
 			}
 			selectNamed(p, p.services, func(s brew.Service) string { return s.Name }, selectedService)
-			selectNamed(p, p.taps, func(t brew.Tap) string { return t.Name }, selectedTap)
+			if msg.PanelID == PanelTaps {
+				selectTapRow(p, selectedRow, onTrusted)
+			}
 		}
 		p.indexInstalled()
 		p.normalize()
@@ -65,19 +71,30 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 	if msg.PanelID == PanelOutdated && msg.Err == nil {
 		m.batch.selected = make(map[int]bool)
 	}
+	// A failed trust read is toasted once: a refresh that fails the same way
+	// stays quiet, and the trusted rows are simply absent (lb30 AC-02).
+	var trustToast tea.Cmd
+	if msg.PanelID == PanelTaps && msg.Err == nil {
+		p := m.panels[PanelTaps]
+		if msg.TrustErr != nil && !p.trustFailed {
+			trustToast = m.setToast("Could not read the trust list: "+msg.TrustErr.Error(), modal.ToastError)
+		}
+		p.trustFailed = msg.TrustErr != nil
+	}
 	m.clearPanelTabContent(msg.PanelID)
 	// A preload read is not one a refresh waits for, so it does not count.
 	if m.refreshing > 0 && !preloaded {
 		m.refreshing--
 		if m.refreshing == 0 {
 			return tea.Batch(
+				trustToast,
 				m.setToast("Data refreshed", modal.ToastSuccess),
 				m.loadTabContent(),
 			)
 		}
 	}
 	if msg.PanelID == m.activePanel && needsTabFetch(m.activePanel, m.activeTab) {
-		return m.loadTabContent()
+		return tea.Batch(trustToast, m.loadTabContent())
 	}
-	return nil
+	return trustToast
 }

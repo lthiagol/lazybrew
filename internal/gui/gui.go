@@ -216,7 +216,7 @@ func (m Model) animate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// With the motion off nothing is animated: the update is the message
 	// switch, with no copy of the animated values and no motion work.
 	if !m.motionOn {
-		return m.update(msg)
+		return followTaps(m.update(msg))
 	}
 	// Each update works on its own copy of the animated values, so a model
 	// kept from before the update is not moved by it.
@@ -224,7 +224,7 @@ func (m Model) animate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if tick, ok := msg.(anim.TickMsg); ok {
 		return m.stepMotion(tick.At)
 	}
-	next, cmd := m.update(msg)
+	next, cmd := followTaps(m.update(msg))
 	// A handler on *Model returns the pointer, so the settled model goes back
 	// into it and the returned type stays the same.
 	if p, ok := next.(*Model); ok {

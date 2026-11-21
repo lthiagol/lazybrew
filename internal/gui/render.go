@@ -539,6 +539,9 @@ func (m Model) renderContent(width, height int) string {
 		}
 
 	case PanelTaps:
+		if e := panel.selectedTrusted(); e != nil {
+			return renderTrustedInfo(panel, *e, width)
+		}
 		switch m.activeTab {
 		case tapInfoTab:
 			return renderTapInfo(panel, width)

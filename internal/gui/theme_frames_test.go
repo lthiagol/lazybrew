@@ -45,6 +45,19 @@ var themeScreens = []themeScreen{
 		},
 	},
 	{
+		// A trusted item on the Taps list, selected: the same accent and surface as
+		// any selected row, its kind in the subtle role (lb30 AC-02).
+		name: "trusted item selected",
+		setup: func(m *Model) *Model {
+			m.switchPanel(PanelTaps)
+			m = updateModel(m, tapsMsg([]brew.Tap{{Name: "octo/tools", Installed: true}}, []brew.TrustEntry{trustedAt("octo/tools/zeta", brew.TrustTypeFormula)}))
+			return sendKey(m, "j")
+		},
+		want: func(th *style.Theme) []string {
+			return []string{sgrColor("38", th.Accent), sgrColor("48", th.Surface)}
+		},
+	},
+	{
 		// The operation overlay: the accent title and the subtle status line.
 		name: "operation",
 		setup: func(m *Model) *Model {
