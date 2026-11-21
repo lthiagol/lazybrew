@@ -9,18 +9,18 @@
 
 ## Run 2 — v2 overhaul (LB-05, before the `wip` → `stable` PR)
 
-> **Status:** open — **human, interactive**, in a real terminal. Covers LB-08
+> **Status:** run 2026-11-21 (human, interactive; result below). Covers LB-08
 > (v2-01 … v2-11). Run 1 (M08, hybrid) is kept below for history.
 > Build: `git pull && make run`. Tick each box; note anything odd under Result.
 
 | Field | Value |
 |---|---|
-| Date | |
-| Tester | |
-| lazybrew commit | `git rev-parse --short HEAD` |
-| brew version | |
-| Terminal / size | |
-| OS | |
+| Date | 2026-11-21 |
+| Tester | user (human, interactive) |
+| lazybrew commit | `4bf1584` |
+| brew version | Homebrew 7.0.15-111-ge40c695 |
+| Terminal / size | herdr, xterm-256color, 140x38 |
+| OS | Linux 6.12 arm64 |
 
 ### Look and startup
 - [ ] Starts without error; header, sidebar boxes, main area and footer fill the terminal
@@ -64,9 +64,9 @@
 
 | | |
 |---|---|
-| **Pass / Fail** | |
-| **Blocking issues** | |
-| **Notes** | |
+| **Pass / Fail** | **PASS** (human, partial: items below not reported) |
+| **Blocking issues** | None. |
+| **Notes** | Passed: startup and loading, header update badge, casks as tokens, counts match brew (2 casks, 3 outdated, 3 taps), `Tab`/`Shift+Tab`/digits, mouse, main-area layout, Info/Deps, `?` help, install and uninstall `hello`, cancel mid-run (`hunk`), failed uninstall stays with Esc, Services restart (`moshi-hook`) and start/stop (`pulseaudio`), Taps trust/untrust/untap, `q`. **Bugs found and parked as lb19:** `Tab` stuck on Search (focused input), search rows all `unknown`/never `installed`. **Decision:** `[` `]` and PgUp/PgDn are being removed; tabs switch with arrows and `h`/`l`. **Not reported (not run):** `LAZYBREW_ICONS=unicode` and light theme, `LAZYBREW_ANIMATIONS=0`, batch upgrade, `s`/`S` info toast, the stale-launch `touch` check. The `wip` → `stable` PR is not planned: work stays on `wip`. |
 
 ---
 
