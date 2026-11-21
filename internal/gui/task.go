@@ -78,6 +78,10 @@ const (
 
 type Operation struct {
 	Title string
+	// TaskID and TaskTitle name the task the Operation runs, as the task
+	// manager has them. A retry in the terminal reports under them.
+	TaskID    string
+	TaskTitle string
 	// Icon is the glyph of the action the task runs.
 	Icon  string
 	Lines []string

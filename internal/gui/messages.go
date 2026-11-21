@@ -107,6 +107,15 @@ type lastUpdateMsg struct {
 	err error
 }
 
+// SudoRunDoneMsg is a failed step run again in the terminal, once the command
+// has exited. Err is nil on success.
+type SudoRunDoneMsg struct {
+	ID    string
+	Title string
+	Args  []string
+	Err   error
+}
+
 type DepCheckMsg struct {
 	MutType mutationType
 	Label   string

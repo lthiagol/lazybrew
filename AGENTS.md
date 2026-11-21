@@ -63,7 +63,10 @@ make test-integration
 All GUI state mutation must go through the Bubble Tea `Update(msg tea.Msg)` loop.
 
 1. **Zero `program.Send` in production code.** If you find `program.Send`, replace it with a `tea.Cmd` that returns a message.
-2. **All write operations through `task.Manager`.** Install, uninstall, reinstall, upgrade, pin, tap, untap, trust, service start/stop, repair, cleanup, autoremove, and `brew update` must be enqueued via `m.tasks.Enqueue`.
+2. **All write operations through `task.Manager`.** Install, uninstall, reinstall, upgrade, pin, tap, untap, trust, service start/stop, repair, cleanup, autoremove, and `brew update` must be enqueued via `m.tasks.Enqueue`. The one exception is the user-confirmed
+   retry of a step that needs sudo (`terminal_retry.go`): it runs with the TUI
+   suspended, and only when the manager is idle (nothing running or queued) and
+   no batch is in flight.
 3. **No raw goroutines in handlers.** Use `tea.Cmd` closures or the TaskManager streaming pattern.
 4. **The Operation overlay owns streaming output.** `TaskOutputMsg` lines are appended to the active `Operation` (`m.opState`); `TaskCompletedMsg` marks it done (`opSuccess`/`opError`/`opCancelled`) and shows a toast. A successful run closes itself after 2 s; failed and cancelled runs stay until Esc or a panel switch. (The old `ProgressModal` was removed; there is no progress modal anymore.)
 5. **Model fields are the source of truth.** Do not read from `m.program` to infer state.

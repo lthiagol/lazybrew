@@ -556,3 +556,29 @@ func TestManager_OutputArrivesInOrderInBatches(t *testing.T) {
 		}
 	}
 }
+
+// Idle is true only when nothing runs and nothing waits in the queue.
+func TestManager_Idle(t *testing.T) {
+	m := NewManager(10)
+	if !m.Idle() {
+		t.Fatal("a new manager is idle")
+	}
+	_, _ = m.Enqueue(&Task{ID: "t1", Run: func(context.Context) (<-chan string, <-chan error, error) {
+		return afterTask()
+	}})
+	if m.Idle() {
+		t.Fatal("a queued task is not idle")
+	}
+	if _, ok := m.RunNext()().(TaskStartedMsg); !ok {
+		t.Fatal("expected TaskStartedMsg")
+	}
+	if m.Idle() {
+		t.Fatal("a running task is not idle")
+	}
+	if _, ok := m.RunNext()().(TaskCompletedMsg); !ok {
+		t.Fatal("expected TaskCompletedMsg")
+	}
+	if !m.Idle() {
+		t.Fatal("a completed task leaves the manager idle")
+	}
+}
