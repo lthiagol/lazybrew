@@ -319,14 +319,37 @@ func footerOn(id PanelID) []keyHint {
 				})
 			}
 		}
-		// A trusted item under the cursor: the footer leads with its untrust.
-		show(func(m *Model) {
-			m.panels[PanelTaps].taps = []brew.Tap{{Name: "a/b", Installed: true}}
-			m.panels[PanelTaps].trusted = []brew.TrustEntry{{Name: "a/b/c", Type: brew.TrustTypeFormula, Tap: "a/b"}}
-			m.panels[PanelTaps].selected = 1
-		})
+		show(trustedItemUnderCursor)
 	}
 	return out
+}
+
+// trustedItemUnderCursor puts a tap and a trusted formula in the Taps panel and
+// moves the cursor onto the formula, the item row whose footer leads with untrust.
+func trustedItemUnderCursor(m *Model) {
+	m.panels[PanelTaps].taps = []brew.Tap{{Name: "a/b", Installed: true}}
+	m.panels[PanelTaps].trusted = []brew.TrustEntry{{Name: "a/b/c", Type: brew.TrustTypeFormula, Tap: "a/b"}}
+	m.panels[PanelTaps].selected = 1
+}
+
+// TestTapsItemRowFooterIsExact (lb30 r2 F-r1-01): a trusted item's footer is t untrust,
+// a add tap and y copy, each answered by the Taps dispatch. The t on the tap rows
+// (trust) does not cover it, so this pins the item-row branch of tapsHints.
+func TestTapsItemRowFooterIsExact(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelTaps
+	trustedItemUnderCursor(m)
+
+	want := []keyHint{tUntrust, tAdd, keyCopy}
+	if got := m.footerHints().panel; !slices.Equal(got, want) {
+		t.Fatalf("the panel group of the footer on a trusted item = %v, want %v", got, want)
+	}
+	answers := dispatchByPanel(t)[PanelTaps]
+	for _, h := range want {
+		if !answersAny(h, answers) {
+			t.Errorf("the Taps dispatch does not answer %q %q", h.key, h.desc)
+		}
+	}
 }
 
 // helpOn is the help lines a panel's keys are on: the Global page and the page

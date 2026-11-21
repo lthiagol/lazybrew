@@ -350,13 +350,17 @@ func TestTAndAOnTrustedItem(t *testing.T) {
 	}
 }
 
-func TestTapsFooterOnTrustedItemLeadsWithUntrust(t *testing.T) {
+// TestTapsFooterRowOnTrustedItemLeadsWithUntrust (lb30 r2 F-r1-01): the footer row,
+// the last row of View, leads its panel group with t untrust and then a and y. No
+// x, r or T hint is on it: x and r are refused on an item and T needs a tap.
+func TestTapsFooterRowOnTrustedItemLeadsWithUntrust(t *testing.T) {
 	m, _ := tapsTrustedModel(t, []brew.Tap{{Name: "octo/tools"}}, []brew.TrustEntry{trustedAt("octo/tools/zeta", brew.TrustTypeFormula)})
 	m = selectRow(t, m, "octo/tools/zeta")
 
-	out := ansi.Strip(m.View().Content)
-	if !strings.Contains(out, "untrust") || strings.Contains(out, "untap") {
-		t.Fatalf("the footer on a trusted item should say untrust and not untap:\n%s", out)
+	rows := strings.Split(ansi.Strip(m.View().Content), "\n")
+	panel, _, _ := strings.Cut(rows[len(rows)-1], "│")
+	if got, want := strings.TrimSpace(panel), "t untrust · a add tap · y copy"; got != want {
+		t.Fatalf("the footer row's panel group on a trusted item = %q, want %q", got, want)
 	}
 }
 
