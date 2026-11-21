@@ -76,7 +76,7 @@ func TestTapsFooterAndInfoAgreeOnActions(t *testing.T) {
 			m := tapsModel([]brew.Tap{c.tap}, c.trustKnown)
 			info := ansi.Strip(renderTapInfo(m.panels[PanelTaps], 100))
 			for _, h := range m.panelKeyHints() {
-				if h.key == "j/k" || h.key == "a" {
+				if h.key == "j/k" || h.key == "h/l" || h.key == "a" {
 					continue
 				}
 				if !strings.Contains(info, h.key+" "+h.desc) {
@@ -88,14 +88,14 @@ func TestTapsFooterAndInfoAgreeOnActions(t *testing.T) {
 }
 
 // TestTapsFooterLeadsWithTheTapActions: the state's actions come first, then
-// navigate, then add tap, which is always there.
+// navigate, the tabs, then add tap, which is always there.
 func TestTapsFooterLeadsWithTheTapActions(t *testing.T) {
 	m := tapsModel([]brew.Tap{{Name: "user/tool"}}, true)
 	var got []string
 	for _, h := range m.panelKeyHints() {
 		got = append(got, h.key+" "+h.desc)
 	}
-	want := []string{"t trust", "x untap", "r repair", "j/k navigate", "a add tap"}
+	want := []string{"t trust", "x untap", "r repair", "j/k navigate", "h/l tabs", "a add tap"}
 	if strings.Join(got[:len(want)], "|") != strings.Join(want, "|") {
 		t.Fatalf("Taps footer = %v, want it to start with %v", got, want)
 	}

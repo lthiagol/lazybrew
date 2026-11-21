@@ -164,7 +164,7 @@ func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
 // tapsHints is the Taps footer: the actions for the selected tap lead, then the
 // keys that apply to any tap.
 func tapsHints(p *panelData) []keyHint {
-	hints := []keyHint{keyNavigate, tAdd}
+	hints := []keyHint{keyNavigate, keyPanelTabs, tAdd}
 	if t := p.selectedTap(); t != nil {
 		hints = append(tapActionHints(*t, !p.trustUnknown), hints...)
 	}
@@ -192,11 +192,11 @@ func panelHints(id PanelID) []keyHint {
 	case PanelServices:
 		return []keyHint{keyNavigate, keyPanelTabs, svStart, svStop, svRestart, svRun, svCleanup}
 	case PanelTaps:
-		return []keyHint{keyNavigate, tAdd, tUntap, tTrust, tRepair}
+		return []keyHint{keyNavigate, keyPanelTabs, tAdd, tUntap, tTrust, tRepair}
 	case PanelStatus:
-		return []keyHint{keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing}
+		return []keyHint{keyNavigate, keyPanelTabs, keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing}
 	case PanelOutdated:
-		return []keyHint{keyNavigate, keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll}
+		return []keyHint{keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll}
 	case PanelSearch:
 		return []keyHint{keyNavigate, sExecute, sInstall, sInstallCap, sUninstall, sFetch}
 	default:
