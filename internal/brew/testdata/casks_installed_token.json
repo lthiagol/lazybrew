@@ -1,0 +1,32 @@
+{
+  "formulae": [],
+  "casks": [
+    {
+      "token": "claude-code",
+      "full_token": "claude-code",
+      "old_tokens": [],
+      "tap": "homebrew/cask",
+      "name": [
+        "Claude Code"
+      ],
+      "desc": "Terminal-based AI coding assistant",
+      "homepage": "https://claude.com/product/claude-code",
+      "url": "https://downloads.claude.ai/claude-code-releases/2.1.311/linux-arm64/claude",
+      "version": "2.1.311",
+      "installed": "2.1.311",
+      "pinned": false,
+      "outdated": false,
+      "auto_updates": false,
+      "sha256": "2e2496c9a8065df93acb0fca2d341f59a6b8777649b2e025ab8c9bcd5eef61f3",
+      "artifacts": [
+        {
+          "binary": [
+            "claude"
+          ],
+          "target": "/home/linuxbrew/.linuxbrew/bin/claude"
+        }
+      ],
+      "depends_on": {}
+    }
+  ]
+}

@@ -26,25 +26,25 @@ func TestCaskDependsOnRealBrewShape(t *testing.T) {
 		casks[c.Name] = c
 	}
 
-	gcloud := casks["Google Cloud CLI"]
+	gcloud := casks["gcloud-cli"]
 	if want := []string{"python@3.14"}; !reflect.DeepEqual(gcloud.DependsOnFormulae, want) {
-		t.Fatalf("Google Cloud CLI DependsOnFormulae = %v, want %v", gcloud.DependsOnFormulae, want)
+		t.Fatalf("gcloud-cli DependsOnFormulae = %v, want %v", gcloud.DependsOnFormulae, want)
 	}
 	if want := []string{"python@3.14"}; !reflect.DeepEqual(gcloud.DependsOn, want) {
-		t.Fatalf("Google Cloud CLI DependsOn = %v, want %v", gcloud.DependsOn, want)
+		t.Fatalf("gcloud-cli DependsOn = %v, want %v", gcloud.DependsOn, want)
 	}
 	if len(gcloud.DependsOnCasks) != 0 || len(gcloud.Requirements) != 0 {
-		t.Fatalf("Google Cloud CLI has no cask or requirement deps, got casks %v, requirements %v",
+		t.Fatalf("gcloud-cli has no cask or requirement deps, got casks %v, requirements %v",
 			gcloud.DependsOnCasks, gcloud.Requirements)
 	}
 
 	// An empty object is a cask with no dependencies, not an error.
-	claude, ok := casks["Claude Code"]
+	claude, ok := casks["claude-code"]
 	if !ok {
-		t.Fatal("Claude Code missing from the fixture")
+		t.Fatal("claude-code missing from the fixture")
 	}
 	if len(claude.DependsOn) != 0 || len(claude.DependsOnFormulae) != 0 {
-		t.Fatalf("Claude Code depends_on {} should read as none, got %v", claude.DependsOn)
+		t.Fatalf("claude-code depends_on {} should read as none, got %v", claude.DependsOn)
 	}
 }
 

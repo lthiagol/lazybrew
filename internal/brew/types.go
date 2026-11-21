@@ -42,7 +42,10 @@ type InstalledVersion struct {
 
 // Cask represents an installed Homebrew cask
 type Cask struct {
+	// Name is the token brew acts on (claude-code). DisplayName is the
+	// human title brew lists under "name" (Claude Code).
 	Name        string   `json:"name"`
+	DisplayName string   `json:"-"`
 	FullName    string   `json:"full_name"`
 	Tap         string   `json:"tap"`
 	Version     string   `json:"version"`
