@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // TestHelpKeepsBorderAndHint: the help screen cuts its text to fit, so at
@@ -25,5 +26,29 @@ func TestHelpKeepsBorderAndHint(t *testing.T) {
 				t.Fatalf("help box should close on row %d, got %q", h-2, string(rows[h-2]))
 			}
 		})
+	}
+}
+
+// TestHelpNeverClipsAWord (lb29 r2 F-r1-01): no help line is cut at 80x24, 100x30,
+// 140x40 or 200x50 on either theme. A cut line ends in the … that textutil.Fit
+// leaves, and every page is checked, not only the rows on show.
+func TestHelpNeverClipsAWord(t *testing.T) {
+	defer style.ApplyTheme(style.DarkTheme())
+	themes := []struct {
+		name  string
+		theme *style.Theme
+	}{{"dark", style.DarkTheme()}, {"light", style.LightTheme()}}
+	for _, th := range themes {
+		style.ApplyTheme(th.theme)
+		for _, sz := range [][2]int{{80, 24}, {100, 30}, {140, 40}, {200, 50}} {
+			t.Run(fmt.Sprintf("%s %dx%d", th.name, sz[0], sz[1]), func(t *testing.T) {
+				m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+				for _, row := range helpRows(m.helpTextWidth()) {
+					if plain := plainLine(row); strings.Contains(plain, "…") {
+						t.Errorf("help line is clipped: %q", plain)
+					}
+				}
+			})
+		}
 	}
 }
