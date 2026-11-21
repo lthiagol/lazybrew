@@ -93,7 +93,7 @@ left, `formula`/`cask` right-aligned; a green mark before the name replaces the 
 loaded list locally as you type (generic panel filter; Outdated later). Global search
 stays on `7` then `/`, and `/` on the other panels.
 
-**LB-24 (planned, slice lb27-status-tabs)** — `m` (brew missing) and `v` (brew vulns)
+**LB-24 (closed, lb27-status-tabs)** — `m` (brew missing) and `v` (brew vulns)
 become Status tabs beside Config and Doctor (Config | Doctor | Missing | Vulns): run on
 demand, cached, kept across panel switches; `m`/`v` jump to the tab and refresh.
 
