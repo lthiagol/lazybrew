@@ -389,3 +389,29 @@ func retryUnderPty(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// When the retry runs, the failed row says only that sudo was needed and how to
+// continue; the command it runs is on the line under it. A command the retry
+// does not run keeps its message as it was.
+func TestFailedOverlaySaysWhatTheRetryRunsOnItsOwnLine(t *testing.T) {
+	const status = "Failed: needs sudo · Enter  run in this terminal · Esc  close"
+	for _, size := range [][2]int{{80, 24}, {140, 40}} {
+		width, height := size[0], size[1]
+		m := sudoFailedModel("install", "--cask", "foo")
+		lines := strings.Split(ansi.Strip(m.renderOperation(width, height)), "\n")
+		row := slices.IndexFunc(lines, func(l string) bool { return strings.Contains(l, "Failed:") })
+		if row < 0 || !strings.Contains(lines[row], status) {
+			t.Fatalf("%dx%d: status row lacks %q:\n%s", width, height, status, strings.Join(lines, "\n"))
+		}
+		if row+1 >= len(lines) || strings.TrimSpace(lines[row+1]) != "brew install --cask foo" {
+			t.Errorf("%dx%d: the line under the status row is not the command:\n%s", width, height, strings.Join(lines, "\n"))
+		}
+
+		// The message is cut to the row at 80 columns, as it always was.
+		refused := sudoFailedModel("services", "start", "moshi-hook")
+		want := `Failed: needs sudo — run "brew services start moshi-hook"`
+		if got := ansi.Strip(refused.renderOperation(width, height)); !strings.Contains(got, want) {
+			t.Errorf("%dx%d: refused command lost its message %q:\n%s", width, height, want, got)
+		}
+	}
+}
