@@ -77,6 +77,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | lb22-update-default-and-leftovers | fc82630, dcc09ce, 6c5ee76, e5b6b16, 276f126 | closed | ok (r2, orchestrator-verified) |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c, a3284a2, 266cf69 | closed | ok (r2, orchestrator-verified); macOS manual test pending (user) |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
+| lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
