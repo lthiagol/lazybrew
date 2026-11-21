@@ -856,3 +856,30 @@ keys, as it does for Enter and Esc; the macOS smoke copy case was a failed insta
 overlay on Search). With no overlay, `y` still types on Search. The copied overlay
 text includes the status row (Failed text, elapsed), ANSI-free. Done in
 `fix-lb24-copy-and-wording-r2`.
+
+## Questions raised — slice `lb25-search-polish` (runner lane)
+
+### Q-lb25-unknown-type — what does a Search row with no type show?
+
+- **Decision (brief lb25, AC-02):** a row brew gave neither flag shows the type
+  `unknown` at the right, flush. Before, it showed nothing there. The brief's
+  "the `unknown` of fixtures stays `unknown`" was read as this word.
+- **Ask.** Keep `unknown` (recommended), or leave the type cell blank for such rows?
+
+### Q-lb25-step-tick — one green ✔ for installed, finished steps and dependency marks?
+
+- **Decision (brief lb25, AC-01):** `style.Icons.Installed` is ✔ in both sets. The
+  finished-step ticks (`operation.go`), the dependency marks (`depviews.go`) and
+  the status word (`formatters.go`) read the same field, so they show ✔ too. The
+  `Completed in` row keeps ✓, which is `Icons.OK`.
+- **Ask.** Keep ✔ for all of them (recommended, brew's own mark), or give the step
+  ticks their own glyph so `Completed` and the steps match?
+
+### Q-lb25-I-types — what does `I` do on Search with the box unfocused?
+
+- **Decision (brief lb25, AC-03):** `I` is no longer answered on Search. Unfocused,
+  a key with no action on Search falls through to the search box and is typed
+  there, as `g`, `h` and `l` are. So `I` types an `I` into the box and opens no
+  confirm, rather than doing nothing.
+- **Ask.** Keep typing (recommended, same as any other letter there), or swallow
+  `I` so it does nothing at all?
