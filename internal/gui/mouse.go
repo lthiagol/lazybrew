@@ -201,20 +201,37 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// handleTabBarClick selects the tab under column ix of the tab bar, as the
+// window draws it. A click on a marker moves one tab that way.
 func (m Model) handleTabBarClick(ix int) (tea.Model, tea.Cmd) {
-	x := 0
+	first, last := m.tabWindowIn(contentWidthIn(m.screenLayout()))
 	gap := tabGap(m.activePanel)
-	for i, tab := range m.tabs {
-		w := tabWidth(tab.name, gap)
+	x := 0
+	if first > 0 {
+		if ix < tabMarkerW {
+			return m.selectTab(m.activeTab - 1)
+		}
+		x = tabMarkerW
+	}
+	for i := first; i < last; i++ {
+		w := tabWidth(m.tabs[i].name, gap)
 		if ix >= x && ix < x+w {
-			if i == m.activeTab {
-				return m, nil
-			}
-			m.activeTab = i
-			c := m.loadTabContent()
-			return m, c
+			return m.selectTab(i)
 		}
 		x += w
 	}
+	if last < len(m.tabs) && ix >= x && ix < x+tabMarkerW {
+		return m.selectTab(m.activeTab + 1)
+	}
 	return m, nil
+}
+
+// selectTab makes tab i the active one and loads its content, unless it is
+// already the active tab.
+func (m Model) selectTab(i int) (tea.Model, tea.Cmd) {
+	if i == m.activeTab {
+		return m, nil
+	}
+	m.activeTab = i
+	return m, m.loadTabContent()
 }

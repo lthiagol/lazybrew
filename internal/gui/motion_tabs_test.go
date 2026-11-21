@@ -121,7 +121,7 @@ func TestSlidingTabBarAtRestIsTheRestingBar(t *testing.T) {
 		}
 		m = settle(t, m)
 		x, w := m.activeTabSpan()
-		if got, want := m.renderTabBarSliding(float64(x), float64(w)), m.renderTabBar(m.width); got != want {
+		if got, want := m.renderTabBarSliding(float64(x), float64(w), m.width), m.renderTabBar(m.width); got != want {
 			t.Fatalf("tab %d: sliding bar differs from the resting bar:\n%q\n%q", i, got, want)
 		}
 	}

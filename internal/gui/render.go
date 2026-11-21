@@ -286,24 +286,96 @@ func (m Model) renderCommandLogBox(width, height int) string {
 	return panel(titled("Log"), borderLabel{full: label}, body, width, height, m.logBusy())
 }
 
+// tabMarkerW is the width of the marker that stands at a side of the tab bar
+// where tabs are cut off: ‹ on the left, › on the right.
+const tabMarkerW = 1
+
+// renderTabBar draws the tab bar in width cells: the names of the tabs the
+// window shows (tabWindowIn), with its underline on the active tab. A width of
+// zero or less draws every tab.
 func (m Model) renderTabBar(width int) string {
 	if len(m.tabs) == 0 {
 		return ""
 	}
 	if x, w, moving := m.tabUnderlineSpan(); moving {
-		return m.renderTabBarSliding(x, w)
+		return m.renderTabBarSliding(x, w, width)
 	}
+	first, last := m.tabWindowIn(width)
+	return m.tabRow(first, last, false)
+}
 
-	var tabs []string
-	gap := tabGap(m.activePanel)
-	for i, tab := range m.tabs {
-		if i == m.activeTab {
-			tabs = append(tabs, style.TabActive.Render(tabLabel(tab.name, gap)))
-		} else {
-			tabs = append(tabs, style.TabInactive.Render(tabLabel(tab.name, gap)))
+// tabWindowIn is the run of tabs the bar shows in width cells, as the half-open
+// range [first, last). When every tab fits, or width is not positive, it is all
+// of them. Otherwise it grows from the active tab, one tab at a time and
+// alternately right and left, while the tabs and a marker for each cut side
+// still fit. A tab that does not fit whole is not shown. The active tab is
+// always shown; if it alone does not fit, the frame cuts it.
+func (m Model) tabWindowIn(width int) (first, last int) {
+	n := len(m.tabs)
+	if width <= 0 || m.tabsWidth(0, n) <= width {
+		return 0, n
+	}
+	fits := func(first, last int) bool {
+		w := m.tabsWidth(first, last)
+		if first > 0 {
+			w += tabMarkerW
+		}
+		if last < n {
+			w += tabMarkerW
+		}
+		return w <= width
+	}
+	first, last = m.activeTab, m.activeTab+1
+	for grew := true; grew; {
+		grew = false
+		if last < n && fits(first, last+1) {
+			last++
+			grew = true
+		}
+		if first > 0 && fits(first-1, last) {
+			first--
+			grew = true
 		}
 	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+	return first, last
+}
+
+// tabsWidth is the width of the tabs first..last-1 drawn in a row, without
+// markers.
+func (m Model) tabsWidth(first, last int) int {
+	gap := tabGap(m.activePanel)
+	w := 0
+	for _, tab := range m.tabs[first:last] {
+		w += tabWidth(tab.name, gap)
+	}
+	return w
+}
+
+// tabRow draws the tabs first..last-1 as the names row of the bar, with a marker
+// on each side that has tabs cut off. The active tab's underline is its own
+// bottom border, unless sliding: then the caller draws the underline, and the
+// active tab has no border.
+func (m Model) tabRow(first, last int, sliding bool) string {
+	gap := tabGap(m.activePanel)
+	var blocks []string
+	if first > 0 {
+		blocks = append(blocks, style.MutedText.Render("‹"))
+	}
+	for i := first; i < last; i++ {
+		name := tabLabel(m.tabs[i].name, gap)
+		switch {
+		case i != m.activeTab:
+			blocks = append(blocks, style.TabInactive.Render(name))
+		case sliding:
+			blocks = append(blocks, style.TabActive.UnsetBorderBottom().Render(name))
+		default:
+			blocks = append(blocks, style.TabActive.Render(name))
+		}
+	}
+	if last < len(m.tabs) {
+		blocks = append(blocks, style.MutedText.Render("›"))
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, blocks...)
 }
 
 // tabGap is the space drawn either side of a tab's name, inside the tab style's
@@ -344,23 +416,26 @@ func tabWidth(name string, gap int) int {
 	return lipgloss.Width(name) + 2*gap + 2
 }
 
-// renderTabBarSliding draws the tab bar while the underline is on its way to
-// the active tab: the tab names, then a row with the underline at x, w cells
-// wide. At rest the same geometry draws exactly what renderTabBar draws.
-func (m Model) renderTabBarSliding(x, w float64) string {
-	var tabs []string
-	gap := tabGap(m.activePanel)
-	for i, tab := range m.tabs {
-		if i == m.activeTab {
-			tabs = append(tabs, style.TabActive.UnsetBorderBottom().Render(tabLabel(tab.name, gap)))
-		} else {
-			tabs = append(tabs, style.TabInactive.Render(tabLabel(tab.name, gap)))
-		}
+// renderTabBarSliding draws the tab bar in width cells while the underline is on
+// its way to the active tab: the names row, then a row with the underline at x,
+// w cells wide. The underline is drawn only where the window shows it, so a
+// column the window cuts is not drawn. At rest the same geometry draws exactly
+// what renderTabBar draws.
+func (m Model) renderTabBarSliding(x, w float64, width int) string {
+	first, last := m.tabWindowIn(width)
+	row := m.tabRow(first, last, true)
+	// vx and vw are the shown tabs' span in the full row. The row's left marker,
+	// when there is one, comes before the first shown tab.
+	vx := m.tabsWidth(0, first)
+	vw := m.tabsWidth(first, last)
+	offset := 0
+	if first > 0 {
+		offset = tabMarkerW
 	}
-	row := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+	left := min(max(int(math.Round(x)), vx), vx+vw)
+	span := min(max(int(math.Round(w)), 0), vx+vw-left)
 	total := lipgloss.Width(row)
-	left := min(max(int(math.Round(x)), 0), total)
-	span := min(max(int(math.Round(w)), 0), total-left)
+	left += offset - vx
 	rule := strings.Repeat(" ", left) +
 		lipgloss.NewStyle().Foreground(style.AccentColor).Render(strings.Repeat("━", span)) +
 		strings.Repeat(" ", total-left-span)
