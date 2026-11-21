@@ -71,8 +71,12 @@ Launch the interactive TUI. Available flags:
 | `/` | Search packages |
 | `q` | Quit |
 | `?` | Help |
+| `y` | Copy the text on screen (the Operation, or the panel's content) to the clipboard |
 
 Per-panel actions appear in the bottom bar and `?` help screen.
+
+Mouse capture is on by default and blocks the terminal's own text selection. Hold
+Option (macOS) or Shift to select, or set `gui.mouse: false`.
 
 When an install, reinstall, upgrade or uninstall fails because sudo needs a
 password, the failed operation shows `Enter  run in this terminal`. Enter suspends
@@ -109,7 +113,7 @@ gui:                             # the interface
   sidebar_width: 35              # percent of the terminal width, 15-50
   show_icons: true               # true or false; false draws no icons
   icons: nerd                    # nerd or unicode (no Nerd Font needed)
-  mouse: true                    # true or false
+  mouse: true                    # true or false; true blocks terminal text selection: hold Option/Shift, or set false
   animations: true               # true or false; motion, short and never delays a key
   preload: true                  # true or false; load every panel in the background
   auto_refresh_seconds: 0        # 0 is off; N refreshes the data every N seconds

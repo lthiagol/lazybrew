@@ -18,7 +18,7 @@ var sampleComments = map[string]string{
 	"gui.sidebar_width":        "percent of the terminal width, 15-50",
 	"gui.show_icons":           "true or false; false draws no icons",
 	"gui.icons":                "nerd or unicode (no Nerd Font needed)",
-	"gui.mouse":                "true or false",
+	"gui.mouse":                "true or false; true blocks terminal text selection: hold Option/Shift, or set false",
 	"gui.animations":           "true or false; motion, short and never delays a key",
 	"gui.preload":              "true or false; load every panel in the background",
 	"gui.auto_refresh_seconds": "0 is off; N refreshes the data every N seconds",

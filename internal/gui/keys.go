@@ -185,6 +185,12 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, m.fetchSelectedSearchInfo()
 		}
 
+	case "y":
+		// On Search the letter is typed into the box, as g and h are.
+		if m.activePanel != PanelSearch {
+			return m.copyScreen()
+		}
+
 	case "?":
 		m.showHelp = !m.showHelp
 		m.helpScroll = 0

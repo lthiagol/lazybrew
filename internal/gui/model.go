@@ -109,6 +109,9 @@ type Model struct {
 	// attached (tea.ExecProcess). New sets it; a test swaps it in to capture
 	// the command (terminal_retry.go).
 	execProcess func(*exec.Cmd, tea.ExecCallback) tea.Cmd
+	// setClipboard copies text to the terminal clipboard (clipboard.go). New
+	// sets tea.SetClipboard; a test swaps it in to read what would be copied.
+	setClipboard func(string) tea.Cmd
 	// taskID was removed (r3 finding R3-6): nothing read it, and stale
 	// output filtering belongs to the TaskManager, not the model.
 	refreshing int
@@ -206,6 +209,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		opBar:         newProgressBar(),
 		readLog:       logtail.Read,
 		execProcess:   tea.ExecProcess,
+		setClipboard:  tea.SetClipboard,
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).
