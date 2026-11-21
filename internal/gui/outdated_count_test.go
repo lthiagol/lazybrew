@@ -1,13 +1,13 @@
 package gui
 
 import (
-	"github.com/lthiagol/lazybrew/internal/config"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 // collectRefreshMsgs drains a command (and every command in a batch it
