@@ -447,7 +447,7 @@ func TestDraculaRoles(t *testing.T) {
 		"Text":       "#f8f8f2", // foreground
 		"Border":     "#6272a4", // comment
 		"Focus":      "#bd93f9", // purple
-		"Surface":    "#44475a", // current line
+		"Surface":    "#44475a", // selection
 		"Background": "#282a36", // background
 	}
 	checkRoles(t, "Dracula", DraculaTheme(), want)

@@ -107,7 +107,7 @@ file exists, it says so and exits non-zero. `lazybrew --config-sample` prints
 the same file to stdout, so `lazybrew --config-sample > ~/.config/lazybrew/config.yml`
 also works for a fresh file. Every option is in it: the default is uncommented,
 and the other values it accepts are named in the comment beside it. Delete a
-line to follow lazybrew's default for that key. The start of the sample:
+line to follow lazybrew's default for that key. Here is the sample:
 
 ```yaml
 # lazybrew config. The file is optional: delete a line to follow
@@ -119,7 +119,7 @@ line to follow lazybrew's default for that key. The start of the sample:
 #   LAZYBREW_PRELOAD=0|1         gui.preload
 
 gui:                             # the interface
-  theme: dark                    # one of the names under Themes below
+  theme: dark                    # dark, light, catppuccin-mocha, catppuccin-macchiato, catppuccin-frappe, catppuccin-latte, dracula or nord
   sidebar_width: 35              # percent of the terminal width, 15-50
   show_icons: true               # true or false; false draws no icons
   icons: nerd                    # nerd or unicode (no Nerd Font needed)
@@ -134,7 +134,12 @@ brew:                            # how lazybrew runs brew
   # update_on_start: auto        # brew update at launch only when brew's last update is older than update_stale_hours
   # update_on_start: false       # never run brew update at launch
   update_stale_hours: 6          # 1 or more hours; auto updates when brew's last update is older
-  # ... the TTLs follow, one per class; see the sample
+  formulae_ttl: 5m               # a duration, e.g. 5m; how long formula results are reused; 0 or less keeps the default
+  casks_ttl: 5m                  # a duration, e.g. 5m; how long cask results are reused; 0 or less keeps the default
+  outdated_ttl: 30m              # a duration, e.g. 30m; how long the outdated list is reused; 0 or less keeps the default
+  taps_ttl: 1h                   # a duration, e.g. 1h; how long tap results are reused; 0 or less keeps the default
+  services_ttl: 30s              # a duration, e.g. 30s; how long service results are reused; 0 or less keeps the default
+  doctor_ttl: 1h                 # a duration, e.g. 1h; how long doctor output is reused; 0 or less keeps the default
 ```
 
 `brew.update_on_start` says whether lazybrew runs `brew update` when it starts.
