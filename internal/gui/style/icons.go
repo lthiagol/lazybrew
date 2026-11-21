@@ -22,7 +22,7 @@ var NerdIcons = Icons{
 	Tap:        "\uf126", // code-fork
 	Service:    "\uf013", // cog
 	Search:     "\uf002", // search
-	Installed:  "\uf058", // check-circle
+	Installed:  "✔",
 	Absent:     "\uf10c", // circle-o
 	Upgradable: "\uf062", // arrow-up
 	Pinned:     "\uf08d", // thumb-tack
@@ -47,7 +47,7 @@ var UnicodeIcons = Icons{
 	Tap:        "⊕",
 	Service:    "◎",
 	Search:     "⌕",
-	Installed:  "✓",
+	Installed:  "✔",
 	Absent:     "○",
 	Upgradable: "↑",
 	Pinned:     "•",

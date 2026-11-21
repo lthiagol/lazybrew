@@ -89,7 +89,7 @@ func TestUsesTabFollowsTheInstalledList(t *testing.T) {
 	m = sendKey(m, "2")
 	m.activeTab = formulaUsesTab
 	m.tabContent[tabKey(PanelFormulae, formulaUsesTab, "bash")] = "ncurses\n"
-	if out := ansi.Strip(m.View().Content); !hasRow(out, "✓", "ncurses") {
+	if out := ansi.Strip(m.View().Content); !hasRow(out, "✔", "ncurses") {
 		t.Fatalf("ncurses is installed, its row should read installed, got:\n%s", out)
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"bash"},
