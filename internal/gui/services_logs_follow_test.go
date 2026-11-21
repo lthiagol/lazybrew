@@ -125,7 +125,7 @@ func TestLogsLeavingTabStopsReads(t *testing.T) {
 	reads := countReads(m)
 
 	m = pressKey(m, "[")
-	m, cmd := stepMsg(m, logsTickMsg{gen: m.logs.gen})
+	_, cmd := stepMsg(m, logsTickMsg{gen: m.logs.gen})
 	if cmd != nil {
 		t.Errorf("a tick on another tab started a command")
 	}

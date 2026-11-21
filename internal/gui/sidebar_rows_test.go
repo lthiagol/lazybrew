@@ -144,6 +144,7 @@ func TestLeavesFilterKeepsFormulaeAligned(t *testing.T) {
 		t.Fatalf("the selected formula should be the leaf bash, got %+v", f)
 	}
 	m = updateModel(m, MutationResultMsg{Name: "leaves", Leaves: []string{"bash", "dep"}})
+	p = m.panels[PanelFormulae]
 	if len(p.items) != 2 || len(p.formulae) != 2 {
 		t.Fatalf("leaves off should restore both lists, got %d and %d", len(p.items), len(p.formulae))
 	}

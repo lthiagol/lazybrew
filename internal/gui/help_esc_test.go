@@ -40,7 +40,7 @@ func TestHelpEscClosesHelpBeforeCancellingATask(t *testing.T) {
 		t.Fatal("the operation should still be running after the first esc")
 	}
 
-	m = sendSpecial(m, tea.KeyEsc)
+	sendSpecial(m, tea.KeyEsc)
 	if ctx.Err() == nil {
 		t.Fatal("the second esc should cancel the running task")
 	}

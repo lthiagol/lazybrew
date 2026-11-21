@@ -27,8 +27,7 @@ func FuzzParseCask(f *testing.F) {
 	f.Add(`{"name":"a","artifacts":null}`)
 
 	f.Fuzz(func(t *testing.T, data string) {
-		var cj []byte
-		cj = []byte(data)
+		cj := []byte(data)
 		var result struct {
 			Casks []struct {
 				Name      string        `json:"name"`
