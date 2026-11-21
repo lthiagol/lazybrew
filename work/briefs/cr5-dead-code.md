@@ -17,10 +17,36 @@ you found in the receipt as "already gone" or "now used, kept".
 Run these first and paste their output into the receipt (as the "before"):
 
 ```bash
-go run golang.org/x/tools/cmd/deadcode@latest ./cmd/...
-go run golang.org/x/tools/cmd/deadcode@latest -test ./...
-go run honnef.co/go/tools/cmd/staticcheck@latest ./...
+T=/tmp/claude-1000/-home-agent-coding-lazybrew/020ffb7e-4ae6-44f3-a324-1eba91f46e86/scratchpad/tools-bin
+$T/deadcode ./cmd/lazybrew
+$T/deadcode -test ./...
+$T/staticcheck ./...
 ```
+
+`deadcode` (x/tools v0.53.0) and `staticcheck` (v0.8.2) are already installed in
+that directory; they are new enough for this machine's Go 1.27. **Do not
+`go run …@latest` or `go install` anything**: the sandbox denies it. If a
+binary is missing, say so in the receipt and fall back to grep.
+
+At `7a11e69` the tools report the following, on top of the review's §3 list.
+Re-check each before acting, and report "already gone" or "now used, kept":
+
+- `deadcode`, unreachable from `cmd/lazybrew`: `brew.SetDebug`,
+  `brew.ParseTrustStatus`, `brew.ParseServiceStatus`, `MockRunner.*` and
+  `NewMockRunner` (AC-01 moves them), `gui.extractPackageName`,
+  `gui.parseSteps` (test-only since cr3), `panelData.selectedItem`,
+  `Model.renderMainPanel`, `Model.mainContentWidth`, `Model.newestToast`.
+- `staticcheck`: `brew.dependencyJSON` and `panelData.icon` unused (U1000);
+  test hygiene (SA4006 unused values in `gui_test.go`, `help_esc_test.go`,
+  `preload_test.go`, `review_r4_test.go`, `services_logs_follow_test.go`,
+  `sidebar_rows_test.go`; SA4010 in `formulae_decode_test.go`; SA4017 and
+  SA4000 in `hot_path_test.go`, where the assertion may be vacuous: check;
+  ST1012 `assertAnError` in `gui_test.go` and `task/manager_test.go`; S1021,
+  S1039). `SA1019` on `parser.ParseDir` in `keymap_test.go`: leave it and say
+  so. Fix the rest in the AC that fits, or in one last small commit, and list
+  them in the receipt.
+- Finish with both tools run again: the receipt shows "before" and "after".
+  Anything left must be named and justified.
 
 ## Acceptance criteria
 
