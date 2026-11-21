@@ -210,7 +210,7 @@ func cleanupTable(items []brew.CleanupItem, width int, home, prefix string) []st
 		if it.Bytes > 0 && i < large {
 			size = style.WarningText.Render(size)
 		}
-		path := cutMiddle(shortPath(it.Path, home, prefix), pathW)
+		path := cutPath(shortPath(it.Path, home, prefix), pathW)
 		rows = append(rows, size+strings.Repeat(" ", tableGap)+padRight(fileCountText(it), filesW)+strings.Repeat(" ", tableGap)+path)
 	}
 	return rows
@@ -264,6 +264,17 @@ func shortPath(path, home, prefix string) string {
 		return "~" + path[len(home):]
 	}
 	return path
+}
+
+// cutPath fits a shortened path to w cells. When the last segment is wider than w,
+// the directories go and that segment is cut alone, so two long file names keep
+// their starts and ends. Otherwise the whole path is cut.
+func cutPath(p string, w int) string {
+	last := p[strings.LastIndex(p, "/")+1:]
+	if len([]rune(last)) > w {
+		return cutMiddle(last, w)
+	}
+	return cutMiddle(p, w)
 }
 
 // cutSnap is how far, in cells, a cut may move to reach a "/". Farther than that
