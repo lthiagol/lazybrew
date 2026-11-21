@@ -62,67 +62,14 @@ func (m Model) brewfileMenu() (tea.Model, tea.Cmd) {
 	return m, menuModal.Init()
 }
 
-func (m Model) runVulns() (tea.Model, tea.Cmd) {
-	client := m.client
-	t := linesTask("vulns", "Vulnerability Check", func(ctx context.Context) ([]string, error) {
-		output, err := client.Diagnostics.Vulns(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if output == "" {
-			output = "No vulnerabilities found"
-		}
-		// The whole report is one line, as brew wrote it.
-		return []string{output}, nil
-	})
-
-	c := m.enqueue(t)
-	return m, c
-}
-
-func (m Model) runMissing() (tea.Model, tea.Cmd) {
-	client := m.client
-	t := linesTask("missing", "Missing Dependencies", func(ctx context.Context) ([]string, error) {
-		missing, err := client.Diagnostics.Missing(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if len(missing) == 0 {
-			return []string{"All dependencies satisfied"}, nil
-		}
-		lines := make([]string, 0, len(missing))
-		for _, d := range missing {
-			lines = append(lines, d.Formula+": missing "+d.Missing)
-		}
-		return lines, nil
-	})
-
-	c := m.enqueue(t)
-	return m, c
-}
-
-func (m Model) runDoctor() (tea.Model, tea.Cmd) {
-	client := m.client
-	t := linesTask("doctor", "Doctor", func(ctx context.Context) ([]string, error) {
-		warnings, err := client.Diagnostics.Doctor(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if len(warnings) == 0 {
-			return []string{"Your system is ready to brew."}, nil
-		}
-		var lines []string
-		for _, w := range warnings {
-			lines = append(lines, w.Title)
-			if w.Details != "" {
-				lines = append(lines, "  "+w.Details)
-			}
-		}
-		return lines, nil
-	})
-
-	c := m.enqueue(t)
-	return m, c
+// openDiagnosticsTab switches the Status panel to the Doctor or Missing tab and
+// loads it afresh. The diagnostics cache is dropped first, as R drops it, so the
+// tab shows what brew says now.
+func (m Model) openDiagnosticsTab(tab int) (tea.Model, tea.Cmd) {
+	m.activeTab = tab
+	m.invalidateCacheGroup("diagnostics")
+	delete(m.tabContent, tabKey(PanelStatus, tab, statusItemName))
+	return m, m.loadTabContent()
 }
 
 func (m Model) brewCleanup() (tea.Model, tea.Cmd) {

@@ -324,7 +324,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "d":
 		if m.activePanel == PanelStatus {
-			return m.runDoctor()
+			return m.openDiagnosticsTab(statusDoctorTab)
 		}
 	case "L":
 		if m.activePanel == PanelFormulae {
@@ -344,7 +344,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "m":
 		if m.activePanel == PanelStatus {
-			return m.runMissing()
+			return m.openDiagnosticsTab(statusMissingTab)
 		}
 	case "p":
 		// Pin is formula-only: `brew pin` has no cask counterpart, and
