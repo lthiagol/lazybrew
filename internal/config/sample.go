@@ -60,11 +60,11 @@ func sampleHeader() string {
 # lazybrew's default for that key.
 #
 # For one run, these environment variables override the file:
-#   %s=nerd|unicode   gui.icons
-#   %s=0|1            gui.animations
-#   %s=0|1            gui.preload
+#   %-28s gui.icons
+#   %-28s gui.animations
+#   %-28s gui.preload
 
-`, IconsEnv, AnimationsEnv, PreloadEnv)
+`, IconsEnv+"=nerd|unicode", AnimationsEnv+"=0|1", PreloadEnv+"=0|1")
 }
 
 // writeSampleSection writes the keys of the struct v. A nested struct is a
