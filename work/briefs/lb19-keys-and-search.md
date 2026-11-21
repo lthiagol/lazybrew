@@ -38,6 +38,7 @@ To-do (one commit each, in this order):
 - [ ] AC-01 — Tab and Shift+Tab cycle past a focused search input
 - [ ] AC-02 — Search rows carry the real type and installed state
 - [ ] AC-03 — `h`/`l` switch tabs; `[` `]` and PgUp/PgDn removed
+- [ ] AC-04 — Search can uninstall what is installed (user request, 2026-11-21)
 
 ### AC-01
 
@@ -71,6 +72,28 @@ start (teatest flow asserting on `View()`).
    while the search input or any text input is focused they type text.
 3. Update `SMOKE-CHECKLIST.md` Run 2 lines that mention `[` `]` and PgUp/PgDn.
 4. Name every golden/teatest expectation that changes (footers, help) and why.
+
+### AC-04 — uninstall from Search
+
+Search lists installed rows (after AC-02) but only offers install. Add:
+
+1. `x` on a Search row that is **installed** opens the same uninstall confirm
+   the Formulae/Casks panels use (formula, or cask with `--cask`, from the
+   row's certain type), through `task.Manager`, naming the consequence. `X`
+   (zap) on an installed cask row, as on the Casks panel.
+2. `x` on a row that is not installed: info toast "not installed", nothing
+   runs. `i` on an installed row: info toast "already installed, x to
+   uninstall", nothing runs (or, if it already does something sensible, keep
+   it and say so in the receipt).
+3. After the uninstall completes the row's installed mark clears (invalidate
+   the installed lists, then re-mark the current results), without a new
+   search.
+4. The Search footer and help show `x uninstall` (single keymap; keymap test
+   covers it); README. Name each golden that changes.
+5. Tests first: installed cask row → `x` → confirm → brew args `uninstall
+   --cask claude-code`; installed formula row → `uninstall <name>`; not
+   installed → toast and no task; after completion the row shows no
+   `installed`.
 
 ## Done means
 
