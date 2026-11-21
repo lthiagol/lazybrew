@@ -518,6 +518,10 @@ func (m Model) renderContent(width, height int) string {
 			return m.renderDashboard(width)
 		case statusVulnsTab:
 			return m.vulnsTabView()
+		case statusCleanupTab:
+			return m.cleanupTabView(width)
+		case statusUnusedTab:
+			return m.unusedTabView()
 		case statusConfigTab, statusDoctorTab, statusMissingTab:
 			// Config/Doctor fetch from the loaded dashboard; before the
 			// dashboard has loaded there is nothing to fetch, and the old

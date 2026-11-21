@@ -15,7 +15,7 @@ import (
 // TestNeedsTabFetchTable (cr3 AC-07): exactly the tabs that brew fetches.
 func TestNeedsTabFetchTable(t *testing.T) {
 	want := map[PanelID][]int{
-		PanelStatus:   {statusConfigTab, statusDoctorTab, statusMissingTab},
+		PanelStatus:   {statusConfigTab, statusDoctorTab, statusMissingTab, statusCleanupTab, statusUnusedTab},
 		PanelFormulae: {formulaUsesTab, formulaFilesTab},
 	}
 	for panel := PanelStatus; panel <= PanelSearch; panel++ {

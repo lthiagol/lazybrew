@@ -510,6 +510,14 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case CleanupPreviewMsg:
+		m.previews.landCleanup(msg)
+		return m, nil
+
+	case AutoremovePreviewMsg:
+		m.previews.landUnused(msg)
+		return m, nil
+
 	case TabContentMsg:
 		key := tabKey(msg.PanelID, msg.TabIndex, msg.ItemName)
 		if msg.Err != nil {

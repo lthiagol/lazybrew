@@ -5,13 +5,16 @@ package gui
 // The Info tab of a panel is first, so its default tab is its details.
 
 // The tabs of the Status panel: the dashboard, the config, the doctor, the
-// missing dependencies and the vulnerability check.
+// missing dependencies, the vulnerability check, the cleanup preview and the
+// unused formulae.
 const (
 	statusDashboardTab = iota
 	statusConfigTab
 	statusDoctorTab
 	statusMissingTab
 	statusVulnsTab
+	statusCleanupTab
+	statusUnusedTab
 )
 
 // The tabs of the Formulae panel.

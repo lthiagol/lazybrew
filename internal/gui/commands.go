@@ -252,6 +252,9 @@ func (m *Model) loadTabContent() tea.Cmd {
 	panelID := m.activePanel
 	tabIdx := m.activeTab
 
+	if isPreviewTab(panelID, tabIdx) {
+		return m.loadPreviewTab()
+	}
 	if needsTabFetch(panelID, tabIdx) {
 		panel := m.panels[panelID]
 		name := tabItemName(panel)
