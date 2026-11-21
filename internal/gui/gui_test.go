@@ -332,7 +332,7 @@ func TestSearchEnterShowsInfo(t *testing.T) {
 	m.searchResults = []brew.SearchResult{
 		{Name: "lolcat", IsFormula: true},
 	}
-	m.panels[PanelSearch].items = []string{"lolcat  formula  installed  lolcat description"}
+	m.panels[PanelSearch].items = []string{"lolcat"}
 	m.panels[PanelSearch].selected = 0
 
 	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -347,7 +347,7 @@ func TestSearchInstallKeybind(t *testing.T) {
 	m.searchResults = []brew.SearchResult{
 		{Name: "lolcat", IsFormula: true},
 	}
-	m.panels[PanelSearch].items = []string{"lolcat  formula  installed  lolcat description"}
+	m.panels[PanelSearch].items = []string{"lolcat"}
 	m.panels[PanelSearch].selected = 0
 
 	_, cmd := m.Update(tea.KeyPressMsg{Code: 'i', Text: "i"})

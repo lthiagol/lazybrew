@@ -65,7 +65,7 @@ func TestInstallFlow(t *testing.T) {
 	tm.Send(tea.KeyPressMsg{Code: '/', Text: "/"})
 	tm.Type("ripgrep")
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
-	waitForScreen(t, tm, "▸ ripgrep")
+	waitForScreen(t, tm, "▸   ripgrep")
 	tm.Send(tea.KeyPressMsg{Code: 'i', Text: "i"})
 	waitForScreen(t, tm, "Install ripgrep?")
 	tm.Send(tea.KeyPressMsg{Code: 'y', Text: "y"})
