@@ -42,18 +42,18 @@ the token (`claude-code`), so every cask action sends the wrong name.
 `parseCask` should read `token` (fall back to `name`), with a fixture in the
 current brew shape. Raised by cr1 (`Q-cr1-cask-name`).
 
-**LB-13 (parked)** — the Status, Outdated and Taps footers leave `[ ] tabs` off
+**LB-13 (closed, lb21-backlog-sweep r1)** — the Status, Outdated and Taps footers leave `[ ] tabs` off
 (Formulae, Casks and Services show it), and Status `j/k` are help-only although
 Status lists rows. Showing them changes footer frames and goldens. Raised by
 cr4 (`Q-cr4-gui-dedup-r2-footer-tabs`); the keymap test records the omission in
 `footerExempt`.
 
-**LB-14 (parked)** — `TestSingleflightPropagatesError` now waits 20 ms for the
+**LB-14 (closed, lb21-backlog-sweep r1)** — `TestSingleflightPropagatesError` now waits 20 ms for the
 second goroutine to queue, because `sfCall.waiters` (the v2-11 AC-02 hook) was
 deleted by cr5 AC-03. A slow `-race` run could flake. Needs a race-free hook if
 it ever does. Raised by the cr5 r1 review.
 
-**LB-15 (parked)** — `brew.SetDebug` is kept only for `app/debug_log_test.go`
+**LB-15 (closed, lb21-backlog-sweep r1)** — `brew.SetDebug` is kept only for `app/debug_log_test.go`
 (a cross-package logger reset); its `true` branch logs to stderr, the C13
 hazard. Narrow it to a reset-only helper later. Raised by the cr5 r1 review.
 
@@ -62,7 +62,7 @@ writes `full_token`, not `full_name`, so `installedFromTap` never lists casks
 and the untap warning misses them. Read `full_token`. Raised by the lb12 r1
 review.
 
-**LB-18 (parked)** — `TestSearchTabCyclesAllPanelsFlow` takes about 21 s under
+**LB-18 (closed, lb21-backlog-sweep r1)** — `TestSearchTabCyclesAllPanelsFlow` takes about 21 s under
 `-race` (15 keys, a `View()` check after each). Make it cheaper (fewer waits,
 or drive the model without a teatest program) if `make ci` time matters. Raised
 by the lb19 r2 review.
@@ -77,3 +77,8 @@ read exits 1 (no results) and the other fails, the user sees an empty list and n
 error, which reads as "no results"; (b) two writes that finish back to back can
 land their Search re-marks out of order, so a slow first re-mark could restore a
 stale mark (the name guard does not cover it).
+
+**LB-21 (parked)** — leftovers from the lb21 r1 review: three other singleflight
+tests keep 20 ms sleeps (same synctest fix as LB-14); `EnableFileLogging` never
+closes its log file; the `ResetLogger` doc in `internal/brew/logger.go` says
+nothing in production calls it, but `init()` does (wording).
