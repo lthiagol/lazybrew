@@ -988,3 +988,9 @@ card (its counts are taps only); the panel title everywhere else is `Taps & Trus
   and the confirm says so when N > 0. The run is still plain `brew cleanup`.
 - **Ask.** Keep the note and the plain run (recommended: same as `brew cleanup` in a shell), or
   run the Cleanup tab's command with `HOMEBREW_NO_AUTOREMOVE=1` so `c` only removes files?
+
+**Rulings (orchestrator, 2026-11-21):** Q-lb31-tabs-80: option 1: one row, shown as a window onto the
+tabs; the active tab is always in view; `‹` / `›` mark a cut side; every tab row on every panel
+uses it, and rows that fit are drawn exactly as today. Mouse clicks on the tab row map through the
+window. Q-lb31-cleanup-autoremove: keep the note and the plain `brew cleanup` run (same as in a
+shell). `fix-lb31-cleanup-tabs-r1`.
