@@ -57,6 +57,24 @@ func TestSlashStillSearchesOnOtherPanels(t *testing.T) {
 	if m.activePanel != PanelSearch || !m.searchInput.Focused() || m.filterInput.Focused() {
 		t.Fatalf("7 then / should reach Search, panel %v", m.activePanel)
 	}
+	if v := m.searchInput.Value(); v != "" {
+		t.Fatalf("7 then / must not type the / into Search, box holds %q", v)
+	}
+}
+
+// TestSlashOnEmptySearchBoxIsNotTyped: a / on the focused, empty Search box only
+// keeps it focused; once the box holds text, / is typed as before.
+func TestSlashOnEmptySearchBoxIsNotTyped(t *testing.T) {
+	m := sendKey(updateModel(newTestModel(), tea.WindowSizeMsg{Width: 120, Height: 40}), "/")
+	m = sendKey(m, "/")
+	if !m.searchInput.Focused() || m.searchInput.Value() != "" {
+		t.Fatalf("/ on an empty focused Search box: focused %v, value %q", m.searchInput.Focused(), m.searchInput.Value())
+	}
+	m = typeText(m, "rip")
+	m = sendKey(m, "/")
+	if v := m.searchInput.Value(); v != "rip/" {
+		t.Fatalf("/ after text should type it, box holds %q", v)
+	}
 }
 
 // TestFilterNarrowsAsYouType: typing narrows the list, the cursor lands on the

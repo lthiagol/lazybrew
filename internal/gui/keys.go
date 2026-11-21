@@ -55,6 +55,14 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 			m.searchInput, cmd = m.searchInput.Update(msg)
 			return m, cmd
+		case "/":
+			// On an empty box, / only keeps it focused. `7` then `/` from
+			// Formulae or Casks lands here and must not type a slash.
+			if m.searchInput.Value() == "" {
+				return m, nil
+			}
+			m.searchInput, cmd = m.searchInput.Update(msg)
+			return m, cmd
 		default:
 			m.searchInput, cmd = m.searchInput.Update(msg)
 			return m, cmd
