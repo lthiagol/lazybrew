@@ -97,7 +97,9 @@ func TestVulnsResultShapes(t *testing.T) {
 	}{
 		{"report", "CVE-2026-1: openssl@3\n", nil, "CVE-2026-1: openssl@3", false},
 		{"empty", "", nil, "No known vulnerabilities", false},
-		{"exit 1 with report", "CVE-2026-2: node\n", &brew.BrewExitError{Command: "vulns", ExitCode: 1}, "CVE-2026-2: node", false},
+		{"exit 1 with report", `{"findings":[{"formula":"node","version":"22","vulnerabilities":[{"id":"CVE-2026-2","severity":"HIGH","summary":"s"}],"patched":[]}],"skipped_formulae":[],"checked":1,"complete":true}`, &brew.BrewExitError{Command: "vulns", ExitCode: 1}, "CVE-2026-2", false},
+		// Regression F-r1-01: exit 1 with text that is not JSON is a failure.
+		{"exit 1 with text", "CVE-2026-2: node\n", &brew.BrewExitError{Command: "vulns", ExitCode: 1}, "brew vulns exited with code 1", true},
 		{"error", "", &brew.BrewExitError{Command: "vulns", ExitCode: 2, Stderr: "Error: Failed to reach OSV.dev\n"}, "Failed to reach OSV.dev", true},
 		// brew without the vulns command exits 1 with no report: a failure, not
 		// an empty report (F-r1-01).
