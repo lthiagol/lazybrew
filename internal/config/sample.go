@@ -25,7 +25,7 @@ var sampleComments = map[string]string{
 	"gui.auto_refresh_pause":   "a duration, e.g. 500ms; 0 turns the pause off",
 	"brew":                     "how lazybrew runs brew",
 	"brew.path":                "the brew binary; empty auto-detects it",
-	"brew.update_on_start":     "auto, true or false: when lazybrew runs brew update",
+	"brew.update_on_start":     "true: brew update at every launch; the other two values are below",
 	"brew.update_stale_hours":  "1 or more hours; auto updates when brew's last update is older",
 	"brew.formulae_ttl":        "a duration, e.g. 5m; how long formula results are reused; 0 or less keeps the default",
 	"brew.casks_ttl":           "a duration, e.g. 5m; how long cask results are reused; 0 or less keeps the default",
@@ -35,7 +35,24 @@ var sampleComments = map[string]string{
 	"brew.doctor_ttl":          "a duration, e.g. 1h; how long doctor output is reused; 0 or less keeps the default",
 }
 
-var durationType = reflect.TypeOf(time.Duration(0))
+// sampleAlternatives are the values a key takes besides the one the sample
+// sets. Each is written as a commented line under the key, with what it does.
+var sampleAlternatives = map[string][]sampleAlternative{
+	"brew.update_on_start": {
+		{"auto", "brew update at launch only when brew's last update is older than update_stale_hours"},
+		{"false", "never run brew update at launch"},
+	},
+}
+
+type sampleAlternative struct {
+	value   string
+	comment string
+}
+
+var (
+	durationType   = reflect.TypeOf(time.Duration(0))
+	updateModeType = reflect.TypeOf(UpdateMode(""))
+)
 
 // Sample returns the documented config file that --config-sample prints. Its
 // uncommented values are Default(), so the sample cannot drift from the defaults.
@@ -88,6 +105,10 @@ func writeSampleSection(b *strings.Builder, v reflect.Value, prefix, indent stri
 		}
 		line := indent + key + ": " + sampleValue(fv)
 		fmt.Fprintf(b, "%-32s # %s\n", line, sampleComments[path])
+		for _, alt := range sampleAlternatives[path] {
+			commented := indent + "# " + key + ": " + alt.value
+			fmt.Fprintf(b, "%-32s # %s\n", commented, alt.comment)
+		}
 	}
 }
 
@@ -95,6 +116,16 @@ func writeSampleSection(b *strings.Builder, v reflect.Value, prefix, indent stri
 func sampleValue(v reflect.Value) string {
 	if v.Type() == durationType {
 		return sampleDuration(time.Duration(v.Int()))
+	}
+	if v.Type() == updateModeType {
+		// The two bool modes are written as the bools a person types, true and
+		// false, not as the quoted strings they are held as.
+		switch UpdateMode(v.String()) {
+		case UpdateAlways:
+			return "true"
+		case UpdateNever:
+			return "false"
+		}
 	}
 	switch v.Kind() {
 	case reflect.Bool:

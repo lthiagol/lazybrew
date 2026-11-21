@@ -11,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/exp/teatest/v2"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/testutil"
 )
 
@@ -72,7 +73,7 @@ func launchRepo(t *testing.T, at time.Time) string {
 // shows on the header. The Outdated panel lists the package the update brought in.
 func TestLaunchCheckStaleFlow(t *testing.T) {
 	var updates atomic.Int32
-	tm := testutil.NewTestModelWithRunner(t, launchCheckRunner(launchRepo(t, time.Time{}), &updates),
+	tm := testutil.NewTestModelWithUpdate(t, launchCheckRunner(launchRepo(t, time.Time{}), &updates), config.UpdateAuto,
 		teatest.WithInitialTermSize(140, 40))
 
 	// One wait, not two: a wait consumes the output it reads, so a text that
@@ -93,7 +94,7 @@ func TestLaunchCheckStaleFlow(t *testing.T) {
 // runs, and the header says when it last did.
 func TestLaunchCheckFreshFlow(t *testing.T) {
 	var updates atomic.Int32
-	tm := testutil.NewTestModelWithRunner(t, launchCheckRunner(launchRepo(t, time.Now().Add(-time.Hour)), &updates),
+	tm := testutil.NewTestModelWithUpdate(t, launchCheckRunner(launchRepo(t, time.Now().Add(-time.Hour)), &updates), config.UpdateAuto,
 		teatest.WithInitialTermSize(140, 40))
 
 	waitForScreen(t, tm, "updated 1h ago")

@@ -14,11 +14,18 @@ import (
 // runner, with the motion off whatever the environment says, so every frame
 // it draws is a resting frame.
 //
-// The background preload is off too: the flows read each panel as they open
-// it, and a preload behind them would add reads to what they count.
+// The background preload and the launch `brew update` are off too: the flows
+// read each panel as they open it, and a preload or an update behind them would
+// add reads to what they count. The launch-check flows use NewModelWithUpdate.
 func NewModel(runner brew.Runner) *gui.Model {
+	return NewModelWithUpdate(runner, config.UpdateNever)
+}
+
+// NewModelWithUpdate is NewModel with brew.update_on_start set to mode.
+func NewModelWithUpdate(runner brew.Runner, mode config.UpdateMode) *gui.Model {
 	cfg := config.Default()
 	cfg.GUI.Preload = false
+	cfg.Brew.UpdateOnStart = mode
 	return gui.New(brew.NewClient(runner), cfg).WithoutMotion()
 }
 
@@ -30,4 +37,10 @@ func NewTestModel(t *testing.T, opts ...teatest.TestOption) *teatest.TestModel {
 func NewTestModelWithRunner(t *testing.T, runner brew.Runner, opts ...teatest.TestOption) *teatest.TestModel {
 	t.Helper()
 	return teatest.NewTestModel(t, NewModel(runner), opts...)
+}
+
+// NewTestModelWithUpdate is NewTestModelWithRunner with brew.update_on_start set to mode.
+func NewTestModelWithUpdate(t *testing.T, runner brew.Runner, mode config.UpdateMode, opts ...teatest.TestOption) *teatest.TestModel {
+	t.Helper()
+	return teatest.NewTestModel(t, NewModelWithUpdate(runner, mode), opts...)
 }

@@ -152,3 +152,29 @@ func TestSampleDuration(t *testing.T) {
 		}
 	}
 }
+
+// The sample sets update_on_start to true, the default, and lists the other two
+// modes as commented lines under it.
+func TestSampleUpdateOnStartIsTrueWithAlternatives(t *testing.T) {
+	clearEnvOverrides(t)
+	sample := Sample()
+	if line := sampleLine(sample, "update_on_start"); !strings.HasPrefix(strings.TrimSpace(line), "update_on_start: true ") {
+		t.Errorf("update_on_start line = %q, want it set to true", line)
+	}
+	for _, alt := range []string{"# update_on_start: auto ", "# update_on_start: false "} {
+		if !strings.Contains(sample, alt) {
+			t.Errorf("the sample lacks the commented alternative %q", alt)
+		}
+	}
+}
+
+// The uncommented value follows the default: a config whose default is false
+// prints the bool, not a quoted string.
+func TestSampleWritesUpdateModeAsBool(t *testing.T) {
+	clearEnvOverrides(t)
+	cfg := Default()
+	cfg.Brew.UpdateOnStart = UpdateNever
+	if line := sampleLine(sample(cfg), "update_on_start"); !strings.HasPrefix(strings.TrimSpace(line), "update_on_start: false ") {
+		t.Errorf("update_on_start line = %q, want it set to false", line)
+	}
+}

@@ -19,6 +19,14 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
 
+// autoConfig is testConfig under update_on_start: auto, the mode whose launch
+// check reads brew's last update time and runs brew update only when it is stale.
+func autoConfig() *config.Config {
+	cfg := testConfig()
+	cfg.Brew.UpdateOnStart = config.UpdateAuto
+	return cfg
+}
+
 // launchRunner is the runner of the launch check. `brew --repository` prints
 // repo (or fails when repo is empty), `brew update` is counted in updates, and
 // `brew outdated` reports one formula and is counted in outdated.
@@ -119,7 +127,7 @@ func launchOf(m *Model) *Model {
 func TestLaunchCheckStaleRunsOneUpdateAndReloadsOutdated(t *testing.T) {
 	var updates, outdated int32
 	repo := brewRepoWithFetchHead(t, time.Time{})
-	m := New(brew.NewClient(launchRunner(repo, &updates, &outdated)), testConfig())
+	m := New(brew.NewClient(launchRunner(repo, &updates, &outdated)), autoConfig())
 
 	m = launchOf(m)
 
@@ -146,7 +154,7 @@ func TestLaunchCheckFreshRunsNoUpdateAndShowsItsAge(t *testing.T) {
 	var updates, outdated int32
 	at := time.Now().Add(-time.Hour)
 	repo := brewRepoWithFetchHead(t, at)
-	m := updateModel(New(brew.NewClient(launchRunner(repo, &updates, &outdated)), testConfig()),
+	m := updateModel(New(brew.NewClient(launchRunner(repo, &updates, &outdated)), autoConfig()),
 		tea.WindowSizeMsg{Width: 140, Height: 40})
 
 	m = launchOf(m)
@@ -167,7 +175,7 @@ func TestLaunchCheckFreshRunsNoUpdateAndShowsItsAge(t *testing.T) {
 
 func TestLaunchCheckUnreadableTimeIsStale(t *testing.T) {
 	var updates, outdated int32
-	m := New(brew.NewClient(launchRunner("", &updates, &outdated)), testConfig())
+	m := New(brew.NewClient(launchRunner("", &updates, &outdated)), autoConfig())
 
 	m = launchOf(m)
 
@@ -178,7 +186,7 @@ func TestLaunchCheckUnreadableTimeIsStale(t *testing.T) {
 
 func TestLaunchCheckStaleBadgeReadsUpdatingWhileItRuns(t *testing.T) {
 	var updates, outdated int32
-	m := updateModel(New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, time.Time{}), &updates, &outdated)), testConfig()),
+	m := updateModel(New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, time.Time{}), &updates, &outdated)), autoConfig()),
 		tea.WindowSizeMsg{Width: 140, Height: 40})
 
 	nm, _ := m.Update(lastUpdateMsg{})
@@ -205,7 +213,7 @@ func TestLaunchCheckRespectsUpdateStaleHours(t *testing.T) {
 		{hours: 6, wantStale: false},
 	} {
 		var updates, outdated int32
-		cfg := testConfig()
+		cfg := autoConfig()
 		cfg.Brew.UpdateStaleHours = tt.hours
 		m := New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, at), &updates, &outdated)), cfg)
 
@@ -252,7 +260,7 @@ func TestLaunchCheckNeverUpdatesAtLaunch(t *testing.T) {
 
 func TestLaunchCheckPreloadWaitsForTheCheck(t *testing.T) {
 	var updates, outdated int32
-	cfg := testConfig()
+	cfg := autoConfig()
 	cfg.GUI.Preload = true
 	at := time.Now().Add(-time.Hour)
 	m := New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, at), &updates, &outdated)), cfg)
@@ -275,7 +283,7 @@ func TestLaunchCheckPreloadWaitsForTheCheck(t *testing.T) {
 
 func TestLaunchCheckPreloadWaitsForTheUpdate(t *testing.T) {
 	var updates, outdated int32
-	cfg := testConfig()
+	cfg := autoConfig()
 	cfg.GUI.Preload = true
 	m := New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, time.Time{}), &updates, &outdated)), cfg)
 
@@ -417,7 +425,7 @@ func TestStaleUpdateShowsEveryOutdatedPackage(t *testing.T) {
 func TestRKeyUnderAutoRunsOneUpdateAndLoadsOutdated(t *testing.T) {
 	var updates, outdated int32
 	repo := brewRepoWithFetchHead(t, time.Now().Add(-time.Hour))
-	m := New(brew.NewClient(launchRunner(repo, &updates, &outdated)), testConfig())
+	m := New(brew.NewClient(launchRunner(repo, &updates, &outdated)), autoConfig())
 
 	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
 	m = feedBack(asModel(nm), cmd)
@@ -467,5 +475,77 @@ func TestRKeyWhileUpdatingEnqueuesNothing(t *testing.T) {
 	}
 	if !m.isUpdating {
 		t.Error("R while an update runs cleared isUpdating")
+	}
+}
+
+// The production default is update_on_start: true, so every launch runs brew
+// update once, fresh brew or not, and the outdated count is read after it.
+func TestProductionDefaultUpdatesOnEveryLaunch(t *testing.T) {
+	var updates, outdated int32
+	repo := brewRepoWithFetchHead(t, time.Now().Add(-time.Hour))
+	m := New(brew.NewClient(launchRunner(repo, &updates, &outdated)), config.Default())
+
+	m = launchOf(m)
+
+	if n := atomic.LoadInt32(&updates); n != 1 {
+		t.Fatalf("the production default ran brew update %d times at launch, want 1", n)
+	}
+	if m.isUpdating {
+		t.Error("the launch update is still marked running after it finished")
+	}
+	if got := m.status.Outdated; !got.Known || got.N != 1 {
+		t.Errorf("Outdated after the launch update = %+v, want 1 known", got)
+	}
+}
+
+// An offline launch: brew update fails. The failure shows as an error toast, the
+// panels load from brew's old metadata, and the keys still switch panels.
+func TestOfflineLaunchShowsUpdateFailureAndLoadsOldMetadata(t *testing.T) {
+	var updates, outdated int32
+	r := launchRunner(brewRepoWithFetchHead(t, time.Now().Add(-time.Hour)), &updates, &outdated)
+	readOnly := r.ExecuteStreamFn
+	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
+		if len(args) != 1 || args[0] != "update" {
+			return readOnly(ctx, args...)
+		}
+		atomic.AddInt32(&updates, 1)
+		lines := make(chan string)
+		close(lines)
+		errs := make(chan error, 1)
+		errs <- brewtest.ErrTest
+		close(errs)
+		return lines, errs
+	}
+	cfg := config.Default()
+	cfg.GUI.Preload = false
+	m := updateModel(New(brew.NewClient(r), cfg), tea.WindowSizeMsg{Width: 140, Height: 40})
+
+	m = launchOf(m)
+
+	if n := atomic.LoadInt32(&updates); n != 1 {
+		t.Fatalf("the offline launch ran brew update %d times, want 1", n)
+	}
+	if m.isUpdating {
+		t.Error("the failed update is still marked running")
+	}
+	var failure *modal.Toast
+	for _, toast := range m.toasts {
+		if strings.HasPrefix(toast.Message, "Update: ") {
+			failure = toast
+		}
+	}
+	if failure == nil || failure.Type != modal.ToastError || !strings.Contains(failure.Message, brewtest.ErrTest.Error()) {
+		t.Errorf("the failed update shows no error toast; toasts = %+v", m.toasts)
+	}
+	if !m.panels[PanelStatus].loaded {
+		t.Error("Status did not load from the old metadata after the failed update")
+	}
+	if got := m.status.Outdated; !got.Known || got.N != 1 {
+		t.Errorf("Outdated after the failed update = %+v, want 1 known from the old metadata", got)
+	}
+
+	m = sendKey(m, "4")
+	if m.activePanel != PanelOutdated {
+		t.Errorf("activePanel after key 4 = %v, want PanelOutdated: the keys must still work", m.activePanel)
 	}
 }
