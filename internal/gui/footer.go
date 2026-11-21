@@ -25,10 +25,25 @@ func (m Model) footerHints() []keyHint {
 		return []keyHint{keyHelpOff}
 	}
 	hints := append([]keyHint{}, m.panelKeyHints()...)
-	hints = append(hints, globalHints...)
+	hints = append(hints, m.globalFooterHints()...)
 	if m.opState != nil && m.opState.Done() {
 		// A finished operation covers the main area, and Esc clears it.
 		return append([]keyHint{keyClose}, hints...)
+	}
+	return hints
+}
+
+// globalFooterHints are globalHints for the active panel. On the panels the `/`
+// filter applies to, the panel's `/ filter` takes the place of `/ search`.
+func (m Model) globalFooterHints() []keyHint {
+	if !m.panels[m.activePanel].canFilter() {
+		return globalHints
+	}
+	var hints []keyHint
+	for _, h := range globalHints {
+		if h != keySearch {
+			hints = append(hints, h)
+		}
 	}
 	return hints
 }

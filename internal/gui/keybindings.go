@@ -38,6 +38,7 @@ var (
 	keyEnds    = keyHint{key: "Home/End", keys: "home end g G", help: "Top/bottom (g/G outside Search)"}
 	keyTabs    = keyHint{key: "h/l", keys: "h l left right", help: "Switch tabs"}
 	keySearch  = keyHint{key: "/", desc: "search", help: "Search packages"}
+	keyFilter  = keyHint{key: "/", desc: "filter", help: "Filter the list"}
 	keyHelp    = keyHint{key: "?", desc: "help", help: "This help"}
 	keyRefresh = keyHint{key: "R", desc: "refresh", help: "Refresh all data"}
 	keyLog     = keyHint{key: "C", desc: "log", help: "Toggle command log"}
@@ -186,9 +187,9 @@ func servicesHints(p *panelData) []keyHint {
 func panelHints(id PanelID) []keyHint {
 	switch id {
 	case PanelFormulae:
-		return []keyHint{keyNavigate, keyPanelTabs, fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch, keyCopy}
+		return []keyHint{keyNavigate, keyPanelTabs, keyFilter, fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch, keyCopy}
 	case PanelCasks:
-		return []keyHint{keyNavigate, keyPanelTabs, cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch, keyCopy}
+		return []keyHint{keyNavigate, keyPanelTabs, keyFilter, cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch, keyCopy}
 	case PanelServices:
 		return []keyHint{keyNavigate, keyPanelTabs, svStart, svStop, svRestart, svRun, svCleanup, keyCopy}
 	case PanelTaps:
