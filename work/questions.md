@@ -964,3 +964,27 @@ the muted `·` separator, so every hint row in the interface reads the same. `fi
 
 **Ruling (orchestrator, 2026-11-21) — Q-lb30-dashboard-taps:** keep `Taps` on the Status dashboard
 card (its counts are taps only); the panel title everywhere else is `Taps & Trust`.
+
+### Q-lb31-tabs-80 — the seven Status tabs do not fit at 80x24
+
+- **Context (lb31 AC-02):** Status tabs are Dashboard, Config, Doctor, Missing, Vulns, Cleanup,
+  Unused. The names need 46 cells. With the tab padding (one cell each side, no gap) the row
+  needs 60 cells; at 80x24 the bar has about 50 (sidebar 28 cells, main box 52 with its border
+  and padding). Single-space separators need 52, still too wide.
+- **Done:** the two tabs are in; the spacing is unchanged. At 80x24 the row is cut at the right
+  edge (`… Vulns  Clea`), so Unused is not visible at that size. The row is asserted at 140x40
+  only (`TestStatusTabRowWhole140x40`); no name is abbreviated and none is clipped on purpose.
+- **Ask.** Which way at narrow widths? (1) (Recommended) keep one row and show a window on it:
+  the active tab always in view, `‹` / `›` on the cut side; (2) wrap the Status bar to a second
+  row below 88 columns (one row more in the body).
+
+### Q-lb31-cleanup-autoremove — `brew cleanup` also runs autoremove
+
+- **Context (lb31 AC-02/03):** `brew cleanup` (and `-n`) runs autoremove too
+  (`Library/Homebrew/cleanup.rb`, `clean!`: `Cleanup.autoremove(dry_run:)` unless
+  `HOMEBREW_NO_AUTOREMOVE`). So `c` also uninstalls the unused formulae; the old preview did not
+  show that.
+- **Done:** the Cleanup tab adds `Also removes N unused formulae (Unused tab)` under its table,
+  and the confirm says so when N > 0. The run is still plain `brew cleanup`.
+- **Ask.** Keep the note and the plain run (recommended: same as `brew cleanup` in a shell), or
+  run the Cleanup tab's command with `HOMEBREW_NO_AUTOREMOVE=1` so `c` only removes files?
