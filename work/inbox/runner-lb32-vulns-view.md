@@ -42,3 +42,10 @@ Commits, one per AC: `392a00b` AC-01 typed report + text fallback;
 
 - `unscanned_formulae` / `outdated_without_sbom` shapes seen only as `{}` / `[]`.
 - `complete` parsed, not drawn.
+
+## Fix r2
+
+- F-r1-01 `8d2a0f2`, `6ddde2f`: exit 1 is a report only with JSON. `TestDiagnosticsVulnsExitCode1WithReportIsResult` now uses JSON; new `TestDiagnosticsVulnsExitCode1WithTextIsError`; `TestVulnsResultShapes` follows the rule (`8d2a0f2` alone left that case red).
+- F-r1-02 `d835549`: a release outranks its pre-releases; `2.0.0` and `v2.0.0` > `2.0.0-rc1`; a missing part counts as 0 (`2.0` = `2.0.0`). Cases in `TestVersionAfter`.
+- F-r1-03 `db0ab4f`: `TestVulnsReportColours` asserts the HIGH chip and HIGH cell in `style.ErrorText`; a WarningText mutation fails it.
+- Gate: `GOFLAGS=-p=1 make ci` exit 0 (gui 92.4 ≥ 83, brew 90.6 ≥ 78); `GOOS=darwin go build ./...` ok; deadcode empty; staticcheck: the same 5 findings as before.
