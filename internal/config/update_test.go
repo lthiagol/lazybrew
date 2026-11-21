@@ -43,6 +43,9 @@ func TestUpdateOnStartValues(t *testing.T) {
 		{"true", UpdateAlways},
 		{"false", UpdateNever},
 		{"auto", UpdateAuto},
+		// Quoted, the bools are strings in YAML; they mean the same.
+		{`"true"`, UpdateAlways},
+		{`"false"`, UpdateNever},
 	}
 	for _, tt := range tests {
 		t.Run(tt.value, func(t *testing.T) {

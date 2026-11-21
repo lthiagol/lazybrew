@@ -68,21 +68,31 @@ const (
 const DefaultUpdateStaleHours = 6
 
 // UnmarshalYAML reads true, false or auto. A YAML bool decodes as it always
-// did, so `update_on_start: true` and `false` keep their meaning.
+// did, and so does its quoted form ("true", "false"), which YAML reads as a
+// string.
 func (u *UpdateMode) UnmarshalYAML(node *yaml.Node) error {
 	var on bool
 	if err := node.Decode(&on); err == nil {
-		*u = UpdateNever
-		if on {
-			*u = UpdateAlways
-		}
+		*u = boolUpdateMode(on)
 		return nil
 	}
-	if node.Value == string(UpdateAuto) {
+	switch node.Value {
+	case string(UpdateAuto):
 		*u = UpdateAuto
+		return nil
+	case "true", "false":
+		*u = boolUpdateMode(node.Value == "true")
 		return nil
 	}
 	return fmt.Errorf("brew.update_on_start: unknown value %q (want true, false or auto)", node.Value)
+}
+
+// boolUpdateMode is the mode a true or false update_on_start means.
+func boolUpdateMode(on bool) UpdateMode {
+	if on {
+		return UpdateAlways
+	}
+	return UpdateNever
 }
 
 const (
