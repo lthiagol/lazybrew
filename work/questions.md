@@ -750,3 +750,10 @@ decides when it runs.
 - **Ask.** Is the omission on purpose? Showing the keys changes footer frames
   and goldens, so it is out of the cr4 scope. Also: Status `j/k` are help-only
   (`keyScroll`), though Status does list rows (`statusRows`).
+
+**Ruling (orchestrator, 2026-11-20) — Q-cr4-gui-dedup-r2-footer-tabs:** out of
+cr4 scope. cr4 is a no-behaviour-change refactor and every footer frame stays
+byte-identical, so the exemptions in `footerExempt` stand as the record of the
+current omission. Whether the Status/Outdated/Taps footers should show the tab
+keys, and whether Status `j/k` belong on its footer, is a UI decision for the
+user; parked in `work/backlog.md` as LB-13.
