@@ -30,7 +30,7 @@ func buildHelp() []helpPage {
 			sections: []helpSection{
 				{
 					heading: "Navigation",
-					items:   []keyHint{keyNext, keyPrev, keyJump, keyScroll, keyPage, keyEnds, keyTabs},
+					items:   []keyHint{keyNext, keyPrev, keyJump, keyScroll, keyEnds, keyTabs},
 				},
 				{
 					heading: "Actions",
@@ -233,16 +233,11 @@ func (m Model) scrollHelpTo(row int) Model {
 // keys move through the text, and ? or esc close it. Any other key passes
 // through unchanged. It reports whether it took the key.
 func (m Model) helpKey(key string) (Model, bool) {
-	page := m.helpViewRows()
 	switch key {
 	case "j", "down":
 		return m.scrollHelpTo(m.helpScroll + 1), true
 	case "k", "up":
 		return m.scrollHelpTo(m.helpScroll - 1), true
-	case "pgdown":
-		return m.scrollHelpTo(m.helpScroll + page), true
-	case "pgup":
-		return m.scrollHelpTo(m.helpScroll - page), true
 	case "home", "g":
 		return m.scrollHelpTo(0), true
 	case "end", "G":

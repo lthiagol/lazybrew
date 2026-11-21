@@ -20,8 +20,8 @@ func TestHelpScrollReachesEveryLineAt80x24(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = sendKey(m, "?")
 	seen := strings.Join(helpFrame(m), "\n")
-	for i := 0; i < 20 && m.helpScroll < m.helpLast(); i++ {
-		m = sendSpecial(m, tea.KeyPgDown)
+	for i := 0; i < 200 && m.helpScroll < m.helpLast(); i++ {
+		m = sendKey(m, "j")
 		seen += "\n" + strings.Join(helpFrame(m), "\n")
 	}
 	for _, page := range buildHelp() {
@@ -43,7 +43,9 @@ func TestHelpPositionHint(t *testing.T) {
 	if first := helpFrame(m)[0]; !strings.Contains(first, fmt.Sprintf("1–%d of %d", m.helpViewRows(), total)) {
 		t.Fatalf("the first screen should read 1–%d of %d, got %q", m.helpViewRows(), total, first)
 	}
-	m = sendSpecial(m, tea.KeyPgDown)
+	for range m.helpViewRows() {
+		m = sendKey(m, "j")
+	}
 	from := m.helpViewRows() + 1
 	if first := helpFrame(m)[0]; !strings.Contains(first, fmt.Sprintf("%d–", from)) {
 		t.Fatalf("after a page the hint should start at %d, got %q", from, first)
@@ -80,7 +82,7 @@ func TestHelpKeysScrollHelpNotThePanels(t *testing.T) {
 func TestHelpOpensAtTheTop(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = sendKey(m, "?")
-	m = sendSpecial(m, tea.KeyPgDown)
+	m = sendKey(m, "j")
 	m = sendKey(m, "?")
 	m = sendKey(m, "?")
 	if m.helpScroll != 0 {

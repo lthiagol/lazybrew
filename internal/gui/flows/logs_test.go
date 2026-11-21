@@ -66,7 +66,7 @@ func TestLogsFlow(t *testing.T) {
 	tm := testutil.NewTestModelWithRunner(t, logsRunner(t, stdout, stderr), teatest.WithInitialTermSize(120, 40))
 	tm.Send(logsKeyPress('6'))
 	waitForScreen(t, tm, "started")
-	tm.Send(logsKeyPress(']'))
+	tm.Send(logsKeyPress('l'))
 	waitForScreen(t, tm, "ready")
 
 	f, err := os.OpenFile(stdout, os.O_APPEND|os.O_WRONLY, 0)

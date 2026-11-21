@@ -128,7 +128,7 @@ func TestWheelOverMainScrollsItsContent(t *testing.T) {
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: []string{"foo  1.0"},
 		Formulae: []brew.Formula{{Name: "foo", Version: "1.0", Caveats: strings.Join(caveats, "\n")}}})
 	for range formulaCaveatsTab {
-		m = sendKey(m, "]")
+		m = sendKey(m, "l")
 	}
 	if m.activeTab != formulaCaveatsTab {
 		t.Fatalf("fixture: want the Caveats tab, got %d", m.activeTab)

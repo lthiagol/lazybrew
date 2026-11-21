@@ -72,7 +72,7 @@ func underlineRun(t *testing.T, m *Model) (start, end int) {
 }
 
 func TestTabUnderlineRestsOnTheActiveTab(t *testing.T) {
-	m := settle(t, sendKey(motionModel(t, 140, 40), "]"))
+	m := settle(t, sendKey(motionModel(t, 140, 40), "l"))
 	x, w := m.activeTabSpan()
 	if start, end := underlineRun(t, m); start != x || end != x+w {
 		t.Fatalf("settled underline = [%d,%d); want the active tab's [%d,%d)", start, end, x, x+w)
@@ -82,9 +82,9 @@ func TestTabUnderlineRestsOnTheActiveTab(t *testing.T) {
 func TestTabUnderlineSlidesBetweenTabs(t *testing.T) {
 	m := settle(t, motionModel(t, 140, 40))
 	x0, w0 := m.activeTabSpan()
-	m = sendKey(m, "]")
-	m = sendKey(m, "]")
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
+	m = sendKey(m, "l")
+	m = sendKey(m, "l")
 	x1, w1 := m.activeTabSpan()
 	if x1 <= x0 || w1 == w0 {
 		t.Fatalf("test tabs %d/%d are not apart: want a wider move", x0, x1)
@@ -117,7 +117,7 @@ func TestSlidingTabBarAtRestIsTheRestingBar(t *testing.T) {
 	m := settle(t, motionModel(t, 140, 40))
 	for i := range m.tabs {
 		if i > 0 {
-			m = sendKey(m, "]")
+			m = sendKey(m, "l")
 		}
 		m = settle(t, m)
 		x, w := m.activeTabSpan()
@@ -130,7 +130,7 @@ func TestSlidingTabBarAtRestIsTheRestingBar(t *testing.T) {
 func TestAnimationsOffDrawsTheUnderlineAtOnce(t *testing.T) {
 	t.Setenv(config.AnimationsEnv, "0")
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
-	m = sendKey(sendKey(m, "2"), "]")
+	m = sendKey(sendKey(m, "2"), "l")
 	if _, _, moving := m.tabUnderlineSpan(); moving {
 		t.Fatal("the underline moves with animations off")
 	}
@@ -153,13 +153,13 @@ func TestPanelSwitchSnapsTheUnderline(t *testing.T) {
 
 func TestKeysWorkWhileTheUnderlineSlides(t *testing.T) {
 	m := settle(t, motionModel(t, 140, 40))
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	m = frames(m, 2)
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	if m.activeTab != 2 {
 		t.Fatalf("activeTab = %d mid-slide; want 2", m.activeTab)
 	}
-	m = sendKey(m, "[")
+	m = sendKey(m, "h")
 	if m.activeTab != 1 {
 		t.Fatalf("activeTab = %d after [; want 1", m.activeTab)
 	}
@@ -168,7 +168,7 @@ func TestKeysWorkWhileTheUnderlineSlides(t *testing.T) {
 func TestSlidingFramesAreTerminalSize(t *testing.T) {
 	for _, sz := range [][2]int{{140, 40}, {80, 24}} {
 		m := settle(t, motionModel(t, sz[0], sz[1]))
-		m = sendKey(m, "]")
+		m = sendKey(m, "l")
 		for i := 0; i < 8; i++ {
 			m = frames(m, 1)
 			v := m.View().Content

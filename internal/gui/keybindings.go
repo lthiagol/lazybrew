@@ -35,9 +35,8 @@ var (
 	keyPrev    = keyHint{key: "S-Tab", helpKey: "Shift+Tab", keys: "shift+tab", desc: "prev", help: "Previous panel"}
 	keyJump    = keyHint{key: "1-7", keys: "1 2 3 4 5 6 7", desc: "jump", help: "Jump to panel"}
 	keyScroll  = keyHint{key: "j/k", keys: "j k down up", help: "Scroll list"}
-	keyPage    = keyHint{key: "PgUp/Dn", helpKey: "PgUp/PgDn", keys: "pgup pgdown", desc: "scroll", help: "Scroll content by a page"}
 	keyEnds    = keyHint{key: "Home/End", keys: "home end g G", help: "Top/bottom (g/G outside Search)"}
-	keyTabs    = keyHint{key: "[/]", keys: "[ ] left right", help: "Switch tabs"}
+	keyTabs    = keyHint{key: "h/l", keys: "h l left right", help: "Switch tabs"}
 	keySearch  = keyHint{key: "/", desc: "search", help: "Search packages"}
 	keyHelp    = keyHint{key: "?", desc: "help", help: "This help"}
 	keyRefresh = keyHint{key: "R", desc: "refresh", help: "Refresh all data"}
@@ -50,7 +49,7 @@ var (
 // Keys the panels share, with the same words wherever they appear.
 var (
 	keyNavigate        = keyHint{key: "j/k", keys: "j k down up", desc: "navigate"}
-	keyPanelTabs       = keyHint{key: "[ ]", keys: "[ ] left right", desc: "tabs"}
+	keyPanelTabs       = keyHint{key: "h/l", keys: "h l left right", desc: "tabs"}
 	keyUpgradeSelected = keyHint{key: "u", keys: "u", desc: "upgrade", help: "Upgrade selected"}
 	keyUpgradeAll      = keyHint{key: "U", desc: "upgrade all", help: "Upgrade all"}
 )
@@ -110,7 +109,7 @@ var (
 	stBrewfile   = keyHint{key: "B", desc: "brewfile", help: "Brewfile actions"}
 	stVulns      = keyHint{key: "v", desc: "vulns", help: "Vulnerability check"}
 	stMissing    = keyHint{key: "m", desc: "missing", help: "Missing dependencies"}
-	stTabs       = keyHint{key: "[ ]", keys: "[ ] left right", help: "Switch tabs"}
+	stTabs       = keyHint{key: "h/l", keys: "h l left right", help: "Switch tabs"}
 )
 
 // Search.

@@ -82,7 +82,7 @@ func logsModel(t *testing.T, w, h int, stdout, stderr string) *Model {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: w, Height: h})
 	m = loadServices(m, servicesList(), info)
 	m = selectService(m, "moshi-hook")
-	return pressKey(m, "]")
+	return pressKey(m, "l")
 }
 
 // plainView is the frame as plain text, one string per row.
@@ -283,12 +283,12 @@ func TestLogsFooterListsStreamOnLogsOnly(t *testing.T) {
 		}
 		return false
 	}
-	if hints := m.footerHints(); !hasHint(hints, "[ ]", "tabs") || hasHint(hints, "e", "stream") {
-		t.Errorf("Info footer = %v, want [ ] tabs and no e", hints)
+	if hints := m.footerHints(); !hasHint(hints, "h/l", "tabs") || hasHint(hints, "e", "stream") {
+		t.Errorf("Info footer = %v, want h/l tabs and no e", hints)
 	}
-	m = pressKey(m, "]")
-	if hints := m.footerHints(); !hasHint(hints, "e", "stream") || !hasHint(hints, "[ ]", "tabs") {
-		t.Errorf("Logs footer = %v, want e stream and [ ] tabs", hints)
+	m = pressKey(m, "l")
+	if hints := m.footerHints(); !hasHint(hints, "e", "stream") || !hasHint(hints, "h/l", "tabs") {
+		t.Errorf("Logs footer = %v, want e stream and h/l tabs", hints)
 	}
 }
 
@@ -317,8 +317,8 @@ func TestLogsReadStartsOnEachVisit(t *testing.T) {
 		return logtail.Read(path, n)
 	}
 	// Leaving the tab starts no read; coming back starts one.
-	m = pressKey(m, "[")
-	m = pressKey(m, "]")
+	m = pressKey(m, "h")
+	m = pressKey(m, "l")
 	if len(reads) != 1 {
 		t.Errorf("reads after leaving and returning = %d, want 1", len(reads))
 	}
@@ -363,7 +363,7 @@ func TestLogsSwitchServiceShowsNewLogAndDropsOld(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m = loadServices(m, servicesList(), info)
 	m = selectService(m, "moshi-hook")
-	m = pressKey(m, "]")
+	m = pressKey(m, "l")
 	if view := plainView(m); !strings.Contains(view, "alpha line 2") {
 		t.Fatalf("moshi-hook's log does not show before the switch:\n%s", view)
 	}

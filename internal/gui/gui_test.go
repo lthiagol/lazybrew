@@ -185,14 +185,14 @@ func TestPanelJump(t *testing.T) {
 func TestTabSwitching(t *testing.T) {
 	m := newTestModel()
 
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 	if m.activeTab != 1 {
-		t.Errorf("after ]: activeTab = %d, want 1", m.activeTab)
+		t.Errorf("after l: activeTab = %d, want 1", m.activeTab)
 	}
 
-	m = sendKey(m, "[")
+	m = sendKey(m, "h")
 	if m.activeTab != 0 {
-		t.Errorf("after [: activeTab = %d, want 0", m.activeTab)
+		t.Errorf("after h: activeTab = %d, want 0", m.activeTab)
 	}
 }
 
@@ -1534,7 +1534,7 @@ func TestDepsTabLoads(t *testing.T) {
 	}
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Items: items, Formulae: formulae})
 	m = sendKey(m, "2")
-	m = sendKey(m, "]")
+	m = sendKey(m, "l")
 
 	if m.activePanel != PanelFormulae || m.activeTab != formulaDepsTab {
 		t.Fatalf("expected Formulae/Deps, got panel=%v tab=%d", m.activePanel, m.activeTab)
