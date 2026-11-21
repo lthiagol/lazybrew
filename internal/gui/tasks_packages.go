@@ -112,9 +112,19 @@ func (m Model) fetchSelectedSearchInfo() tea.Cmd {
 		return nil
 	}
 	r := m.searchResults[m.panels[PanelSearch].selected]
+	// A name can be both a formula and a cask, so the row's own kind goes to
+	// brew (LB-19). A row of unknown type keeps the no-flag call.
+	args := []string{"info", "--json=v2"}
+	switch {
+	case r.IsCask:
+		args = append(args, "--cask")
+	case r.IsFormula:
+		args = append(args, "--formula")
+	}
+	args = append(args, r.Name)
 	return func() tea.Msg {
 		output, err := boundedRead(brewSearchTimeout, "info", func(ctx context.Context) ([]byte, error) {
-			return m.client.Runner.Execute(ctx, "info", "--json=v2", r.Name)
+			return m.client.Runner.Execute(ctx, args...)
 		})
 		if err != nil {
 			return SearchInfoLoadedMsg{Err: searchInfoErr(err)}

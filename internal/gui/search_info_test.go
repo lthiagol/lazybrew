@@ -2,6 +2,8 @@ package gui
 
 import (
 	"context"
+	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -190,5 +192,54 @@ func TestSearchInfoBrewErrorIsShownAsBrewSaysIt(t *testing.T) {
 	}
 	if strings.Contains(view, "Parse error") {
 		t.Fatalf("a brew error must not read as a parse error:\n%s", view)
+	}
+}
+
+// TestSearchInfoAsksForTheRowsKind (LB-19): a name that is both a formula and a
+// cask gets a different `brew info` per row, so brew shows the row's own kind.
+// A row of unknown type keeps the no-flag call.
+func TestSearchInfoAsksForTheRowsKind(t *testing.T) {
+	rows := []brew.SearchResult{
+		{Name: "same", IsFormula: true},
+		{Name: "same", IsCask: true},
+		{Name: "same"},
+	}
+	want := [][]string{
+		{"info", "--json=v2", "--formula", "same"},
+		{"info", "--json=v2", "--cask", "same"},
+		{"info", "--json=v2", "same"},
+	}
+	for i, row := range rows {
+		var gotArgs []string
+		runner := brewtest.NewMockRunner()
+		runner.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+			gotArgs = args
+			return []byte(`{"formulae":[],"casks":[]}`), nil
+		}
+		m := New(brew.NewClient(runner), testConfig())
+		m.activePanel = PanelSearch
+		m.searchResults = rows
+		m.panels[PanelSearch].selected = i
+
+		m.fetchSelectedSearchInfo()()
+		if !reflect.DeepEqual(gotArgs, want[i]) {
+			t.Errorf("row %d (formula=%v cask=%v): brew args %v, want %v", i, row.IsFormula, row.IsCask, gotArgs, want[i])
+		}
+	}
+}
+
+// A cask row's `brew info --json=v2 --cask` payload parses as a cask, read from
+// the same fixture the Casks list is built from (LB-19).
+func TestSearchInfoCaskRowParsesBrewCaskFixture(t *testing.T) {
+	raw, err := os.ReadFile("../brew/testdata/casks_installed_token.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := parsePackageInfo(string(raw))
+	if err != nil {
+		t.Fatalf("parsePackageInfo: %v", err)
+	}
+	if info.Type != "cask" || info.Name != "claude-code" {
+		t.Fatalf("got type %q name %q, want cask claude-code", info.Type, info.Name)
 	}
 }
