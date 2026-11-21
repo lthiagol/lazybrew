@@ -40,3 +40,12 @@
 ## Next session
 
 - Gate passed. No brew write command run; TUI not launched.
+
+## Fix r2 (work/briefs/fix-lb27-status-tabs-r2.md)
+
+- F-r1-01 `b548db4`: `brew.Vulns` fails on exit 1 with no stdout or an `Error:` stderr line; exit 1 with a report stays a result. Red before the fix: `TestVulnsResultShapes/exit_1_no_report`; also `TestDiagnosticsVulns*` (3).
+- F-r1-02 `b450312`: Status bar drops the literal gap either side of each name (`tabGap`: 0 on Status, 1 elsewhere). At 80x24, both themes, all five names and the underline under Vulns show: `TestStatusTabRowShowsEveryName` (red before). Formulae gap held by `TestOtherTabBarsKeepTheirGap`. Status tabs are also tighter at 140.
+- F-r1-03 `05f7aa5`, `1610d81`: `TestVulnsTimeoutShowsErrorAndHint`, `TestVulnsRunningFrameFitsAt80x24`, `TestYCopiesTheVulnsReportWhole`. They pass on arrival (pin behaviour the reviewer checked by hand). `1610d81` drops an unused assignment (SA4006).
+- F-r1-04 `d99091e`: SMOKE-CHECKLIST cites `TestStatusKeysOpenTheirTabs`, `TestMissingTabFetchesRows`, `TestVulnsKeyRunsOnceWhileRunning`, `flows.TestStatusTabsFlow` and others, all existing.
+- Gate at `1610d81`: `GOFLAGS=-p=1 make ci` exit 0; `GOOS=darwin go build ./...` ok; deadcode clean; staticcheck: no new hit.
+- Not done: SMOKE-CHECKLIST `d`/`m` lines still say "output in modal / status path" (no overlay now). Wording only; left alone.
