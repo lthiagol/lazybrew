@@ -1,24 +1,20 @@
 verdict: changes-required
 
 # reviewer: cr4-gui-dedup r1 (base db7d464, HEAD 8a02d11)
-
 ## Gate and harness
 - V1: `make ci` PASS (gofmt, vet, race, all floors, build); `GOOS=darwin go build ./...` PASS.
-- V3 frames (own harness, external test pkg on exported `gui.New`/`Update`/`View`, run in worktrees
-  db7d464 and HEAD, replaying one cache of real read-only brew output; writes recorded, never run):
-  208-step script over panels 1-7, every tab, help + paging, the log toggle, every confirm/input/menu
-  modal, the operation overlay, footers. 832 frames (dark+light × 80x24+140x40). 116 differ in raw
-  bytes, all on header line 0 only ("updated 9s/10s ago" clock); 0 differ after normalising it.
-- V3 brew args: 164 recorded write calls per version, identical (`diff` empty): update, install,
-  uninstall, zap, reinstall, upgrade (formula, cask, batch, all), fetch, pin, tap, untap, trust,
-  untrust, tap --repair, services start/run/cleanup, cleanup -n, autoremove -n/autoremove, bundle
-  dump, vulns. Not reached by my script: services stop/restart (same runServiceTask path as start/run).
+- V3 frames (own harness on exported gui.New/Update/View, worktrees db7d464 and HEAD, one replayed
+  cache of real read-only brew output; writes recorded, never run): panels 1-7, every tab, help +
+  paging, log toggle, every confirm/input/menu modal, the overlay, footers. 832 frames (dark+light ×
+  80x24+140x40); 116 differ raw, all on header line 0 ("updated 9s/10s ago"); 0 after normalising.
+- V3 brew args: 164 write calls per version, identical: update, install, uninstall, zap, reinstall,
+  upgrade (formula/cask/batch/all), fetch, pin, tap, untap, (un)trust, tap --repair, services
+  start/run/cleanup, cleanup -n, autoremove, bundle dump, vulns. Not reached: services stop/restart.
 - V2: the one regression test (TestCaskUninstallConfirmRecordsNoUsesCall) on 2248ac7 (pre-AC-06)
   FAILS: `cask uninstall confirm asked brew for dependents: [uses --installed firefox]`.
-- V7: deadcode/staticcheck not run (fetch denied). Grep: all 14 added funcs (enqueue, tryEnqueue,
-  errTask, streamTask, linesTask, selectNamed, handleKey, Clip, Fit, WithIcon, YesNo, Hints,
-  hintViews, helpKeyText) have production callers; clipLine, both fitLine, cutCell, withIcon,
-  boolStr, selectedOutdatedFormula, selectServiceNamed/selectTapNamed, helpItem are gone.
+- V7: deadcode/staticcheck not run (fetch denied). Grep: all 14 added funcs have production callers;
+  clipLine, both fitLine, cutCell, withIcon, boolStr, selectedOutdatedFormula, select{Service,Tap}Named,
+  helpItem are gone.
 
 ## AC table
 | AC | verdict | evidence |
@@ -42,9 +38,7 @@ verdict: changes-required
    the "no unreachable functions" invariant is not breached. (`keyHint.keys` is data read only by tests.)
 3. panel.go:375 truncates with "..." (three dots), not "…": Clip would change frames, so it is outside
    R8's `ansi.Truncate(…, "…")` pattern. presentation/detail.go:136 is in package presentation, not
-   `internal/gui` or `internal/gui/modal`. Both out of scope; not findings.
-4. see F-r1-01.  5. see F-r1-02.  6. met (V7 above).
-
+   `internal/gui` or `internal/gui/modal`. Both out of scope; not findings. 4: F-r1-01. 5: F-r1-02. 6: met (V7).
 ## Findings
 F-r1-01 (major) — internal/gui/task_build.go:84-88 — on ctx cancel linesTask returns without sending on
 errCh; readChunk then blocks forever on `rt.err = <-rt.errCh` (task/manager.go:186-188): no
@@ -62,6 +56,5 @@ strings, footers are only checked ⊆ table, and keyTable is hand-listed in the 
 per context, each key dispatched there is in that context's footer (or help where the brief allows)
 and vice versa; the stDoctor mutation fails.
 
-## Seen, not done
-- executeSearch / fetchSelectedSearchInfo / toggleLeaves read cmds still capture `m` (not task Run
-  closures, so outside Q2). render.go:486-488 Artifacts `+=` loop (not a Q5 site).
+Seen, not done: read cmds executeSearch/fetchSelectedSearchInfo/toggleLeaves still capture `m` (not
+task Run closures, outside Q2); render.go:486-488 Artifacts `+=` loop (not a Q5 site).
