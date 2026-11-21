@@ -66,3 +66,8 @@ Plan commit (questions, STATE row): `dfa7d36`.
 - Fix: `operation.go:152` draws the row with `m.icons.Installed` (smaller than changing `OK`, which also draws the trusted tap and toasts). `Icons.OK` stays ✓ at `sidebar_rows.go:196` (trusted tap), `toasts.go:64` (toast), `dashboard.go:111`, `:198`, `command_log.go:153`. Question: Q-lb25-ok-uses.
 - Goldens changed: `operation_test.go` TestOperationFinalStates; `operation_dismiss_test.go` TestFinishedRunsEndWithTheCloseHint (success row).
 - Gate: `make test-fast PKG=./internal/gui/...` ok; `GOFLAGS=-p=1 make ci` exit 0, "All coverage floors met"; `GOOS=darwin go build ./...` ok. `-p=1` because /tmp is at 93% (link failed otherwise).
+
+## Fix r2 — success mark ✔ [Q-lb25-ok-uses] (commit 89962c8)
+- Tests first: `TestOKGlyphIsBrewsCheckmark`, `TestSuccessToastDrawsBrewsCheckmark`, `TestTrustedTapRowDrawsCheckmark` failed on `OK = "✓"` and `▸ ✓ lt/tap`; `TestHealthReadsTheDoctorSummary`, `TestDoctorTabBlocksEachWarning`, `TestCommandLogShowsExecutedCommands` now expect ✔. `style/icons.go` OK → ✔ in both sets; all green after.
+- Gate: `make test-fast PKG=./internal/gui/...` ok; `GOFLAGS=-p=1 make ci` exit 0, "All coverage floors met". No ✓ left in Go production code.
+- Not touched: `SMOKE-CHECKLIST.md:42` still says `✓ Completed in …` (stale since fix r1), for the orchestrator.
