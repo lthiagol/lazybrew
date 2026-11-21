@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -92,6 +93,48 @@ func TestSearchInstalledListUnreadableKeepsTypes(t *testing.T) {
 	}
 	if done.Raw[0].IsFormula != true || done.Raw[2].IsCask != true {
 		t.Errorf("types lost with the installed list unread: %+v", done.Raw)
+	}
+}
+
+// TestRemarkKeepsMarksOfUnreadableList (lb19 AC-02, F-r1-04): a re-mark whose
+// installed list cannot be read leaves that type's marks as they were, so the
+// row still installed stays installed. The other type is re-marked from its
+// list as usual, and its list is empty here, so its row is unmarked.
+func TestRemarkKeepsMarksOfUnreadableList(t *testing.T) {
+	cases := []struct {
+		unreadable                   string
+		jqInstalled, claudeInstalled bool
+	}{
+		{unreadable: "formula", jqInstalled: true, claudeInstalled: false},
+		{unreadable: "cask", jqInstalled: false, claudeInstalled: true},
+	}
+	for _, tc := range cases {
+		mr := brewtest.NewMockRunner()
+		mr.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
+			isCask := slices.Contains(args, "--cask")
+			if isCask == (tc.unreadable == "cask") {
+				return brewtest.ErrTest
+			}
+			if isCask {
+				return jsonInto(result, `{"casks": []}`)
+			}
+			return jsonInto(result, `{"formulae": []}`)
+		}
+		rows := []brew.SearchResult{
+			{Name: "jq", IsFormula: true, Installed: true},
+			{Name: "claude-code", IsCask: true, Installed: true},
+		}
+		m := searchRowsModel(&searchUninstallRunner{}, rows)
+		m.client = brew.NewClient(mr)
+
+		m = updateModel(m, m.remarkSearch()())
+
+		if got := m.searchResults[0].Installed; got != tc.jqInstalled {
+			t.Errorf("%s list unreadable: jq Installed = %v, want %v", tc.unreadable, got, tc.jqInstalled)
+		}
+		if got := m.searchResults[1].Installed; got != tc.claudeInstalled {
+			t.Errorf("%s list unreadable: claude-code Installed = %v, want %v", tc.unreadable, got, tc.claudeInstalled)
+		}
 	}
 }
 
