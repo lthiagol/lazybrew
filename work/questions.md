@@ -849,3 +849,10 @@ decision log say so.
 - **Raised by:** runner lane (slice lb24-copy-and-wording).
 - **Ask.** Keep `y` typing on Search (recommended), or make it copy there and
   accept that a query cannot start with `y` unless the box has focus?
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb24-y-search:** with an Operation overlay
+open, `y` copies the overlay on every panel, Search included (the overlay owns the
+keys, as it does for Enter and Esc; the macOS smoke copy case was a failed install
+overlay on Search). With no overlay, `y` still types on Search. The copied overlay
+text includes the status row (Failed text, elapsed), ANSI-free. Done in
+`fix-lb24-copy-and-wording-r2`.
