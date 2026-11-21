@@ -193,9 +193,10 @@ func tabIndex(t *testing.T, m *Model, name string) int {
 	return -1
 }
 
-// TestTabWindowAt60Columns: at 60 columns both bars fit whole (Status is 60
-// cells, Formulae 48), so every tab is drawn with no marker.
-func TestTabWindowAt60Columns(t *testing.T) {
+// TestTabWindowAt60CellContent: a bar given 60 cells of content width fits whole
+// (Status is 60 cells, Formulae 48), so every tab is drawn with no marker. A 60
+// column terminal is below minTerminalWidth, so this is a width, not a screen.
+func TestTabWindowAt60CellContent(t *testing.T) {
 	m := loadedStatus(80, 24)
 	m = pressStatus(m, "2")
 	for _, panel := range []PanelID{PanelStatus, PanelFormulae} {
