@@ -164,7 +164,7 @@ func TestFinishedRunsEndWithTheCloseHint(t *testing.T) {
 		want string
 	}{
 		{"success", Operation{Title: "stop moshi-hook", Status: opSuccess, Started: start, Ended: start},
-			"✓ Completed in 0s · Esc to close · y copy"},
+			"✔ Completed in 0s · Esc to close · y copy"},
 		{"failed", Operation{Title: "stop moshi-hook", Status: opError, Err: errors.New("boom"), Started: start, Ended: start},
 			"✗ Failed: boom · Esc to close · y copy"},
 		{"cancelled", Operation{Title: "stop moshi-hook", Status: opCancelled, Started: start, Ended: start},
@@ -331,5 +331,32 @@ func TestServicesInfoDrawsTheReloadOnceTheRunCloses(t *testing.T) {
 	}
 	if strings.Contains(screenText(m), "Loading...") {
 		t.Fatalf("the reload has landed, the Info should not still be loading:\n%s", screenText(m))
+	}
+}
+
+// TestCompletedRowMatchesTheStepTicks (lb25 fix r1): a finished run ticks its
+// steps and its Completed row with the same mark, the ✔ brew prints, at the
+// harness sizes.
+func TestCompletedRowMatchesTheStepTicks(t *testing.T) {
+	start := time.Now().Add(-time.Hour)
+	sizes := []struct {
+		name string
+		msg  tea.WindowSizeMsg
+	}{
+		{"80x24", tea.WindowSizeMsg{Width: 80, Height: 24}},
+		{"140x40", tea.WindowSizeMsg{Width: 140, Height: 40}},
+	}
+	for _, size := range sizes {
+		t.Run(size.name, func(t *testing.T) {
+			m := updateModel(newTestModel(), size.msg)
+			m.opState = operationFrom(Operation{Title: "upgrade bash", Status: opSuccess, Started: start, Ended: start.Add(34 * time.Second)}, upgradeTranscript)
+			out := screenText(m)
+			if !strings.Contains(out, "✔ Completed in 34s") {
+				t.Fatalf("the Completed row should carry ✔, got:\n%s", out)
+			}
+			if !strings.Contains(out, "✔ Fetching bash") {
+				t.Fatalf("a finished step should carry ✔, got:\n%s", out)
+			}
+		})
 	}
 }
