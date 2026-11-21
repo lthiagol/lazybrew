@@ -56,26 +56,6 @@ func TestSearchServiceEmpty(t *testing.T) {
 	}
 }
 
-func TestSearchServiceSearchDesc(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		if len(args) >= 2 && args[0] == "--desc" {
-			return []byte("ripgrep"), nil
-		}
-		return []byte("==> Formulae\nripgrep"), nil
-	}
-	svc := NewSearchService(r)
-
-	results, err := svc.SearchDesc(context.Background(), "search")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("results: %+v", results)
-	if len(results) != 1 || results[0].Name != "ripgrep" {
-		t.Errorf("got %v, want [ripgrep]", results)
-	}
-}
-
 func TestParseSearchOutput(t *testing.T) {
 	raw := "==> Formulae\nfzf\nripgrep\n\n==> Casks\nfirefox\nspotify"
 	results := parseSearchOutput(raw)

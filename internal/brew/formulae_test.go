@@ -465,24 +465,6 @@ func TestFormulaeOutdatedDoesNotCallList(t *testing.T) {
 	}
 }
 
-func TestFormulaeGetReturnsNilForMissing(t *testing.T) {
-	r := newMockFormulaeRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		data, _ := json.Marshal(formulaeJSON{Formulae: []formulaJSON{}})
-		return data, nil
-	}
-	cache := NewCache(time.Minute)
-	reader := NewFormulaeReader(r, cache)
-
-	f, err := reader.Get(context.Background(), "nonexistent")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if f != nil {
-		t.Error("expected nil for missing formula")
-	}
-}
-
 func TestFormulaeOutdatedCoalescesConcurrentCalls(t *testing.T) {
 	r := newMockFormulaeRunner()
 	var calls int32

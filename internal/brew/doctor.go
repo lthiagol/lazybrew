@@ -11,7 +11,6 @@ type DiagnosticsReader interface {
 	Missing(ctx context.Context) ([]MissingDep, error)
 	Vulns(ctx context.Context) (string, error)
 	Config(ctx context.Context) (*BrewConfig, error)
-	Version(ctx context.Context) (string, error)
 	SetCacheTTLs(ttls CacheTTLs)
 }
 
@@ -174,26 +173,6 @@ func (s *diagnosticsReader) Config(ctx context.Context) (*BrewConfig, error) {
 		}
 		return cfg, true, nil
 	})
-}
-
-func (s *diagnosticsReader) Version(ctx context.Context) (string, error) {
-	if cached, ok := s.cache.Get(KeyConfig); ok {
-		if cfg, ok := cached.(*BrewConfig); ok {
-			return cfg.HomebrewVersion, nil
-		}
-	}
-
-	output, err := s.runner.Execute(ctx, "--version")
-	if err != nil {
-		return "", err
-	}
-
-	version := strings.TrimSpace(string(output))
-	parts := strings.SplitN(version, " ", 3)
-	if len(parts) >= 2 {
-		return parts[1], nil
-	}
-	return version, nil
 }
 
 func (s *diagnosticsWriter) Update(ctx context.Context) (<-chan string, <-chan error) {

@@ -60,7 +60,6 @@ type Cache struct {
 	entries    map[CacheKey]cacheEntry
 	seq        uint64              // the last invalidation's stamp; see generationLocked
 	keyGen     map[CacheKey]uint64 // the stamp of the last invalidation that dropped each key
-	allGen     uint64              // the stamp of the last InvalidateAll
 	defaultTTL time.Duration
 	now        func() time.Time // time.Now; a test swaps in a clock it moves by hand
 	sf         *singleflight    // coalesces concurrent fetches of one key
@@ -131,14 +130,6 @@ func (c *Cache) InvalidateFor(group string) {
 	c.Invalidate(keys...)
 }
 
-func (c *Cache) InvalidateAll() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.seq++
-	c.allGen = c.seq
-	c.entries = make(map[CacheKey]cacheEntry)
-}
-
 // generation is the stamp of the last invalidation that dropped key. A read
 // notes it before it fetches, and its result is stored only if it has not moved
 // since. Every stamp comes from seq, so a change always yields a new value.
@@ -150,7 +141,7 @@ func (c *Cache) generation(key CacheKey) uint64 {
 
 // generationLocked is generation for a caller that already holds c.mu.
 func (c *Cache) generationLocked(key CacheKey) uint64 {
-	return max(c.keyGen[key], c.allGen)
+	return c.keyGen[key]
 }
 
 // setIfCurrent stores data only when key's generation is still gen. A read that

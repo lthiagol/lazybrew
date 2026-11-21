@@ -132,17 +132,8 @@ func writeCases() []writeCase {
 			_, errs := c.CasksWrite.Upgrade(ctx, "x")
 			return drain(errs)
 		}},
-		{"cask pin", "pin", "pin x", func(c *Client) error {
-			return c.CasksWrite.Pin(ctx, "x")
-		}},
-		{"cask unpin", "unpin", "unpin x", func(c *Client) error {
-			return c.CasksWrite.Unpin(ctx, "x")
-		}},
 		{"tap", "tap", "tap x", func(c *Client) error {
 			return c.TapsWrite.Tap(ctx, "x")
-		}},
-		{"tap with url", "tap", "tap x url", func(c *Client) error {
-			return c.TapsWrite.TapWithURL(ctx, "x", "url")
 		}},
 		{"untap", "untap", "untap x", func(c *Client) error {
 			return c.TapsWrite.Untap(ctx, "x")

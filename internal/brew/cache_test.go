@@ -77,17 +77,6 @@ func TestCacheInvalidateFor(t *testing.T) {
 	}
 }
 
-func TestCacheInvalidateAll(t *testing.T) {
-	c := NewCache(time.Minute)
-	c.Set("a", 1)
-	c.Set("b", 2)
-	c.InvalidateAll()
-	_, ok := c.Get("a")
-	if ok {
-		t.Error("expected all keys invalidated")
-	}
-}
-
 func TestCacheConcurrency(t *testing.T) {
 	c := NewCache(time.Minute)
 	done := make(chan struct{})
@@ -102,7 +91,7 @@ func TestCacheConcurrency(t *testing.T) {
 	go func() {
 		for i := 0; i < 100; i++ {
 			c.Get(KeyFormulaeList)
-			c.InvalidateAll()
+			c.Invalidate(KeyFormulaeList, KeyOutdatedFormulae)
 			c.Set(KeyOutdatedFormulae, i)
 		}
 		done <- struct{}{}

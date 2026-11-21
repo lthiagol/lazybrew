@@ -77,23 +77,6 @@ func TestDiagnosticsDoctorWarnings(t *testing.T) {
 	}
 }
 
-func TestDiagnosticsVersion(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte("Homebrew 6.0.0"), nil
-	}
-	cache := NewCache(time.Minute)
-	diag := NewDiagnosticsReader(r, cache)
-
-	version, err := diag.Version(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if version != "6.0.0" {
-		t.Errorf("expected 6.0.0, got %s", version)
-	}
-}
-
 func TestDiagnosticsConfig(t *testing.T) {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
