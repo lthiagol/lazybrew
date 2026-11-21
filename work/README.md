@@ -87,17 +87,23 @@ items in `work/questions.md` and `work/backlog.md`.
 orchestrator's workspace. A **fresh pair per slice** (stop both, start new) so
 each slice starts with clean context.
 
+**Names.** Other projects run builders and reviewers on the same herdr server, so
+agent names and tab labels carry the `lb-` slug: tabs `lb-builder` and
+`lb-reviewer`, agents `lb-builder` and `lb-reviewer`. Never address a bare
+`builder` or `reviewer`. Exit an agent with `herdr agent prompt <name> "/exit"`
+(a double Ctrl-C can open an exit dialog); the pane returns to a shell.
+
 | Lane | Model | Effort | Start |
 |---|---|---|---|
-| builder (runner) | `claude-haiku-5-5` | high | `herdr agent start builder --kind claude --pane <builder pane> -- --model claude-haiku-5-5 --effort high --permission-mode auto` |
-| reviewer | `claude-opus-5-5` | medium | `herdr agent start reviewer --kind claude --pane <reviewer pane> -- --model claude-opus-5-5 --effort medium --permission-mode auto` |
+| builder (runner) | `claude-haiku-5-5` | high | `herdr agent start lb-builder --kind claude --pane <builder pane> -- --model claude-haiku-5-5 --effort high --permission-mode auto` |
+| reviewer | `claude-opus-5-5` | medium | `herdr agent start lb-reviewer --kind claude --pane <reviewer pane> -- --model claude-opus-5-5 --effort medium --permission-mode auto` |
 
 **Loop per slice.**
 1. Orchestrator writes `work/briefs/<slice>.md` and `review-<slice>.md`
    (copy the last pair as a template — check every path names the new slice),
    commits them.
-2. `herdr agent prompt builder "<read AGENTS.md + work/README.md, implement the brief, reply with the done line>"`,
-   then `herdr agent wait builder --timeout <ms>` — **the timeout is in
+2. `herdr agent prompt lb-builder "<read AGENTS.md + work/README.md, implement the brief, reply with the done line>"`,
+   then `herdr agent wait lb-builder --timeout <ms>` — **the timeout is in
    milliseconds** (3600000 = 1 h).
 3. Read the receipt; rule on any question it raised (append to
    `questions.md`) before the review.
