@@ -132,6 +132,7 @@ type casksJSON struct {
 }
 
 type caskJSON struct {
+	Token       string          `json:"token"`
 	Name        flexString      `json:"name"`
 	FullName    string          `json:"full_name"`
 	Tap         string          `json:"tap"`
@@ -269,8 +270,15 @@ func parseCask(c caskJSON) Cask {
 		}
 	}
 
+	// The token is what brew acts on. An older payload has no token, so the
+	// first display name stands in for it.
+	name := c.Token
+	if name == "" {
+		name = string(c.Name)
+	}
 	cask := Cask{
-		Name:        string(c.Name),
+		Name:        name,
+		DisplayName: string(c.Name),
 		FullName:    c.FullName,
 		Tap:         c.Tap,
 		Version:     version,
