@@ -12,6 +12,10 @@ import (
 // runConfigFlags carries out --config-sample or --config-create and returns the
 // exit code. It is the whole of what those flags do: it never builds the app.
 func runConfigFlags(sample, create bool, path string, stdout, stderr io.Writer) int {
+	if sample && create {
+		fmt.Fprintln(stderr, "Error: --config-sample and --config-create cannot be used together")
+		return 1
+	}
 	if sample {
 		fmt.Fprint(stdout, config.Sample())
 		return 0
