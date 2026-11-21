@@ -11,10 +11,12 @@ import (
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
+	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
 
 // launchRunner is the runner of the launch check. `brew --repository` prints
@@ -307,6 +309,60 @@ func TestLaunchReadLandingAfterStaleUpdateIsDropped(t *testing.T) {
 	m = asModel(nm)
 	if got := m.status.Outdated; !got.Known || got.N != 1 {
 		t.Errorf("a launch read from before the update overwrote the outdated count: %+v", got)
+	}
+}
+
+// The launch Status read can land while the stale update is still running. It
+// is applied then, so the dashboard shows at once rather than "not loaded yet"
+// until the update ends.
+func TestLaunchStatusLandingDuringStaleUpdateShowsDashboard(t *testing.T) {
+	var updates, outdated int32
+	m := updateModel(New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, time.Time{}), &updates, &outdated)), testConfig()),
+		tea.WindowSizeMsg{Width: 140, Height: 40})
+
+	// The stale check lands first and starts the update. Its command is not run
+	// here, so the update is still running when the Status read lands.
+	nm, _ := m.Update(lastUpdateMsg{})
+	m = asModel(nm)
+	if !m.isUpdating {
+		t.Fatal("a stale launch check did not start the update")
+	}
+
+	nm, _ = m.Update(launchRead(fetchStatusData(m.client, false))())
+	m = asModel(nm)
+	if !m.panels[PanelStatus].loaded {
+		t.Fatal("the launch Status read was dropped while the stale update ran")
+	}
+	if out := ansi.Strip(m.renderContent(140, 40)); strings.Contains(out, "not loaded yet") {
+		t.Errorf("the dashboard should show during the update, got:\n%s", out)
+	}
+}
+
+// A stale update that cannot be queued never runs, so nothing reloads after it.
+// The launch Status read still applies, and the panel is not left blank until R.
+func TestLaunchStatusLandingAfterFailedEnqueueIsApplied(t *testing.T) {
+	var updates, outdated int32
+	m := updateModel(New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, time.Time{}), &updates, &outdated)), testConfig()),
+		tea.WindowSizeMsg{Width: 140, Height: 40})
+	m.tasks = task.NewManager(1)
+	// A parked task fills the queue, so the update's enqueue is refused.
+	if _, err := m.tasks.Enqueue(&task.Task{ID: "parked"}); err != nil {
+		t.Fatal(err)
+	}
+
+	nm, cmd := m.Update(lastUpdateMsg{})
+	m = feedBack(asModel(nm), cmd)
+	if m.isUpdating {
+		t.Fatal("a refused update still reads as running")
+	}
+
+	nm, _ = m.Update(launchRead(fetchStatusData(m.client, false))())
+	m = asModel(nm)
+	if !m.panels[PanelStatus].loaded {
+		t.Fatal("the launch Status read was dropped after a refused update")
+	}
+	if out := ansi.Strip(m.renderContent(140, 40)); strings.Contains(out, "not loaded yet") {
+		t.Errorf("the dashboard should show after a refused update, got:\n%s", out)
 	}
 }
 

@@ -55,7 +55,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 // launchRead marks the data a launch read returns, so that Update can drop it
-// once a stale update has begun (DataLoadedMsg.launch).
+// once a stale update's refresh has been issued (DataLoadedMsg.launch).
 func launchRead(read tea.Cmd) tea.Cmd {
 	return func() tea.Msg {
 		msg := read()
@@ -358,6 +358,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			// The update changed brew's metadata, so the outdated count is
 			// read again here: it would be stale otherwise.
+			m.updateRefreshed = true
 			cmds := []tea.Cmd{
 				m.tasks.RunNext(),
 				func() tea.Msg { return RefreshMsg{LoadOutdated: true, ReloadDiagnostics: true} },
@@ -489,10 +490,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case DataLoadedMsg:
-		// A launch read that lands after a stale update began holds the data the
-		// update replaces. The update's refresh reads the panels again, so the
-		// stale read is dropped rather than applied over it.
-		if msg.launch && m.launchStale {
+		// A launch read that lands after a stale update's refresh is issued holds
+		// the data the update replaces. The refresh reads the panels again, so
+		// that read is dropped. One that lands while the update runs, or after a
+		// refused enqueue, is applied: it is the only data the panel has yet.
+		if msg.launch && m.launchStale && m.updateRefreshed {
 			return m, nil
 		}
 		cmd := m.landData(msg, false)
