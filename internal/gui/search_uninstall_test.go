@@ -192,11 +192,14 @@ func TestSearchMarkClearsAfterUninstall(t *testing.T) {
 	m := searchRowsModel(r, []brew.SearchResult{{Name: "claude-code", IsCask: true, Installed: true}})
 
 	m = confirmSearchUninstall(t, m, "x")
-	// The completion is what the task manager reports for the run above.
-	m = updateModel(m, TaskCompletedMsg{ID: mutationID(mutUninstall, "claude-code"), Title: "Uninstall claude-code"})
-	// The completion re-marks the rows from the lists the write invalidated.
-	msg := m.remarkSearch()()
-	m = updateModel(m, msg)
+	// The completion is what the task manager reports for the run above. Run
+	// the batch its update returns and feed each message back, so the re-mark
+	// is whatever the completion itself queued.
+	nm, done := m.Update(TaskCompletedMsg{ID: mutationID(mutUninstall, "claude-code"), Title: "Uninstall claude-code"})
+	m = asModel(nm)
+	for _, msg := range drainCmds(done) {
+		m = updateModel(m, msg)
+	}
 
 	if got := m.searchResults[0].Installed; got {
 		t.Error("the row still says installed after the uninstall")
