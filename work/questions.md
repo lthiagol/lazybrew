@@ -799,3 +799,19 @@ as the brief says; `brew doctor` after an update is the reason `R` reloads it.
 typed search reads (`--formula`, `--cask`) fails with anything but exit 1, keep
 the rows of the read that worked; the search errors only when both reads fail.
 Pinned by a test in `fix-lb19-keys-and-search-r2`.
+
+### Q-lb20-trust-menu — what does "the tap-trust menu lists it" mean for an installed cask?
+
+- **Evidence.** The brief (AC-01) asks a gui test that "the tap-trust menu lists
+  [an installed cask from the tap] where formulae are listed". The trust menu
+  (`startTrustMenu`, `tasks_taps.go`) lists `tap.FormulaNames` and `tap.CaskNames`
+  from `brew tap-info`; it reads no installed package and never uses `Cask.FullName`.
+  The only consumer of `FullName` is `installedFromTap`, used by the untap confirm.
+- **Effect.** No code path puts an installed cask into the trust menu, so the
+  test cannot be written against the menu as it stands.
+- **Decision taken.** Read it as the untap confirm's installed list, where a
+  tap-owned cask is named after the formulae (`TestUntapConfirmListsInstalledCaskFromBrewPayload`).
+  The trust menu is unchanged.
+- **Ask.** Is the untap confirm what was meant, or should the trust menu gain an
+  installed-from-tap section? Recommended: the untap confirm only; the trust menu
+  lists the tap's own formulae and casks, which is correct.
