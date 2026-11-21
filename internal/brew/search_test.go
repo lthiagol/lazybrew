@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
@@ -10,7 +11,11 @@ import (
 func TestSearchServiceSearch(t *testing.T) {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte("==> Formulae\nneovim\nneovim-qt\n\n==> Casks\nneovide"), nil
+		// Each typed read answers with its own rows, as brew does.
+		if args[1] == "--formula" {
+			return []byte("neovim\nneovim-qt\n"), nil
+		}
+		return []byte("neovide\n"), nil
 	}
 	svc := NewSearchService(r)
 
@@ -98,5 +103,86 @@ func TestParseSearchOutputCasksOnlyHeader(t *testing.T) {
 	}
 	if results[0].IsFormula {
 		t.Error("cask-section entry must not be labeled formula")
+	}
+}
+
+// The real headerless shape of `brew search <q>` without a TTY: the formulae,
+// a blank line, then the casks. Each typed read carries its own half.
+func TestSearchServiceTypesRowsByReadFlag(t *testing.T) {
+	const formulaRead = "claude-code-router\nclaude-code-templates\n"
+	const caskRead = "claude-code\nclaude-code@latest\n"
+	var calls [][]string
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		calls = append(calls, args)
+		if args[1] == "--formula" {
+			return []byte(formulaRead), nil
+		}
+		return []byte(caskRead), nil
+	}
+
+	results, err := NewSearchService(r).Search(context.Background(), "claude-code")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(calls) != 2 || !slices.Equal(calls[0], []string{"search", "--formula", "claude-code"}) ||
+		!slices.Equal(calls[1], []string{"search", "--cask", "claude-code"}) {
+		t.Fatalf("calls = %v, want search --formula then search --cask", calls)
+	}
+	if len(results) != 4 {
+		t.Fatalf("got %d results, want 4: %+v", len(results), results)
+	}
+	wantFormula := map[string]bool{"claude-code-router": true, "claude-code-templates": true, "claude-code": false, "claude-code@latest": false}
+	for _, res := range results {
+		if res.IsFormula != wantFormula[res.Name] || res.IsCask == wantFormula[res.Name] {
+			t.Errorf("%s: IsFormula=%v IsCask=%v, want formula=%v", res.Name, res.IsFormula, res.IsCask, wantFormula[res.Name])
+		}
+	}
+}
+
+// A blank line in a read's output is not a row.
+func TestSearchServiceSkipsBlankLines(t *testing.T) {
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if args[1] == "--formula" {
+			return []byte("\nfzf\n\n"), nil
+		}
+		return []byte(""), nil
+	}
+	results, err := NewSearchService(r).Search(context.Background(), "fzf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || results[0].Name != "fzf" || !results[0].IsFormula {
+		t.Fatalf("results = %+v, want one formula fzf", results)
+	}
+}
+
+func TestMarkInstalledMatchesByTypeAndTapSuffix(t *testing.T) {
+	results := []SearchResult{
+		{Name: "jq", IsFormula: true},
+		{Name: "homebrew/core/wget", IsFormula: true},
+		{Name: "claude-code", IsCask: true},
+		{Name: "homebrew/cask/firefox", IsCask: true},
+		{Name: "ripgrep", IsFormula: true},
+		{Name: "iterm2", IsCask: true},
+	}
+	// A cask named jq must not mark the jq formula row, and the reverse.
+	formulae := []Formula{{Name: "jq"}, {Name: "wget"}}
+	casks := []Cask{{Name: "claude-code"}, {Name: "firefox"}, {Name: "jq"}}
+
+	got := MarkInstalled(results, formulae, casks)
+	want := []bool{true, true, true, true, false, false}
+	for i, r := range got {
+		if r.Installed != want[i] {
+			t.Errorf("%s (formula=%v cask=%v): Installed = %v, want %v", r.Name, r.IsFormula, r.IsCask, r.Installed, want[i])
+		}
+	}
+}
+
+func TestMarkInstalledNilListsMarksNothing(t *testing.T) {
+	got := MarkInstalled([]SearchResult{{Name: "jq", IsFormula: true}}, nil, nil)
+	if got[0].Installed {
+		t.Error("a missing installed list marked a row")
 	}
 }
