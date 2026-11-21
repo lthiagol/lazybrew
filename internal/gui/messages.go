@@ -49,6 +49,18 @@ type TabContentMsg struct {
 	Err      error
 }
 
+// CleanupPreviewMsg is the Cleanup tab's read: `brew cleanup -n`, parsed.
+type CleanupPreviewMsg struct {
+	Preview brew.CleanupPreview
+	Err     error
+}
+
+// AutoremovePreviewMsg is the Unused tab's read: `brew autoremove -n`, parsed.
+type AutoremovePreviewMsg struct {
+	Preview brew.AutoremovePreview
+	Err     error
+}
+
 // VulnsMsg is the result of the Vulns tab's check: brew's report, or the error
 // that stopped it.
 type VulnsMsg struct {

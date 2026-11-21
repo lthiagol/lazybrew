@@ -142,15 +142,19 @@ func tabKey(panel PanelID, tab int, itemName string) string {
 func needsTabFetch(panelID PanelID, tabIdx int) bool {
 	switch panelID {
 	case PanelStatus:
-		return tabIdx == statusConfigTab || tabIdx == statusDoctorTab || tabIdx == statusMissingTab
+		return tabIdx == statusConfigTab || tabIdx == statusDoctorTab || tabIdx == statusMissingTab ||
+			tabIdx == statusCleanupTab || tabIdx == statusUnusedTab
 	case PanelFormulae:
 		return tabIdx == formulaUsesTab || tabIdx == formulaFilesTab
 	}
 	return false
 }
 
+// clearTabContent drops every tab's read, so each tab reads brew again when it
+// is drawn: the text tabs, and the Cleanup and Unused previews.
 func (m *Model) clearTabContent() {
 	m.tabContent = make(map[string]string)
+	m.previews = previewCache{}
 }
 
 func (m *Model) clearPanelTabContent(pid PanelID) {

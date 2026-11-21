@@ -47,6 +47,9 @@ type Model struct {
 	// the top each time help opens.
 	helpScroll int
 	tabContent map[string]string
+	// previews is the Cleanup and Unused tabs' reads. They are typed, not text,
+	// so a draw cuts the paths to its own width; see cleanup_tabs.go.
+	previews previewCache
 	// vulns is the Vulns tab's check. It is not in tabContent, so R and the
 	// panel reloads leave it alone.
 	vulns          vulnsState
