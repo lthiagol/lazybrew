@@ -86,7 +86,7 @@ var (
 var (
 	tAdd       = keyHint{key: "a", desc: "add tap", help: "Add tap"}
 	tUntap     = keyHint{key: "x", desc: "untap", help: "Untap"}
-	tTrust     = keyHint{key: "t", desc: "trust", help: "Trust or untrust tap"}
+	tTrust     = keyHint{key: "t", desc: "trust", help: "Trust or untrust a tap or trusted item"}
 	tUntrust   = keyHint{key: "t", desc: "untrust"}
 	tTrustItem = keyHint{key: "T", help: "Trust a formula or cask"}
 	tRepair    = keyHint{key: "r", desc: "repair", help: "Repair tap"}
@@ -165,6 +165,9 @@ func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
 // keys that apply to any tap.
 func tapsHints(p *panelData) []keyHint {
 	hints := []keyHint{tAdd, keyCopy}
+	if p.selectedTrusted() != nil {
+		return append([]keyHint{tUntrust}, hints...)
+	}
 	if t := p.selectedTap(); t != nil {
 		hints = append(tapActionHints(*t, !p.trustUnknown), hints...)
 	}

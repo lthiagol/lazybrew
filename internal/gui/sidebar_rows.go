@@ -138,6 +138,9 @@ func (p *panelData) typedRow(idx int, ic style.Icons) (sidebarCells, bool) {
 		if idx < len(p.taps) {
 			return tapCells(p.taps[idx], !p.trustUnknown, ic), true
 		}
+		if j := idx - len(p.taps); j < len(p.trusted) {
+			return trustedCells(p.trusted[j], ic), true
+		}
 	case PanelServices:
 		if idx < len(p.services) {
 			return serviceCells(p.services[idx], ic), true
@@ -203,6 +206,13 @@ func tapCells(t brew.Tap, trustKnown bool, ic style.Icons) sidebarCells {
 		c.icon, c.iconRole, c.right = ic.Warn, style.OutdatedBadge, "untrusted"
 	}
 	return c
+}
+
+// trustedCells is a trusted formula, cask or command on the Taps list: the
+// trusted mark, the full name, then its kind flush right, as a Search row shows
+// its type.
+func trustedCells(e brew.TrustEntry, ic style.Icons) sidebarCells {
+	return sidebarCells{name: e.Name, icon: ic.OK, iconRole: style.InstalledBadge, right: string(e.Type), rightRole: style.SubtleText}
 }
 
 // searchCells is a Search row: the installed mark, or a blank cell as wide as

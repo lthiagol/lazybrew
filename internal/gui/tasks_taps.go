@@ -164,9 +164,14 @@ func officialTrustToast(name string) string {
 
 // toggleTrust is t on the Taps list (v2-10 AC-02.1): an untrusted tap is trusted
 // at once, a trusted one is untrusted after a confirm, and an official one needs
-// no trust, so it enqueues nothing.
+// no trust, so it enqueues nothing. On a trusted item it asks first, then untrusts
+// the item (lb30 AC-03).
 func (m *Model) toggleTrust() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
+	if panel.selectedTrusted() != nil {
+		c := m.openUntrustItemConfirm()
+		return m, c
+	}
 	if panel.trustUnknown {
 		toast := m.setToast(trustStateMissingToast, modal.ToastInfo)
 		return m, toast
@@ -198,8 +203,44 @@ func (m *Model) openUntrustConfirm() tea.Cmd {
 	return m.activeModal.Init()
 }
 
+// openUntrustItemConfirm asks before a trusted formula, cask or command is
+// untrusted. The confirm acts on the row the cursor is on, as the tap confirm does.
+func (m *Model) openUntrustItemConfirm() tea.Cmd {
+	name := m.panels[PanelTaps].selectedName()
+	m.pendingAction = "untrust-item"
+	m.activeModal = modal.NewConfirmModal(modal.ActionUpgrade, "Untrust", "Untrust "+name+"?").
+		WithDetail("Homebrew will not load " + name + " until it is trusted again.")
+	return m.activeModal.Init()
+}
+
+// executeUntrustItem runs `brew untrust` for the trusted item under the cursor,
+// through the task manager, with the flag its kind takes (lb30 AC-03).
+func (m *Model) executeUntrustItem() tea.Cmd {
+	item := m.panels[PanelTaps].selectedTrusted()
+	if item == nil {
+		return nil
+	}
+	client := m.client
+	name, typ := item.Name, item.Type
+	t := errTask("untrust:"+name, "Untrust: "+name, func(ctx context.Context) error {
+		switch typ {
+		case brew.TrustTypeFormula:
+			return client.TrustWrite.UntrustFormula(ctx, name)
+		case brew.TrustTypeCask:
+			return client.TrustWrite.UntrustCask(ctx, name)
+		default:
+			return client.TrustWrite.UntrustCommand(ctx, name)
+		}
+	})
+	return m.enqueue(t)
+}
+
 func (m *Model) startTrustMenu() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelTaps]
+	if panel.selectedTap() == nil {
+		toast := m.setToast("T acts on a tap: select one first", modal.ToastInfo)
+		return m, toast
+	}
 	if panel.trustUnknown {
 		toast := m.setToast(trustStateMissingToast, modal.ToastInfo)
 		return m, toast
@@ -282,6 +323,10 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 	if name == "" {
 		return m, nil
 	}
+	if item := panel.selectedTrusted(); item != nil {
+		c := m.setToast("x untaps a tap; t untrusts "+item.Name, modal.ToastInfo)
+		return m, c
+	}
 	if isOfficialTap(name) {
 		c := m.setToast("Cannot untap official taps", modal.ToastWarning)
 		return m, c
@@ -328,6 +373,10 @@ func (m Model) confirmRepair() (tea.Model, tea.Cmd) {
 	name := panel.selectedName()
 	if name == "" {
 		return m, nil
+	}
+	if item := panel.selectedTrusted(); item != nil {
+		c := m.setToast("r repairs a tap; t untrusts "+item.Name, modal.ToastInfo)
+		return m, c
 	}
 	m.pendingAction = "repair"
 	m.activeModal = modal.NewConfirmModal(modal.ActionInstall, "Repair", "Repair tap "+name+"?").

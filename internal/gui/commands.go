@@ -147,6 +147,10 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 				m.pendingAction = ""
 				cmd := m.executeTrustAction(1)
 				return *m, cmd
+			case "untrust-item":
+				m.pendingAction = ""
+				cmd := m.executeUntrustItem()
+				return *m, cmd
 			case "repair":
 				return m.executeRepair()
 			case "cleanup":
@@ -417,15 +421,37 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			return DataLoadedMsg{PanelID: panel, Items: items, Formulae: formulae, Casks: casks}
 
 		case PanelTaps:
-			list, err := boundedRead(brewReadTimeout, "taps", client.Taps.List)
+			// The trust list is its own read: a failure there does not fail the
+			// taps, it only leaves the trusted rows out (lb30 AC-02).
+			var (
+				list     brew.TapList
+				err      error
+				trusted  []brew.TrustEntry
+				trustErr error
+			)
+			runConcurrently(
+				func() { list, err = boundedRead(brewReadTimeout, "taps", client.Taps.List) },
+				func() { trusted, trustErr = boundedRead(brewReadTimeout, "trust", client.Trust.ListTrusted) },
+			)
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
-			items := make([]string, len(list.Taps))
-			for i, t := range list.Taps {
-				items[i] = t.Name
+			rows := trustedRows(trusted)
+			items := make([]string, 0, len(list.Taps)+len(rows))
+			for _, t := range list.Taps {
+				items = append(items, t.Name)
 			}
-			return DataLoadedMsg{PanelID: panel, Items: items, Taps: list.Taps, TrustUnknown: list.TrustUnknown}
+			for _, e := range rows {
+				items = append(items, e.Name)
+			}
+			return DataLoadedMsg{
+				PanelID:      panel,
+				Items:        items,
+				Taps:         list.Taps,
+				TrustUnknown: list.TrustUnknown,
+				Trusted:      rows,
+				TrustErr:     trustErr,
+			}
 
 		case PanelServices:
 			var (

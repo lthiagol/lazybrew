@@ -55,7 +55,7 @@ func buildHelp() []helpPage {
 			},
 		},
 		{
-			title: "Taps",
+			title: PanelTaps.Title(),
 			sections: []helpSection{
 				{
 					items: []keyHint{tAdd, tUntap, tTrust, tTrustItem, tRepair, keyCopy},
