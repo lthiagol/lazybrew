@@ -296,3 +296,12 @@ func cutLines(s string, width int) string {
 	}
 	return strings.Join(lines, "\n")
 }
+
+// fitLines is cutLines for the content of the main area, except in a copy: y
+// copies every line whole, so the copy is not cut to the width.
+func (m Model) fitLines(s string, width int) string {
+	if m.copying {
+		return s
+	}
+	return cutLines(s, width)
+}

@@ -260,7 +260,7 @@ func (m Model) renderServiceLogs(width int) string {
 	default:
 		rows = append(rows, m.logs.lines...)
 	}
-	return cutLines(strings.Join(rows, "\n"), width)
+	return m.fitLines(strings.Join(rows, "\n"), width)
 }
 
 // logHeader names the stream and the file it reads, cut to fit: the

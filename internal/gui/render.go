@@ -502,7 +502,7 @@ func (m Model) renderContent(width, height int) string {
 				if m.activeTab == statusConfigTab {
 					// The config rows are built uncut (formatConfig), so they
 					// are cut to the main width here, with …
-					return cutLines(content, width)
+					return m.fitLines(content, width)
 				}
 				return content
 			}

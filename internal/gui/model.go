@@ -112,6 +112,9 @@ type Model struct {
 	// setClipboard copies text to the terminal clipboard (clipboard.go). New
 	// sets tea.SetClipboard; a test swaps it in to read what would be copied.
 	setClipboard func(string) tea.Cmd
+	// copying is set on the copy of the Model that y renders (copyText): the
+	// content is then drawn whole, not cut to a width (fitLines).
+	copying bool
 	// taskID was removed (r3 finding R3-6): nothing read it, and stale
 	// output filtering belongs to the TaskManager, not the model.
 	refreshing int

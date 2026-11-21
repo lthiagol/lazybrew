@@ -44,6 +44,7 @@ func (m Model) copyText() string {
 		}
 		return plainText(strings.Join(lines, "\n"))
 	}
+	m.copying = true
 	return plainText(ansi.Strip(m.renderContent(copyWidth, m.height)))
 }
 
