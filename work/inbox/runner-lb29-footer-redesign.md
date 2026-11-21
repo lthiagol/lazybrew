@@ -42,3 +42,11 @@ Search    Enter search · i install · x uninstall  │  ←↑↓→ navigate �
 ## Notes
 - Modal dialog's own key line (`modal/frame.go`) untouched; sample's `x uninstall` kept as `x remove`. Seen, not done: Status shows `R refresh` twice.
 - Don't set TMPDIR to a long path: TestLogsTabShowsLastLinesOfStdout and TestLogsEmptyStates depend on path length.
+## Fix r2
+Commits: `5f0cd94` F-r1-01 · `4ddfaa5` F-r1-02 · `3d7883a` F-r1-03 · `cf112f3` F-r1-04.
+F-r1-01: red on HEAD, `TestHelpNeverClipsAWord`: `Home/End        Top/bottom (g/G outside Sear…` at 100x30, both themes. Fixed with `j/k ↑↓`, `h/l ←→`; key column back to 9 cells. `TestHelpSectionsLineUp` now counts cells, not bytes (the arrows are multi-byte): a test correction.
+F-r1-02: red on `TestFooterFlowStatusAt140` and `…FormulaeAt140` (`Tab next`). Footer shows `tab next`; help keeps `Tab`. No README text quotes the footer word, so README is unchanged.
+F-r1-03: red on `TestModalKeyLineUsesTheDotSeparator` (`[y]es   [n]o`). `keyLine` joins with the muted `·`.
+F-r1-04: red on `TestFooterNeverRepeatsAKey` (`"R" shows twice`, Status). R refresh leaves Status's group; global keeps it, help still lists it. look_test and flows expectations follow.
+Gate: `GOFLAGS=-p=1 make ci` exit 0, all floors met. `GOOS=darwin go build ./...` ok. deadcode: nothing. staticcheck: the same 5 as base.
+Goldens: none are files; the changed expectations are the tests named above.
