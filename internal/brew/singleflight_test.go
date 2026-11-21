@@ -10,50 +10,53 @@ import (
 )
 
 func TestSingleflightCoalescesConcurrent(t *testing.T) {
-	sf := newSingleflight()
-	var calls int32
+	synctest.Test(t, func(t *testing.T) {
+		sf := newSingleflight()
+		var calls int32
 
-	const goroutines = 16
+		const goroutines = 16
 
-	// Hold all callers inside fn until we release the gate, so we know
-	// they really overlapped.
-	gate := make(chan struct{})
+		// Hold all callers inside fn until we release the gate, so we know
+		// they really overlapped.
+		gate := make(chan struct{})
 
-	var wg sync.WaitGroup
-	results := make([]any, goroutines)
-	errs := make([]error, goroutines)
+		var wg sync.WaitGroup
+		results := make([]any, goroutines)
+		errs := make([]error, goroutines)
 
-	for i := 0; i < goroutines; i++ {
-		i := i
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			val, err := sf.Do("k", func() (any, error) {
-				atomic.AddInt32(&calls, 1)
-				<-gate
-				return "ok", nil
-			})
-			results[i] = val
-			errs[i] = err
-		}()
-	}
-
-	// Give the first caller time to enter fn; others should be queued.
-	time.Sleep(20 * time.Millisecond)
-	close(gate)
-	wg.Wait()
-
-	if got := atomic.LoadInt32(&calls); got != 1 {
-		t.Fatalf("expected exactly 1 fn invocation, got %d", got)
-	}
-	for i, r := range results {
-		if r != "ok" {
-			t.Errorf("results[%d] = %v, want 'ok'", i, r)
+		for i := 0; i < goroutines; i++ {
+			i := i
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				val, err := sf.Do("k", func() (any, error) {
+					atomic.AddInt32(&calls, 1)
+					<-gate
+					return "ok", nil
+				})
+				results[i] = val
+				errs[i] = err
+			}()
 		}
-		if errs[i] != nil {
-			t.Errorf("errs[%d] = %v, want nil", i, errs[i])
+
+		// Wait until the first caller is inside fn and the others are queued
+		// behind it.
+		synctest.Wait()
+		close(gate)
+		wg.Wait()
+
+		if got := atomic.LoadInt32(&calls); got != 1 {
+			t.Fatalf("expected exactly 1 fn invocation, got %d", got)
 		}
-	}
+		for i, r := range results {
+			if r != "ok" {
+				t.Errorf("results[%d] = %v, want 'ok'", i, r)
+			}
+			if errs[i] != nil {
+				t.Errorf("errs[%d] = %v, want nil", i, errs[i])
+			}
+		}
+	})
 }
 
 func TestSingleflightSecondBatchStartsFresh(t *testing.T) {
@@ -82,36 +85,39 @@ func TestSingleflightSecondBatchStartsFresh(t *testing.T) {
 }
 
 func TestSingleflightKeysAreIndependent(t *testing.T) {
-	sf := newSingleflight()
-	var a, b int32
+	synctest.Test(t, func(t *testing.T) {
+		sf := newSingleflight()
+		var a, b int32
 
-	gate := make(chan struct{})
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		_, _ = sf.Do("a", func() (any, error) {
-			atomic.AddInt32(&a, 1)
-			<-gate
-			return nil, nil
-		})
-	}()
-	go func() {
-		defer wg.Done()
-		_, _ = sf.Do("b", func() (any, error) {
-			atomic.AddInt32(&b, 1)
-			<-gate
-			return nil, nil
-		})
-	}()
+		gate := make(chan struct{})
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			_, _ = sf.Do("a", func() (any, error) {
+				atomic.AddInt32(&a, 1)
+				<-gate
+				return nil, nil
+			})
+		}()
+		go func() {
+			defer wg.Done()
+			_, _ = sf.Do("b", func() (any, error) {
+				atomic.AddInt32(&b, 1)
+				<-gate
+				return nil, nil
+			})
+		}()
 
-	time.Sleep(20 * time.Millisecond)
-	close(gate)
-	wg.Wait()
+		// Both keys must be inside fn before either gate opens.
+		synctest.Wait()
+		close(gate)
+		wg.Wait()
 
-	if atomic.LoadInt32(&a) != 1 || atomic.LoadInt32(&b) != 1 {
-		t.Errorf("keys a and b should each run once independently, got a=%d b=%d", a, b)
-	}
+		if atomic.LoadInt32(&a) != 1 || atomic.LoadInt32(&b) != 1 {
+			t.Errorf("keys a and b should each run once independently, got a=%d b=%d", a, b)
+		}
+	})
 }
 
 func TestSingleflightPropagatesError(t *testing.T) {
@@ -173,47 +179,50 @@ func TestSingleflightPropagatesError(t *testing.T) {
 }
 
 func TestSingleflightPanicUnblocksWaiters(t *testing.T) {
-	sf := newSingleflight()
-	gate := make(chan struct{})
-	started := make(chan struct{})
+	synctest.Test(t, func(t *testing.T) {
+		sf := newSingleflight()
+		gate := make(chan struct{})
+		started := make(chan struct{})
 
-	leaderDone := make(chan struct{})
-	go func() {
-		defer close(leaderDone)
-		defer func() { _ = recover() }()
-		_, _ = sf.Do("k", func() (any, error) {
-			close(started)
-			<-gate
-			panic("boom")
+		leaderDone := make(chan struct{})
+		go func() {
+			defer close(leaderDone)
+			defer func() { _ = recover() }()
+			_, _ = sf.Do("k", func() (any, error) {
+				close(started)
+				<-gate
+				panic("boom")
+			})
+		}()
+
+		<-started
+
+		waiterDone := make(chan struct{})
+		go func() {
+			defer close(waiterDone)
+			// Must unblock when leader panics (defer wg.Done).
+			_, _ = sf.Do("k", func() (any, error) {
+				t.Error("waiter must not invoke fn while sharing panicked call")
+				return nil, nil
+			})
+		}()
+
+		// The waiter must be queued behind the leader before the leader panics.
+		synctest.Wait()
+		close(gate)
+
+		select {
+		case <-waiterDone:
+		case <-time.After(2 * time.Second):
+			t.Fatal("waiter blocked after leader panic (missing defer cleanup)")
+		}
+		<-leaderDone
+
+		val, err := sf.Do("k", func() (any, error) {
+			return "ok", nil
 		})
-	}()
-
-	<-started
-
-	waiterDone := make(chan struct{})
-	go func() {
-		defer close(waiterDone)
-		// Must unblock when leader panics (defer wg.Done).
-		_, _ = sf.Do("k", func() (any, error) {
-			t.Error("waiter must not invoke fn while sharing panicked call")
-			return nil, nil
-		})
-	}()
-
-	time.Sleep(20 * time.Millisecond)
-	close(gate)
-
-	select {
-	case <-waiterDone:
-	case <-time.After(2 * time.Second):
-		t.Fatal("waiter blocked after leader panic (missing defer cleanup)")
-	}
-	<-leaderDone
-
-	val, err := sf.Do("k", func() (any, error) {
-		return "ok", nil
+		if err != nil || val != "ok" {
+			t.Errorf("post-panic Do = (%v, %v), want (ok, nil)", val, err)
+		}
 	})
-	if err != nil || val != "ok" {
-		t.Errorf("post-panic Do = (%v, %v), want (ok, nil)", val, err)
-	}
 }
