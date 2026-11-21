@@ -71,3 +71,11 @@
 
 - None. Decisions taken: the error-toast wording `Search: <err>`; the log file is
   closed by `ResetLogger` called from main.
+
+## Fix r2
+
+- F-r1-01 (`e5b6b16`): `TestSingleflightCoalescesConcurrent`, `TestSingleflightKeysAreIndependent`, `TestSingleflightPanicUnblocksWaiters` use `synctest.Test` + `synctest.Wait`; no sleeps. `CGO_ENABLED=1 go test ./internal/brew -run Singleflight -race -count=100` → `ok  github.com/lthiagol/lazybrew/internal/brew  1.169s`.
+- Mutations (restored after each, tests re-run green): sharing off (`inflight[key]` lookup `&& false`) → CoalescesConcurrent FAIL `expected exactly 1 fn invocation, got 16`, PanicUnblocksWaiters FAIL `waiter must not invoke fn while sharing panicked call`, PropagatesError FAIL. Key collapse (`inflight[""]`) → KeysAreIndependent FAIL `got a=0 b=1`. Panic cleanup removed (`call.wg.Done()` dropped) → PanicUnblocksWaiters FAIL `waiter blocked after leader panic`, then synctest deadlock panic.
+- F-r1-02 (`276f126`): `testConfig` doc names `TestProductionDefaultUpdatesOnEveryLaunch`.
+- F-r1-03: no action.
+- Gate: `make test-fast PKG="./internal/brew/... ./internal/gui/..."` exit 0. `make ci` exit 0; floors met (app 70.0, brew 88.8, config 93.1, gui 90.8, anim 88.2, modal 89.2, presentation 100.0, style 89.5, task 96.2, logtail 92.3).
