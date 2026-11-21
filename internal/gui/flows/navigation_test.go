@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/exp/teatest/v2"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/testutil"
 )
 
@@ -94,38 +95,31 @@ func mainTitleMarker(panel string) string {
 	return "╮╭─ " + panel + " "
 }
 
-// finalView runs the program over keys, quits, and returns the View of the
-// model it ended with. The renderer writes cursor-positioned diffs, not whole
-// frames, so the state after each key is read from the model's View instead.
-func finalView(t *testing.T, keys ...tea.KeyPressMsg) string {
-	t.Helper()
-	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
-	for _, k := range keys {
-		tm.Send(k)
-	}
-	if err := tm.Quit(); err != nil {
-		t.Fatal(err)
-	}
-	return ansi.Strip(tm.FinalModel(t, teatest.WithFinalTimeout(2*time.Second)).View().Content)
-}
-
 // TestSearchTabCyclesAllPanelsFlow (lb19 AC-01, F-r1-01): with the Search input
 // focused, Tab walks through all seven panels and Shift+Tab walks back, and the
-// View shows the expected panel as the main title after every key.
+// View shows the expected panel as the main title after every key. The model is
+// driven directly, one Update and one View per key, so the walk needs no program.
 func TestSearchTabCyclesAllPanelsFlow(t *testing.T) {
+	type step struct {
+		key  tea.KeyPressMsg
+		want string
+	}
 	tab := tea.KeyPressMsg{Code: tea.KeyTab}
 	shiftTab := tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift}
-	keys := []tea.KeyPressMsg{{Code: '/', Text: "/"}}
-	panels := []string{"Search"}
+	steps := []step{{tea.KeyPressMsg{Code: '/', Text: "/"}, "Search"}}
 	for _, p := range []string{"Status", "Formulae", "Casks", "Outdated", "Taps", "Services", "Search"} {
-		keys, panels = append(keys, tab), append(panels, p)
+		steps = append(steps, step{tab, p})
 	}
 	for _, p := range []string{"Services", "Taps", "Outdated", "Casks", "Formulae", "Status", "Search"} {
-		keys, panels = append(keys, shiftTab), append(panels, p)
+		steps = append(steps, step{shiftTab, p})
 	}
-	for i, want := range panels {
-		if got := finalView(t, keys[:i+1]...); !strings.Contains(got, mainTitleMarker(want)) {
-			t.Fatalf("after %d keys: main title is not %s", i+1, want)
+
+	var m tea.Model = testutil.NewModel(brewtest.NewMockRunner())
+	m, _ = m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	for i, st := range steps {
+		m, _ = m.Update(st.key)
+		if got := ansi.Strip(m.View().Content); !strings.Contains(got, mainTitleMarker(st.want)) {
+			t.Fatalf("after %d keys: main title is not %s", i+1, st.want)
 		}
 	}
 }
