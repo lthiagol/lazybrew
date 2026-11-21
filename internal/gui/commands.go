@@ -291,6 +291,14 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
 					Content: doctorView(warnings, icons)}
 			}
+			if tab == statusMissingTab {
+				deps, err := client.Diagnostics.Missing(ctx)
+				if err != nil {
+					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("missing", err)}
+				}
+				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name,
+					Content: missingView(deps, icons)}
+			}
 		case PanelFormulae:
 			switch tab {
 			case formulaUsesTab:

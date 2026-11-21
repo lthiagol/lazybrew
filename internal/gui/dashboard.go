@@ -189,6 +189,21 @@ func valueOr(s, fallback string) string {
 	return s
 }
 
+// missingView is the Missing tab: one warning row per formula with a missing
+// dependency, or the satisfied line when brew reports none.
+func missingView(deps []brew.MissingDep, icons style.Icons) string {
+	if len(deps) == 0 {
+		return style.SuccessText.
+			Render(presentation.WithIcon(icons.OK, "All dependencies satisfied"))
+	}
+	rows := make([]string, 0, len(deps))
+	for _, d := range deps {
+		rows = append(rows, style.WarningText.
+			Render(presentation.WithIcon(icons.Warn, d.Formula+": missing "+d.Missing)))
+	}
+	return strings.Join(rows, "\n")
+}
+
 // doctorView is the Doctor tab: each warning as its own block, a heading line
 // with the warning icon and the details in Text, blocks separated by a blank
 // line. A clean run reads as ready to brew.

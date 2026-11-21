@@ -4,11 +4,13 @@ package gui
 // a tab by these, never by a bare number, so a reordered bar changes one list.
 // The Info tab of a panel is first, so its default tab is its details.
 
-// The tabs of the Status panel: the dashboard, the config and the doctor.
+// The tabs of the Status panel: the dashboard, the config, the doctor and the
+// missing dependencies.
 const (
 	statusDashboardTab = iota
 	statusConfigTab
 	statusDoctorTab
+	statusMissingTab
 )
 
 // The tabs of the Formulae panel.
