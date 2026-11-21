@@ -1,8 +1,13 @@
 package gui
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -166,5 +171,188 @@ func TestFailedOverlayShowsTheRetryOnlyWhenItRuns(t *testing.T) {
 	m = updateModel(m, tea.KeyPressMsg{Code: tea.KeyEscape})
 	if m.opState != nil {
 		t.Error("Esc did not close the failed operation")
+	}
+}
+
+// A retry that succeeds ends the operation as a task's success does: the
+// toast, the refresh, and the cache group the command writes is dropped.
+func TestRetrySuccessFinishesLikeATaskAndDropsItsCache(t *testing.T) {
+	m := sudoFailedModel("install", "--cask", "foo")
+	m.client.Cache.SetWithTTL(brew.KeyCasksList, []brew.Cask{}, time.Minute)
+
+	next, cmd := m.Update(SudoRunDoneMsg{ID: "install:foo", Title: "install foo", Args: []string{"install", "--cask", "foo"}})
+	updated := next.(Model)
+	m = &updated
+
+	if m.opState.Status != opSuccess {
+		t.Errorf("status = %v, want opSuccess", m.opState.Status)
+	}
+	if got := lastToast(m); got != "install foo completed" {
+		t.Errorf("toast = %q, want %q", got, "install foo completed")
+	}
+	if _, ok := m.client.Cache.Get(brew.KeyCasksList); ok {
+		t.Error("the install's cache group was not dropped")
+	}
+	if n := len(collectRefreshMsgs(cmd)); n != 1 {
+		t.Errorf("refresh messages = %d, want 1", n)
+	}
+}
+
+// A retry that fails keeps the failed operation as it was, and its toast names
+// the exit status, as a failed task's toast names its error.
+func TestRetryFailureKeepsTheOperationAndToastsTheExit(t *testing.T) {
+	m := sudoFailedModel("install", "--cask", "foo")
+
+	next, _ := m.Update(SudoRunDoneMsg{
+		ID: "install:foo", Title: "install foo", Args: []string{"install", "--cask", "foo"},
+		Err: fmt.Errorf("exited with status 3"),
+	})
+	updated := next.(Model)
+	m = &updated
+
+	if m.opState == nil || m.opState.Status != opError {
+		t.Fatalf("the failed operation changed: %+v", m.opState)
+	}
+	var needs *brew.NeedsSudoError
+	if !errors.As(m.opState.Err, &needs) {
+		t.Errorf("the operation's error = %v, want the sudo error kept", m.opState.Err)
+	}
+	if got := lastToast(m); got != "install foo: exited with status 3" {
+		t.Errorf("toast = %q, want the exit status", got)
+	}
+}
+
+// The callback of the terminal run maps a non-zero exit to its status.
+func TestRetryCallbackNamesTheExitStatus(t *testing.T) {
+	m := sudoFailedModel("install", "--cask", "foo")
+	var cb tea.ExecCallback
+	m.execProcess = func(_ *exec.Cmd, fn tea.ExecCallback) tea.Cmd {
+		cb = fn
+		return nil
+	}
+	m = updateModel(m, enterKey)
+	if cb == nil {
+		t.Fatal("Enter did not hand the command to the terminal runner")
+	}
+
+	exitErr := exec.Command("sh", "-c", "exit 3").Run()
+	failed, ok := cb(exitErr).(SudoRunDoneMsg)
+	if !ok {
+		t.Fatalf("callback returned %T, want SudoRunDoneMsg", cb(exitErr))
+	}
+	if failed.Err == nil || failed.Err.Error() != "exited with status 3" {
+		t.Errorf("err = %v, want exited with status 3", failed.Err)
+	}
+	if clean := cb(nil).(SudoRunDoneMsg); clean.Err != nil {
+		t.Errorf("a clean exit has err %v", clean.Err)
+	}
+}
+
+// ptyHelperEnv marks the run of the pty test that happens inside the pseudo-
+// terminal. The parent run starts the helper under script(1).
+const ptyHelperEnv = "LB23_PTY_HELPER"
+
+// fakeBrewScript stands in for brew in the pty test. It records whether it has
+// a controlling terminal, which sudo needs, and exits with LB23_FAKE_BREW_EXIT.
+const fakeBrewScript = `#!/bin/sh
+if (exec 3</dev/tty) 2>/dev/null; then echo tty > "$LB23_MARKER"; else echo no-tty > "$LB23_MARKER"; fi
+exit "$LB23_FAKE_BREW_EXIT"
+`
+
+// TestSudoRetryRunsInTheTerminalUnderAPty runs the retry for real: the brew
+// command the production code builds, run with cmd.Run in a pseudo-terminal
+// that script(1) provides, with its exit status coming back as SudoRunDoneMsg.
+// The tea.ExecProcess wrapper is replaced by a plain cmd.Run here, because a
+// Program is not running; that wrapper only sets stdio and calls Run. Skipped
+// when script(1) is absent.
+func TestSudoRetryRunsInTheTerminalUnderAPty(t *testing.T) {
+	if os.Getenv(ptyHelperEnv) != "" {
+		retryUnderPty(t)
+		return
+	}
+	scriptBin, err := exec.LookPath("script")
+	if err != nil {
+		t.Skip("script(1) is not installed: the pty check needs it")
+	}
+	dir := t.TempDir()
+	fake := filepath.Join(dir, "brew")
+	if err := os.WriteFile(fake, []byte(fakeBrewScript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	marker := filepath.Join(dir, "marker")
+	result := filepath.Join(dir, "result.json")
+
+	self := os.Args[0]
+	runTest := "-test.run=^TestSudoRetryRunsInTheTerminalUnderAPty$"
+	var cmd *exec.Cmd
+	if runtime.GOOS == "darwin" {
+		cmd = exec.Command(scriptBin, "-q", "/dev/null", self, runTest)
+	} else {
+		cmd = exec.Command(scriptBin, "-qec", "'"+self+"' "+runTest, "/dev/null")
+	}
+	cmd.Env = append(os.Environ(), ptyHelperEnv+"=1", "LB23_FAKE_BREW="+fake,
+		"LB23_MARKER="+marker, "LB23_RESULT="+result, "LB23_FAKE_BREW_EXIT=3")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("pty run failed: %v\n%s", err, out)
+	}
+
+	gotMarker, err := os.ReadFile(marker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimSpace(string(gotMarker)); got != "tty" {
+		t.Errorf("brew ran with %q, want a controlling terminal (tty)", got)
+	}
+	raw, err := os.ReadFile(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Toast  string
+		Status opStatus
+	}
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Toast != "install foo: exited with status 3" {
+		t.Errorf("toast = %q, want the exit status", got.Toast)
+	}
+	if got.Status != opError {
+		t.Errorf("status = %v, want opError", got.Status)
+	}
+}
+
+// retryUnderPty is the pty run's body: the failed install is retried with the
+// production command, and the outcome is written for the parent to read.
+func retryUnderPty(t *testing.T) {
+	runner, err := brew.NewDefaultRunnerWithPath(os.Getenv("LB23_FAKE_BREW"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := New(brew.NewClient(runner), testConfig())
+	m.opState = &Operation{
+		Title: "install foo", TaskID: "install:foo", TaskTitle: "install foo",
+		Status: opError, Ended: time.Now(),
+		Err: &brew.NeedsSudoError{Command: "install --cask foo", Args: []string{"install", "--cask", "foo"}},
+	}
+	m.execProcess = func(cmd *exec.Cmd, fn tea.ExecCallback) tea.Cmd {
+		return func() tea.Msg {
+			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+			return fn(cmd.Run())
+		}
+	}
+
+	next, cmd := m.Update(enterKey)
+	next, _ = next.(Model).Update(cmd())
+	final := next.(Model)
+	out, err := json.Marshal(struct {
+		Toast  string
+		Status opStatus
+	}{lastToast(&final), final.opState.Status})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(os.Getenv("LB23_RESULT"), out, 0o600); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -2,11 +2,14 @@ package gui
 
 import (
 	"errors"
+	"fmt"
 	"os/exec"
 	"slices"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
 // terminalRetryCommands are the brew commands whose sudo step a failed
@@ -41,6 +44,30 @@ func (m Model) retryInTerminal(needs *brew.NeedsSudoError) (tea.Model, tea.Cmd) 
 	cmd.Env = brew.CommandEnv()
 	id, title, args := m.opState.TaskID, m.opState.TaskTitle, needs.Args
 	return m, m.execProcess(cmd, func(err error) tea.Msg {
+		// A failed command is its exit status, as the toast names it.
+		var exit *exec.ExitError
+		if errors.As(err, &exit) {
+			err = fmt.Errorf("exited with status %d", exit.ExitCode())
+		}
 		return SudoRunDoneMsg{ID: id, Title: title, Args: args, Err: err}
 	})
+}
+
+// sudoRetryDone is the end of a retry in the terminal. As for every write, the
+// cache group the command writes is dropped, success or not. A success ends the
+// operation as a task's success does. A failure leaves the failed operation as
+// it was, so Esc still closes it, and says the exit status in a toast, as a
+// failed task does.
+func (m Model) sudoRetryDone(msg SudoRunDoneMsg) (tea.Model, tea.Cmd) {
+	if len(msg.Args) > 0 {
+		m.invalidateCacheGroup(msg.Args[0])
+	}
+	if msg.Err != nil {
+		return m, m.setToast(failureText(msg.ID, msg.Title, msg.Err), modal.ToastError)
+	}
+	if m.opState != nil {
+		m.opState.Status = opSuccess
+		m.opState.Ended = time.Now()
+	}
+	return m.finishedMutation(msg.ID, msg.Title)
 }
