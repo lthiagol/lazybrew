@@ -50,3 +50,12 @@ Commits, in AC order:
 - Not checked in a real terminal: OSC 52 copy on macOS. Tests cover the payload
   through the `setClipboard` hook only.
 - No TUI launch; no brew write commands run.
+
+## Fix r2 — Q-lb24-y-search (6b2e627)
+- Open overlay: `y` copies it on every panel, Search too; a focused box still types. No overlay on Search: `y` types.
+- Overlay copy: title, status row without the `y copy` hint, the retry command line when shown, then every output line.
+- Status row ends `· y copy` where the row holds it: 80x24 and 140x40 retry rows yes; at 50 columns the close hint stays whole and no hint. Left out where it would cut the failure text (refused command at 80, long errors); their text is unchanged.
+- Goldens changed: `TestFinishedRunsEndWithTheCloseHint` (+ `y copy`); `TestYCopiesTheOverlayAsPlainText` (status row, "Copied 4 lines"); `TestYWithNothingToCopySaysSo` replaced by `TestYCopiesAnOverlayWithNoOutputByItsStatusRow`.
+- Revert check: overlay-first check removed → `TestYOnSearchCopiesAFailedOverlay` and `TestYCopiesTheRetryCommandUnderTheStatusRow` fail (`y copied []`).
+- "Nothing to copy" is unreachable from the UI now (every panel renders text; every overlay has a status row). Branch kept as a guard.
+- Gate: `make ci` exit 0; `GOOS=darwin go build ./...` ok.
