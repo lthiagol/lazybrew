@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 )
 
@@ -114,59 +115,61 @@ func TestSingleflightKeysAreIndependent(t *testing.T) {
 }
 
 func TestSingleflightPropagatesError(t *testing.T) {
-	sf := newSingleflight()
-	wantErr := context.DeadlineExceeded
+	synctest.Test(t, func(t *testing.T) {
+		sf := newSingleflight()
+		wantErr := context.DeadlineExceeded
 
-	type result struct {
-		val any
-		err error
-	}
-	results := make(chan result, 2)
-
-	// Gate for fn so we can synchronize the second caller.
-	gate := make(chan struct{})
-
-	// firstFnRunning signals the moment first caller's fn is actually
-	// executing (and thus holding the inflight slot).
-	firstFnRunning := make(chan struct{})
-
-	// First caller: enters fn, signals firstFnRunning, blocks on gate.
-	go func() {
-		v, err := sf.Do("k", func() (any, error) {
-			close(firstFnRunning)
-			<-gate
-			return nil, wantErr
-		})
-		results <- result{v, err}
-	}()
-
-	<-firstFnRunning
-
-	// Second caller: enters Do. Should be queued, NOT invoke fn.
-	go func() {
-		v, err := sf.Do("k", func() (any, error) {
-			t.Error("second caller must not invoke fn while first is in flight")
-			return nil, nil
-		})
-		results <- result{v, err}
-	}()
-
-	// Release fn only once the second caller has had time to queue behind the
-	// first. If it had not, it would run fn itself and fail the test.
-	time.Sleep(20 * time.Millisecond)
-
-	close(gate)
-
-	for i := 0; i < 2; i++ {
-		select {
-		case r := <-results:
-			if r.err != wantErr {
-				t.Errorf("result %d err = %v, want %v", i, r.err, wantErr)
-			}
-		case <-time.After(time.Second):
-			t.Fatalf("timed out waiting for result %d", i)
+		type result struct {
+			val any
+			err error
 		}
-	}
+		results := make(chan result, 2)
+
+		// Gate for fn so we can synchronize the second caller.
+		gate := make(chan struct{})
+
+		// firstFnRunning signals the moment first caller's fn is actually
+		// executing (and thus holding the inflight slot).
+		firstFnRunning := make(chan struct{})
+
+		// First caller: enters fn, signals firstFnRunning, blocks on gate.
+		go func() {
+			v, err := sf.Do("k", func() (any, error) {
+				close(firstFnRunning)
+				<-gate
+				return nil, wantErr
+			})
+			results <- result{v, err}
+		}()
+
+		<-firstFnRunning
+
+		// Second caller: enters Do. Should be queued, NOT invoke fn.
+		go func() {
+			v, err := sf.Do("k", func() (any, error) {
+				t.Error("second caller must not invoke fn while first is in flight")
+				return nil, nil
+			})
+			results <- result{v, err}
+		}()
+
+		// Release fn only once the second caller is durably blocked behind the
+		// first. If it had not queued, it would run fn itself and fail the test.
+		synctest.Wait()
+
+		close(gate)
+
+		for i := 0; i < 2; i++ {
+			select {
+			case r := <-results:
+				if r.err != wantErr {
+					t.Errorf("result %d err = %v, want %v", i, r.err, wantErr)
+				}
+			case <-time.After(time.Second):
+				t.Fatalf("timed out waiting for result %d", i)
+			}
+		}
+	})
 }
 
 func TestSingleflightPanicUnblocksWaiters(t *testing.T) {
