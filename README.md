@@ -55,6 +55,8 @@ Launch the interactive TUI. Available flags:
 |------|-------------|
 | `--version` | Print version and exit |
 | `--config PATH` | Path to config file (default `~/.config/lazybrew/config.yml`) |
+| `--config-sample` | Print a documented sample config to stdout and exit |
+| `--config-create` | Write the sample config to the config path (`--config PATH` or the default) and exit; never overwrites an existing file |
 | `--debug` | Enable debug logging |
 
 ### Keybindings
@@ -74,22 +76,41 @@ Per-panel actions appear in the bottom bar and `?` help screen.
 
 ## Configuration
 
-Config file at `~/.config/lazybrew/config.yml`:
+Config file at `~/.config/lazybrew/config.yml`. The file is optional: without it
+lazybrew runs on its defaults.
+
+**Create a config.** `lazybrew --config-create` writes a complete, commented
+file to the default path (or to `--config PATH`). It never overwrites: if the
+file exists, it says so and exits non-zero. `lazybrew --config-sample` prints
+the same file to stdout, so `lazybrew --config-sample > ~/.config/lazybrew/config.yml`
+also works for a fresh file. Every option is in it: the default is uncommented,
+and the other values it accepts are named in the comment beside it. Delete a
+line to follow lazybrew's default for that key. The start of the sample:
 
 ```yaml
-gui:
-  theme: dark             # dark or light
-  sidebar_width: 35       # percent of the terminal width, 15-50; default 35
-  mouse: true
-  auto_refresh_seconds: 60
-  icons: nerd             # nerd (Nerd Font glyphs) or unicode (no Nerd Font needed)
-  show_icons: true        # false draws no icons at all
-  animations: true        # false draws every change at once, with no motion
-  preload: true           # false loads each panel only when it is first opened
-brew:
-  path: ""                # auto-detect if empty
-  update_on_start: auto   # auto, true or false; see below
-  update_stale_hours: 6   # auto updates when brew's last update is older than this
+# lazybrew config. The file is optional: delete a line to follow
+# lazybrew's default for that key.
+#
+# For one run, these environment variables override the file:
+#   LAZYBREW_ICONS=nerd|unicode  gui.icons
+#   LAZYBREW_ANIMATIONS=0|1      gui.animations
+#   LAZYBREW_PRELOAD=0|1         gui.preload
+
+gui:                             # the interface
+  theme: dark                    # dark or light
+  sidebar_width: 35              # percent of the terminal width, 15-50
+  show_icons: true               # true or false; false draws no icons
+  icons: nerd                    # nerd or unicode (no Nerd Font needed)
+  mouse: true                    # true or false
+  animations: true               # true or false; motion, short and never delays a key
+  preload: true                  # true or false; load every panel in the background
+  auto_refresh_seconds: 0        # 0 is off; N refreshes the data every N seconds
+  auto_refresh_pause: 500ms      # a duration, e.g. 500ms; 0 turns the pause off
+brew:                            # how lazybrew runs brew
+  path: ""                       # the brew binary; empty auto-detects it
+  update_on_start: auto          # auto, true or false: when lazybrew runs brew update
+  update_stale_hours: 6          # hours; auto updates when brew's last update is older
+  # ... the TTLs follow, one per class; see the sample
 ```
 
 `brew.update_on_start` says whether lazybrew runs `brew update` when it starts.
