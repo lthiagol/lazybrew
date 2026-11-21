@@ -71,6 +71,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | lb12-cask-token | 93d0659, 6a8b551 | implemented | awaiting reviewer |
 | lb16-update-when-stale | 75ecbba, 0ecc2ba, 080e9e5, e82b38d | implemented | awaiting reviewer |
 | lb18-config-sample | ddbb3d0, fb8b195, 6717737, f11cea1 | implemented | awaiting reviewer |
+| lb20-cask-followups | c05ebf0, 179adf2 | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
