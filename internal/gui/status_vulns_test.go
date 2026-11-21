@@ -98,6 +98,9 @@ func TestVulnsResultShapes(t *testing.T) {
 		{"empty", "", nil, "No known vulnerabilities", false},
 		{"exit 1 with report", "CVE-2026-2: node\n", &brew.BrewExitError{Command: "vulns", ExitCode: 1}, "CVE-2026-2: node", false},
 		{"error", "", &brew.BrewExitError{Command: "vulns", ExitCode: 2, Stderr: "Error: Failed to reach OSV.dev\n"}, "Failed to reach OSV.dev", true},
+		// brew without the vulns command exits 1 with no report: a failure, not
+		// an empty report (F-r1-01).
+		{"exit 1 no report", "", &brew.BrewExitError{Command: "vulns", ExitCode: 1, Stderr: "Error: Invalid usage: Unknown command: brew vulns\n"}, "Invalid usage: Unknown command: brew vulns", true},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

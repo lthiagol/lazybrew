@@ -177,14 +177,33 @@ func (s *diagnosticsReader) parseMissingOutput(text string) []MissingDep {
 	return missing
 }
 
+// Vulns is brew vulns' report. brew vulns exits 1 when it finds vulnerabilities
+// and prints them on stdout, so exit 1 with a report is a result. Exit 1 with no
+// report, or with an Error: line on stderr, is a failure: brew did not run the
+// check (an unknown command, a network error).
 func (s *diagnosticsReader) Vulns(ctx context.Context) (string, error) {
 	output, err := s.runner.Execute(ctx, "vulns")
-	if err != nil {
-		if !IsExitCode(err, 1) {
-			return "", err
-		}
+	if err == nil {
+		return string(output), nil
+	}
+	var exit *BrewExitError
+	if !errors.As(err, &exit) || exit.ExitCode != 1 {
+		return "", err
+	}
+	if strings.TrimSpace(string(output)) == "" || hasErrorLine(exit.Stderr) {
+		return "", err
 	}
 	return string(output), nil
+}
+
+// hasErrorLine reports whether a line of stderr starts with Error:.
+func hasErrorLine(stderr string) bool {
+	for _, line := range strings.Split(stderr, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "Error:") {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *diagnosticsReader) Config(ctx context.Context) (*BrewConfig, error) {
