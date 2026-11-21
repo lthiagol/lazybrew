@@ -22,7 +22,7 @@ func captureStderr(t *testing.T) *os.File {
 	os.Stderr = f
 	t.Cleanup(func() {
 		os.Stderr = orig
-		brew.SetDebug(false)
+		brew.ResetLogger()
 	})
 	return f
 }
