@@ -89,7 +89,6 @@ type StartUpdateMsg struct{}
 
 type DepCheckMsg struct {
 	MutType mutationType
-	Name    string
 	Label   string
 	Message string
 	Kind    modal.ActionKind

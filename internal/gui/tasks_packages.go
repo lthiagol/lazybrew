@@ -422,7 +422,6 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 		}
 		return DepCheckMsg{
 			MutType: mutType,
-			Name:    name,
 			Label:   label,
 			Message: text,
 			Kind:    mutationKind(mutType),
@@ -531,8 +530,8 @@ func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
 			return m.client.Formulae.Leaves(ctx)
 		})
 		if err != nil {
-			return MutationResultMsg{Name: "leaves", Type: mutInstall, Err: err}
+			return MutationResultMsg{Name: "leaves", Err: err}
 		}
-		return MutationResultMsg{Name: "leaves", Type: mutInstall, Leaves: leaves}
+		return MutationResultMsg{Name: "leaves", Leaves: leaves}
 	}
 }

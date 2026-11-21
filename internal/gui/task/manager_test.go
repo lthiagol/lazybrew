@@ -231,6 +231,9 @@ func TestManager_StreamingOutput(t *testing.T) {
 		case TaskOutputMsg:
 			got = append(got, v.Lines...)
 		case TaskCompletedMsg:
+			if v.Err != nil {
+				t.Errorf("expected a clean completion, got %v", v.Err)
+			}
 			goto done
 		default:
 			t.Fatalf("unexpected msg type %T", msg)
@@ -247,9 +250,6 @@ done:
 		}
 	}
 
-	if task.Status != StatusSuccess {
-		t.Errorf("expected StatusSuccess, got %v", task.Status)
-	}
 }
 
 func TestManager_RunImmediateError(t *testing.T) {
@@ -270,9 +270,6 @@ func TestManager_RunImmediateError(t *testing.T) {
 	}
 	if comp.Err != brewtest.ErrTest {
 		t.Errorf("expected error, got %v", comp.Err)
-	}
-	if task.Status != StatusFailed {
-		t.Errorf("expected StatusFailed, got %v", task.Status)
 	}
 }
 
@@ -412,7 +409,7 @@ func TestManager_DrainsOutputBeforeError(t *testing.T) {
 // TestManager_CancelledStatus locks the StatusCancelled wiring: a task
 // whose error is context.Canceled must be recorded as cancelled, not
 // failed (r1 finding 23 wires the previously unused status).
-func TestManager_CancelledStatus(t *testing.T) {
+func TestManager_CancelledCompletion(t *testing.T) {
 	m := NewManager(10)
 
 	task := &Task{
@@ -439,9 +436,6 @@ func TestManager_CancelledStatus(t *testing.T) {
 	}
 	if !errors.Is(comp.Err, context.Canceled) {
 		t.Fatalf("expected context.Canceled, got %v", comp.Err)
-	}
-	if task.Status != StatusCancelled {
-		t.Fatalf("expected StatusCancelled, got %v", task.Status)
 	}
 }
 

@@ -91,7 +91,7 @@ func TestInfoSplitsAt140x40(t *testing.T) {
 	m := formulaWithDeps(t)
 	p := m.panels[PanelFormulae]
 	p.formulae[0].Description = "GNU Bourne-Again SHell"
-	out := ansi.Strip(m.renderContent(m.mainContentWidth(), 20))
+	out := ansi.Strip(m.renderContent(contentWidthIn(m.screenLayout()), 20))
 	first := strings.Split(out, "\n")[0]
 	if !strings.Contains(first, "Name:") || !strings.Contains(first, "Description:") {
 		t.Fatalf("at 140x40 the Info should split, first row %q in:\n%s", first, out)

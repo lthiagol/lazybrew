@@ -49,6 +49,7 @@ func (m Model) brewfileMenu() (tea.Model, tea.Cmd) {
 		"List entries (brew bundle list)",
 	}
 	menuModal := modal.NewMenuModal("Brewfile", menuItems)
+	m.pendingAction = "brewfile"
 	m.activeModal = menuModal
 	return m, menuModal.Init()
 }

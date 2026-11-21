@@ -58,7 +58,6 @@ var panelTabs = map[PanelID][]tabInfo{
 type panelData struct {
 	id    PanelID
 	title string
-	icon  string
 	// items holds one entry per row. On the package, tap and service panels it
 	// is the bare name; Status and Search have no typed rows, so it is their
 	// drawn text.
@@ -70,9 +69,7 @@ type panelData struct {
 	leavesActive       bool
 	selected           int
 	offset             int
-	width              int
 	height             int
-	active             bool
 	loading            bool
 	err                error
 	formulae           []brew.Formula
@@ -421,6 +418,5 @@ func initPanels() []*panelData {
 		id := PanelID(i)
 		panels[i] = &panelData{id: id, title: id.String()}
 	}
-	panels[0].active = true
 	return panels
 }

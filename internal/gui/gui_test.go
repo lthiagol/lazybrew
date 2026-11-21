@@ -57,7 +57,7 @@ func TestNewModel(t *testing.T) {
 	if m.panels[PanelStatus] == nil {
 		t.Fatal("Status panel is nil")
 	}
-	if !m.panels[PanelStatus].active {
+	if m.activePanel != PanelStatus {
 		t.Error("Status panel should be active by default")
 	}
 }
@@ -737,22 +737,6 @@ func TestStartTrustMenu(t *testing.T) {
 	}
 }
 
-func TestMutationMessageTypes(t *testing.T) {
-	for _, mt := range []mutationType{mutInstall, mutUninstall, mutReinstall, mutUpgrade, mutUpgradeAll, mutZap, mutFetch} {
-		msg := MutationResultMsg{Name: "test", Type: mt, Err: nil}
-		if msg.Name != "test" {
-			t.Error("MutationResultMsg name mismatch")
-		}
-	}
-}
-
-func TestProgressMessageTypes(t *testing.T) {
-	msg := ProgressLineMsg{Line: "test line"}
-	if msg.Line != "test line" {
-		t.Error("ProgressLineMsg mismatch")
-	}
-}
-
 func TestFetchFlow(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
@@ -988,7 +972,7 @@ func TestCommandLogRendersInMainPanel(t *testing.T) {
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.commandLog.Append("test command")
 
-	panel := m.renderMainPanel()
+	panel := m.renderMainPanelIn(m.screenLayout())
 	if !strings.Contains(panel, "test command") {
 		t.Fatal("expected command log entry in main panel render")
 	}
@@ -1028,7 +1012,7 @@ func TestLogCollapsedFreesMainHeight(t *testing.T) {
 		t.Fatalf("expanded main %d + log %d should fill body %d", expanded.mainH, expanded.logH, expanded.bodyH)
 	}
 
-	expandedView := m.renderMainPanel()
+	expandedView := m.renderMainPanelIn(m.screenLayout())
 	if !strings.Contains(expandedView, "Log") {
 		t.Fatal("expanded log should show Log title")
 	}
@@ -1051,7 +1035,7 @@ func TestLogCollapsedFreesMainHeight(t *testing.T) {
 		t.Fatalf("collapsed content %d should exceed expanded content %d (gained log rows)", collapsed.contentH, expanded.contentH)
 	}
 
-	collapsedView := m.renderMainPanel()
+	collapsedView := m.renderMainPanelIn(m.screenLayout())
 	if strings.Contains(collapsedView, "visible-cmd") {
 		t.Fatal("collapsed log should not render command entries")
 	}
@@ -1251,6 +1235,25 @@ func TestDepsTabPopulatedAfterDataLoaded(t *testing.T) {
 	}
 }
 
+// The Deps tab is drawn from the loaded formula at render time, so opening it
+// shows the dependencies and schedules no fetch.
+func TestDepsTabShowsWithoutFetch(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.activeTab = formulaDepsTab
+	p := m.panels[PanelFormulae]
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{{Name: "ripgrep", Version: "14.1.1", Dependencies: []string{"pcre2"}}}
+	p.selected = 0
+
+	if cmd := m.loadTabContent(); cmd != nil {
+		t.Fatal("the Deps tab scheduled a fetch, want none")
+	}
+	if content := ansi.Strip(m.renderContent(100, 20)); !strings.Contains(content, "pcre2") {
+		t.Fatalf("the Deps tab does not show pcre2:\n%s", content)
+	}
+}
+
 func TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
@@ -1337,7 +1340,7 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 	}
 	client := brew.NewClient(r)
 
-	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep", style.Icons{})
+	cmd := fetchTabContentCmd(client, PanelFormulae, formulaUsesTab, "ripgrep", style.Icons{})
 	if cmd == nil {
 		t.Fatal("fetchTabContentCmd returned nil cmd")
 	}
@@ -1362,8 +1365,8 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 		if !errors.As(tMsg.Err, &timeoutErr) {
 			t.Fatalf("expected *brew.TimeoutError, got %v", tMsg.Err)
 		}
-		if timeoutErr.Command != "deps" {
-			t.Errorf("expected command 'deps' in timeout error, got %q", timeoutErr.Command)
+		if timeoutErr.Command != "uses" {
+			t.Errorf("expected command 'uses' in timeout error, got %q", timeoutErr.Command)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("fetchTabContentCmd hung past fetchTabContentTimeout (infinite-Loading reproducer)")
@@ -1541,33 +1544,6 @@ func TestDepsTabLoads(t *testing.T) {
 	}
 	if !strings.Contains(view, "Deps") {
 		t.Fatal("expected Deps tab label in view")
-	}
-}
-
-func TestFetchDepsTabReturnsContent(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		if len(args) >= 3 && args[0] == "deps" && args[1] == "--tree" && args[2] == "ripgrep" {
-			return []byte("openssl\n└── ca-certificates\n"), nil
-		}
-		return nil, nil
-	}
-	client := brew.NewClient(r)
-
-	cmd := fetchTabContentCmd(client, PanelFormulae, formulaDepsTab, "ripgrep", style.Icons{})
-	if cmd == nil {
-		t.Fatal("fetchTabContentCmd returned nil cmd")
-	}
-	msg := cmd()
-	tMsg, ok := msg.(TabContentMsg)
-	if !ok {
-		t.Fatalf("expected TabContentMsg, got %T", msg)
-	}
-	if tMsg.Err != nil {
-		t.Fatalf("unexpected error: %v", tMsg.Err)
-	}
-	if !strings.Contains(tMsg.Content, "openssl") {
-		t.Fatalf("expected deps content to contain 'openssl', got %q", tMsg.Content)
 	}
 }
 

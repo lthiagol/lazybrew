@@ -100,9 +100,7 @@ func (m *Model) switchPanel(id PanelID) tea.Cmd {
 	if id != m.activePanel && m.opState != nil && m.opState.Done() {
 		m.opState = nil
 	}
-	m.panels[m.activePanel].active = false
 	m.activePanel = id
-	m.panels[m.activePanel].active = true
 	// The sidebar layout depends on the active panel: re-derive the
 	// per-panel viewport heights (r2 finding NEW-8).
 	m.syncVisibleRows()
@@ -144,7 +142,7 @@ func needsTabFetch(panelID PanelID, tabIdx int) bool {
 	case PanelStatus:
 		return tabIdx == statusConfigTab || tabIdx == statusDoctorTab
 	case PanelFormulae:
-		return tabIdx == formulaDepsTab || tabIdx == formulaUsesTab || tabIdx == formulaFilesTab
+		return tabIdx == formulaUsesTab || tabIdx == formulaFilesTab
 	}
 	return false
 }

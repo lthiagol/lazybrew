@@ -35,8 +35,8 @@ func TestNonRRefreshEmittersStayCacheOnly(t *testing.T) {
 	}{
 		{"install completion", TaskCompletedMsg{ID: "ripgrep", Title: "Install ripgrep"}},
 		{"uninstall completion", TaskCompletedMsg{ID: "ripgrep", Title: "Uninstall ripgrep"}},
-		{"install mutation result", MutationResultMsg{Name: "ripgrep", Type: mutInstall}},
-		{"uninstall mutation result", MutationResultMsg{Name: "ripgrep", Type: mutUninstall}},
+		{"install mutation result", MutationResultMsg{Name: "ripgrep"}},
+		{"uninstall mutation result", MutationResultMsg{Name: "ripgrep"}},
 	}
 
 	for _, tc := range cases {

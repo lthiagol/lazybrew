@@ -133,7 +133,7 @@ func TestWheelOverMainScrollsItsContent(t *testing.T) {
 	if m.activeTab != formulaCaveatsTab {
 		t.Fatalf("fixture: want the Caveats tab, got %d", m.activeTab)
 	}
-	if !strings.Contains(sgr.ReplaceAllString(m.renderMainPanel(), ""), "line-00") {
+	if !strings.Contains(sgr.ReplaceAllString(m.renderMainPanelIn(m.screenLayout()), ""), "line-00") {
 		t.Fatal("fixture: the first caveat line should show before scrolling")
 	}
 
@@ -141,7 +141,7 @@ func TestWheelOverMainScrollsItsContent(t *testing.T) {
 	x, y := l.sideW+5, headerRows+1+m.tabBarRows()+1
 	nm, _ := m.Update(tea.MouseWheelMsg{X: x, Y: y, Button: tea.MouseWheelDown})
 	got := nm.(Model)
-	main := sgr.ReplaceAllString(got.renderMainPanel(), "")
+	main := sgr.ReplaceAllString(got.renderMainPanelIn(got.screenLayout()), "")
 	if strings.Contains(main, "line-00") || !strings.Contains(main, "line-03") {
 		t.Fatalf("a notch should scroll the content three rows, got:\n%s", main)
 	}

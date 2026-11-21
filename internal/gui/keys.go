@@ -78,9 +78,6 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if m.showHelp {
 			m.showHelp = false
 		}
-		if m.searchInput.Focused() {
-			m.searchInput.Blur()
-		}
 		return m, nil
 	case "R":
 		if m.cfg.Brew.UpdateOnStart && !m.isUpdating {
@@ -169,11 +166,6 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, m.searchInput.Focus()
 
 	case "enter":
-		if m.activePanel == PanelSearch && m.searchInput.Focused() {
-			m.searchInput.Blur()
-			c := m.executeSearch(m.searchInput.Value())
-			return m, c
-		}
 		if m.activePanel == PanelSearch && len(m.searchResults) > 0 {
 			return m, m.fetchSelectedSearchInfo()
 		}

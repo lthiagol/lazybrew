@@ -217,12 +217,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.opBar, cmd = m.opBar.Update(msg)
 		return m, cmd
 
-	case ProgressLineMsg:
-		if m.opState != nil {
-			m.opState.AppendLine(msg.Line)
-		}
-		return m, nil
-
 	case opAutoCloseMsg:
 		// Only the operation the timer names, and only once it is done with no
 		// batch still in flight. A newer or running operation is left alone.
@@ -418,7 +412,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// of during render (r1 finding 29, r3 finding R3-7).
 		m.syncVisibleRows()
 		for i := range m.panels {
-			m.panels[i].width = sidebarWidth(m.cfg, m.width)
 			m.panels[i].height = m.height - 4
 			m.panels[i].normalize()
 		}

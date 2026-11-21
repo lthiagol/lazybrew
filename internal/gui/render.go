@@ -74,13 +74,6 @@ func (m Model) sidebarLabel(p *panelData) borderLabel {
 	}
 }
 
-// renderMainPanel draws the main column: the main panel box with the Log
-// box stacked below it at the same width. The column is exactly
-// l.mainW wide and l.bodyH rows tall.
-func (m Model) renderMainPanel() string {
-	return m.renderMainPanelIn(m.screenLayout())
-}
-
 // renderMainPanelIn is the main panel drawn to the layout l.
 func (m Model) renderMainPanelIn(l screenLayout) string {
 	innerW := l.mainW - 2
@@ -116,13 +109,6 @@ const bottomBarRows = 1
 // mainPadX is the blank column either side of the main area's content and the
 // Log box's, inside their borders, so text never touches the frame.
 const mainPadX = 1
-
-// mainContentWidth is the width the main content is laid out to: the main box
-// less its border and the padding either side. Every helper that cuts or wraps
-// the main content uses it, so nothing overflows into the padding.
-func (m Model) mainContentWidth() int {
-	return contentWidthIn(m.screenLayout())
-}
 
 // contentWidthIn is mainContentWidth for the layout l.
 func contentWidthIn(l screenLayout) int {

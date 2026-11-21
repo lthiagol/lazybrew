@@ -64,12 +64,7 @@ func mutationID(t mutationType, name string) string {
 type MutationResultMsg struct {
 	Err    error
 	Name   string
-	Type   mutationType
 	Leaves []string
-}
-
-type ProgressLineMsg struct {
-	Line string
 }
 
 type opStatus int

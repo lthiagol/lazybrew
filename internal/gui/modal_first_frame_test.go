@@ -18,7 +18,7 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 	}{
 		"uninstall confirm": {
 			open: func(m *Model) *Model {
-				return updateModel(m, DepCheckMsg{MutType: mutUninstall, Name: "bash", Label: "Uninstall", Message: "Uninstall bash? This cannot be undone."})
+				return updateModel(m, DepCheckMsg{MutType: mutUninstall, Label: "Uninstall", Message: "Uninstall bash? This cannot be undone."})
 			},
 			want: "Uninstall bash? This cannot be undone.",
 		},
@@ -64,7 +64,7 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 // the modal on screen and re-centres it in the new frame.
 func TestModalSurvivesResizeWhileOpen(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
-	m = updateModel(m, DepCheckMsg{MutType: mutUninstall, Name: "bash", Label: "Uninstall", Message: "Uninstall bash?"})
+	m = updateModel(m, DepCheckMsg{MutType: mutUninstall, Label: "Uninstall", Message: "Uninstall bash?"})
 	m = updateModel(m, tea.WindowSizeMsg{Width: 100, Height: 30})
 
 	view := m.View().Content

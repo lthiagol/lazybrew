@@ -285,3 +285,11 @@ func TestToastStackLeavesCellsBesideBoxesAlone(t *testing.T) {
 		})
 	}
 }
+
+// newestToast is the toast drawn lowest in the stack, or nil when there is none.
+func (m Model) newestToast() *modal.Toast {
+	if len(m.toasts) == 0 {
+		return nil
+	}
+	return m.toasts[len(m.toasts)-1]
+}

@@ -170,8 +170,7 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 	case *modal.MenuResult:
 		// pendingAction is consumed here whichever way the menu closes:
 		// a CANCELLED menu used to leave it set, so the next unrelated
-		// menu (Brewfile, which sets no pendingAction) could route its
-		// pick into a trust action (r4 finding R4-1).
+		// menu could route its pick into a trust action (r4 finding R4-1).
 		pending := m.pendingAction
 		m.pendingAction = ""
 		if !r.Cancelled {
@@ -185,23 +184,13 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 			case "trust-cask":
 				c := m.executeTrustCaskAction(r.SelectedIndex)
 				return m, c
+			case "brewfile":
+				c := m.executeBrewfileAction(r.SelectedIndex)
+				return m, c
 			}
-			c := m.executeMenuAction(r.SelectedIndex)
-			return m, c
 		}
 	}
 	return m, nil
-}
-
-func (m *Model) executeMenuAction(selectedIndex int) tea.Cmd {
-	switch {
-	case m.activePanel == PanelTaps && selectedIndex == 1:
-		return m.openUntrustConfirm()
-	case m.activePanel == PanelTaps && selectedIndex == 0:
-		return m.executeTrustAction(0)
-	default:
-		return m.executeBrewfileAction(selectedIndex)
-	}
 }
 
 func closedCh() <-chan string {
@@ -269,29 +258,9 @@ func (m *Model) loadTabContent() tea.Cmd {
 		if _, ok := m.tabContent[key]; ok {
 			return nil
 		}
-		if content, ok := m.renderCachedTabContent(panelID, tabIdx, panel); ok {
-			m.tabContent[key] = content
-			return nil
-		}
 		return fetchTabContentCmd(m.client, panelID, tabIdx, name, m.icons)
 	}
 	return nil
-}
-
-// renderCachedTabContent returns a body string for tabs whose content is
-// already on the model (avoids shelling out for data we already have).
-// Returns ok=false when no fast path applies so the caller falls through to
-// fetchTabContentCmd. The boolean lets the caller distinguish "rendered
-// something terminal" from "no fast path" — empty strings still count as
-// a terminal state (e.g. "No dependencies").
-func (m *Model) renderCachedTabContent(panelID PanelID, tabIdx int, panel *panelData) (string, bool) {
-	if panelID == PanelFormulae && tabIdx == formulaDepsTab {
-		// The Deps tab is drawn from the loaded formula at render time, when its
-		// width is known, so there is nothing to store: the tab is ready
-		// when a formula is selected.
-		return "", panel.selectedFormula() != nil
-	}
-	return "", false
 }
 
 func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string, icons style.Icons) tea.Cmd {
@@ -324,12 +293,6 @@ func fetchTabContentCmd(client *brew.Client, panel PanelID, tab int, name string
 			}
 		case PanelFormulae:
 			switch tab {
-			case formulaDepsTab:
-				deps, err := client.Formulae.Deps(ctx, name)
-				if err != nil {
-					return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Err: wrapErr("deps", err)}
-				}
-				return TabContentMsg{PanelID: panel, TabIndex: tab, ItemName: name, Content: deps}
 			case formulaUsesTab:
 				uses, err := client.Formulae.Uses(ctx, name)
 				if err != nil {
@@ -495,7 +458,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 // key) passes true.
 func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 	return func() tea.Msg {
-		summary, _ := statusDashboard(client, loadOutdated)
+		summary := statusDashboard(client, loadOutdated)
 		return DataLoadedMsg{PanelID: PanelStatus, Items: statusRows(summary), Summary: summary, Err: nil}
 	}
 }
@@ -527,7 +490,7 @@ func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 // count becomes known. A failed or timed-out outdated read joins the ⚠
 // lines like any other source and the count falls back to "not known", never
 // to a misleading 0.
-func statusDashboard(client *brew.Client, loadOutdated bool) (statusSummary, []error) {
+func statusDashboard(client *brew.Client, loadOutdated bool) statusSummary {
 	totalCtx, cancelTotal := context.WithTimeout(context.Background(), brewStatusTotalTimeout)
 	defer cancelTotal()
 
@@ -658,12 +621,9 @@ func statusDashboard(client *brew.Client, loadOutdated bool) (statusSummary, []e
 	}
 
 	officialTaps := 0
-	thirdPartyTaps := 0
 	for _, t := range taps.Taps {
 		if t.IsOfficial {
 			officialTaps++
-		} else {
-			thirdPartyTaps++
 		}
 	}
 
@@ -681,15 +641,13 @@ func statusDashboard(client *brew.Client, loadOutdated bool) (statusSummary, []e
 	if docErr != nil {
 		summary.DoctorErr = docErr.Error()
 	}
-	errs := make([]error, 0, len(sources))
 	for _, s := range sources {
 		if s.label != "doctor" {
 			summary.Problems = append(summary.Problems, "⚠ "+s.label+": "+s.err.Error())
 		}
-		errs = append(errs, s.err)
 	}
 
-	return summary, errs
+	return summary
 }
 
 func parseUpdateSummary(lines []string) string {

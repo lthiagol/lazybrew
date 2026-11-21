@@ -36,8 +36,8 @@ func TestMainRowsMatchTheUncachedRender(t *testing.T) {
 	m := filesTabModel(t, 300)
 	for i := 0; i < 3; i++ {
 		m.View()
-		want := wrapContent(m.renderContent(m.mainContentWidth(), 30), m.mainContentWidth())
-		if got := m.mainRows(m.mainContentWidth(), 30); strings.Join(got, "\n") != strings.Join(want, "\n") {
+		want := wrapContent(m.renderContent(contentWidthIn(m.screenLayout()), 30), contentWidthIn(m.screenLayout()))
+		if got := m.mainRows(contentWidthIn(m.screenLayout()), 30); strings.Join(got, "\n") != strings.Join(want, "\n") {
 			t.Fatalf("pass %d: cached rows differ from the uncached render", i)
 		}
 		m = sendSpecial(m, tea.KeyPgDown)

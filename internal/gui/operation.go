@@ -53,17 +53,6 @@ type opStep struct {
 	output []string
 }
 
-// parseSteps splits brew's output at its `==> ` lines. Blank lines are not
-// output. Lines before the first step belong to no step. It is the step state
-// of a whole run; an Operation keeps the same state as its lines arrive.
-func parseSteps(lines []string) []opStep {
-	var steps []opStep
-	for _, line := range lines {
-		steps = addStepLine(steps, line)
-	}
-	return steps
-}
-
 // addStepLine adds one line of brew's output to the steps. A step keeps only
 // its last operationTailLines lines of output: the ones its row shows.
 func addStepLine(steps []opStep, line string) []opStep {
