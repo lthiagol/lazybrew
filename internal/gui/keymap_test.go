@@ -568,4 +568,18 @@ func TestRetiredTabAndPageKeysDoNothing(t *testing.T) {
 	if got := m.contentScroll[m.contentKey()]; got != scroll {
 		t.Errorf("PgUp/PgDn scrolled the content: offset %d->%d", scroll, got)
 	}
+
+	// The open help screen has no page keys either.
+	m = sendKey(m, "?")
+	m = sendKey(m, "j")
+	m = sendKey(m, "j")
+	help := m.helpScroll
+	if !m.showHelp || help != 2 {
+		t.Fatalf("help not open at offset 2: showHelp=%v helpScroll=%d", m.showHelp, help)
+	}
+	m = sendSpecial(m, tea.KeyPgDown)
+	m = sendSpecial(m, tea.KeyPgUp)
+	if got := m.helpScroll; got != help {
+		t.Errorf("PgUp/PgDn scrolled the help screen: offset %d->%d", help, got)
+	}
 }
