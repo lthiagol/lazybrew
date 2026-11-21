@@ -159,6 +159,51 @@ func TestDiagnosticsMissingExitCode2IsError(t *testing.T) {
 	}
 }
 
+// vulnsOnce runs Vulns against one brew answer.
+func vulnsOnce(t *testing.T, out string, err error) (string, error) {
+	t.Helper()
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte(out), err
+	}
+	return NewDiagnosticsReader(r, NewCache(time.Minute)).Vulns(context.Background())
+}
+
+func TestDiagnosticsVulnsExitCode1WithReportIsResult(t *testing.T) {
+	// brew vulns exits 1 when it finds vulnerabilities and prints them.
+	report, err := vulnsOnce(t, "CVE-2026-1: openssl@3\n", &BrewExitError{Command: "vulns", ExitCode: 1})
+	if err != nil {
+		t.Fatalf("exit 1 with a report is a result, got error %v", err)
+	}
+	if report != "CVE-2026-1: openssl@3\n" {
+		t.Fatalf("report %q", report)
+	}
+}
+
+func TestDiagnosticsVulnsExitCode1WithoutReportIsError(t *testing.T) {
+	// Regression F-r1-01: a brew without the vulns command exits 1 with an
+	// empty stdout and an Error: line on stderr. That is a failure, not an
+	// empty report.
+	_, err := vulnsOnce(t, "", &BrewExitError{
+		Command: "vulns", ExitCode: 1,
+		Stderr: "Error: Invalid usage: Unknown command: brew vulns\n",
+	})
+	if !IsExitCode(err, 1) {
+		t.Fatalf("expected the exit 1 error, got %v", err)
+	}
+}
+
+func TestDiagnosticsVulnsErrorLineIsError(t *testing.T) {
+	// An Error: line on stderr makes the run a failure even when stdout
+	// holds lines.
+	_, err := vulnsOnce(t, "CVE-2026-1: openssl@3\n", &BrewExitError{
+		Command: "vulns", ExitCode: 1, Stderr: "Error: Failed to reach OSV.dev\n",
+	})
+	if !IsExitCode(err, 1) {
+		t.Fatalf("expected the exit 1 error, got %v", err)
+	}
+}
+
 func TestParseDoctorWarnings(t *testing.T) {
 	tests := []struct {
 		input string
