@@ -155,3 +155,25 @@ func TestFooterNeverClipsAPanel(t *testing.T) {
 		}
 	}
 }
+
+// TestFooterNeverRepeatsAKey (lb29 r2 F-r1-04): at 140 columns no key shows twice
+// in the row, on any panel, with or without a finished operation over it.
+func TestFooterNeverRepeatsAKey(t *testing.T) {
+	for id := PanelStatus; id <= PanelSearch; id++ {
+		for _, done := range []bool{false, true} {
+			m := newTestModel()
+			m.activePanel = id
+			if done {
+				m.opState = &Operation{Status: opSuccess}
+			}
+			row, _ := fitFooter(m.footerHints(), 140)
+			seen := map[string]bool{}
+			for _, h := range row.all() {
+				if seen[h.key] {
+					t.Errorf("%s (operation done %v): %q shows twice in the row at 140 columns", id, done, h.key)
+				}
+				seen[h.key] = true
+			}
+		}
+	}
+}

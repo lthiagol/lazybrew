@@ -195,7 +195,7 @@ func panelHints(id PanelID) []keyHint {
 	case PanelTaps:
 		return []keyHint{tAdd, tUntap, tTrust, tRepair, keyCopy}
 	case PanelStatus:
-		return []keyHint{keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, keyCopy}
+		return []keyHint{stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, keyCopy}
 	case PanelOutdated:
 		return []keyHint{keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll, keyCopy}
 	case PanelSearch:
