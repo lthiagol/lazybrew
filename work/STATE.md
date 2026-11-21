@@ -63,6 +63,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | cr2-brew-cache | 48378ab, 7d79b31, e4fe8ee, 7edc2f6, 02f3991, 6a4f7e2, 733ed25, e0f08db, c86d029, 492ab80 | closed | ok (r2) |
 | cr3-render-perf | d8650ab, ec0df54, 99b737b, c043ba2, 8da6ed8, 1ebf46c, 5010219, b014689, d19018e | closed | ok (r2) |
 | cr4-gui-dedup | 1bf20ae, 2333f2c, e7f87a8, 34b60d9, 2248ac7, 20f827f, fa00dce, 1dd15c8, fe72f96, 187a8cb, 508df05 | closed | ok (r3) |
+| cr5-dead-code | 59255c9, 4838469, 41860b1, c978a89, 0bb24ac, e9ceaa5, 7a9eb96, d0a6a86 | implemented | awaiting reviewer |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
