@@ -25,10 +25,13 @@ type MenuResult struct {
 	Cancelled     bool
 }
 
-// Hint is one key a modal answers to, and what it does.
+// Hint is one key a modal answers to, and what it does. Keys are the
+// msg.String() spellings the modal answers with that key, space separated;
+// keymap_test.go holds them to the modal's Update.
 type Hint struct {
 	Key  string
 	Desc string
+	Keys string
 }
 
 // Hinter is a modal that lists the keys it answers to. Its key line and the
@@ -38,4 +41,4 @@ type Hinter interface {
 }
 
 // hintCancel is the key every modal answers with a cancel.
-var hintCancel = Hint{Key: "esc", Desc: "cancel"}
+var hintCancel = Hint{Key: "esc", Desc: "cancel", Keys: "esc"}
