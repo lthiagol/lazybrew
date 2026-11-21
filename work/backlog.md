@@ -122,7 +122,7 @@ name `Taps & Trust`, commands shown too.
 total; `c` runs it after a confirm) and `Unused` (brew autoremove -n; `A` runs it after a confirm),
 loaded on open and refreshed after the run. Seven Status tabs must still fit at 80 columns.
 
-**LB-30 (planned, slice lb32-vulns-view)** — the Vulns tab renders `brew vulns --json
+**LB-30 (closed, lb32-vulns-view)** — the Vulns tab renders `brew vulns --json
 --max-summary 0` (real schema checked once against the live command): a summary strip with
 severity chips, one block per package (worst first) with a table of ID / severity / full title,
 theme-coloured severities (CRITICAL/HIGH error, MEDIUM warning, LOW info, UNKNOWN muted), a
