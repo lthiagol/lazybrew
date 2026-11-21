@@ -923,3 +923,22 @@ glyphs unchanged). `fix-lb25-search-polish-r2`.
 **Ruling (orchestrator, 2026-11-21) — Q-lb28-latte-contrast:** keep Latte exactly as it is
 (official palette, `light` frames stay byte-identical). Its low-contrast roles are parked as
 LB-27; the test keeps `latteBelow` so they cannot get worse.
+
+### Q-lb29-sample-width — the 140-column sample is 167 cells; keep the rule-derived row?
+
+- **Context (lb29 AC-01/03):** the brief's target line for Formulae at 140 columns is
+  167 cells, so it cannot be drawn at 140. The Narrow-widths rules drop panel actions
+  from the right end, so the 140 row is `i install · x remove · r reinstall · u upgrade
+  │ ←↑↓→ navigate · Tab next · 1-7 jump · / filter · R refresh · C log · q quit · ? more`.
+  The sample also says `x uninstall`; the code says `x remove`, which is kept.
+- **Done:** the rules were followed; the sample is not reproduced.
+- **Ask.** Keep the rule-derived row (recommended), or say which keys the 140 row must
+  keep so the sample fits.
+
+### Q-lb29-info-keylines — Info tabs' key lines take the new `·` separators
+
+- **Context (lb29 AC-01):** Tap Info and Services Info end with a key line drawn by
+  `footerLine` (`details.go`). It now uses `·` and the same fit rules, so 12 frames
+  differ outside the footer row. The brief says only the footer row differs.
+- **Ask.** Keep the Info key lines in the new style (recommended: one renderer), or
+  give them back the two-space style?
