@@ -5,7 +5,6 @@ package gui
 
 import (
 	"context"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +12,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )

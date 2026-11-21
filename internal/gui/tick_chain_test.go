@@ -1,11 +1,11 @@
 package gui
 
 import (
-	"github.com/lthiagol/lazybrew/internal/config"
 	"testing"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 // tickWait is how long a command may run before countPending calls it still
