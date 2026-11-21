@@ -52,9 +52,10 @@ type SearchDoneMsg struct {
 }
 
 // SearchMarksMsg carries the installed marks re-read for the rows of the last
-// search, in the rows' order.
+// search, in the rows' order. gen is the remarkGen the read was issued under.
 type SearchMarksMsg struct {
 	Results []brew.SearchResult
+	gen     int
 }
 
 type SearchInfoLoadedMsg struct {

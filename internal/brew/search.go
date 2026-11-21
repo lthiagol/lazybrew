@@ -21,14 +21,21 @@ func NewSearchService(runner Runner) SearchService {
 // reads: `brew search --formula` and `brew search --cask`. Without a TTY brew
 // prints no section headers, so a single read cannot tell the two apart; each
 // read's flag says the type of its rows instead. A read that fails adds no
-// rows; the search errors only when both reads fail.
+// rows. The search errors only when it has no rows and a read failed: an empty
+// list must not hide a failure, but rows from the read that worked are kept.
 func (s *searchService) Search(ctx context.Context, query string) ([]SearchResult, error) {
 	formulae, ferr := s.searchType(ctx, "--formula", query)
 	casks, cerr := s.searchType(ctx, "--cask", query)
-	if ferr != nil && cerr != nil {
-		return nil, ferr
+	results := append(formulae, casks...)
+	if len(results) == 0 {
+		if ferr != nil {
+			return nil, ferr
+		}
+		if cerr != nil {
+			return nil, cerr
+		}
 	}
-	return append(formulae, casks...), nil
+	return results, nil
 }
 
 // searchType runs one typed read and types every row it returns by the flag.
