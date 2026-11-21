@@ -54,7 +54,8 @@ func (s *searchService) searchType(ctx context.Context, flag, query string) ([]S
 // MarkInstalled sets Installed on each result that matches an installed
 // formula (for a formula row) or an installed cask (for a cask row). A
 // tap-qualified name, such as homebrew/cask/claude-code, matches on its last
-// part. A nil list marks nothing of its type.
+// part. A nil list leaves no row of its type installed; a caller whose list
+// could not be read must keep those rows' marks itself.
 func MarkInstalled(results []SearchResult, formulae []Formula, casks []Cask) []SearchResult {
 	installedFormulae := make(map[string]bool, len(formulae))
 	for _, f := range formulae {

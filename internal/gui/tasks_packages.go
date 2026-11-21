@@ -77,8 +77,9 @@ func (m *Model) remarkSearch() tea.Cmd {
 }
 
 // markInstalled sets Installed on the search rows from the installed formula
-// and cask lists. A list that cannot be read marks nothing of its type: the
-// rows keep their types and the search still succeeds.
+// and cask lists. A list that cannot be read says nothing about its rows, so
+// they keep the marks they have: the rows keep their types and the search
+// still succeeds.
 func markInstalled(ctx context.Context, client *brew.Client, results []brew.SearchResult) []brew.SearchResult {
 	formulae, ferr := client.Formulae.List(ctx)
 	casks, cerr := client.Casks.List(ctx)
@@ -88,7 +89,13 @@ func markInstalled(ctx context.Context, client *brew.Client, results []brew.Sear
 	if cerr != nil {
 		casks = nil
 	}
-	return brew.MarkInstalled(results, formulae, casks)
+	marked := brew.MarkInstalled(slices.Clone(results), formulae, casks)
+	for i, r := range results {
+		if (ferr != nil && r.IsFormula) || (cerr != nil && r.IsCask) {
+			marked[i].Installed = r.Installed
+		}
+	}
+	return marked
 }
 
 // selectedSearchRow is the Search row under the cursor, if there is one.
