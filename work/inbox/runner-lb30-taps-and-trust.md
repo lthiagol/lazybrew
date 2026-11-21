@@ -78,3 +78,10 @@ Deviations, not amended (the brief forbids amend):
 - Real-terminal feel and a live `brew untrust`: human smoke, not run here.
 - ⊕ icon at the default 28-cell sidebar: not checked in a real terminal.
 - `wip` is not pushed by this lane.
+
+## Fix r2
+
+- F-r1-01 (`249eb6e`): `TestTapsFooterRowOnTrustedItemLeadsWithUntrust` reads the footer row (last row of `View`) and wants the panel group `t untrust · a add tap · y copy`. `TestTapsItemRowFooterIsExact` pins the item-row panel hints and checks each is answered by the Taps dispatch.
+- Mutation (`selectedTrusted()` branch of `tapsHints` removed, then restored): both fail. Footer row `a add tap · y copy`, want `t untrust · a add tap · y copy`; item hints `[a y]`, want `[t a y]`. `TestPanelKeysAreOnFooterAndHelp` stays green, since tap rows still show `t trust`.
+- Gate: `GOFLAGS=-p=1 make ci` exit 0, `All coverage floors met` (gui 92.0% ≥ 83%), `go vet` clean.
+- F-r1-03: this section is 8 lines; the receipt above is not edited.
