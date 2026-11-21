@@ -71,7 +71,7 @@ Launch the interactive TUI. Available flags:
 | `/` | Search packages |
 | `q` | Quit |
 | `?` | Help |
-| `y` | Copy the text on screen (the Operation, or the panel's content) to the clipboard |
+| `y` | Copy the text on screen (the Operation, or the panel's content) to the clipboard. On Search `y` types into the box unless an Operation is open |
 
 Per-panel actions appear in the bottom bar and `?` help screen.
 
