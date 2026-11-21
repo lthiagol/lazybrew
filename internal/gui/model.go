@@ -90,6 +90,9 @@ type Model struct {
 	readLog func(path string, n int) (logtail.Tail, error)
 
 	searchResults []brew.SearchResult
+	// remarkGen numbers the Search re-marks issued. Only the latest one may land:
+	// an older one read the installed lists before a later write (LB-20 b).
+	remarkGen int
 	// searchInfo is the info of the selected search result, parsed once when
 	// it lands. searchInfoErr is why there is none instead (cr3 AC-01).
 	searchInfo    *pkgInfo

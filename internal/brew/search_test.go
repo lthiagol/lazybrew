@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 
@@ -75,6 +76,26 @@ func TestSearchKeepsTheReadThatWorked(t *testing.T) {
 	}
 	if _, err := NewSearchService(both).Search(context.Background(), "x"); err == nil {
 		t.Error("both reads failed: Search err = nil, want an error")
+	}
+}
+
+// TestSearchErrorsWhenNoRowsAndAReadFailed (LB-20 a): a read that finds nothing
+// (exit 1) and a read that fails leave no rows. The failure must be the error,
+// not an empty list that reads as "no results".
+func TestSearchErrorsWhenNoRowsAndAReadFailed(t *testing.T) {
+	for _, tc := range []struct{ failFlag, emptyFlag string }{{"--cask", "--formula"}, {"--formula", "--cask"}} {
+		r := brewtest.NewMockRunner()
+		r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+			if args[1] == tc.failFlag {
+				return nil, brewtest.ErrTest
+			}
+			return nil, &BrewExitError{Command: "search", ExitCode: 1}
+		}
+		results, err := NewSearchService(r).Search(context.Background(), "x")
+		if !errors.Is(err, brewtest.ErrTest) {
+			t.Errorf("%s failed, %s is empty: Search err = %v, want the failed read's error (results %+v)",
+				tc.failFlag, tc.emptyFlag, err, results)
+		}
 	}
 }
 

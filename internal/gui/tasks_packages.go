@@ -63,6 +63,8 @@ func (m *Model) remarkSearch() tea.Cmd {
 	if len(m.searchResults) == 0 {
 		return nil
 	}
+	m.remarkGen++
+	gen := m.remarkGen
 	rows := slices.Clone(m.searchResults)
 	client := m.client
 	return func() tea.Msg {
@@ -70,9 +72,9 @@ func (m *Model) remarkSearch() tea.Cmd {
 			return markInstalled(ctx, client, rows), nil
 		})
 		if err != nil {
-			return SearchMarksMsg{}
+			return SearchMarksMsg{gen: gen}
 		}
-		return SearchMarksMsg{Results: marked}
+		return SearchMarksMsg{Results: marked, gen: gen}
 	}
 }
 

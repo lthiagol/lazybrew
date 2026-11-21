@@ -248,8 +248,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p := m.panels[PanelSearch]
 		p.loading = false
 		p.loaded = true
+		var toast tea.Cmd
 		if msg.Err != nil {
 			p.err = msg.Err
+			// A failed search is an error, not an empty result: say so in a toast.
+			toast = m.setToast("Search: "+msg.Err.Error(), modal.ToastError)
 		} else {
 			p.items = msg.Results
 			p.results = msg.Raw
@@ -257,9 +260,17 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		p.normalize()
 		cmd := m.switchPanel(PanelSearch)
+		if toast != nil {
+			return m, tea.Batch(cmd, toast)
+		}
 		return m, cmd
 
 	case SearchMarksMsg:
+		// A re-mark that is not the latest read the lists before a later write:
+		// its marks may be stale, so it is dropped (LB-20 b).
+		if msg.gen != m.remarkGen {
+			return m, nil
+		}
 		// Rows are matched by name, so marks read for an earlier search do not
 		// land on the rows of a newer one.
 		for i, r := range msg.Results {
