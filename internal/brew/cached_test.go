@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
@@ -66,39 +67,41 @@ func TestBrewReadsConcurrentCallsRunOnce(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var mu sync.Mutex
-			calls := 0
-			release := make(chan struct{})
-			runner := &brewtest.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
-				if strings.Join(args, " ") != tc.command {
-					t.Errorf("unexpected command %q", strings.Join(args, " "))
-					return nil, nil
-				}
-				mu.Lock()
-				calls++
-				mu.Unlock()
-				<-release
-				return []byte(tc.output), nil
-			}}
-			client := NewClient(runner)
-
-			var wg sync.WaitGroup
-			for i := 0; i < 20; i++ {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					if err := tc.read(client); err != nil {
-						t.Error(err)
+			synctest.Test(t, func(t *testing.T) {
+				var mu sync.Mutex
+				calls := 0
+				release := make(chan struct{})
+				runner := &brewtest.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
+					if strings.Join(args, " ") != tc.command {
+						t.Errorf("unexpected command %q", strings.Join(args, " "))
+						return nil, nil
 					}
-				}()
-			}
-			time.Sleep(20 * time.Millisecond)
-			close(release)
-			wg.Wait()
+					mu.Lock()
+					calls++
+					mu.Unlock()
+					<-release
+					return []byte(tc.output), nil
+				}}
+				client := NewClient(runner)
 
-			if calls != 1 {
-				t.Errorf("%s ran %d times for 20 concurrent callers, want 1", tc.command, calls)
-			}
+				var wg sync.WaitGroup
+				for i := 0; i < 20; i++ {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						if err := tc.read(client); err != nil {
+							t.Error(err)
+						}
+					}()
+				}
+				synctest.Wait()
+				close(release)
+				wg.Wait()
+
+				if calls != 1 {
+					t.Errorf("%s ran %d times for 20 concurrent callers, want 1", tc.command, calls)
+				}
+			})
 		})
 	}
 }

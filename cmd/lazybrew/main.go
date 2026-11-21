@@ -8,6 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/app"
+	"github.com/lthiagol/lazybrew/internal/brew"
 )
 
 // version is set at link time with -ldflags "-X main.version=...". Left empty,
@@ -56,7 +57,10 @@ func main() {
 
 	p := tea.NewProgram(m)
 
-	if _, err := p.Run(); err != nil {
+	_, err = p.Run()
+	// Close the debug log file, if --debug opened one, before the process ends.
+	brew.ResetLogger()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
