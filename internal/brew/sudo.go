@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"slices"
 	"strings"
 )
 
@@ -47,5 +48,5 @@ func sudoError(args []string, err error) error {
 	if err == nil || !errorMentions(err, terminalMarkers) {
 		return err
 	}
-	return &NeedsSudoError{Command: strings.Join(args, " "), Err: err}
+	return &NeedsSudoError{Command: strings.Join(args, " "), Args: slices.Clone(args), Err: err}
 }
