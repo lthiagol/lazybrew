@@ -47,12 +47,12 @@ func TestFormulaDepsShowInstalledState(t *testing.T) {
 			t.Fatalf("the Deps tab should show %q, got:\n%s", want, out)
 		}
 	}
-	for _, row := range [][2]string{{"✓", "ncurses"}, {"○", "readline"}, {"○", "cmake"}} {
+	for _, row := range [][2]string{{"✔", "ncurses"}, {"○", "readline"}, {"○", "cmake"}} {
 		if !hasRow(out, row[0], row[1]) {
 			t.Fatalf("the Deps tab should show %s %s, got:\n%s", row[0], row[1], out)
 		}
 	}
-	if hasRow(out, "✓", "readline") || hasRow(out, "○", "ncurses") {
+	if hasRow(out, "✔", "readline") || hasRow(out, "○", "ncurses") {
 		t.Fatalf("installed state is per package, got:\n%s", out)
 	}
 }
@@ -70,7 +70,7 @@ func TestDepIconsWaitForTheInstalledList(t *testing.T) {
 	p.formulae = []brew.Formula{{Name: "bash", Dependencies: []string{"ncurses"}}}
 	m = sendKey(m, "l")
 	out := ansi.Strip(m.renderContent(70, 20))
-	if strings.Contains(out, "✓") || strings.Contains(out, "○") {
+	if strings.Contains(out, "✔") || strings.Contains(out, "○") {
 		t.Fatalf("no icon should show until the installed list loads, got:\n%s", out)
 	}
 	if !strings.Contains(out, "ncurses") {
@@ -116,7 +116,7 @@ func TestCaskDepsGroupFormulaeCasksAndRequirements(t *testing.T) {
 	if !hasRow(out, "○", "python@3.14") || !hasRow(out, "○", "docker") {
 		t.Fatalf("the cask Deps tab should show the formula and cask rows unlisted, got:\n%s", out)
 	}
-	if hasRow(out, "○", "macOS") || hasRow(out, "✓", "macOS") {
+	if hasRow(out, "○", "macOS") || hasRow(out, "✔", "macOS") {
 		t.Fatalf("a requirement is not a package and carries no icon, got:\n%s", out)
 	}
 }
@@ -126,7 +126,7 @@ func TestUsedByListsInstalledDependents(t *testing.T) {
 	m = sendKey(m, "l")
 	m = sendKey(m, "l")
 	m.tabContent[tabKey(PanelFormulae, formulaUsesTab, "bash")] = "ncurses\n"
-	if out := ansi.Strip(m.renderContent(70, 20)); !hasRow(out, "✓", "ncurses") {
+	if out := ansi.Strip(m.renderContent(70, 20)); !hasRow(out, "✔", "ncurses") {
 		t.Fatalf("the Used By tab should list the installed dependent, got:\n%s", out)
 	}
 	m.tabContent[tabKey(PanelFormulae, formulaUsesTab, "bash")] = noDependents
@@ -172,7 +172,7 @@ func TestSearchResultDependenciesCheckInstalled(t *testing.T) {
 			t.Fatalf("the search result should show %q, got:\n%s", want, out)
 		}
 	}
-	if !hasRow(out, "✓", "ncurses") || !hasRow(out, "○", "cmake") {
+	if !hasRow(out, "✔", "ncurses") || !hasRow(out, "○", "cmake") {
 		t.Fatalf("the search result should show ncurses installed and cmake not, got:\n%s", out)
 	}
 }

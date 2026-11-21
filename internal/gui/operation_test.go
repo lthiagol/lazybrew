@@ -126,13 +126,13 @@ func TestOperationStepMarks(t *testing.T) {
 	m.icons = style.UnicodeIcons
 	m.opState = operationFrom(Operation{Title: "upgrade bash", Status: opRunning, Started: time.Now()}, upgradeTranscript)
 	out := ansi.Strip(m.renderOperation(90, 30))
-	if !strings.Contains(out, "✓ Fetching bash") {
+	if !strings.Contains(out, "✔ Fetching bash") {
 		t.Fatalf("a finished step should be ticked, got:\n%s", out)
 	}
 	if !strings.Contains(out, "Removing: /opt/homebrew/Cellar/bash/5.2.37") {
 		t.Fatalf("the current step's latest output should show, got:\n%s", out)
 	}
-	if strings.Contains(out, "✓ Running `brew cleanup") {
+	if strings.Contains(out, "✔ Running `brew cleanup") {
 		t.Fatalf("the current step is not finished, got:\n%s", out)
 	}
 }

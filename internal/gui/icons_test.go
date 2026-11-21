@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
@@ -38,8 +39,25 @@ func TestIconSetsFillEveryField(t *testing.T) {
 	}
 }
 
+// TestInstalledGlyphIsBrewsCheckmark (lb25 AC-01): the installed mark is the
+// ✔ brew prints, in both sets, and it is one cell wide so rows stay aligned.
+func TestInstalledGlyphIsBrewsCheckmark(t *testing.T) {
+	for name, icons := range map[string]style.Icons{"nerd": style.NerdIcons, "unicode": style.UnicodeIcons} {
+		if icons.Installed != "✔" {
+			t.Errorf("%s set: Installed = %q, want ✔ (U+2714)", name, icons.Installed)
+		}
+		if w := lipgloss.Width(icons.Installed); w != 1 {
+			t.Errorf("%s set: Installed is %d cells wide, want 1", name, w)
+		}
+	}
+}
+
 func TestNerdGlyphsArePrivateUse(t *testing.T) {
 	for field, glyph := range setFields(t, style.NerdIcons) {
+		// Installed is brew's ✔ in both sets (lb25 AC-01), not a Nerd glyph.
+		if field == "Installed" {
+			continue
+		}
 		for _, r := range glyph {
 			if !inPrivateUse(r) {
 				t.Errorf("nerd field %s = U+%04X, want a Private Use Area glyph", field, r)

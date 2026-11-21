@@ -77,7 +77,7 @@ func TestUninstallFlow(t *testing.T) {
 	tm := testutil.NewTestModelWithRunner(t, runner, teatest.WithInitialTermSize(120, 40))
 
 	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
-	waitForScreen(t, tm, "▸ ✓ testformula")
+	waitForScreen(t, tm, "▸ ✔ testformula")
 	tm.Send(tea.KeyPressMsg{Code: 'x', Text: "x"})
 	waitForScreen(t, tm, "Uninstall testformula?")
 	tm.Send(tea.KeyPressMsg{Code: 'y', Text: "y"})

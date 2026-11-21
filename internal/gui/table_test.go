@@ -137,7 +137,7 @@ func TestPackageRowsCarryLoadedDataOnly(t *testing.T) {
 	cells := func(name string) string {
 		return ansi.Strip(strings.Join(m.pkgRow(name, m.installedList(depFormula)).cells, "|"))
 	}
-	if got := cells("ncurses"); got != "✓|ncurses|6.5|Terminal handling" {
+	if got := cells("ncurses"); got != "✔|ncurses|6.5|Terminal handling" {
 		t.Fatalf("an installed package should carry its version and description, got %q", got)
 	}
 	if got := cells("cmake"); got != "○|cmake||" {

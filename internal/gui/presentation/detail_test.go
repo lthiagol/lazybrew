@@ -85,10 +85,10 @@ func TestFormulaStatusRowsCarryIconAndWord(t *testing.T) {
 		f    brew.Formula
 		want string
 	}{
-		{"installed", brew.Formula{Name: "bash", Version: "5.2"}, "✓ installed"},
+		{"installed", brew.Formula{Name: "bash", Version: "5.2"}, "✔ installed"},
 		{"outdated", brew.Formula{Name: "bash", Version: "5.2", Outdated: true, NewVersion: "5.3"}, "↑ outdated 5.2 → 5.3"},
 		{"pinned", brew.Formula{Name: "bash", Version: "5.2", Pinned: true, Outdated: true, NewVersion: "5.3"}, "• pinned"},
-		{"keg-only", brew.Formula{Name: "bash", Version: "5.2", KegOnly: true}, "✓ installed · keg-only"},
+		{"keg-only", brew.Formula{Name: "bash", Version: "5.2", KegOnly: true}, "✔ installed · keg-only"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestFormulaStatusRowsCarryIconAndWord(t *testing.T) {
 
 func TestCaskStatusNotesAutoUpdate(t *testing.T) {
 	got := ansi.Strip(FormatCaskInfo(brew.Cask{Name: "firefox", Version: "135", AutoUpdates: true}, 60, style.UnicodeIcons))
-	if !strings.Contains(got, "✓ installed · auto-update") {
+	if !strings.Contains(got, "✔ installed · auto-update") {
 		t.Fatalf("want the auto-update note, got:\n%s", got)
 	}
 }
