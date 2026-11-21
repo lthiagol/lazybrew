@@ -65,3 +65,12 @@ Brief: `work/briefs/fix-lb16-update-when-stale-r2.md`. One commit per finding, i
 - No brew write command run. `make test-integration` not run.
 
 **Seen, not done.** The r1 item "a refused stale enqueue leaves the preload waiting for the next Status load" should now clear, since the applied launch read starts the preload. Not tested.
+
+## Fix r3 — cosmetic, the reviewer's two minor findings
+
+Brief: `work/briefs/fix-lb16-update-when-stale-r3.md`. Reviewer: `work/inbox/reviewer-lb16-update-when-stale-r2.md` (F-r2-01, F-r2-02).
+
+- `9caadf6` — `lb16 fix r3: move config import into module group, reword emitter doc [LB-16]`. No behaviour change.
+- F-r2-01: `internal/config` import moved into the module group in `brew_update_test.go`, `gui_misc_test.go`, `tick_chain_test.go`. Scan of every touched `.go` file (`git diff --name-only 75ecbba^ HEAD -- '*.go'`) for a module import in the stdlib group: no hits left.
+- F-r2-02: the doc of `TestNonRRefreshEmittersStayCacheOnly` now says install, uninstall and mutation emitters stay plain; R and the brew-update completion load the count.
+- Gate: `make test-fast PKG=./internal/gui/...` ok; `make ci` exit 0 (gofmt, vet, `-race`, all coverage floors, build).
