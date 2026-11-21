@@ -264,3 +264,39 @@ func TestYCopiesAnOverlayWithNoOutputByItsStatusRow(t *testing.T) {
 		t.Errorf("toast = %q, want %q", got, "Copied 2 lines")
 	}
 }
+
+// y on the Logs tab copies every line whole: a line wider than the copy's
+// render width is not cut with … in the copy.
+func TestYCopiesALongLogLineWhole(t *testing.T) {
+	m := logsModel(t, 80, 24, "/tmp/moshi-hook.log", "/tmp/moshi-hook.log")
+	copied := captureClipboard(m)
+	long := "START" + strings.Repeat("0123456789", 61) + "END"
+	m.logs.loaded, m.logs.err = true, nil
+	m.logs.lines = []string{"short", long}
+
+	m = sendKey(m, "y")
+
+	if len(*copied) != 1 || !strings.Contains((*copied)[0], "\n"+long) {
+		t.Fatalf("y copied %q, want the %d-cell line whole", *copied, len(long))
+	}
+	if strings.Contains((*copied)[0], "…") {
+		t.Errorf("the copy is cut: %q", (*copied)[0])
+	}
+}
+
+// y on Status Config copies every row whole, not cut to the main width.
+func TestYCopiesALongConfigRowWhole(t *testing.T) {
+	m := newTestModel()
+	copied := captureClipboard(m)
+	m.activePanel = PanelStatus
+	m.activeTab = statusConfigTab
+	m.panels[PanelStatus].loaded = true
+	long := "HOMEBREW_PREFIX: " + strings.Repeat("0123456789", 50) + "END"
+	m.tabContent[tabKey(PanelStatus, statusConfigTab, statusItemName)] = long
+
+	m = sendKey(m, "y")
+
+	if len(*copied) != 1 || (*copied)[0] != long {
+		t.Fatalf("y copied %q, want the row whole", *copied)
+	}
+}
