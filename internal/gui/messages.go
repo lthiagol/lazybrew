@@ -45,6 +45,13 @@ type TabContentMsg struct {
 	Err      error
 }
 
+// VulnsMsg is the result of the Vulns tab's check: brew's report, or the error
+// that stopped it.
+type VulnsMsg struct {
+	Report string
+	Err    error
+}
+
 type SearchDoneMsg struct {
 	Results []string
 	Raw     []brew.SearchResult

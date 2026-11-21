@@ -45,8 +45,11 @@ type Model struct {
 	showHelp     bool
 	// helpScroll is how far the help text is scrolled, in rows. It starts at
 	// the top each time help opens.
-	helpScroll     int
-	tabContent     map[string]string
+	helpScroll int
+	tabContent map[string]string
+	// vulns is the Vulns tab's check. It is not in tabContent, so R and the
+	// panel reloads leave it alone.
+	vulns          vulnsState
 	pendingAction  string
 	pendingService string
 	pendingMutType mutationType
