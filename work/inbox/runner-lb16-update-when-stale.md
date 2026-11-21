@@ -1,0 +1,36 @@
+# Receipt — lb16-update-when-stale (runner)
+
+**Commits, one per AC, in order**
+- AC-01 `75ecbba` — brew: last update time from `.git/FETCH_HEAD`
+- AC-02 `0ecc2ba` — config: `update_on_start` true/false/auto; `update_stale_hours`
+- AC-03 `080e9e5` — gui: launch check, header badge, preload wait, outdated reload
+- AC-04 `e82b38d` — README and DESIGN
+
+**Per AC evidence**
+- AC-01: `make test-fast PKG=./internal/brew/...` → `ok internal/brew`. `go test -run LastUpdate -v` → 4 PASS (ReadsFetchHeadMtime, WithoutFetchHeadIsZero, RepositoryErrorIsReturned, ReadsRepositoryOnce). No `git` is run; `brew --repository` is read once per reader, and a failed read is not kept.
+- AC-02: `make test-fast PKG="./internal/config/... ./internal/gui/..."` → all ok. New `internal/config/update_test.go`: defaults (auto, 6); true/false/auto; invalid strings error; stale hours 12 and 1 kept; 0 and -3 error. Parsing: custom `UnmarshalYAML` on `UpdateMode` (not a second key). Stale hours below 1 is a load error, like an unknown icon set.
+- AC-03: `make test-fast PKG=./internal/gui/...` → all ok. New `internal/gui/launch_check_test.go` (11 unit tests) and `internal/gui/flows/launch_check_test.go` (2 teatest flows asserting on output). Stale → one `brew update` through `task.Manager`, then `1 outdated` on screen. Fresh → no update, `updated 1h ago`, no `brew outdated` at launch. Unreadable time → stale.
+- Mutation: completion back to `RefreshMsg{}` → `TestLaunchCheckStaleRunsOneUpdateAndReloadsOutdated`: "Outdated after the update = {N:0 Known:false}, want 1 known"; `TestBrewUpdateCompletionLoadsOutdated` fails. Restored.
+- Race found and fixed: Init's active-panel Status read overlaps a stale update and can land after the completion's refresh, erasing `1 outdated`. Fix: Init reads are tagged (`launchRead`), and a tagged read is dropped once `launchStale` is set. Test: `TestLaunchReadLandingAfterStaleUpdateIsDropped`; with the drop disabled it fails with "{N:0 Known:false}".
+- Flow flake found and fixed: two sequential `waitForScreen` calls failed 22 of 30 runs (teatest consumes output it reads). Now one wait on `1 outdated`: 30 of 30 pass.
+
+**Tests changed (named, with reason)**
+- `TestBrewUpdateCompletionStaysPlain` → `TestBrewUpdateCompletionLoadsOutdated` (outdated_count_test.go): asserted the M9 "completion stays plain" rule, which the brief reverses.
+- `preloadConfig()` (preload_test.go) sets `update_on_start: false`: those tests drive the preload directly, and under `auto` it waits for a launch check they never run.
+- Mechanical: `UpdateOnStart = true/false` → `config.UpdateAlways/UpdateNever` in 7 gui test files; `TestDefaultConfig`-style default check now expects auto. No golden or snapshot file changed.
+
+**Gate**
+- `make ci` → exit 0: fmt-check, vet, `go test ./... -race -count=1`, all coverage floors (app 70.0≥64, brew 87.1≥78, config 88.5≥85, gui 90.0≥83, anim 88.2≥86, modal 89.2≥88, presentation 100≥96, style 89.5≥88, task 96.2≥93, logtail 92.3≥90), build.
+- `GOOS=darwin go build ./...` → exit 0.
+- No brew write command was run. Tests use the mock runner; `brew --repository` is never called for real.
+
+**Decisions (ruling wanted)**
+- `R` under `auto` does not run `brew update` (gate unchanged). Filed `Q-lb16-r-key-auto`.
+- The completion of any `brew update` now reloads outdated and diagnostics, under `true` too: each `true` launch also runs `brew outdated`, `brew doctor`, `brew config`. Filed `Q-lb16-true-launch-diagnostics`.
+- Auto mode arms no update ticker; the spinner already redraws.
+- "never updated" shows only for `true`.
+
+**Seen, not done**
+- If the stale launch update fails to enqueue (queue full), the preload waits for the next Status load.
+- The `R` path still runs its outdated read in the same batch as `brew update`, not after it. The new test covers the completion path only.
+- AC commits lack the `Co-Authored-By` line the attribution rule asks for. AGENTS.md forbids amending, so they are left as they are.

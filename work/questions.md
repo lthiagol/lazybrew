@@ -757,3 +757,32 @@ byte-identical, so the exemptions in `footerExempt` stand as the record of the
 current omission. Whether the Status/Outdated/Taps footers should show the tab
 keys, and whether Status `j/k` belong on its footer, is a UI decision for the
 user; parked in `work/backlog.md` as LB-13.
+
+## Questions raised — slice `lb16-update-when-stale` (runner lane)
+
+### Q-lb16-r-key-auto — should the R key run `brew update` under `auto`?
+
+- **Evidence.** `R` runs `brew update` only when `brew.update_on_start` is
+  `true` (keys.go, the R case; unchanged gate). Under `auto` the launch check
+  is the only update that runs by itself, and `R` only reloads.
+- **Effect.** Under `auto`, a user who presses `R` with a stale brew gets the
+  outdated list from the old metadata, and the header keeps its age.
+- **Decision taken.** Kept `R` as it was (only `true` updates on `R`), because
+  the brief does not ask for a change to `R`.
+- **Ask.** Should `R` also run `brew update` under `auto`? Recommended: yes, one
+  line in the R case (`!= config.UpdateNever`), since `R` is an explicit
+  request. Left for the orchestrator to rule.
+
+### Q-lb16-true-launch-diagnostics — the update's completion reloads diagnostics at every launch under `true`
+
+- **Evidence.** The brief asks for `RefreshMsg{LoadOutdated: true,
+  ReloadDiagnostics: true}` when `brew update` finishes. That completion runs in
+  every mode, so under `update_on_start: true` each launch now also runs
+  `brew outdated`, `brew doctor` and `brew config`. Before, the launch path read
+  none of them (M9).
+- **Decision taken.** Followed the brief. The change is in the brew-update
+  completion in `internal/gui/gui.go`.
+- **Ask.** Is that acceptable under `true`, or should the completion reload only
+  the outdated count there (`ReloadDiagnostics: false`)? Recommended: keep it as
+  the brief says, since `brew doctor` after an update is the reason `R` does it
+  too.
