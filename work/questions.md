@@ -899,3 +899,8 @@ Completed-row change is `fix-lb25-search-polish-r1`.
   (`sidebar_rows.go:196`). The fix brief keeps toasts and the trusted tap on ✓.
 - **Ask.** Make the dashboard and command-log ticks ✔ too, so one check mark
   shows across the interface (recommended), or leave them ✓?
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb25-ok-uses:** yes, one check mark across the
+interface: `Icons.OK` becomes ✔ in both icon sets, so the dashboard "ready to brew", the
+command-log success, the success toast and the trusted tap show ✔ too (error and warn
+glyphs unchanged). `fix-lb25-search-polish-r2`.
