@@ -115,8 +115,8 @@ func TestStatusRefreshKeepsOutdatedCache(t *testing.T) {
 // must still load the outdated count, so the dashboard is not stuck at
 // "not loaded" until R is pressed again.
 //
-// The load flag belongs to the R path only: the brew-update completion
-// handler also serves the Init path and must stay plain.
+// The load flag is R's own request. The brew-update completion loads the count
+// again once the update ends (TestBrewUpdateCompletionLoadsOutdated).
 func TestRKeyLoadsOutdatedWhenUpdateOnStart(t *testing.T) {
 	m := newTestModel()
 	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
@@ -150,13 +150,9 @@ func TestRKeyLoadsOutdatedWhenUpdateOnStart(t *testing.T) {
 	}
 }
 
-// TestBrewUpdateCompletionStaysPlain guards the constraint that keeps the
-// load flag on the R path: the brew-update completion handler serves both
-// the R key and the Init path, so it must emit a plain refresh — otherwise
-// the count would be loaded at startup, which M9 forbids.
 // TestBrewUpdateCompletionLoadsOutdated: the end of a brew update changes brew's
-// metadata, so its completion reloads the outdated count. This replaces the M9
-// check that the completion stayed plain (lb16 AC-03).
+// metadata, so its completion reloads the outdated count. The launch's stale
+// update and R's update both end here (lb16 AC-03).
 func TestBrewUpdateCompletionLoadsOutdated(t *testing.T) {
 	m := newTestModel()
 	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
