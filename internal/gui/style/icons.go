@@ -31,7 +31,7 @@ var NerdIcons = Icons{
 	Scheduled:  "\uf017", // clock-o
 	Error:      "\uf057", // times-circle
 	Warn:       "\uf071", // exclamation-triangle
-	OK:         "\uf00c", // check
+	OK:         "\u2714",
 	Info:       "\uf05a", // info-circle
 	Marker:     "\uf054", // chevron-right
 	Refresh:    "\uf021", // refresh
@@ -56,7 +56,7 @@ var UnicodeIcons = Icons{
 	Scheduled:  "⏲",
 	Error:      "✗",
 	Warn:       "⚠",
-	OK:         "✓",
+	OK:         "✔",
 	Info:       "i",
 	Marker:     "▸",
 	Refresh:    "⟳",

@@ -52,10 +52,23 @@ func TestInstalledGlyphIsBrewsCheckmark(t *testing.T) {
 	}
 }
 
+// TestOKGlyphIsBrewsCheckmark (lb25 fix r2, Q-lb25-ok-uses): the success mark
+// is the same ✔ as the installed mark, in both sets, one cell wide.
+func TestOKGlyphIsBrewsCheckmark(t *testing.T) {
+	for name, icons := range map[string]style.Icons{"nerd": style.NerdIcons, "unicode": style.UnicodeIcons} {
+		if icons.OK != "✔" {
+			t.Errorf("%s set: OK = %q, want ✔ (U+2714)", name, icons.OK)
+		}
+		if w := lipgloss.Width(icons.OK); w != 1 {
+			t.Errorf("%s set: OK is %d cells wide, want 1", name, w)
+		}
+	}
+}
+
 func TestNerdGlyphsArePrivateUse(t *testing.T) {
 	for field, glyph := range setFields(t, style.NerdIcons) {
-		// Installed is brew's ✔ in both sets (lb25 AC-01), not a Nerd glyph.
-		if field == "Installed" {
+		// Installed and OK are brew's ✔ in both sets (lb25 AC-01, r2), not Nerd glyphs.
+		if field == "Installed" || field == "OK" {
 			continue
 		}
 		for _, r := range glyph {

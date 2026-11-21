@@ -943,8 +943,8 @@ func TestCommandLogShowsExecutedCommands(t *testing.T) {
 	// entry has the same "running" state.
 	cl.SetStatus(0, CommandSuccess)
 	view = cl.View(40, 10)
-	if !strings.Contains(view, "✓") {
-		t.Fatal("expected success indicator in command log view")
+	if !strings.Contains(view, "✔") || strings.Contains(view, "✓") {
+		t.Fatal("expected the ✔ success indicator in command log view, and no ✓")
 	}
 }
 
