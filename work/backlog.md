@@ -57,7 +57,7 @@ it ever does. Raised by the cr5 r1 review.
 (a cross-package logger reset); its `true` branch logs to stderr, the C13
 hazard. Narrow it to a reset-only helper later. Raised by the cr5 r1 review.
 
-**LB-17 (parked)** — installed casks get an empty `Cask.FullName`: `brew info`
+**LB-17 (closed, lb20-cask-followups r1)** — installed casks get an empty `Cask.FullName`: `brew info`
 writes `full_token`, not `full_name`, so `installedFromTap` never lists casks
 and the untap warning misses them. Read `full_token`. Raised by the lb12 r1
 review.
@@ -67,7 +67,7 @@ review.
 or drive the model without a teatest program) if `make ci` time matters. Raised
 by the lb19 r2 review.
 
-**LB-19 (parked)** — Search → info runs `brew info --json=v2 <name>` with no
+**LB-19 (closed, lb20-cask-followups r1)** — Search → info runs `brew info --json=v2 <name>` with no
 `--cask`; for a name that is both a formula and a cask brew may show the
 formula. The row's type is now certain, so pass `--cask` for cask rows. Raised
 by the lb19 r1 review.
