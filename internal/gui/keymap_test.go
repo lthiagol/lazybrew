@@ -5,11 +5,13 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
 // isMsgString reports whether e is msg.String(), the expression the key
@@ -173,6 +175,327 @@ func (h keyHint) dispatchKeys() []string {
 		return []string{h.key}
 	}
 	return strings.Fields(h.keys)
+}
+
+// dispatchByPanel is the panels each key of the main key dispatch (handleKey in
+// keys.go) answers on. A case that compares m.activePanel to a panel answers on
+// that panel; one that compares it with != answers on every other panel; a case
+// that names no panel answers on all of them. Cases that are not at the top of
+// handleKey, such as the search box's, are not panel keys and are left out.
+func dispatchByPanel(t *testing.T) map[PanelID]map[string]bool {
+	t.Helper()
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "keys.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]PanelID{}
+	dispatch := map[PanelID]map[string]bool{}
+	for id := PanelStatus; id <= PanelSearch; id++ {
+		byName["Panel"+id.String()] = id
+		dispatch[id] = map[string]bool{}
+	}
+	found := false
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "handleKey" {
+			continue
+		}
+		for _, stmt := range fn.Body.List {
+			sw, ok := stmt.(*ast.SwitchStmt)
+			if !ok || !isMsgString(sw.Tag) {
+				continue
+			}
+			found = true
+			for _, c := range sw.Body.List {
+				clause := c.(*ast.CaseClause)
+				panels := answeredOn(clause.Body, byName)
+				for _, e := range clause.List {
+					lit, ok := e.(*ast.BasicLit)
+					if !ok || lit.Kind != token.STRING {
+						continue
+					}
+					key, err := strconv.Unquote(lit.Value)
+					if err != nil {
+						t.Fatal(err)
+					}
+					for _, id := range panels {
+						dispatch[id][key] = true
+					}
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("found no key switch in handleKey: the source scan is broken")
+	}
+	return dispatch
+}
+
+// answeredOn is the panels a case body answers on, from the comparisons with
+// m.activePanel in it. See dispatchByPanel.
+func answeredOn(body []ast.Stmt, byName map[string]PanelID) []PanelID {
+	eq, neq := map[PanelID]bool{}, map[PanelID]bool{}
+	for _, stmt := range body {
+		ast.Inspect(stmt, func(n ast.Node) bool {
+			b, ok := n.(*ast.BinaryExpr)
+			if !ok || (b.Op != token.EQL && b.Op != token.NEQ) {
+				return true
+			}
+			id, ok := panelComparison(b, byName)
+			if !ok {
+				return true
+			}
+			if b.Op == token.EQL {
+				eq[id] = true
+			} else {
+				neq[id] = true
+			}
+			return true
+		})
+	}
+	var panels []PanelID
+	for id := PanelStatus; id <= PanelSearch; id++ {
+		if len(eq) > 0 && !eq[id] || len(eq) == 0 && neq[id] {
+			continue
+		}
+		panels = append(panels, id)
+	}
+	return panels
+}
+
+// panelComparison is the panel a comparison of m.activePanel with a panel
+// constant names.
+func panelComparison(b *ast.BinaryExpr, byName map[string]PanelID) (PanelID, bool) {
+	for _, pair := range [][2]ast.Expr{{b.X, b.Y}, {b.Y, b.X}} {
+		sel, ok := pair[0].(*ast.SelectorExpr)
+		if !ok || sel.Sel.Name != "activePanel" {
+			continue
+		}
+		id, ok := pair[1].(*ast.Ident)
+		if !ok {
+			continue
+		}
+		if panel, ok := byName[id.Name]; ok {
+			return panel, true
+		}
+	}
+	return 0, false
+}
+
+// footerOn is every footer line a panel shows, over the states its footer
+// changes with: the selected Services or Taps item in each state, the Services
+// logs tab, a finished operation (its Esc line) and the help screen.
+func footerOn(id PanelID) []keyHint {
+	var out []keyHint
+	show := func(setup func(m *Model)) {
+		m := newTestModel()
+		m.activePanel = id
+		setup(m)
+		out = append(out, m.footerHints()...)
+	}
+	show(func(m *Model) {})
+	show(func(m *Model) { m.activeTab = servicesLogsTab })
+	show(func(m *Model) { m.opState = &Operation{Status: opSuccess} })
+	show(func(m *Model) { m.showHelp = true })
+	if id == PanelServices {
+		for _, status := range []brew.ServiceStatus{brew.ServiceStarted, brew.ServiceStopped, brew.ServiceError, brew.ServiceScheduled} {
+			show(func(m *Model) {
+				m.panels[PanelServices].services = []brew.Service{{Status: status}}
+			})
+		}
+	}
+	if id == PanelTaps {
+		for _, tap := range []brew.Tap{
+			{Name: "a/b", Installed: true},
+			{Name: "a/b", Installed: true, Trusted: true},
+			{Name: "homebrew/core", Installed: true, IsOfficial: true},
+		} {
+			for _, unknown := range []bool{false, true} {
+				show(func(m *Model) {
+					m.panels[PanelTaps].taps = []brew.Tap{tap}
+					m.panels[PanelTaps].trustUnknown = unknown
+				})
+			}
+		}
+	}
+	return out
+}
+
+// helpOn is the help lines a panel's keys are on: the Global page and the page
+// named for the panel.
+func helpOn(id PanelID) []keyHint {
+	var out []keyHint
+	for _, page := range buildHelp() {
+		if page.title != "Global" && page.title != id.String() {
+			continue
+		}
+		for _, sec := range page.sections {
+			out = append(out, sec.items...)
+		}
+	}
+	return out
+}
+
+// TestPanelKeysAreOnFooterAndHelp holds each panel's dispatch to its footer and
+// its help screen, both ways. A key the panel answers must be on its footer and
+// on its help through an entry that has a footer word and a help line. Every
+// footer and help line must name a key the panel answers. Both lists come from
+// the real footer and help, and the dispatch from the source of handleKey.
+func TestPanelKeysAreOnFooterAndHelp(t *testing.T) {
+	dispatch := dispatchByPanel(t)
+	for id := PanelStatus; id <= PanelSearch; id++ {
+		answers := dispatch[id]
+		if len(answers) == 0 {
+			t.Fatalf("%s: the dispatch answers no key", id)
+		}
+		footer, help := footerOn(id), helpOn(id)
+		for k := range answers {
+			if !onFooterAndHelp(k, footer, help) {
+				t.Errorf("%s: the dispatch answers %q, which its footer and help do not both show", id, k)
+			}
+		}
+		for _, h := range footer {
+			if !answersAny(h, answers) {
+				t.Errorf("%s: the footer lists %q %q, which the panel does not answer", id, h.key, h.desc)
+			}
+		}
+		for _, h := range help {
+			if !answersAny(h, answers) {
+				t.Errorf("%s: the help lists %q %q, which the panel does not answer", id, h.key, h.help)
+			}
+		}
+	}
+}
+
+// onFooterAndHelp reports whether a table entry that answers k is on the footer,
+// when it has a footer word, and on the help, when it has a help line.
+func onFooterAndHelp(k string, footer, help []keyHint) bool {
+	for _, e := range keyTable {
+		if !slices.Contains(e.dispatchKeys(), k) || e.desc == "" && e.help == "" {
+			continue
+		}
+		if (e.desc == "" || slices.Contains(footer, e)) && (e.help == "" || slices.Contains(help, e)) {
+			return true
+		}
+	}
+	return false
+}
+
+// answersAny reports whether the panel answers one of h's keys.
+func answersAny(h keyHint, answers map[string]bool) bool {
+	for _, k := range h.dispatchKeys() {
+		if answers[k] {
+			return true
+		}
+	}
+	return false
+}
+
+// modalKeys is the msg.String() cases of each modal's Update, read from the
+// source of the modal package.
+func modalKeys(t *testing.T) map[string]map[string]bool {
+	t.Helper()
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, "modal", func(fi fs.FileInfo) bool {
+		return !strings.HasSuffix(fi.Name(), "_test.go")
+	}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := map[string]map[string]bool{}
+	for _, pkg := range pkgs {
+		for _, file := range pkg.Files {
+			for _, decl := range file.Decls {
+				fn, ok := decl.(*ast.FuncDecl)
+				if !ok || fn.Name.Name != "Update" || fn.Recv == nil {
+					continue
+				}
+				star, ok := fn.Recv.List[0].Type.(*ast.StarExpr)
+				if !ok {
+					continue
+				}
+				recv := star.X.(*ast.Ident).Name
+				keys[recv] = map[string]bool{}
+				ast.Inspect(fn.Body, func(n ast.Node) bool {
+					sw, ok := n.(*ast.SwitchStmt)
+					if !ok || !isMsgString(sw.Tag) {
+						return true
+					}
+					for _, c := range sw.Body.List {
+						for _, e := range c.(*ast.CaseClause).List {
+							lit, ok := e.(*ast.BasicLit)
+							if !ok || lit.Kind != token.STRING {
+								continue
+							}
+							key, err := strconv.Unquote(lit.Value)
+							if err != nil {
+								t.Fatal(err)
+							}
+							keys[recv][key] = true
+						}
+					}
+					return true
+				})
+			}
+		}
+	}
+	return keys
+}
+
+// TestModalHintsMatchUpdate holds each modal's Hints to the keys its Update
+// answers. A key the Update answers must be listed by Hints, or be on the short
+// list of keys shown another way, and every key Hints lists must be answered.
+func TestModalHintsMatchUpdate(t *testing.T) {
+	modals := map[string]modal.Hinter{
+		"ConfirmModal": &modal.ConfirmModal{},
+		"InputModal":   &modal.InputModal{},
+		"MenuModal":    &modal.MenuModal{},
+	}
+	// The keys a modal answers that its Hints leave out, each shown another
+	// way: the confirm's choice keys show as the Yes and No buttons, and the
+	// menu's digits are drawn on each item's row.
+	digits := map[string]bool{}
+	for d := '0'; d <= '9'; d++ {
+		digits[string(d)] = true
+	}
+	unlisted := map[string]map[string]bool{
+		"ConfirmModal": {"enter": true, "h": true, "left": true, "l": true, "right": true},
+		"MenuModal":    digits,
+	}
+
+	updates := modalKeys(t)
+	for name, m := range modals {
+		answers, ok := updates[name]
+		if !ok {
+			t.Errorf("%s: no Update in the modal package", name)
+			continue
+		}
+		listed := map[string]bool{}
+		for _, h := range m.Hints() {
+			if h.Keys == "" {
+				t.Errorf("%s: hint %q has no Keys", name, h.Key)
+			}
+			for _, k := range strings.Fields(h.Keys) {
+				listed[k] = true
+			}
+		}
+		for k := range listed {
+			if !answers[k] {
+				t.Errorf("%s: Hints lists %q, which Update does not answer", name, k)
+			}
+		}
+		for k := range answers {
+			if !listed[k] && !unlisted[name][k] {
+				t.Errorf("%s: Update answers %q, which Hints does not list", name, k)
+			}
+		}
+		for k := range unlisted[name] {
+			if !answers[k] {
+				t.Errorf("%s: the unlisted key %q is no longer answered; drop it from the list", name, k)
+			}
+		}
+	}
 }
 
 // keyTable lists every entry of the key tables in keybindings.go. The tests

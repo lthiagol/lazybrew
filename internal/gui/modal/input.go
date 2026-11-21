@@ -63,7 +63,7 @@ func (m *InputModal) View() tea.View {
 
 // Hints are the keys the input answers to: enter, and esc.
 func (m *InputModal) Hints() []Hint {
-	return []Hint{{Key: "enter", Desc: "submit"}, hintCancel}
+	return []Hint{{Key: "enter", Desc: "submit", Keys: "enter"}, hintCancel}
 }
 
 func (m *InputModal) Done() bool      { return m.done }

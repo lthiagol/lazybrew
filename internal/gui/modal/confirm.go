@@ -139,7 +139,7 @@ func choice(accent color.Color, key, rest string, selected bool) string {
 
 // Hints are the keys the confirm answers to: y, n, and esc.
 func (m *ConfirmModal) Hints() []Hint {
-	return []Hint{{Key: "y", Desc: "yes"}, {Key: "n", Desc: "no"}, hintCancel}
+	return []Hint{{Key: "y", Desc: "yes", Keys: "y"}, {Key: "n", Desc: "no", Keys: "n"}, hintCancel}
 }
 
 func (m *ConfirmModal) Done() bool      { return m.done }

@@ -78,7 +78,7 @@ func (m *MenuModal) View() tea.View {
 
 // Hints are the keys the menu answers to: the arrows, enter, and esc.
 func (m *MenuModal) Hints() []Hint {
-	return []Hint{{Key: "↑↓", Desc: "move"}, {Key: "enter", Desc: "choose"}, hintCancel}
+	return []Hint{{Key: "↑↓", Desc: "move", Keys: "up k down j"}, {Key: "enter", Desc: "choose", Keys: "enter"}, hintCancel}
 }
 
 func (m *MenuModal) Done() bool      { return m.done }
