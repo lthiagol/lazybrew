@@ -77,6 +77,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | lb22-update-default-and-leftovers | fc82630, dcc09ce, 6c5ee76, e5b6b16, 276f126 | closed | ok (r2, orchestrator-verified) |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c, a3284a2, 266cf69 | closed | ok (r2, orchestrator-verified); macOS manual test pending (user) |
 | lb24-copy-and-wording | 9beaafe, 755f7de, 6b2e627, 22a1a87, b05e324, 9762f16, ccd6fed, 2907e72 | closed | ok (r2) |
+| lb25-search-polish | b2885f6, 4c14fbf, 897f98f, 51bd21e, 89962c8 | closed | ok (r1 + ruled fixes, orchestrator-verified) |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
 | lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |
 | lb25-search-polish | b2885f6, 4c14fbf, 897f98f | implemented | awaiting reviewer |
