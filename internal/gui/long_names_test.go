@@ -208,8 +208,7 @@ func TestLongCaskNameReachesSearchInstall(t *testing.T) {
 	p.results = m.searchResults
 	p.items = []string{longCaskName + "  cask"}
 
-	// I installs from the result list; i would type into the search box.
-	m = sendKey(m, "I")
+	m = sendKey(m, "i")
 	if m.activeModal == nil {
 		t.Fatal("I on Search must open the install confirm")
 	}
