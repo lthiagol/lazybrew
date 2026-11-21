@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // captureClipboard swaps the clipboard of m for one that records what it is
@@ -30,10 +32,11 @@ func lastToastText(m *Model) string {
 	return ""
 }
 
-// y on a failed Operation copies its title and every output line, with the
-// escape codes removed and nothing cut.
+// y on a failed Operation copies its title, its status row, and every output
+// line, with the escape codes removed and nothing cut.
 func TestYCopiesTheOverlayAsPlainText(t *testing.T) {
 	m := newTestModel()
+	m.icons = style.UnicodeIcons
 	copied := captureClipboard(m)
 	m.opState = &Operation{
 		Title:  "install foo",
@@ -47,12 +50,135 @@ func TestYCopiesTheOverlayAsPlainText(t *testing.T) {
 
 	m = sendKey(m, "y")
 
-	want := "install foo\n==> Installing foo\nError: " + strings.Repeat("long ", 60) + "boom"
+	want := "install foo\n✗ Failed: boom · Esc to close\n==> Installing foo\nError: " + strings.Repeat("long ", 60) + "boom"
 	if len(*copied) != 1 || (*copied)[0] != want {
 		t.Fatalf("y copied %q, want one copy of %q", *copied, want)
 	}
-	if got := lastToastText(m); got != "Copied 3 lines" {
-		t.Errorf("toast = %q, want %q", got, "Copied 3 lines")
+	if got := lastToastText(m); got != "Copied 4 lines" {
+		t.Errorf("toast = %q, want %q", got, "Copied 4 lines")
+	}
+}
+
+// The overlay copy holds the status row as shown, without the y hint that
+// names the key just pressed.
+func TestYCopiesTheStatusRowWithoutTheCopyHint(t *testing.T) {
+	m := newTestModel()
+	m.icons = style.UnicodeIcons
+	copied := captureClipboard(m)
+	m.opState = &Operation{Title: "install foo", Status: opError, Err: errors.New("boom"), Started: time.Now(), Ended: time.Now()}
+
+	m = sendKey(m, "y")
+
+	if len(*copied) != 1 || !strings.Contains((*copied)[0], "\n✗ Failed: boom · Esc to close") {
+		t.Fatalf("y copied %q, want the status row", *copied)
+	}
+	if strings.Contains((*copied)[0], "y copy") {
+		t.Errorf("the copy holds the y hint: %q", (*copied)[0])
+	}
+}
+
+// y on Search copies a failed overlay: the overlay owns the keys while it is
+// open, so the letter is not typed into the hidden search box.
+func TestYOnSearchCopiesAFailedOverlay(t *testing.T) {
+	m := newTestModel()
+	m.icons = style.UnicodeIcons
+	copied := captureClipboard(m)
+	m.activePanel = PanelSearch
+	m.opState = &Operation{
+		Title:   "install foo",
+		Status:  opError,
+		Err:     errors.New("boom"),
+		Started: time.Now(),
+		Ended:   time.Now(),
+		Lines:   []string{"==> Installing foo", "Error: boom"},
+	}
+
+	m = sendKey(m, "y")
+
+	want := "install foo\n✗ Failed: boom · Esc to close\n==> Installing foo\nError: boom"
+	if len(*copied) != 1 || (*copied)[0] != want {
+		t.Fatalf("y copied %q, want one copy of %q", *copied, want)
+	}
+	if got := m.searchInput.Value(); got != "" {
+		t.Errorf("y typed %q into the search box under an overlay", got)
+	}
+}
+
+// The same overlay copy holds on Formulae, where y copies the overlay too.
+func TestYOnFormulaeCopiesAFailedOverlay(t *testing.T) {
+	m := newTestModel()
+	m.icons = style.UnicodeIcons
+	copied := captureClipboard(m)
+	m.activePanel = PanelFormulae
+	m.opState = &Operation{
+		Title:   "install foo",
+		Status:  opError,
+		Err:     errors.New("boom"),
+		Started: time.Now(),
+		Ended:   time.Now(),
+		Lines:   []string{"Error: boom"},
+	}
+
+	m = sendKey(m, "y")
+
+	want := "install foo\n✗ Failed: boom · Esc to close\nError: boom"
+	if len(*copied) != 1 || (*copied)[0] != want {
+		t.Fatalf("y copied %q, want one copy of %q", *copied, want)
+	}
+}
+
+// A sudo refusal that the retry runs copies the command under its status row,
+// as the overlay shows it.
+func TestYCopiesTheRetryCommandUnderTheStatusRow(t *testing.T) {
+	m := sudoFailedModel("install", "--cask", "foo")
+	m.icons = style.UnicodeIcons
+	copied := captureClipboard(m)
+	m.activePanel = PanelSearch
+
+	m = sendKey(m, "y")
+
+	want := "install foo\n✗ Failed: needs sudo · Enter  run in this terminal · Esc  close\nbrew install --cask foo"
+	if len(*copied) != 1 || (*copied)[0] != want {
+		t.Fatalf("y copied %q, want one copy of %q", *copied, want)
+	}
+}
+
+// With an overlay open, a focused search box still takes y as a letter.
+func TestYWithAnOverlayOpenAndTheBoxFocusedTypesIt(t *testing.T) {
+	m := newTestModel()
+	copied := captureClipboard(m)
+	m.activePanel = PanelSearch
+	m.searchInput.Focus()
+	m.opState = &Operation{Title: "install foo", Status: opError, Err: errors.New("boom"), Started: time.Now(), Ended: time.Now()}
+
+	m = sendKey(m, "y")
+
+	if got := m.searchInput.Value(); got != "y" {
+		t.Errorf("search box = %q, want %q", got, "y")
+	}
+	if len(*copied) != 0 {
+		t.Errorf("y copied %q while the box had focus", *copied)
+	}
+}
+
+// The overlay's status row offers y copy after the close hint when the row
+// holds both at the width, and leaves it out where the close hint would be cut.
+func TestOverlayStatusRowOffersYCopyWhereItFits(t *testing.T) {
+	for _, width := range []int{80, 140} {
+		m := sudoFailedModel("install", "--cask", "foo")
+		got := ansi.Strip(m.renderOperation(width, 24))
+		if want := "Enter  run in this terminal · Esc  close · y copy"; !strings.Contains(got, want) {
+			t.Errorf("width %d: status row lacks %q:\n%s", width, want, got)
+		}
+	}
+
+	m := sudoFailedModel("install", "--cask", "foo")
+	got := ansi.Strip(m.renderOperation(50, 24))
+	if want := "Enter  run in this terminal · Esc  close"; !strings.Contains(got, want) {
+		t.Errorf("width 50: the close hint is cut:\n%s", got)
+	}
+	if strings.Contains(got, "y copy") {
+		t.Errorf("width 50: the copy hint does not fit but is shown:\n%s", got)
 	}
 }
 
@@ -122,18 +248,20 @@ func TestYOnSearchTypesWhenTheBoxIsNotFocused(t *testing.T) {
 	}
 }
 
-// y with nothing on screen to copy says so and copies nothing.
-func TestYWithNothingToCopySaysSo(t *testing.T) {
+// An overlay copies its status row even with no output: the row is on screen,
+// so there is text to copy. "Nothing to copy" is left for an empty screen.
+func TestYCopiesAnOverlayWithNoOutputByItsStatusRow(t *testing.T) {
 	m := newTestModel()
 	copied := captureClipboard(m)
-	m.opState = &Operation{}
+	m.opState = &Operation{Title: "install foo", Status: opRunning, Started: time.Now()}
 
 	m = sendKey(m, "y")
 
-	if len(*copied) != 0 {
-		t.Errorf("y copied %q, want nothing", *copied)
+	want := "install foo\nRunning 0s · Esc to cancel"
+	if len(*copied) != 1 || (*copied)[0] != want {
+		t.Fatalf("y copied %q, want one copy of %q", *copied, want)
 	}
-	if got := lastToastText(m); got != "Nothing to copy" {
-		t.Errorf("toast = %q, want %q", got, "Nothing to copy")
+	if got := lastToastText(m); got != "Copied 2 lines" {
+		t.Errorf("toast = %q, want %q", got, "Copied 2 lines")
 	}
 }

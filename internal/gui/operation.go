@@ -34,6 +34,9 @@ const operationCloseHint = " · Esc to close"
 // the terminal can run: Enter runs it, Esc closes it.
 const operationRetryHint = " · Enter  run in this terminal · Esc  close"
 
+// operationCopyHint ends the status row of an open overlay: y copies it.
+const operationCopyHint = " · y copy"
+
 // operationAutoClose is how long a successful operation stays on screen before
 // it closes itself. The toast has already said it finished. Tests shorten it.
 var operationAutoClose = 2 * time.Second
@@ -130,13 +133,14 @@ func (m Model) renderOperation(width, height int) string {
 
 // operationStatus is the row under the title: the elapsed time while the run
 // goes on, then the final state. A finished run ends with how to close it, and
-// a long error is cut short so that hint stays on the row.
+// a long error is cut short so that hint stays on the row. Every row ends with
+// the y copy hint where the row holds it (withCopy).
 func (m Model) operationStatus(op *Operation, width int) string {
 	closeHint := style.SubtleText.Render(operationCloseHint)
 	switch op.Status {
 	case opSuccess:
-		return style.InstalledBadge.Render(presentation.WithIcon(m.icons.OK,
-			"Completed in "+formatElapsed(op.Ended.Sub(op.Started)))) + closeHint
+		return withCopy(style.InstalledBadge.Render(presentation.WithIcon(m.icons.OK,
+			"Completed in "+formatElapsed(op.Ended.Sub(op.Started))))+closeHint, width)
 	case opError:
 		hint := closeHint
 		failure := "Failed: " + op.Err.Error()
@@ -145,14 +149,33 @@ func (m Model) operationStatus(op *Operation, width int) string {
 			hint = style.SubtleText.Render(operationRetryHint)
 			failure = "Failed: needs sudo"
 		}
-		text := textutil.Clip(presentation.WithIcon(m.icons.Error, failure),
-			max(0, width-lipgloss.Width(hint)))
+		shown := presentation.WithIcon(m.icons.Error, failure)
+		if row := style.ErrorBadge.Render(shown) + hint; copyFits(row, width) {
+			return withCopy(row, width)
+		}
+		text := textutil.Clip(shown, max(0, width-lipgloss.Width(hint)))
 		return style.ErrorBadge.Render(text) + hint
 	case opCancelled:
-		return style.SubtleText.Render("Cancelled") + closeHint
+		return withCopy(style.SubtleText.Render("Cancelled")+closeHint, width)
 	default:
-		return style.SubtleText.Render("Running " + formatElapsed(time.Since(op.Started)) + " · Esc to cancel")
+		return withCopy(style.SubtleText.Render("Running "+formatElapsed(time.Since(op.Started))+" · Esc to cancel"), width)
 	}
+}
+
+// withCopy ends a status row with the y copy hint where the row holds it within
+// width. Where it does not, the row is returned as it is.
+func withCopy(row string, width int) string {
+	if !copyFits(row, width) {
+		return row
+	}
+	return row + style.SubtleText.Render(operationCopyHint)
+}
+
+// copyFits is whether a status row has room for the y copy hint. The hint
+// never cuts what the row shows without it, so a failed row whose text is cut
+// to its close hint gets no copy hint.
+func copyFits(row string, width int) bool {
+	return lipgloss.Width(row)+lipgloss.Width(operationCopyHint) <= width
 }
 
 // newProgressBar is the batch's progress bar with no width or position yet.
