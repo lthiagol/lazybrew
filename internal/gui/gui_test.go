@@ -405,24 +405,6 @@ func TestEmptyStateMessages(t *testing.T) {
 	}
 }
 
-func TestExtractPackageName(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"neovim  0.10.4  bottled", "neovim"},
-		{"google-chrome  132.0  auto-update", "google-chrome"},
-		{"ripgrep", "ripgrep"},
-		{"", ""},
-	}
-	for _, tc := range tests {
-		result := extractPackageName(tc.input)
-		if result != tc.expected {
-			t.Errorf("extractPackageName(%q) = %q, want %q", tc.input, result, tc.expected)
-		}
-	}
-}
-
 func TestDoMutationRejectedWhenRunning(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae

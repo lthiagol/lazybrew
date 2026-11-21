@@ -627,15 +627,6 @@ func (m Model) render() string {
 	return compose(base, m.width, m.height, overlays...)
 }
 
-func extractPackageName(item string) string {
-	for i, r := range item {
-		if r == ' ' || r == '\t' {
-			return item[:i]
-		}
-	}
-	return item
-}
-
 func sidebarWidth(cfg *config.Config, totalWidth int) int {
 	pct := cfg.GUI.SidebarWidth
 	if pct < 15 {

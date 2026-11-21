@@ -6,7 +6,6 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
-	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -49,7 +48,7 @@ func loadServices(m *Model, services []brew.Service, info []brew.ServiceInfo) *M
 	p.serviceInfo = info
 	p.items = make([]string, len(services))
 	for i, s := range services {
-		p.items[i] = presentation.FormatService(s, 0)
+		p.items[i] = s.Name
 	}
 	p.loaded = true
 	return sendKey(m, "6")

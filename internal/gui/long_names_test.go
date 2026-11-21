@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
-	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 )
 
 // Names longer than the 22-rune column the rows are padded to. The display
@@ -88,7 +87,7 @@ func TestLongFormulaNameReachesPinAndUninstall(t *testing.T) {
 			m, calls := recordedModel(t, PanelFormulae)
 			p := m.panels[PanelFormulae]
 			p.formulae = []brew.Formula{{Name: longFormulaName}}
-			p.items = []string{presentation.FormatFormula(p.formulae[0], 0)}
+			p.items = []string{p.formulae[0].Name}
 			p.selected = 0
 
 			pressAndRun(t, m, key)
@@ -105,7 +104,7 @@ func TestLongCaskNameReachesUninstallAndUpgrade(t *testing.T) {
 			m, calls := recordedModel(t, PanelCasks)
 			p := m.panels[PanelCasks]
 			p.casks = []brew.Cask{{Name: longCaskName}}
-			p.items = []string{presentation.FormatCask(p.casks[0], 0)}
+			p.items = []string{p.casks[0].Name}
 			p.selected = 0
 
 			pressAndRun(t, m, key)
@@ -120,7 +119,7 @@ func TestLongNamesReachUpgradeOnOutdated(t *testing.T) {
 	m, calls := recordedModel(t, PanelOutdated)
 	p := m.panels[PanelOutdated]
 	p.casks = []brew.Cask{{Name: longCaskName}}
-	p.items = []string{presentation.FormatOutdatedCask(p.casks[0])}
+	p.items = []string{p.casks[0].Name}
 	p.selected = 0
 
 	pressAndRun(t, m, "u")
@@ -133,7 +132,7 @@ func TestLongNameReachesOutdatedFormulaRow(t *testing.T) {
 	m, calls := recordedModel(t, PanelOutdated)
 	p := m.panels[PanelOutdated]
 	p.formulae = []brew.Formula{{Name: longFormulaName}}
-	p.items = []string{presentation.FormatOutdatedFormula(p.formulae[0])}
+	p.items = []string{p.formulae[0].Name}
 	p.selected = 0
 
 	pressAndRun(t, m, "u")
@@ -153,7 +152,7 @@ func TestLongTapNameReachesUntapAndTrust(t *testing.T) {
 		t.Run(tc.key, func(t *testing.T) {
 			m, calls := tapsActionModel(t, []brew.Tap{tc.tap})
 			p := m.panels[PanelTaps]
-			p.items[0] = presentation.FormatTap(tc.tap, 0)
+			p.items[0] = tc.tap.Name
 
 			pressAndRun(t, m, tc.key)
 			if !anyArgIs(*calls, longTapName) {
@@ -176,7 +175,7 @@ func TestLongFormulaNameReachesTabFetch(t *testing.T) {
 	m, calls := recordedModel(t, PanelFormulae)
 	p := m.panels[PanelFormulae]
 	p.formulae = []brew.Formula{{Name: longFormulaName}}
-	p.items = []string{presentation.FormatFormula(p.formulae[0], 0)}
+	p.items = []string{p.formulae[0].Name}
 	p.selected = 0
 	m.activeTab = formulaUsesTab
 
@@ -192,7 +191,7 @@ func TestLongCaskNameReachesBatchUpgrade(t *testing.T) {
 	m, calls := recordedModel(t, PanelOutdated)
 	p := m.panels[PanelOutdated]
 	p.casks = []brew.Cask{{Name: longCaskName}}
-	p.items = []string{presentation.FormatOutdatedCask(p.casks[0])}
+	p.items = []string{p.casks[0].Name}
 	m.batch.selected[0] = true
 
 	pressAndRun(t, m, "u")

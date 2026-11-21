@@ -401,7 +401,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			sortFormulae(formulae)
 			items := make([]string, len(formulae))
 			for i, f := range formulae {
-				items[i] = presentation.FormatFormula(f, 0)
+				items[i] = f.Name
 			}
 			return DataLoadedMsg{PanelID: panel, Items: items, Formulae: formulae}
 
@@ -412,7 +412,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			}
 			items := make([]string, len(casks))
 			for i, c := range casks {
-				items[i] = presentation.FormatCask(c, 0)
+				items[i] = c.Name
 			}
 			return DataLoadedMsg{PanelID: panel, Items: items, Casks: casks}
 
@@ -438,10 +438,10 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			}
 			items := make([]string, 0, len(formulae)+len(casks))
 			for _, f := range formulae {
-				items = append(items, presentation.FormatOutdatedFormula(f))
+				items = append(items, f.Name)
 			}
 			for _, c := range casks {
-				items = append(items, presentation.FormatOutdatedCask(c))
+				items = append(items, c.Name)
 			}
 			return DataLoadedMsg{PanelID: panel, Items: items, Formulae: formulae, Casks: casks}
 
@@ -452,7 +452,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			}
 			items := make([]string, len(list.Taps))
 			for i, t := range list.Taps {
-				items[i] = presentation.FormatTap(t, 0)
+				items[i] = t.Name
 			}
 			return DataLoadedMsg{PanelID: panel, Items: items, Taps: list.Taps, TrustUnknown: list.TrustUnknown}
 
@@ -474,7 +474,7 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			}
 			items := make([]string, len(services))
 			for i, s := range services {
-				items[i] = presentation.FormatService(s, 0)
+				items[i] = s.Name
 			}
 			return DataLoadedMsg{PanelID: panel, Items: items, Services: services, ServiceInfo: info}
 
