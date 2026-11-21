@@ -187,8 +187,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	case "y":
 		// On Search the letter is typed into the box, as g and h are, unless
-		// an Operation is open: the overlay owns the keys then.
-		if m.opState != nil || m.activePanel != PanelSearch {
+		// an Operation is open: the overlay owns the keys then. Help hides the
+		// panel, so nothing is copied while it is open.
+		if !m.showHelp && (m.opState != nil || m.activePanel != PanelSearch) {
 			return m.copyScreen()
 		}
 

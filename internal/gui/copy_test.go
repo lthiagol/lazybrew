@@ -300,3 +300,26 @@ func TestYCopiesALongConfigRowWhole(t *testing.T) {
 		t.Fatalf("y copied %q, want the row whole", *copied)
 	}
 }
+
+// With the help screen open, y copies nothing: the help hides the panel, and a
+// copy would take text the screen does not show.
+func TestYWithHelpOpenCopiesNothing(t *testing.T) {
+	m := newTestModel()
+	copied := captureClipboard(m)
+	m.activePanel = PanelFormulae
+	m.activeTab = formulaInfoTab
+	panel := m.panels[PanelFormulae]
+	panel.items = []string{"foo  1.0"}
+	panel.formulae = []brew.Formula{{Name: "foo", Description: "hidden"}}
+	panel.selected = 0
+	m.showHelp = true
+
+	m = sendKey(m, "y")
+
+	if len(*copied) != 0 {
+		t.Errorf("y copied %q with help open", *copied)
+	}
+	if got := lastToastText(m); got != "" {
+		t.Errorf("toast = %q with help open, want none", got)
+	}
+}
