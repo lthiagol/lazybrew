@@ -35,8 +35,12 @@ func TestNeedsTabFetchTable(t *testing.T) {
 // TestNeedsTabFetchAllocatesNothing: it is called on every j, k and data
 // landing, so it builds nothing per call.
 func TestNeedsTabFetchAllocatesNothing(t *testing.T) {
-	if n := testing.AllocsPerRun(100, func() { needsTabFetch(PanelFormulae, formulaFilesTab) }); n != 0 {
+	fetches := false
+	if n := testing.AllocsPerRun(100, func() { fetches = needsTabFetch(PanelFormulae, formulaFilesTab) }); n != 0 {
 		t.Fatalf("needsTabFetch allocates %v times per call, want 0", n)
+	}
+	if !fetches {
+		t.Fatal("the Files tab must fetch")
 	}
 }
 
@@ -123,7 +127,8 @@ func TestHelpRowsAreCachedPerWidthAndTheme(t *testing.T) {
 func TestToastNamesFollowTheToast(t *testing.T) {
 	a := modal.NewToast("one", modal.ToastInfo)
 	b := modal.NewToast("one", modal.ToastInfo)
-	if toastName(a, "slot") != toastName(a, "slot") {
+	first := toastName(a, "slot")
+	if toastName(a, "slot") != first {
 		t.Fatal("a toast's name should not change between calls")
 	}
 	if toastName(a, "slot") == toastName(b, "slot") {

@@ -175,7 +175,7 @@ func TestPreloadSkipsLoadedPanels(t *testing.T) {
 	if got := m.preload.queue; !reflect.DeepEqual(got, []PanelID{PanelTaps, PanelServices}) {
 		t.Errorf("queue = %v, want Taps, Services: a loaded panel must not be queued", got)
 	}
-	m, order := landPreload(t, m, cmd)
+	_, order := landPreload(t, m, cmd)
 	for _, id := range order {
 		if id == PanelCasks {
 			t.Error("Casks was read although it had loaded")
@@ -325,6 +325,9 @@ func TestPreloadWaitsForUpdateOnStart(t *testing.T) {
 			m.preload.started, m.preload.inFlight)
 	}
 	m, order := landPreload(t, m, cmd)
+	if m.preload.inFlight != 0 {
+		t.Errorf("%d preload reads still in flight after they landed", m.preload.inFlight)
+	}
 	if len(order) != 5 {
 		t.Errorf("%d reads landed after update_on_start, want 5", len(order))
 	}

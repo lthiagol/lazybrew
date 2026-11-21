@@ -1707,18 +1707,10 @@ func TestRefreshForcesCacheBypass(t *testing.T) {
 	atomic.StoreInt32(&formulaeCalls, 0)
 
 	// Without invalidate, List would cache-hit. Refresh must force a shell.
-	nm, cmd := m.Update(RefreshMsg{})
+	_, cmd := m.Update(RefreshMsg{})
 	if cmd == nil {
 		t.Fatal("RefreshMsg returned nil cmd batch")
 	}
-	// Drain batch: run all DataLoaded producers.
-	// tea.Batch flattens; cmd() may return a batch msg — use a simple drain.
-	if newM, ok := nm.(Model); ok {
-		m = &newM
-	}
-	// Execute cmds by invoking fetchPanelData path via Update on messages
-	// produced when we run the batch function.
-	// Simpler: call List again after invalidate that Refresh performed.
 	// Refresh already invalidated — next List must shell.
 	_, _ = client.Formulae.List(context.Background())
 	if atomic.LoadInt32(&formulaeCalls) < 1 {
@@ -2144,12 +2136,9 @@ func TestRefreshMsgPlainDoesNotShellOutdated(t *testing.T) {
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
 
-	nm, cmd := m.Update(RefreshMsg{})
+	_, cmd := m.Update(RefreshMsg{})
 	if cmd == nil {
 		t.Fatal("RefreshMsg returned nil cmd")
-	}
-	if updated, ok := nm.(Model); ok {
-		m = &updated
 	}
 	drainCmds(cmd)
 	if got := atomic.LoadInt32(&outdatedCalls); got != 0 {
@@ -2167,12 +2156,9 @@ func TestRefreshMsgWithLoadOutdatedShellsOutdated(t *testing.T) {
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
 
-	nm, cmd := m.Update(RefreshMsg{LoadOutdated: true})
+	_, cmd := m.Update(RefreshMsg{LoadOutdated: true})
 	if cmd == nil {
 		t.Fatal("RefreshMsg returned nil cmd")
-	}
-	if updated, ok := nm.(Model); ok {
-		m = &updated
 	}
 	msgs := drainCmds(cmd)
 	if got := atomic.LoadInt32(&outdatedCalls); got != 1 {

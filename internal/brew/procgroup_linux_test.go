@@ -91,7 +91,7 @@ func TestPtyHelper(t *testing.T) {
 	if result == "" {
 		t.Skip("helper process of TestBrewCannotReadTheTerminal")
 	}
-	r := writeFakeBrew(t, fmt.Sprintf("if read x </dev/tty; then echo terminal; else echo no-terminal; fi\n"))
+	r := writeFakeBrew(t, "if read x </dev/tty; then echo terminal; else echo no-terminal; fi\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

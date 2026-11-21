@@ -68,5 +68,8 @@ func BenchmarkDecodeFormulaeList(b *testing.B) {
 		for _, f := range decoded.Formulae {
 			formulae = append(formulae, parseFormula(f))
 		}
+		if len(formulae) != len(decoded.Formulae) {
+			b.Fatalf("decoded %d formulae, want %d", len(formulae), len(decoded.Formulae))
+		}
 	}
 }
