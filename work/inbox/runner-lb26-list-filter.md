@@ -38,3 +38,10 @@ Commits (AC order):
 - Real-terminal feel and mouse in a real terminal are not verified; the click mapping is unit-tested through `handleMouseClick`.
 
 Questions filed: none.
+
+## Fix r2 — F-r1-01, F-r1-02
+- `2596040` F-r1-01: `7` then `/` no longer types a slash into Search; `/` on an empty focused box only keeps it focused.
+- `7489dd6` F-r1-02: the header badge counts `fullFormulae()`/`fullCasks()` while a query or leaves narrows the list.
+- Revert evidence (red before each fix): `filter_ui_test.go:61` `box holds "/"`; `:71` `value "/"`; `:263` `got "… 2 formulae"` (expected `5 formulae`).
+- Gate: `GOFLAGS=-p=1 make ci` exit 0, floors met (gui 91.2% ≥ 83). `GOOS=darwin go build ./...` ok. `deadcode ./cmd/...` empty. `staticcheck ./...`: only the 5 pre-existing hits.
+- No brew command run; TUI not launched. F-r1-03 (info) not addressed.
