@@ -244,10 +244,13 @@ func TestRefreshKey(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("R should return a refresh command")
 	}
-	msg := cmd()
-	if _, ok := msg.(RefreshMsg); !ok {
-		t.Errorf("R should return RefreshMsg, got %T", msg)
+	// Under auto, R also runs brew update, so the refresh is in a batch.
+	for _, msg := range drainCmds(cmd) {
+		if _, ok := msg.(RefreshMsg); ok {
+			return
+		}
 	}
+	t.Error("R should return RefreshMsg")
 }
 
 func TestWindowSizeMsg(t *testing.T) {
@@ -2183,20 +2186,19 @@ func TestRefreshMsgWithLoadOutdatedShellsOutdated(t *testing.T) {
 }
 
 func TestRKeyRequestsOutdatedLoad(t *testing.T) {
-	// The R key is the user-facing "load the count" action.
+	// The R key is the user-facing "load the count" action. Under auto it
+	// also runs brew update, so the refresh arrives in a batch with it.
 	m := newTestModel()
 	_, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
 	if cmd == nil {
 		t.Fatal("R should return a refresh command")
 	}
-	msg := cmd()
-	refresh, ok := msg.(RefreshMsg)
-	if !ok {
-		t.Fatalf("R should return RefreshMsg, got %T", msg)
+	for _, msg := range drainCmds(cmd) {
+		if refresh, ok := msg.(RefreshMsg); ok && refresh.LoadOutdated {
+			return
+		}
 	}
-	if !refresh.LoadOutdated {
-		t.Error("R must request the outdated load")
-	}
+	t.Error("R must request the outdated load")
 }
 
 func TestAutoRefreshTickStaysCacheOnly(t *testing.T) {
