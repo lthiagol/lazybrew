@@ -81,12 +81,13 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case "R":
-		if m.cfg.Brew.UpdateOnStart == config.UpdateAlways && !m.isUpdating {
+		if m.cfg.Brew.UpdateOnStart != config.UpdateNever && !m.isUpdating {
 			// The update task and the load-flagged refresh travel
 			// together: R is an explicit user request, so the
 			// outdated count must be loaded even when R also runs
 			// `brew update`. The completion of the update loads it
-			// again once the metadata has changed.
+			// again once the metadata has changed. Under auto R
+			// updates too: it is the user asking, not the launch check.
 			update := m.beginUpdate()
 			return m, tea.Batch(
 				update,

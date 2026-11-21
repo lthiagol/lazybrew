@@ -309,3 +309,61 @@ func TestLaunchReadLandingAfterStaleUpdateIsDropped(t *testing.T) {
 		t.Errorf("a launch read from before the update overwrote the outdated count: %+v", got)
 	}
 }
+
+// R is an explicit request, so under auto it runs brew update too, as it does
+// under true (Q-lb16-r-key-auto).
+func TestRKeyUnderAutoRunsOneUpdateAndLoadsOutdated(t *testing.T) {
+	var updates, outdated int32
+	repo := brewRepoWithFetchHead(t, time.Now().Add(-time.Hour))
+	m := New(brew.NewClient(launchRunner(repo, &updates, &outdated)), testConfig())
+
+	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	m = feedBack(asModel(nm), cmd)
+
+	if n := atomic.LoadInt32(&updates); n != 1 {
+		t.Fatalf("R under auto ran brew update %d times, want 1", n)
+	}
+	if m.isUpdating {
+		t.Error("the update is still marked running after it finished")
+	}
+	if got := m.status.Outdated; !got.Known || got.N != 1 {
+		t.Errorf("Outdated after R's update = %+v, want 1 known", got)
+	}
+}
+
+// update_on_start: false keeps R to a reload: no brew update, the outdated count
+// is still read.
+func TestRKeyUnderNeverOnlyReloads(t *testing.T) {
+	var updates, outdated int32
+	cfg := testConfig()
+	cfg.Brew.UpdateOnStart = config.UpdateNever
+	m := New(brew.NewClient(launchRunner(brewRepoWithFetchHead(t, time.Time{}), &updates, &outdated)), cfg)
+
+	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	m = feedBack(asModel(nm), cmd)
+
+	if n := atomic.LoadInt32(&updates); n != 0 {
+		t.Errorf("R under never ran brew update %d times, want 0", n)
+	}
+	if n := atomic.LoadInt32(&outdated); n == 0 {
+		t.Error("R under never did not read brew outdated")
+	}
+}
+
+// R while an update is already running enqueues no second one.
+func TestRKeyWhileUpdatingEnqueuesNothing(t *testing.T) {
+	var updates, outdated int32
+	repo := brewRepoWithFetchHead(t, time.Time{})
+	m := New(brew.NewClient(launchRunner(repo, &updates, &outdated)), testConfig())
+	m.isUpdating = true
+
+	nm, cmd := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	m = feedBack(asModel(nm), cmd)
+
+	if n := atomic.LoadInt32(&updates); n != 0 {
+		t.Errorf("R while an update runs enqueued %d brew updates, want 0", n)
+	}
+	if !m.isUpdating {
+		t.Error("R while an update runs cleared isUpdating")
+	}
+}

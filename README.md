@@ -98,7 +98,8 @@ if that was more than `update_stale_hours` ago. The header shows `updating…`
 while it runs and `updated 2h ago` after. `true` runs `brew update` at every
 launch. `false` never runs `brew update` on its own: lazybrew does not update
 behind your back, and the outdated list is only as fresh as your last
-`brew update`. The `R` key runs `brew update` only with `true`.
+`brew update`. The `R` key runs `brew update` with `auto` and `true`; with
+`false` it only reloads.
 
 `LAZYBREW_ICONS=unicode` (or `nerd`) overrides `gui.icons` for one run.
 
