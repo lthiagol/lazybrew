@@ -61,6 +61,10 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	if m.filterInput.Focused() {
+		return m.filterKey(msg)
+	}
+
 	// While help is open its own keys scroll it or close it; the rest
 	// pass through as they always have.
 	if m.showHelp {
@@ -83,6 +87,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		if m.showHelp {
 			m.showHelp = false
+		}
+		if m.panels[m.activePanel].query != "" {
+			m.clearFilter()
 		}
 		return m, nil
 	case "R":
@@ -174,6 +181,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, c
 
 	case "/":
+		if m.panels[m.activePanel].canFilter() {
+			return m, m.openFilter()
+		}
 		m.switchPanel(PanelSearch)
 		return m, m.searchInput.Focus()
 

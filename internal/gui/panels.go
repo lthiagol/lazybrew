@@ -81,7 +81,7 @@ func (m *Model) prevPanel() tea.Cmd {
 func (m *Model) syncVisibleRows() {
 	heights := m.computeContentHeights()
 	for i := range m.panels {
-		m.panels[i].visibleRows = heights[i]
+		m.panels[i].visibleRows = heights[i] - m.filterRows(m.panels[i])
 	}
 }
 
@@ -113,6 +113,8 @@ func (m *Model) switchPanel(id PanelID) tea.Cmd {
 	} else {
 		m.searchInput.Blur()
 	}
+	// The filter input belongs to the panel it was opened on; its query stays.
+	m.filterInput.Blur()
 	return m.lazyLoadPanel(id)
 }
 

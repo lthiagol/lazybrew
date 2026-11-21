@@ -3,7 +3,9 @@ package gui
 import (
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // canFilter is whether the `/` filter applies to the panel. Outdated, Taps and
@@ -184,4 +186,87 @@ func (p *panelData) setQuery(q string) {
 	}
 	p.query = q
 	p.reapply(name)
+}
+
+// openFilter focuses the filter input on the active panel, with the panel's query
+// in it.
+func (m *Model) openFilter() tea.Cmd {
+	m.filterInput.SetValue(m.panels[m.activePanel].query)
+	m.filterInput.CursorEnd()
+	m.syncVisibleRows()
+	return m.filterInput.Focus()
+}
+
+// clearFilter drops the active panel's query and closes its input.
+func (m *Model) clearFilter() {
+	m.filterInput.Blur()
+	m.filterInput.SetValue("")
+	m.panels[m.activePanel].setQuery("")
+	m.syncVisibleRows()
+}
+
+// filterKey answers a key while the filter input has focus. Up and down move the
+// cursor, Enter keeps the filter, Esc clears it, and every other key is typed.
+func (m Model) filterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	p := m.panels[m.activePanel]
+	switch msg.String() {
+	case "ctrl+c":
+		return m, tea.Quit
+	case "tab":
+		return m, m.nextPanel()
+	case "shift+tab":
+		return m, m.prevPanel()
+	case "up":
+		p.up()
+	case "down":
+		p.down()
+	case "enter":
+		m.filterInput.Blur()
+		m.syncVisibleRows()
+	case "esc":
+		m.clearFilter()
+	default:
+		var cmd tea.Cmd
+		m.filterInput, cmd = m.filterInput.Update(msg)
+		if q := m.filterInput.Value(); q != p.query {
+			p.setQuery(q)
+			m.syncVisibleRows()
+		}
+		return m, cmd
+	}
+	if needsTabFetch(m.activePanel, m.activeTab) {
+		return m, m.loadTabContent()
+	}
+	return m, nil
+}
+
+// filterRowShown is whether a sidebar box shows the filter row: while the input
+// is open on it, or while its query is active.
+func (m Model) filterRowShown(p *panelData) bool {
+	if !p.canFilter() {
+		return false
+	}
+	return p.query != "" || (m.filterInput.Focused() && p.id == m.activePanel)
+}
+
+// filterRows is 1 when the box shows the filter row, which takes a row of the box
+// above its list, else 0.
+func (m Model) filterRows(p *panelData) int {
+	if m.filterRowShown(p) {
+		return 1
+	}
+	return 0
+}
+
+// filterLine is the filter row of a sidebar box: "/ query", with the input when
+// it has focus.
+func (m Model) filterLine(p *panelData) string {
+	if !m.filterRowShown(p) {
+		return ""
+	}
+	prompt := style.AccentText.Render("/ ")
+	if m.filterInput.Focused() {
+		return prompt + m.filterInput.View()
+	}
+	return prompt + style.NormalItem.Render(p.query)
 }
