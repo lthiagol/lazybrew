@@ -4,41 +4,6 @@ import (
 	"testing"
 )
 
-func TestTrustStatusString(t *testing.T) {
-	tests := []struct {
-		status TrustStatus
-		want   string
-	}{
-		{TrustOfficial, "official"},
-		{TrustTrusted, "trusted"},
-		{TrustUntrusted, "untrusted"},
-		{TrustStatus(99), "unknown"},
-	}
-	for _, tt := range tests {
-		if got := tt.status.String(); got != tt.want {
-			t.Errorf("TrustStatus(%d).String() = %q, want %q", tt.status, got, tt.want)
-		}
-	}
-}
-
-func TestParseTrustStatus(t *testing.T) {
-	tests := []struct {
-		s    string
-		want TrustStatus
-	}{
-		{"official", TrustOfficial},
-		{"trusted", TrustTrusted},
-		{"untrusted", TrustUntrusted},
-		{"unknown", TrustUnknown},
-		{"random", TrustUnknown},
-	}
-	for _, tt := range tests {
-		if got := ParseTrustStatus(tt.s); got != tt.want {
-			t.Errorf("ParseTrustStatus(%q) = %d, want %d", tt.s, got, tt.want)
-		}
-	}
-}
-
 func TestServiceStatusString(t *testing.T) {
 	tests := []struct {
 		status ServiceStatus
@@ -52,24 +17,6 @@ func TestServiceStatusString(t *testing.T) {
 	for _, tt := range tests {
 		if got := tt.status.String(); got != tt.want {
 			t.Errorf("ServiceStatus(%q).String() = %q, want %q", tt.status, got, tt.want)
-		}
-	}
-}
-
-func TestParseServiceStatus(t *testing.T) {
-	tests := []struct {
-		s    string
-		want ServiceStatus
-	}{
-		{"started", ServiceStarted},
-		{"stopped", ServiceStopped},
-		{"error", ServiceError},
-		{"none", ServiceNone},
-		{"running", ServiceNone},
-	}
-	for _, tt := range tests {
-		if got := ParseServiceStatus(tt.s); got != tt.want {
-			t.Errorf("ParseServiceStatus(%q) = %q, want %q", tt.s, got, tt.want)
 		}
 	}
 }
@@ -98,11 +45,10 @@ func TestFormulaHas6Point0Fields(t *testing.T) {
 
 func TestCaskHas6Point0Fields(t *testing.T) {
 	c := Cask{
-		Pinned:        true,
-		Sha256:        "abc123",
-		URL:           "https://example.com/app.dmg",
-		DependsOn:     []string{"macos"},
-		ConflictsWith: []string{"other-app"},
+		Pinned:    true,
+		Sha256:    "abc123",
+		URL:       "https://example.com/app.dmg",
+		DependsOn: []string{"macos"},
 	}
 	if !c.Pinned {
 		t.Error("Cask.Pinned should be true")

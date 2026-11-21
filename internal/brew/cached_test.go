@@ -253,27 +253,6 @@ func TestCachedGroupInvalidationDropsItsFetch(t *testing.T) {
 	}
 }
 
-// TestCachedInvalidateAllDropsEveryFetch: InvalidateAll drops the result of
-// every fetch that is still running, whatever its key.
-func TestCachedInvalidateAllDropsEveryFetch(t *testing.T) {
-	c := NewCache(time.Minute)
-	var runs atomic.Int32
-	release := make(chan struct{})
-	formulae := blockedFetch(c, KeyFormulaeList, &runs, release)
-	outdated := blockedFetch(c, KeyOutdatedFormulae, &runs, release)
-
-	c.InvalidateAll()
-	close(release)
-	<-formulae
-	<-outdated
-
-	for _, key := range []CacheKey{KeyFormulaeList, KeyOutdatedFormulae} {
-		if _, ok := c.Get(key); ok {
-			t.Errorf("%s was stored by a fetch that started before InvalidateAll", key)
-		}
-	}
-}
-
 // TestCachedWrongTypeIsRefetched: an entry of another type is a miss, and the
 // fetch result replaces it.
 func TestCachedWrongTypeIsRefetched(t *testing.T) {

@@ -25,7 +25,6 @@ type Formula struct {
 	InstalledOnReq bool // installed on request vs as dep
 	InstalledAsDep bool
 	InstallPath    string
-	Size           int64 // bytes
 	// 6.0.0 additions
 	Aliases             []string
 	Binaries            []string // executables installed by this formula
@@ -64,8 +63,7 @@ type Cask struct {
 	DependsOnFormulae []string `json:"-"`
 	DependsOnCasks    []string `json:"-"`
 	// Requirements reads like "macOS ≥ 13" or "arch arm64".
-	Requirements  []string `json:"-"`
-	ConflictsWith []string `json:"conflicts_with,omitempty"`
+	Requirements []string `json:"-"`
 
 	// Installed holds the "installed" entries of a `brew info --json=v2`
 	// payload; a non-empty slice means the cask is installed (r1
@@ -81,51 +79,12 @@ type Tap struct {
 	FormulaCount int    `json:"formula_count"`
 	CaskCount    int    `json:"cask_count"`
 	CommandCount int    `json:"command_count"`
-	LastCommit   string `json:"last_commit"`
 	Installed    bool   `json:"installed"`
 	IsAPI        bool   `json:"is_api"` // API-sourced vs git clone
 	// 6.0.0 additions
 	Trusted      bool     `json:"trusted,omitempty"`       // trust status from tap-info
 	FormulaNames []string `json:"formula_names,omitempty"` // formulae in this tap
 	CaskNames    []string `json:"cask_names,omitempty"`    // casks in this tap
-}
-
-// TrustStatus represents a tap/formula/cask trust state
-type TrustStatus int
-
-const (
-	TrustUnknown   TrustStatus = iota
-	TrustOfficial              // homebrew/* — always trusted
-	TrustTrusted               // explicitly trusted via `brew trust`
-	TrustUntrusted             // default for third-party
-)
-
-// String returns the string representation of TrustStatus
-func (t TrustStatus) String() string {
-	switch t {
-	case TrustOfficial:
-		return "official"
-	case TrustTrusted:
-		return "trusted"
-	case TrustUntrusted:
-		return "untrusted"
-	default:
-		return "unknown"
-	}
-}
-
-// ParseTrustStatus converts a string to a TrustStatus
-func ParseTrustStatus(s string) TrustStatus {
-	switch s {
-	case "official":
-		return TrustOfficial
-	case "trusted":
-		return TrustTrusted
-	case "untrusted":
-		return TrustUntrusted
-	default:
-		return TrustUnknown
-	}
 }
 
 // TrustType represents the type of trusted object
@@ -196,24 +155,6 @@ func (s ServiceStatus) String() string {
 	return string(s)
 }
 
-// ParseServiceStatus converts a string to a ServiceStatus
-func ParseServiceStatus(s string) ServiceStatus {
-	switch s {
-	case "started":
-		return ServiceStarted
-	case "stopped":
-		return ServiceStopped
-	case "error":
-		return ServiceError
-	case "none":
-		return ServiceNone
-	case "scheduled":
-		return ServiceScheduled
-	default:
-		return ServiceNone
-	}
-}
-
 // SearchResult represents a search match
 type SearchResult struct {
 	Name        string `json:"name"`
@@ -238,5 +179,4 @@ type BrewConfig struct {
 	Repository      string `json:"repository"`
 	CoreTap         string `json:"core_tap"`
 	OS              string `json:"os"`
-	Arch            string `json:"arch"`
 }

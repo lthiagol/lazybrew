@@ -9,7 +9,6 @@ import (
 
 type FormulaeReader interface {
 	List(ctx context.Context) ([]Formula, error)
-	Get(ctx context.Context, name string) (*Formula, error)
 	Outdated(ctx context.Context) ([]Formula, error)
 	Leaves(ctx context.Context) ([]string, error)
 	Deps(ctx context.Context, name string) (string, error)
@@ -86,10 +85,6 @@ type installedJSON struct {
 	RuntimeDependencies flexStrings `json:"runtime_dependencies"`
 }
 
-type dependencyJSON struct {
-	Name string `json:"name"`
-}
-
 type bottleJSON struct {
 	Stable stableBottleJSON `json:"stable"`
 }
@@ -126,20 +121,6 @@ func (s *formulaeReader) List(ctx context.Context) ([]Formula, error) {
 		}
 		return formulae, true, nil
 	})
-}
-
-func (s *formulaeReader) Get(ctx context.Context, name string) (*Formula, error) {
-	var data formulaeJSON
-	if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", name); err != nil {
-		return nil, err
-	}
-
-	if len(data.Formulae) == 0 {
-		return nil, nil
-	}
-
-	formula := parseFormula(data.Formulae[0])
-	return &formula, nil
 }
 
 func (s *formulaeReader) Outdated(ctx context.Context) ([]Formula, error) {

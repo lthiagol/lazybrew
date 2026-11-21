@@ -8,7 +8,6 @@ import (
 
 type TapsReader interface {
 	List(ctx context.Context) (TapList, error)
-	Get(ctx context.Context, name string) (*Tap, error)
 	SetCacheTTLs(ttls CacheTTLs)
 }
 
@@ -24,7 +23,6 @@ type TapList struct {
 
 type TapsWriter interface {
 	Tap(ctx context.Context, name string) error
-	TapWithURL(ctx context.Context, name, url string) error
 	Untap(ctx context.Context, name string) error
 	Repair(ctx context.Context, name string) error
 }
@@ -114,20 +112,7 @@ func (s *tapsReader) List(ctx context.Context) (TapList, error) {
 	})
 }
 
-func (s *tapsReader) Get(ctx context.Context, name string) (*Tap, error) {
-	info, err := s.fetchTapInfo(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-	if info == nil {
-		return nil, nil
-	}
-
-	return infoToTap(info), nil
-}
-
-// infoToTap converts a parsed tapInfoJSON into a domain Tap. Shared by Get
-// and the batch path in List so the two stay in lockstep.
+// infoToTap converts a parsed tapInfoJSON into a domain Tap.
 func infoToTap(info *tapInfoJSON) *Tap {
 	return &Tap{
 		Name:         info.Name,
@@ -148,17 +133,6 @@ func infoToTap(info *tapInfoJSON) *Tap {
 // the cache default.
 func (s *tapsReader) SetCacheTTLs(ttls CacheTTLs) {
 	s.tapsTTL = ttls.Taps
-}
-
-func (s *tapsReader) fetchTapInfo(ctx context.Context, name string) (*tapInfoJSON, error) {
-	infos, err := s.fetchTapInfoBatch(ctx, []string{name})
-	if err != nil {
-		return nil, err
-	}
-	if len(infos) == 0 {
-		return nil, nil
-	}
-	return &infos[0], nil
 }
 
 // tapInfoChunkMax and tapInfoChunkBytes bound one `brew tap-info` call: a name
@@ -215,12 +189,6 @@ func chunkTapNames(names []string) [][]string {
 func (s *tapsWriter) Tap(ctx context.Context, name string) error {
 	defer s.cache.InvalidateFor("tap")
 	_, err := s.runner.Execute(ctx, "tap", name)
-	return err
-}
-
-func (s *tapsWriter) TapWithURL(ctx context.Context, name, url string) error {
-	defer s.cache.InvalidateFor("tap")
-	_, err := s.runner.Execute(ctx, "tap", name, url)
 	return err
 }
 

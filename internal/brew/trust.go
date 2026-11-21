@@ -2,12 +2,10 @@ package brew
 
 import (
 	"context"
-	"strings"
 )
 
 type TrustReader interface {
 	ListTrusted(ctx context.Context) ([]TrustEntry, error)
-	GetTapTrustStatus(ctx context.Context, tapName string) (TrustStatus, error)
 }
 
 type TrustWriter interface {
@@ -62,25 +60,6 @@ func (s *trustReader) ListTrusted(ctx context.Context) ([]TrustEntry, error) {
 		}
 		return entries, true, nil
 	})
-}
-
-func (s *trustReader) GetTapTrustStatus(ctx context.Context, tapName string) (TrustStatus, error) {
-	if strings.HasPrefix(tapName, "homebrew/") {
-		return TrustOfficial, nil
-	}
-
-	entries, err := s.ListTrusted(ctx)
-	if err != nil {
-		return TrustUnknown, err
-	}
-
-	for _, e := range entries {
-		if e.Type == TrustTypeTap && e.Name == tapName {
-			return TrustTrusted, nil
-		}
-	}
-
-	return TrustUntrusted, nil
 }
 
 func (s *trustWriter) TrustTap(ctx context.Context, tapName string) error {

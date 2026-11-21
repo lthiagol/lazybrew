@@ -10,7 +10,6 @@ import (
 
 type CasksReader interface {
 	List(ctx context.Context) ([]Cask, error)
-	Get(ctx context.Context, name string) (*Cask, error)
 	Outdated(ctx context.Context) ([]Cask, error)
 	SetCacheTTLs(ttls CacheTTLs)
 }
@@ -21,8 +20,6 @@ type CasksWriter interface {
 	Reinstall(ctx context.Context, name string) (<-chan string, <-chan error)
 	Zap(ctx context.Context, name string) (<-chan string, <-chan error)
 	Upgrade(ctx context.Context, name string) (<-chan string, <-chan error)
-	Pin(ctx context.Context, name string) error
-	Unpin(ctx context.Context, name string) error
 }
 
 type casksReader struct {
@@ -167,20 +164,6 @@ func (s *casksReader) List(ctx context.Context) ([]Cask, error) {
 	})
 }
 
-func (s *casksReader) Get(ctx context.Context, name string) (*Cask, error) {
-	var data casksJSON
-	if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", name); err != nil {
-		return nil, err
-	}
-
-	if len(data.Casks) == 0 {
-		return nil, nil
-	}
-
-	cask := parseCask(data.Casks[0])
-	return &cask, nil
-}
-
 func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
 	return cached(s.cache, KeyOutdatedCasks, s.outdatedTTL, func() ([]Cask, bool, error) {
 		return s.fetchOutdated(ctx)
@@ -253,18 +236,6 @@ func (s *casksWriter) Upgrade(ctx context.Context, name string) (<-chan string, 
 		args = append(args, name)
 	}
 	return streamWrite(ctx, s.runner, s.cache, "upgrade", args...)
-}
-
-func (s *casksWriter) Pin(ctx context.Context, name string) error {
-	defer s.cache.InvalidateFor("pin")
-	_, err := s.runner.Execute(ctx, "pin", name)
-	return err
-}
-
-func (s *casksWriter) Unpin(ctx context.Context, name string) error {
-	defer s.cache.InvalidateFor("unpin")
-	_, err := s.runner.Execute(ctx, "unpin", name)
-	return err
 }
 
 func parseCask(c caskJSON) Cask {

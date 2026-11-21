@@ -7,7 +7,6 @@ import (
 
 type SearchService interface {
 	Search(ctx context.Context, query string) ([]SearchResult, error)
-	SearchDesc(ctx context.Context, query string) ([]SearchResult, error)
 }
 
 type searchService struct {
@@ -19,21 +18,7 @@ func NewSearchService(runner Runner) SearchService {
 }
 
 func (s *searchService) Search(ctx context.Context, query string) ([]SearchResult, error) {
-	return s.search(ctx, query, false)
-}
-
-func (s *searchService) SearchDesc(ctx context.Context, query string) ([]SearchResult, error) {
-	return s.search(ctx, query, true)
-}
-
-func (s *searchService) search(ctx context.Context, query string, desc bool) ([]SearchResult, error) {
-	args := []string{"search"}
-	if desc {
-		args = append(args, "--desc")
-	}
-	args = append(args, query)
-
-	output, err := s.runner.Execute(ctx, args...)
+	output, err := s.runner.Execute(ctx, "search", query)
 	if err != nil {
 		if IsExitCode(err, 1) {
 			return nil, nil

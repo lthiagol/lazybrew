@@ -39,39 +39,6 @@ func TestTrustServiceListTrusted(t *testing.T) {
 	}
 }
 
-func TestTrustServiceGetTapTrustStatusOfficial(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	cache := NewCache(time.Minute)
-	svc := NewTrustReader(r, cache)
-
-	status, err := svc.GetTapTrustStatus(context.Background(), "homebrew/core")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if status != TrustOfficial {
-		t.Errorf("expected TrustOfficial, got %s", status)
-	}
-}
-
-func TestTrustServiceGetTapTrustStatusUntrusted(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
-		data := result.(*trustJSON)
-		*data = trustJSON{}
-		return nil
-	}
-	cache := NewCache(time.Minute)
-	svc := NewTrustReader(r, cache)
-
-	status, err := svc.GetTapTrustStatus(context.Background(), "nicknisi/tap")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if status != TrustUntrusted {
-		t.Errorf("expected TrustUntrusted, got %s", status)
-	}
-}
-
 func TestTrustServiceTrustTap(t *testing.T) {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {

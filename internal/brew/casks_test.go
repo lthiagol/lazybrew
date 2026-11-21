@@ -88,51 +88,6 @@ func TestCasksReaderListCached(t *testing.T) {
 	}
 }
 
-func TestCasksReaderGet(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte(`{
-			"casks": [{
-				"name": "alfred",
-				"full_name": "alfred",
-				"tap": "homebrew/cask",
-				"version": "5.5",
-				"desc": "Productivity app"
-			}]
-		}`), nil
-	}
-	cache := NewCache(time.Minute)
-	reader := NewCasksReader(r, cache)
-
-	cask, err := reader.Get(context.Background(), "alfred")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cask == nil {
-		t.Fatal("expected cask, got nil")
-	}
-	if cask.Name != "alfred" {
-		t.Errorf("Name = %q, want alfred", cask.Name)
-	}
-}
-
-func TestCasksReaderGetMissing(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte(`{"casks":[]}`), nil
-	}
-	cache := NewCache(time.Minute)
-	reader := NewCasksReader(r, cache)
-
-	cask, err := reader.Get(context.Background(), "nonexistent")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cask != nil {
-		t.Error("expected nil for missing cask")
-	}
-}
-
 func TestCasksReaderOutdated(t *testing.T) {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
@@ -194,32 +149,6 @@ func TestCasksWriterZap(t *testing.T) {
 		t.Errorf("got %q, want zapped", line)
 	}
 	if err := <-errCh; err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestCasksWriterPin(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte(""), nil
-	}
-	cache := NewCache(time.Minute)
-	writer := NewCasksWriter(r, cache)
-
-	if err := writer.Pin(context.Background(), "firefox"); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestCasksWriterUnpin(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte(""), nil
-	}
-	cache := NewCache(time.Minute)
-	writer := NewCasksWriter(r, cache)
-
-	if err := writer.Unpin(context.Background(), "firefox"); err != nil {
 		t.Fatal(err)
 	}
 }

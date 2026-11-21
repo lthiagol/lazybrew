@@ -113,28 +113,6 @@ func TestSingleflightKeysAreIndependent(t *testing.T) {
 	}
 }
 
-// waitForWaiters polls until n callers are queued behind key's inflight call.
-// It returns as soon as they are, so it waits for no fixed time.
-func waitForWaiters(t *testing.T, sf *singleflight, key string, n int) {
-	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for {
-		sf.mu.Lock()
-		got := 0
-		if call, ok := sf.inflight[key]; ok {
-			got = call.waiters
-		}
-		sf.mu.Unlock()
-		if got >= n {
-			return
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("%d callers queued behind %q, want %d", got, key, n)
-		}
-		time.Sleep(time.Millisecond)
-	}
-}
-
 func TestSingleflightPropagatesError(t *testing.T) {
 	sf := newSingleflight()
 	wantErr := context.DeadlineExceeded
@@ -173,8 +151,9 @@ func TestSingleflightPropagatesError(t *testing.T) {
 		results <- result{v, err}
 	}()
 
-	// Release fn only once the second caller is queued behind the first.
-	waitForWaiters(t, sf, "k", 1)
+	// Release fn only once the second caller has had time to queue behind the
+	// first. If it had not, it would run fn itself and fail the test.
+	time.Sleep(20 * time.Millisecond)
 
 	close(gate)
 
