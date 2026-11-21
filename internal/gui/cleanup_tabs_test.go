@@ -110,11 +110,12 @@ func TestCutMiddle(t *testing.T) {
 	if got := cutMiddle(path, 200); got != path {
 		t.Errorf("a path that fits is returned whole: %q", got)
 	}
-	// The head is cut after a "/" and the tail starts at the first one it finds.
-	// A last segment with no "/" near it is cut where the width ends.
+	// The cut moves to a "/" only within cutSnap cells of where the width ends.
+	// Otherwise it falls at the width, so "Caches" is kept and "~/Library/" is not
+	// the whole head.
 	cases := map[int]string{
-		33: "~/Library/…ula-1.2.3.tar.gz",
-		20: "~/…2.3.tar.gz",
+		33: "~/Library/Caches…ula-1.2.3.tar.gz",
+		20: "~/Library…2.3.tar.gz",
 	}
 	for w, want := range cases {
 		if got := cutMiddle(path, w); got != want {
@@ -123,6 +124,36 @@ func TestCutMiddle(t *testing.T) {
 	}
 	if got := cutMiddle(path, 1); got != "…" && got != "~" {
 		t.Errorf("cutMiddle(w=1) = %q", got)
+	}
+}
+
+// A cut that already falls after a "/" keeps the whole last segment: at 22 cells
+// the tail is "llvm/17.0.6", not "/17.0.6".
+func TestCutMiddleKeepsWholeSegmentAtCut(t *testing.T) {
+	if got, want := cutMiddle("<prefix>/Cellar/llvm/17.0.6", 22), "<prefix>/…llvm/17.0.6"; got != want {
+		t.Errorf("cutMiddle = %q, want %q", got, want)
+	}
+}
+
+// At 80x24 the path column is 22 cells wide (content 48, the Files column 15 for
+// "empty directory"). The rows keep the part that tells them apart where it fits:
+// the version of a formula, and the formula name when it is short enough.
+func TestCleanupViewRowsAt80x24(t *testing.T) {
+	width := contentWidthIn(loadedStatus(80, 24).screenLayout())
+	p := brew.CleanupPreview{Items: []brew.CleanupItem{
+		{Path: testPrefix + "/Cellar/python@3.12/3.12.4_1", Files: 1700, Size: "64.4MB", Bytes: 64400000},
+		{Path: testPrefix + "/Cellar/llvm/17.0.6", Kind: "empty directory"},
+	}}
+	rows := cleanupTable(p.Items, width, "/Users/alice", testPrefix)
+	if len(rows) != 3 {
+		t.Fatalf("rows = %q, want a header and two rows", rows)
+	}
+	// Biggest first: the python row is the first item row.
+	if want := "<prefix>/…/3.12.4_1"; !strings.HasSuffix(ansi.Strip(rows[1]), want) {
+		t.Errorf("python row %q does not end with %q", rows[1], want)
+	}
+	if want := "<prefix>/…llvm/17.0.6"; !strings.HasSuffix(ansi.Strip(rows[2]), want) {
+		t.Errorf("llvm row %q does not end with %q", rows[2], want)
 	}
 }
 
