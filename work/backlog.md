@@ -47,3 +47,12 @@ current brew shape. Raised by cr1 (`Q-cr1-cask-name`).
 Status lists rows. Showing them changes footer frames and goldens. Raised by
 cr4 (`Q-cr4-gui-dedup-r2-footer-tabs`); the keymap test records the omission in
 `footerExempt`.
+
+**LB-14 (parked)** — `TestSingleflightPropagatesError` now waits 20 ms for the
+second goroutine to queue, because `sfCall.waiters` (the v2-11 AC-02 hook) was
+deleted by cr5 AC-03. A slow `-race` run could flake. Needs a race-free hook if
+it ever does. Raised by the cr5 r1 review.
+
+**LB-15 (parked)** — `brew.SetDebug` is kept only for `app/debug_log_test.go`
+(a cross-package logger reset); its `true` branch logs to stderr, the C13
+hazard. Narrow it to a reset-only helper later. Raised by the cr5 r1 review.
