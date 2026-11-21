@@ -14,9 +14,9 @@ type TaskOutputMsg = task.TaskOutputMsg
 type TaskCompletedMsg = task.TaskCompletedMsg
 
 type DataLoadedMsg struct {
-	// launch marks a read the launch started (Init). Once a stale update has
-	// begun, such a read is dropped: it holds the metadata the update replaces,
-	// and the update's refresh reads the panels again.
+	// launch marks a read the launch started (Init). Once a stale update's
+	// refresh has been issued, such a read is dropped: it holds the metadata the
+	// update replaces, and the refresh reads the panels again.
 	launch bool
 
 	PanelID  PanelID
