@@ -3,6 +3,7 @@ package brew
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
@@ -32,6 +33,9 @@ func TestSudoWithoutTerminalNamesTheCommand(t *testing.T) {
 			if err.Error() != want {
 				t.Errorf("message = %q, want %q", err.Error(), want)
 			}
+			if !slices.Equal(needs.Args, []string{"install", "--cask", "foo"}) {
+				t.Errorf("args = %q, want the command's brew args", needs.Args)
+			}
 			var exit *BrewExitError
 			if !errors.As(err, &exit) || exit.ExitCode != 1 {
 				t.Error("the command's own error must stay reachable")
@@ -55,6 +59,9 @@ func TestSudoStreamWithoutTerminalNamesTheCommand(t *testing.T) {
 	var needs *NeedsSudoError
 	if !errors.As(err, &needs) || needs.Command != "install --cask foo" {
 		t.Fatalf("expected NeedsSudoError for install --cask foo, got %T: %v", err, err)
+	}
+	if !slices.Equal(needs.Args, []string{"install", "--cask", "foo"}) {
+		t.Errorf("args = %q, want the command's brew args", needs.Args)
 	}
 }
 

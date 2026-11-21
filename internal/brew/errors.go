@@ -66,7 +66,9 @@ func (e *ServiceNeedsRootError) Error() string {
 // command's own error.
 type NeedsSudoError struct {
 	Command string
-	Err     error
+	// Args are the brew arguments of the command, for a retry in the terminal.
+	Args []string
+	Err  error
 }
 
 func (e *NeedsSudoError) Error() string {
