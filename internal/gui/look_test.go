@@ -354,7 +354,7 @@ func TestFooterLeadsWithThePanelsKeys(t *testing.T) {
 	if strings.Contains(plain, "more") {
 		t.Fatalf("a footer that fits must not say ? more, got %q", plain)
 	}
-	if !strings.HasPrefix(plain, " R refresh") {
+	if !strings.HasPrefix(plain, " j/k navigate  h/l tabs  R refresh") {
 		t.Fatalf("Status footer should lead with its own keys, got %q", plain)
 	}
 }

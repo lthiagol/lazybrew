@@ -383,11 +383,6 @@ func TestPanelKeysAreOnFooterAndHelp(t *testing.T) {
 // The footers are pinned by goldens, so each omission is recorded here instead of
 // being changed. A listed key is checked on the help only. Each entry says why.
 var footerExempt = map[PanelID]map[string]bool{
-	// Status shows j/k as keyScroll and its tabs as stTabs, both help-only.
-	PanelStatus: {"j": true, "k": true, "down": true, "up": true, "h": true, "l": true, "left": true, "right": true},
-	// Outdated and Taps have tabs, which the Global help page lists as keyTabs.
-	PanelOutdated: {"h": true, "l": true, "left": true, "right": true},
-	PanelTaps:     {"h": true, "l": true, "left": true, "right": true},
 	// Search has no tabs: h and l type there, and the arrows do nothing. X zaps
 	// an installed cask row; its footer word is left out, and its help line shows it.
 	PanelSearch: {"left": true, "right": true, "X": true},
