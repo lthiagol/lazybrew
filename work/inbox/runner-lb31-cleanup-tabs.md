@@ -56,3 +56,12 @@ tab re-reads and shows `Nothing to clean up` / `Nothing unused`. Both PASS.
 - The preview reads use `fetchTabContentTimeout` (15 s). A very slow `cleanup -n` on a large
   cache shows the timeout error in the tab.
 - Path cut: at a `/` where one is near; with no `/` near, the cut falls where the width ends.
+
+## Fix r1 — Q-lb31-tabs-80 (code commit 9170eab)
+- Window: `tabWindowIn` grows from the active tab, alternating right and left, while the shown whole tabs plus one `‹`/`›` per cut side fit. Rows that fit are drawn unwindowed, as before.
+- 80x24 Status (content 48 cells; the row is 60): Dashboard shows ` Dashboard  Config  Doctor  Missing  Vulns ›`; Vulns shows `‹ Doctor  Missing  Vulns  Cleanup  Unused `. Underline spans the active name in both.
+- Red before the fix: `TestTabWindowEveryTabAt80x24` ("names row is 60 cells, want at most 48"), `TestTabWindowNarrow` ("60 cells, want at most 40"), `TestStatusTabWindowRows`, `TestStatusTabWindowClicks` ("click on the left marker selected tab 0, want 3").
+- 60 columns: Status (60) and Formulae (47) fit whole with no marker: `TestTabWindowAt60Columns` (green before and after).
+- Clicks: `handleTabBarClick` maps through the window; a click on a marker calls `selectTab` for the neighbouring tab.
+- Tests changed: `TestStatusTabRowShowsEveryName` is now `TestStatusTabRowShowsTheActiveTab` (it required Dashboard at 80x24, which the window hides with Vulns active). `TestSlidingTabBarAtRestIsTheRestingBar`: signature only. No golden changed.
+- Gate: `GOFLAGS=-p=1 make ci` exit 0 (fmt, vet, race tests, floors met, build). `GOOS=darwin go build ./...` ok. deadcode: no output. staticcheck: the same five pre-existing findings, none in lb31 files.
