@@ -251,8 +251,8 @@ func toastMessages(m *Model) []string {
 // and its help page name x as uninstall.
 func TestSearchFooterAndHelpShowUninstall(t *testing.T) {
 	m := searchRowsModel(&searchUninstallRunner{}, nil)
-	if !slices.ContainsFunc(m.footerHints(), func(h keyHint) bool { return h.key == "x" && h.desc == "uninstall" }) {
-		t.Errorf("Search footer = %v, want x uninstall", m.footerHints())
+	if !slices.ContainsFunc(m.footerHints().all(), func(h keyHint) bool { return h.key == "x" && h.desc == "uninstall" }) {
+		t.Errorf("Search footer = %v, want x uninstall", m.footerHints().all())
 	}
 	var help []keyHint
 	for _, page := range buildHelp() {

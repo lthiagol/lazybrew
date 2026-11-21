@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"slices"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -14,23 +15,35 @@ var globalHints = []keyHint{
 	keyNext, keyPrev, keyJump, keySearch, keyHelp, keyRefresh, keyLog, keyQuit,
 }
 
+// footerRow is the key row the footer shows, in the two groups it draws: the
+// panel's own actions, then the global keys. A surface with one list of keys (a
+// modal, the help screen, an Info tab) leaves global empty.
+type footerRow struct {
+	panel  []keyHint
+	global []keyHint
+}
+
+// all is the row's keys in the order the footer lists them.
+func (r footerRow) all() []keyHint {
+	return append(append([]keyHint{}, r.panel...), r.global...)
+}
+
 // footerHints is the key row the footer shows: the keys of the open modal,
 // else the help screen's keys while help is open, else the active panel's
-// keys followed by the global ones.
-func (m Model) footerHints() []keyHint {
+// keys, then the global ones.
+func (m Model) footerHints() footerRow {
 	if m.activeModal != nil {
-		return modalHints(m.activeModal)
+		return footerRow{panel: modalHints(m.activeModal)}
 	}
 	if m.showHelp {
-		return []keyHint{keyHelpOff}
+		return footerRow{panel: []keyHint{keyHelpOff}}
 	}
-	hints := append([]keyHint{}, m.panelKeyHints()...)
-	hints = append(hints, m.globalFooterHints()...)
+	row := footerRow{panel: m.panelKeyHints(), global: m.globalFooterHints()}
 	if m.opState != nil && m.opState.Done() {
 		// A finished operation covers the main area, and Esc clears it.
-		return append([]keyHint{keyClose}, hints...)
+		row.panel = append([]keyHint{keyClose}, row.panel...)
 	}
-	return hints
+	return row
 }
 
 // globalFooterHints are globalHints for the active panel. On the panels the `/`
@@ -80,32 +93,91 @@ func modalHints(mo modal.Modal) []keyHint {
 
 // renderBottomBar draws the footer: one row of key hints across the bottom.
 func (m Model) renderBottomBar() string {
-	return footerLine(m.footerHints(), m.width)
+	row := m.footerHints()
+	return footerLine(row.panel, row.global, m.width)
 }
 
-// footerLine lays the hints out on one row, w cells wide. Each hint is its key
-// in the accent and its description in the subtle text, and hints are
-// separated by two spaces. When the row cannot hold them all, it keeps the
-// hints that fit and ends with "? more", which is always shown: the ? help
-// screen lists the rest.
-func footerLine(hints []keyHint, w int) string {
-	const gap = "  "
+// footerDropOrder is the global keys in the order they leave a row too narrow
+// for all of them: the first goes first. The arrow hint and ? help never go.
+var footerDropOrder = []string{"C", "R", "1-7", "Tab", "/", "q"}
+
+// footerMinPanel is the fewest panel actions a row keeps while a global key from
+// footerDropOrder is still shown.
+const footerMinPanel = 3
+
+// footerMore is the hint that ends a row which dropped keys. It stands in for
+// ? help.
+var footerMore = keyHint{key: "?", desc: "more"}
+
+// footerLine lays the panel's keys and the global keys out on one row, w cells
+// wide. The panel's keys come first, then a wider gap and a dim rule, then the
+// global keys. Within a group the hints are separated by a dim dot. When the row
+// cannot hold them all, fitFooter drops the keys and renderFooter ends the row
+// with "? more", which the ? help screen explains.
+func footerLine(panel, global []keyHint, w int) string {
+	row, more := fitFooter(footerRow{panel: panel, global: global}, w)
+	return fitFrame(renderFooter(row, more), w, bottomBarRows)
+}
+
+// fitFooter drops keys from the row until it is w cells or fewer. The panel's
+// actions go first, from the right end, but at least footerMinPanel stay while a
+// droppable global key remains. Then the droppable global keys go in
+// footerDropOrder. It reports whether any key went.
+func fitFooter(row footerRow, w int) (footerRow, bool) {
+	dropped := false
+	for lipgloss.Width(renderFooter(row, dropped)) > w {
+		i := nextDroppable(row.global)
+		switch {
+		case i < 0 && len(row.panel) == 0:
+			return row, dropped
+		case i >= 0 && len(row.panel) <= footerMinPanel:
+			row.global = slices.Delete(slices.Clone(row.global), i, i+1)
+		default:
+			row.panel = row.panel[:len(row.panel)-1]
+		}
+		dropped = true
+	}
+	return row, dropped
+}
+
+// nextDroppable is the index in global of the key that goes next, or -1 when no
+// droppable key is left.
+func nextDroppable(global []keyHint) int {
+	for _, key := range footerDropOrder {
+		if i := slices.IndexFunc(global, func(h keyHint) bool { return h.key == key }); i >= 0 {
+			return i
+		}
+	}
+	return -1
+}
+
+// renderFooter draws the row. When more is set, ? help is replaced by ? more at
+// the end of the global group, or of the panel group when there is no global one.
+func renderFooter(row footerRow, more bool) string {
+	panel, global := row.panel, row.global
+	if more {
+		if len(global) == 0 {
+			panel = append(slices.Clone(panel), footerMore)
+		} else {
+			global = append(slices.DeleteFunc(slices.Clone(global), func(h keyHint) bool { return h == keyHelp }), footerMore)
+		}
+	}
+	var groups []string
+	if len(panel) > 0 {
+		groups = append(groups, footerGroup(panel))
+	}
+	if len(global) > 0 {
+		groups = append(groups, footerGroup(global))
+	}
+	return " " + strings.Join(groups, "  "+style.MutedText.Render("│")+"  ")
+}
+
+// footerGroup draws one group's hints, each key in the accent and its word in the
+// subtle text, separated by a dim dot.
+func footerGroup(hints []keyHint) string {
 	parts := make([]string, 0, len(hints))
 	for _, h := range hints {
 		parts = append(parts, style.AccentText.Render(h.key)+" "+style.SubtleText.Render(h.desc))
 	}
-
-	line := " " + strings.Join(parts, gap)
-	if lipgloss.Width(line) > w {
-		more := style.AccentText.Render("?") + " " + style.SubtleText.Render("more")
-		line = " " + more
-		for i := range parts {
-			candidate := " " + strings.Join(parts[:i+1], gap) + gap + more
-			if lipgloss.Width(candidate) > w {
-				break
-			}
-			line = candidate
-		}
-	}
-	return fitFrame(line, w, bottomBarRows)
+	return strings.Join(parts, " "+style.MutedText.Render("·")+" ")
 }

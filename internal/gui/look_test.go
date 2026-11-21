@@ -349,12 +349,12 @@ func TestFooterLeadsWithThePanelsKeys(t *testing.T) {
 		t.Fatalf("a cut Formulae footer at 80 columns should end with ? more, got %q", plain)
 	}
 
-	m = updateModel(newTestModel(), tea.WindowSizeMsg{Width: 200, Height: 40})
+	m = updateModel(newTestModel(), tea.WindowSizeMsg{Width: 240, Height: 40})
 	plain = strings.TrimRight(plainLine(m.renderBottomBar()), " ")
 	if strings.Contains(plain, "more") {
 		t.Fatalf("a footer that fits must not say ? more, got %q", plain)
 	}
-	if !strings.HasPrefix(plain, " j/k navigate  h/l tabs  R refresh") {
+	if !strings.HasPrefix(plain, " j/k navigate · h/l tabs · R refresh") {
 		t.Fatalf("Status footer should lead with its own keys, got %q", plain)
 	}
 }
@@ -364,7 +364,7 @@ func TestFooterLeadsWithThePanelsKeys(t *testing.T) {
 func TestFooterShowsTheOpenModalsKeys(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
 	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Uninstall bash", "Remove bash?")
-	if plain := plainLine(m.renderBottomBar()); !strings.HasPrefix(plain, " y yes  n no  esc cancel") {
+	if plain := plainLine(m.renderBottomBar()); !strings.HasPrefix(plain, " y yes · n no · esc cancel") {
 		t.Fatalf("confirm footer = %q, want the confirm keys", plain)
 	}
 

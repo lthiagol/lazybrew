@@ -210,7 +210,7 @@ func TestLongErrorKeepsTheCloseHint(t *testing.T) {
 func TestFinishedOperationFooterStartsWithEscClose(t *testing.T) {
 	m := sizedServicesModel(t)
 	m.opState = &Operation{Title: "stop moshi-hook", Status: opError, Err: errors.New("boom"), Started: time.Now(), Ended: time.Now()}
-	if hints := m.footerHints(); len(hints) == 0 || hints[0] != keyClose {
+	if hints := m.footerHints().all(); len(hints) == 0 || hints[0] != keyClose {
 		t.Fatalf("first footer hint = %+v, want esc close", hints)
 	}
 	if !strings.Contains(screenText(m), "esc close") {
@@ -218,7 +218,7 @@ func TestFinishedOperationFooterStartsWithEscClose(t *testing.T) {
 	}
 
 	m.opState = &Operation{Title: "stop moshi-hook", Status: opRunning, Started: time.Now()}
-	if hints := m.footerHints(); len(hints) == 0 || hints[0] == keyClose {
+	if hints := m.footerHints().all(); len(hints) == 0 || hints[0] == keyClose {
 		t.Fatalf("a running operation should not offer esc close first, got %+v", hints)
 	}
 	if strings.Contains(screenText(m), "esc close") {

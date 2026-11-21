@@ -139,7 +139,7 @@ func TestServiceInfoKeyLineOffersStartStopRestartForError(t *testing.T) {
 			t.Errorf("Info of a failed service lacks %q:\n%s", want, text)
 		}
 	}
-	footer := m.footerHints()
+	footer := m.footerHints().all()
 	if footer[0].key != "s" || footer[1].key != "S" || footer[2].key != "r" {
 		t.Errorf("footer for a failed service starts %q %q %q, want s S r",
 			footer[0].key, footer[1].key, footer[2].key)

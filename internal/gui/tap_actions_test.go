@@ -17,10 +17,10 @@ var tapStates = []struct {
 	trustKnown bool
 	keys       string
 }{
-	{"untrusted", brew.Tap{Name: "user/tool"}, true, "t trust  x untap  r repair"},
-	{"trusted", brew.Tap{Name: "user/tool", Trusted: true}, true, "t untrust  x untap  r repair"},
+	{"untrusted", brew.Tap{Name: "user/tool"}, true, "t trust · x untap · r repair"},
+	{"trusted", brew.Tap{Name: "user/tool", Trusted: true}, true, "t untrust · x untap · r repair"},
 	{"official", brew.Tap{Name: "homebrew/core", IsOfficial: true}, true, "r repair"},
-	{"unread", brew.Tap{Name: "user/tool"}, false, "x untap  r repair"},
+	{"unread", brew.Tap{Name: "user/tool"}, false, "x untap · r repair"},
 }
 
 func TestTapActionHintsPerState(t *testing.T) {
@@ -30,7 +30,7 @@ func TestTapActionHintsPerState(t *testing.T) {
 			for _, h := range tapActionHints(c.tap, c.trustKnown) {
 				got = append(got, h.key+" "+h.desc)
 			}
-			if line := strings.Join(got, "  "); line != c.keys {
+			if line := strings.Join(got, " · "); line != c.keys {
 				t.Errorf("hints = %q, want %q", line, c.keys)
 			}
 		})
