@@ -194,7 +194,7 @@ Releases are cut from `stable` and the tap formula is updated by hand (the old G
 
 **WIP / dev builds:**
 
-The tap also ships `lazybrew-dev`, tracking `wip` directly. It is **manually bumped** — see [homebrew-tap/projects/lazybrew-dev/README.md](https://github.com/lthiagol/homebrew-tap/src/branch/main/projects/lazybrew-dev/README.md) for the procedure. Stable releases do not touch `lazybrew-dev`.
+The tap also ships `lazybrew-dev`, built from a tag cut on `wip` (no PR to `stable` needed). To ship one: tag the `wip` tip (`git tag -a vX.Y.Z-rcN`, `git push origin vX.Y.Z-rcN`), then bump the `url` tag and `sha256` in the tap's `Formula/lazybrew-dev.rb`; the formula passes the version to the binary with `-X main.version`. The steps are in [homebrew-tap/projects/lazybrew-dev/README.md](https://github.com/lthiagol/homebrew-tap/blob/main/projects/lazybrew-dev/README.md). Stable releases do not touch `lazybrew-dev`.
 
 ---
 

@@ -3,6 +3,10 @@
 One row per slice. This file is the resume record: a cold session reads it to
 learn what is done, what is in flight, and where to pick up.
 
+## ▶ Dev build
+
+`v1.1.0-rc1` (wip `fd1a037`) is tagged and `lazybrew-dev` in the tap points at it (2026-11-21). No PR to `stable`: work stays on `wip`.
+
 ## ▶ Resume here (2026-11-20, end of the orchestrator session)
 
 **Where we are.** LB-08 is code-complete on `wip`: the overhaul (v2-01 … v2-06,
