@@ -142,7 +142,7 @@ func tabKey(panel PanelID, tab int, itemName string) string {
 func needsTabFetch(panelID PanelID, tabIdx int) bool {
 	switch panelID {
 	case PanelStatus:
-		return tabIdx == statusConfigTab || tabIdx == statusDoctorTab
+		return tabIdx == statusConfigTab || tabIdx == statusDoctorTab || tabIdx == statusMissingTab
 	case PanelFormulae:
 		return tabIdx == formulaUsesTab || tabIdx == formulaFilesTab
 	}
