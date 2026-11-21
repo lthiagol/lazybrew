@@ -13,10 +13,10 @@ decision). The source is provenance, not a spec.
 | LB-02 | Apply context timeouts to the four brew fetch paths: `fetchPanelData`, `fetchStatusData`, `fetchSelectedSearchInfo`, `executeSearch` | B-02 (residual from M13 F-02/F-07) | medium | closed |
 | LB-03 | Status dashboard outdated count stays 0 until the first refresh | B-03 (M09 F-02 residual) | low | closed |
 | LB-04 | Chunk `brew tap-info --json` batches when the tap count risks ARG_MAX — slice `lb04-lb10-small-fixes` | B-04 (M11 F-01 residual) | low | closed |
-| LB-05 | Full interactive human smoke before the stable tag — **human gate**, not an agent task; checklist `SMOKE-CHECKLIST.md` *Run 2*; deferred by the user 2026-11-20 (`Q-backlog-next`) | B-05 | medium | deferred |
+| LB-05 | Full interactive human smoke before the stable tag — **human gate**, not an agent task; checklist `SMOKE-CHECKLIST.md` *Run 2*; deferred by the user 2026-11-20 (`Q-backlog-next`) | B-05 | medium | closed (human smoke Run 2, 2026-11-21) |
 | LB-06 | The M13 independent review itself — closed by verification together with LB-01; all 7 findings were already fixed, so the review is not left silently dropped | M13 | medium | closed-by-LB-01 |
 | LB-07 | Apply context timeouts to the two brew reads still unbounded: the uninstall dependency pre-check (`internal/gui/commands.go:1034`, `Formulae.Uses`) and `toggleLeaves` (`internal/gui/commands.go:1128`, `Formulae.Leaves`) | found by lb02-fetch-timeouts | low | closed |
-| LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slices v2-01..v2-06 + v2-05s closed 2026-11-20; checkpoint passed 2026-11-20; follow-up slices v2-07..v2-11 (Q-v2-next) closed 2026-11-20; code-complete, waiting on LB-05 | orchestrator review 2026-11-19 | medium | active |
+| LB-08 | Visual overhaul (change-gate look, overlays, harmonica animations) — slices v2-01..v2-06 + v2-05s closed 2026-11-20; checkpoint passed 2026-11-20; follow-up slices v2-07..v2-11 (Q-v2-next) closed 2026-11-20; code-complete; human smoke passed 2026-11-21 | orchestrator review 2026-11-19 | medium | closed |
 | LB-09 | Services Logs tab: tail a service's stdout/stderr log files from lazybrew — slice `lb09-service-logs` | user, 2026-11-19 | low | closed |
 | LB-10 | Confirm dialog: when a long dependents list is cut, the closing `…` row is centred instead of placed in the list column (`dialogMaxRows` cut in `modal/frame.go`, > ~12 body rows) — slice `lb04-lb10-small-fixes` | reviewer v2-04 r4 | low | closed |
 | LB-11 | Run brew steps that need a terminal (macOS `.pkg` casks asking for sudo) with the TUI suspended (`tea.ExecProcess`), so the user can type the password; today they fail fast with the needs-sudo text — the user ruled that message is enough for now (2026-11-20) | orchestrator + user, 2026-11-20 (Q-v2-11-b) | low | deferred (`Q-backlog-next`) |
@@ -72,13 +72,13 @@ by the lb19 r2 review.
 formula. The row's type is now certain, so pass `--cask` for cask rows. Raised
 by the lb19 r1 review.
 
-**LB-20 (parked)** — two edges from the lb19 r2 review: (a) if one typed search
+**LB-20 (closed, lb22 r2)** — two edges from the lb19 r2 review: (a) if one typed search
 read exits 1 (no results) and the other fails, the user sees an empty list and no
 error, which reads as "no results"; (b) two writes that finish back to back can
 land their Search re-marks out of order, so a slow first re-mark could restore a
 stale mark (the name guard does not cover it).
 
-**LB-21 (parked)** — leftovers from the lb21 r1 review: three other singleflight
+**LB-21 (closed, lb22 r2)** — leftovers from the lb21 r1 review: three other singleflight
 tests keep 20 ms sleeps (same synctest fix as LB-14); `EnableFileLogging` never
 closes its log file; the `ResetLogger` doc in `internal/brew/logger.go` says
 nothing in production calls it, but `init()` does (wording).
