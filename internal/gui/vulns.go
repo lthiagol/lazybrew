@@ -2,6 +2,7 @@ package gui
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -33,7 +34,7 @@ const (
 // that finished, and the error of the last run that failed.
 type vulnsState struct {
 	status vulnsStatus
-	report string
+	report brew.VulnReport
 	err    error
 }
 
@@ -52,7 +53,7 @@ func (m Model) checkVulns() (tea.Model, tea.Cmd) {
 // read, so it does not go through the task manager.
 func vulnsCmd(client *brew.Client) tea.Cmd {
 	return func() tea.Msg {
-		report, err := boundedRead(brewVulnsTimeout, "vulns", client.Diagnostics.Vulns)
+		report, err := boundedRead(brewVulnsTimeout, "vulns", client.Diagnostics.VulnsReport)
 		return VulnsMsg{Report: report, Err: err}
 	}
 }
@@ -64,14 +65,27 @@ func (m Model) vulnsTabView() string {
 	case vulnsRunning:
 		return m.spinner.View() + style.SubtleText.Render(" Checking…")
 	case vulnsDone:
-		if strings.TrimSpace(m.vulns.report) == "" {
-			return style.SuccessText.Render("No known vulnerabilities")
-		}
-		return strings.TrimRight(m.vulns.report, "\n")
+		return vulnsReportView(m.vulns.report)
 	case vulnsFailed:
 		return style.ErrorText.Render(vulnsErrorLine(m.vulns.err)) + "\n" + style.SubtleText.Render(vulnsHint)
 	}
 	return style.SubtleText.Render(vulnsHint)
+}
+
+// vulnsReportView is a finished check: brew's text when its JSON could not be
+// read, the empty line when brew found nothing, else the summary line.
+func vulnsReportView(r brew.VulnReport) string {
+	if !r.Parsed {
+		if strings.TrimSpace(r.Text) == "" {
+			return style.SuccessText.Render("No known vulnerabilities")
+		}
+		return strings.TrimRight(r.Text, "\n")
+	}
+	n := 0
+	for _, f := range r.Findings {
+		n += len(f.Vulnerabilities)
+	}
+	return fmt.Sprintf("%d vulnerabilities in %d of %d packages", n, len(r.Findings), r.Checked)
 }
 
 // vulnsErrorLine is brew's own first error line, or the error's text when brew

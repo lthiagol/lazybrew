@@ -80,8 +80,8 @@ func TestVulnsKeyRunsOnceWhileRunning(t *testing.T) {
 	if calls != 1 {
 		t.Fatalf("brew vulns ran %d times, want 1", calls)
 	}
-	if m.vulns.status != vulnsDone || m.vulns.report != "CVE-2026-1: openssl@3\n" {
-		t.Fatalf("the report should be kept, got status %v report %q", m.vulns.status, m.vulns.report)
+	if m.vulns.status != vulnsDone || m.vulns.report.Text != "CVE-2026-1: openssl@3\n" {
+		t.Fatalf("the report should be kept, got status %v report %+v", m.vulns.status, m.vulns.report)
 	}
 }
 
@@ -141,7 +141,7 @@ func TestVulnsReportSurvivesRefreshAndPanelSwitch(t *testing.T) {
 	if calls != 1 {
 		t.Fatalf("R ran brew vulns: %d calls, want the 1 from v", calls)
 	}
-	if m.vulns.report == "" {
+	if m.vulns.report.Text == "" {
 		t.Fatal("R cleared the Vulns report")
 	}
 
