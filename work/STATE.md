@@ -5,7 +5,7 @@ learn what is done, what is in flight, and where to pick up.
 
 ## ▶ Dev build
 
-`v1.1.0-rc1` (wip `fd1a037`) is tagged and `lazybrew-dev` in the tap points at it (2026-11-21). No PR to `stable`: work stays on `wip`.
+`v1.1.0-rc2` is tagged and `lazybrew-dev` in the tap points at it (2026-11-21); rc1 was `fd1a037`. No PR to `stable`: work stays on `wip`.
 
 ## ▶ Resume here (2026-11-20, end of the orchestrator session)
 
@@ -76,6 +76,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | lb21-backlog-sweep | 88f5f32, 90b1c5d, 557e6a4, d0c4000 | closed | ok (r1) |
 | lb22-update-default-and-leftovers | fc82630, dcc09ce, 6c5ee76, e5b6b16, 276f126 | closed | ok (r2, orchestrator-verified) |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c, a3284a2, 266cf69 | closed | ok (r2, orchestrator-verified); macOS manual test pending (user) |
+| lb24-copy-and-wording | 9beaafe, 755f7de, 6b2e627, 22a1a87, b05e324, 9762f16, ccd6fed, 2907e72 | closed | ok (r2) |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
 | lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |
 
