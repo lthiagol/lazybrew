@@ -63,6 +63,26 @@ func TestConfigCreateRefusesExistingFile(t *testing.T) {
 	}
 }
 
+func TestConfigSampleAndCreateTogetherAreRejected(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "c.yml")
+	var out, errOut bytes.Buffer
+	if code := runConfigFlags(true, true, path, &out, &errOut); code == 0 {
+		t.Fatal("exit code = 0 for both flags, want non-zero")
+	}
+	if out.Len() != 0 {
+		t.Errorf("stdout = %q, want nothing", out.String())
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("a file was written at %s, want none", path)
+	}
+	if strings.Count(errOut.String(), "\n") != 1 {
+		t.Errorf("stderr = %q, want one line", errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "--config-sample") || !strings.Contains(errOut.String(), "--config-create") {
+		t.Errorf("stderr = %q, want both flags named", errOut.String())
+	}
+}
+
 func TestConfigCreateDefaultPath(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
