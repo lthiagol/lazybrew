@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -165,5 +166,16 @@ func TestMockRunnerBrewPathDefault(t *testing.T) {
 	r := brewtest.NewMockRunner()
 	if got := r.BrewPath(); got != "/fake/brew" {
 		t.Errorf("got %q, want /fake/brew", got)
+	}
+}
+
+// CommandEnv turns off auto-update and prompts for every brew command, the
+// runner's and the terminal retry's alike.
+func TestCommandEnvTurnsOffAutoUpdateAndPrompts(t *testing.T) {
+	env := CommandEnv()
+	for _, want := range []string{"HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1"} {
+		if !slices.Contains(env, want) {
+			t.Errorf("CommandEnv() lacks %s", want)
+		}
 	}
 }

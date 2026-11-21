@@ -76,11 +76,17 @@ func (r *DefaultRunner) BrewPath() string {
 	return r.brewPath
 }
 
+// CommandEnv is the environment every brew command runs with: lazybrew's own,
+// with auto-update and prompts off. The terminal retry of a sudo step uses it too.
+func CommandEnv() []string {
+	return append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1")
+}
+
 // newCmd is the brew command for args. Every run sets it up the same way: the
 // environment, an empty stdin, and its own process group.
 func (r *DefaultRunner) newCmd(ctx context.Context, args []string) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, r.brewPath, args...)
-	cmd.Env = append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ASK=1")
+	cmd.Env = CommandEnv()
 	cmd.Stdin = bytes.NewReader(nil)
 	setProcessGroup(cmd)
 	return cmd

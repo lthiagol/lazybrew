@@ -30,6 +30,10 @@ const operationBarWidth = 40
 // operationCloseHint ends the status row of a finished operation: Esc closes it.
 const operationCloseHint = " · Esc to close"
 
+// operationRetryHint ends the status row of a failed operation that a retry in
+// the terminal can run: Enter runs it, Esc closes it.
+const operationRetryHint = " · Enter  run in this terminal · Esc  close"
+
 // operationAutoClose is how long a successful operation stays on screen before
 // it closes itself. The toast has already said it finished. Tests shorten it.
 var operationAutoClose = 2 * time.Second
@@ -131,9 +135,13 @@ func (m Model) operationStatus(op *Operation, width int) string {
 		return style.InstalledBadge.Render(presentation.WithIcon(m.icons.OK,
 			"Completed in "+formatElapsed(op.Ended.Sub(op.Started)))) + closeHint
 	case opError:
+		hint := closeHint
+		if _, ok := m.terminalRetry(); ok {
+			hint = style.SubtleText.Render(operationRetryHint)
+		}
 		text := textutil.Clip(presentation.WithIcon(m.icons.Error, "Failed: "+op.Err.Error()),
-			max(0, width-lipgloss.Width(closeHint)))
-		return style.ErrorBadge.Render(text) + closeHint
+			max(0, width-lipgloss.Width(hint)))
+		return style.ErrorBadge.Render(text) + hint
 	case opCancelled:
 		return style.SubtleText.Render("Cancelled") + closeHint
 	default:

@@ -86,6 +86,13 @@ func (m *Manager) Enqueue(t *Task) (EnqueueResult, error) {
 	return EnqueueQueued, nil
 }
 
+// Idle reports that no task is running and none is queued.
+func (m *Manager) Idle() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return (m.current == nil || m.current.done) && len(m.queue) == 0
+}
+
 func (m *Manager) CancelCurrent() {
 	m.mu.Lock()
 	rt := m.current

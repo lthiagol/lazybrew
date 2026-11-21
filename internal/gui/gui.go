@@ -308,9 +308,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case TaskStartedMsg:
 		title := msg.Title
 		op := &Operation{
-			Icon:    m.actionIcon(msg.ID),
-			Status:  opRunning,
-			Started: time.Now(),
+			Icon:      m.actionIcon(msg.ID),
+			Status:    opRunning,
+			Started:   time.Now(),
+			TaskID:    msg.ID,
+			TaskTitle: msg.Title,
 		}
 		// Surface the batch counter in the Operation overlay: batchCount
 		// used to be write-only state with no user-visible effect (r3

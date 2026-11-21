@@ -1,11 +1,13 @@
 package gui
 
 import (
+	"os/exec"
 	"time"
 
 	"charm.land/bubbles/v2/progress"
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/anim"
@@ -103,6 +105,10 @@ type Model struct {
 	commandLog *CommandLog
 	spinner    spinner.Model
 	opState    *Operation
+	// execProcess runs a command with the TUI suspended and the terminal
+	// attached (tea.ExecProcess). New sets it; a test swaps it in to capture
+	// the command (terminal_retry.go).
+	execProcess func(*exec.Cmd, tea.ExecCallback) tea.Cmd
 	// taskID was removed (r3 finding R3-6): nothing read it, and stale
 	// output filtering belongs to the TaskManager, not the model.
 	refreshing int
@@ -199,6 +205,7 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 		motionOn:      animationsOn(cfg),
 		opBar:         newProgressBar(),
 		readLog:       logtail.Read,
+		execProcess:   tea.ExecProcess,
 	}
 	// -1 marks "no such menu entry" until startTrustMenu records the
 	// real positions (r4 finding R4-3).

@@ -178,6 +178,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, m.searchInput.Focus()
 
 	case "enter":
+		if needs, ok := m.terminalRetry(); ok {
+			return m.retryInTerminal(needs)
+		}
 		if m.activePanel == PanelSearch && len(m.searchResults) > 0 {
 			return m, m.fetchSelectedSearchInfo()
 		}

@@ -819,3 +819,14 @@ Pinned by a test in `fix-lb19-keys-and-search-r2`.
 **Ruling (orchestrator, 2026-11-21) — Q-lb20-trust-menu:** accepted. The trust menu
 lists the tap's own formulae and casks from tap-info (`FormulaNames`/`CaskNames`),
 not installed packages, so `full_token` only affects the untap confirm.
+
+### Q-lb23-execprocess — a sudo retry runs outside task.Manager
+
+- **Decision (brief lb23-sudo-in-terminal, AC-02.3):** a failed install,
+  reinstall, upgrade or uninstall whose step needed sudo runs again with
+  `tea.ExecProcess`, not through `m.tasks.Enqueue`. AGENTS.md rule 2 names the
+  exception. It runs only when `task.Manager.Idle()` (nothing running or queued)
+  and no batch is in flight, so no other write can start while the TUI is
+  suspended. Other commands (update, services, tap, trust, cleanup, autoremove,
+  zap) never run this way.
+- **Raised by:** runner lane (slice lb23-sudo-in-terminal).
