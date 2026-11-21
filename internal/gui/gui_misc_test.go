@@ -590,18 +590,25 @@ func TestServicesRestartKeyHandler(t *testing.T) {
 	}
 }
 
-func TestSearchInstallKeyIHasHandler(t *testing.T) {
-	m := newTestModel()
-	m.activePanel = PanelSearch
-	p := m.panels[PanelSearch]
-	p.items = []string{"ripgrep  formula"}
-	m.searchResults = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
-	p.results = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
-	p.selected = 0
+// TestSearchInstallKeyIsLowercaseI (lb25 AC-03): i installs a Search result; I
+// is no longer answered there, so it opens no confirm and runs nothing.
+func TestSearchInstallKeyIsLowercaseI(t *testing.T) {
+	newSearch := func() *Model {
+		m := newTestModel()
+		m.activePanel = PanelSearch
+		p := m.panels[PanelSearch]
+		p.items = []string{"ripgrep"}
+		m.searchResults = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
+		p.results = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
+		p.selected = 0
+		return m
+	}
 
-	m = sendKey(m, "I")
-	if m.activeModal == nil {
-		t.Fatal("I on Search must open the install confirm (r1 finding 24)")
+	if m := sendKey(newSearch(), "i"); m.activeModal == nil {
+		t.Fatal("i on Search must open the install confirm (r1 finding 24)")
+	}
+	if m := sendKey(newSearch(), "I"); m.activeModal != nil {
+		t.Fatal("I on Search must not open the install confirm (lb25 AC-03)")
 	}
 }
 

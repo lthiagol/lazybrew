@@ -379,6 +379,14 @@ func TestPanelKeysAreOnFooterAndHelp(t *testing.T) {
 	}
 }
 
+// TestSearchDoesNotAnswerCapitalI (lb25 AC-03): I was a second install key on
+// Search. Only i installs there, so I is not in Search's dispatch at all.
+func TestSearchDoesNotAnswerCapitalI(t *testing.T) {
+	if dispatchByPanel(t)[PanelSearch]["I"] {
+		t.Fatal("Search answers I; it must answer only i (lb25 AC-03)")
+	}
+}
+
 // footerExempt is the keys a panel answers that its footer leaves out on purpose.
 // The footers are pinned by goldens, so each omission is recorded here instead of
 // being changed. A listed key is checked on the help only. Each entry says why.
@@ -541,7 +549,7 @@ var keyTable = []keyHint{
 	tAdd, tUntap, tTrust, tUntrust, tTrustItem, tRepair,
 	svStart, svStop, svRestart, svRun, svCleanup, svLogStream,
 	stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, stTabs,
-	sExecute, sType, sInstall, sInstallCap, sUninstall, sZap, sFetch,
+	sExecute, sType, sInstall, sUninstall, sZap, sFetch,
 }
 
 // TestRetiredTabAndPageKeysDoNothing (lb19 AC-03): [ and ] switch no tab, and

@@ -207,13 +207,6 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if m.activePanel == PanelSearch || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
 			return m.confirmMutation(mutInstall, "Install")
 		}
-	case "I":
-		if m.activePanel == PanelSearch {
-			if r, ok := m.selectedSearchRow(); ok && r.Installed {
-				return m, m.setToast(r.Name+" is already installed, x to uninstall", modal.ToastInfo)
-			}
-			return m.confirmMutation(mutInstall, "Install")
-		}
 	case "x":
 		if m.activePanel == PanelFormulae || m.activePanel == PanelCasks || m.activePanel == PanelSearch {
 			return m.confirmUninstall(mutUninstall)
