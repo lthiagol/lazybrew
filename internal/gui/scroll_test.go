@@ -35,7 +35,7 @@ func scrollFixture(t *testing.T) *Model {
 
 // topCaveat is the first caveat line the main panel draws.
 func topCaveat(m *Model) string {
-	plain := sgr.ReplaceAllString(m.renderMainPanel(), "")
+	plain := sgr.ReplaceAllString(m.renderMainPanelIn(m.screenLayout()), "")
 	if mm := caveatLine.FindString(plain); mm != "" {
 		return mm
 	}
@@ -81,7 +81,7 @@ func TestScrollKeysMoveAndClamp(t *testing.T) {
 	if got := topCaveat(m); got != fmt.Sprintf("line-%02d", last) {
 		t.Fatalf("End: the top row should be line-%02d, got %q", last, got)
 	}
-	if plain := sgr.ReplaceAllString(m.renderMainPanel(), ""); !strings.Contains(plain, "line-59") {
+	if plain := sgr.ReplaceAllString(m.renderMainPanelIn(m.screenLayout()), ""); !strings.Contains(plain, "line-59") {
 		t.Fatal("End: the last caveat line should be on screen")
 	}
 	m = down(m, tea.KeyPgDown)

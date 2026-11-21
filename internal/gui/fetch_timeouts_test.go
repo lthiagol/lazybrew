@@ -114,11 +114,9 @@ func TestFetchStatusDataTimesOut(t *testing.T) {
 	if !strings.Contains(strings.Join(dMsg.Summary.Problems, "\n"), "brew list timed out after 10ms") {
 		t.Error("the summary does not name the command and the duration")
 	}
-	_, errs := statusDashboard(client, false)
-	if len(errs) == 0 {
+	if summary := statusDashboard(client, false); len(summary.Problems) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}
-	assertTimeout(t, errs[0], "list", "10ms")
 }
 
 func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
@@ -155,14 +153,13 @@ func TestFetchStatusDataRespectsTotalBudget(t *testing.T) {
 		t.Errorf("fetchStatusData took %s — the sum of the per-read caps, not the total budget", elapsed)
 	}
 
-	_, errs := statusDashboard(client, false)
-	if len(errs) == 0 {
+	summary := statusDashboard(client, false)
+	if len(summary.Problems) == 0 {
 		t.Fatal("expected the dashboard to aggregate the timed-out reads")
 	}
-	for i, err := range errs {
-		var toErr *brew.TimeoutError
-		if !errors.As(err, &toErr) {
-			t.Errorf("errs[%d] = %T: %v, want *brew.TimeoutError", i, err, err)
+	for _, p := range summary.Problems {
+		if !strings.Contains(p, "timed out after") {
+			t.Errorf("problem %q is not a timed-out read", p)
 		}
 	}
 }

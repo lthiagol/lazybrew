@@ -16,7 +16,7 @@ import (
 func TestNeedsTabFetchTable(t *testing.T) {
 	want := map[PanelID][]int{
 		PanelStatus:   {statusConfigTab, statusDoctorTab},
-		PanelFormulae: {formulaDepsTab, formulaUsesTab, formulaFilesTab},
+		PanelFormulae: {formulaUsesTab, formulaFilesTab},
 	}
 	for panel := PanelStatus; panel <= PanelSearch; panel++ {
 		for tab := 0; tab < 8; tab++ {

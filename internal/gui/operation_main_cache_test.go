@@ -75,7 +75,7 @@ func TestMainRowsDuringOperationAreTheOverlayRows(t *testing.T) {
 	m := filesTabModel(t, 300)
 	screenText(m)
 	m = overFilesTabOutput(m)
-	w := m.mainContentWidth()
+	w := contentWidthIn(m.screenLayout())
 	want := wrapContent(m.renderContent(w, 30), w)
 	if got := m.mainRows(w, 30); strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("the rows during the operation should be the overlay's, got:\n%s", strings.Join(got, "\n"))

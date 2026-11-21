@@ -67,8 +67,8 @@ func TestNeedsTabFetchShifted(t *testing.T) {
 	if needsTabFetch(PanelFormulae, formulaInfoTab) {
 		t.Error("Info must not fetch")
 	}
-	if !needsTabFetch(PanelFormulae, formulaDepsTab) {
-		t.Error("Deps must fetch")
+	if needsTabFetch(PanelFormulae, formulaDepsTab) {
+		t.Error("Deps is drawn from the loaded formula and must not fetch")
 	}
 	if !needsTabFetch(PanelFormulae, formulaUsesTab) {
 		t.Error("Used By must fetch")

@@ -412,3 +412,14 @@ func TestOperationLinesAreCapped(t *testing.T) {
 		t.Fatalf("progress after the cap = %d/%d, want 1999/2000", done, total)
 	}
 }
+
+// parseSteps splits brew's output at its `==> ` lines. Blank lines are not
+// output. Lines before the first step belong to no step. It is the step state
+// of a whole run; an Operation keeps the same state as its lines arrive.
+func parseSteps(lines []string) []opStep {
+	var steps []opStep
+	for _, line := range lines {
+		steps = addStepLine(steps, line)
+	}
+	return steps
+}

@@ -46,7 +46,7 @@ func TestSidebarListScrollsWithCursor(t *testing.T) {
 			for i := 0; i < 6; i++ {
 				m = sendKey(m, "j")
 			}
-			if main := m.renderMainPanel(); strings.Contains(main, "row-0") {
+			if main := m.renderMainPanelIn(m.screenLayout()); strings.Contains(main, "row-0") {
 				t.Fatal("the main panel must not redraw the sidebar's list")
 			}
 

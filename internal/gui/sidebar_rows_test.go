@@ -134,7 +134,7 @@ func TestLeavesFilterKeepsFormulaeAligned(t *testing.T) {
 		Items:    []string{"bash  5.2", "dep  1.0"},
 		Formulae: []brew.Formula{{Name: "bash", Version: "5.2"}, {Name: "dep", Version: "1.0"}},
 	})
-	m = updateModel(m, MutationResultMsg{Name: "leaves", Type: mutInstall, Leaves: []string{"bash"}})
+	m = updateModel(m, MutationResultMsg{Name: "leaves", Leaves: []string{"bash"}})
 
 	p := m.panels[PanelFormulae]
 	if len(p.items) != 1 || len(p.formulae) != 1 {
@@ -143,7 +143,7 @@ func TestLeavesFilterKeepsFormulaeAligned(t *testing.T) {
 	if f := p.selectedFormula(); f == nil || f.Name != "bash" {
 		t.Fatalf("the selected formula should be the leaf bash, got %+v", f)
 	}
-	m = updateModel(m, MutationResultMsg{Name: "leaves", Type: mutInstall, Leaves: []string{"bash", "dep"}})
+	m = updateModel(m, MutationResultMsg{Name: "leaves", Leaves: []string{"bash", "dep"}})
 	if len(p.items) != 2 || len(p.formulae) != 2 {
 		t.Fatalf("leaves off should restore both lists, got %d and %d", len(p.items), len(p.formulae))
 	}

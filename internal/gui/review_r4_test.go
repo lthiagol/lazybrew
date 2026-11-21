@@ -71,8 +71,8 @@ func TestCancelledTrustMenuDoesNotPoisonBrewfileMenu(t *testing.T) {
 	if m.activeModal == nil {
 		t.Fatal("expected the Brewfile menu to open")
 	}
-	if m.pendingAction != "" {
-		t.Fatalf("the Brewfile menu must not set pendingAction, got %q", m.pendingAction)
+	if m.pendingAction != "brewfile" {
+		t.Fatalf("the Brewfile menu must set pendingAction to brewfile, got %q", m.pendingAction)
 	}
 	nm, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	m = asModel(nm)

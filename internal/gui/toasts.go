@@ -50,14 +50,6 @@ func toastMessageWidth(frameWidth int) int {
 	return min(frameWidth/2, 60)
 }
 
-// newestToast is the toast drawn lowest in the stack, or nil when there is none.
-func (m Model) newestToast() *modal.Toast {
-	if len(m.toasts) == 0 {
-		return nil
-	}
-	return m.toasts[len(m.toasts)-1]
-}
-
 // toastIcon is the icon a toast of type t draws, from the icon set. The set is
 // empty under show_icons: false, and then the icon is "".
 func (m Model) toastIcon(t modal.ToastType) string {

@@ -79,7 +79,6 @@ func (m *Manager) Enqueue(t *Task) (EnqueueResult, error) {
 		return EnqueueQueued, ErrQueueFull
 	}
 
-	t.Status = StatusPending
 	m.queue = append(m.queue, t)
 	if canStart {
 		return EnqueueStarted, nil
@@ -121,11 +120,9 @@ func (m *Manager) RunNext() tea.Cmd {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	next.Cancel = cancel
-	next.Status = StatusRunning
 
 	outCh, errCh, err := next.Run(ctx)
 	if err != nil {
-		next.Status = StatusFailed
 		return func() tea.Msg {
 			return TaskCompletedMsg{
 				ID:    next.ID,
@@ -189,7 +186,6 @@ func (m *Manager) readChunk(rt *runningTask) tea.Cmd {
 		}
 		m.mu.Lock()
 		rt.done = true
-		rt.task.Status = statusFromErr(rt.err)
 		m.mu.Unlock()
 		return TaskCompletedMsg{
 			ID:    rt.task.ID,
@@ -217,14 +213,4 @@ func (rt *runningTask) batch(first string) []string {
 		}
 	}
 	return lines
-}
-
-func statusFromErr(err error) Status {
-	if err == nil {
-		return StatusSuccess
-	}
-	if errors.Is(err, context.Canceled) {
-		return StatusCancelled
-	}
-	return StatusFailed
 }
