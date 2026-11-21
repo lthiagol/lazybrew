@@ -340,7 +340,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "v":
 		if m.activePanel == PanelStatus {
-			return m.runVulns()
+			return m.checkVulns()
 		}
 	case "m":
 		if m.activePanel == PanelStatus {

@@ -502,6 +502,14 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Label, msg.Message).WithDetail(msg.Detail)
 		return m, m.activeModal.Init()
 
+	case VulnsMsg:
+		if msg.Err != nil {
+			m.vulns = vulnsState{status: vulnsFailed, err: msg.Err}
+		} else {
+			m.vulns = vulnsState{status: vulnsDone, report: msg.Report}
+		}
+		return m, nil
+
 	case TabContentMsg:
 		key := tabKey(msg.PanelID, msg.TabIndex, msg.ItemName)
 		if msg.Err != nil {

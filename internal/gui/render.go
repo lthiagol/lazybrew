@@ -496,6 +496,8 @@ func (m Model) renderContent(width, height int) string {
 				return style.SubtleText.Render("Status dashboard not loaded yet — press R to refresh")
 			}
 			return m.renderDashboard(width)
+		case statusVulnsTab:
+			return m.vulnsTabView()
 		case statusConfigTab, statusDoctorTab, statusMissingTab:
 			// Config/Doctor fetch from the loaded dashboard; before the
 			// dashboard has loaded there is nothing to fetch, and the old
