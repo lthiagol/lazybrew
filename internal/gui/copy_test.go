@@ -161,24 +161,23 @@ func TestYWithAnOverlayOpenAndTheBoxFocusedTypesIt(t *testing.T) {
 	}
 }
 
-// The overlay's status row offers y copy after the close hint when the row
-// holds both at the width, and leaves it out where the close hint would be cut.
-func TestOverlayStatusRowOffersYCopyWhereItFits(t *testing.T) {
-	for _, width := range []int{80, 140} {
-		m := sudoFailedModel("install", "--cask", "foo")
-		got := ansi.Strip(m.renderOperation(width, 24))
-		if want := "Enter  run in this terminal · Esc  close · y copy"; !strings.Contains(got, want) {
-			t.Errorf("width %d: status row lacks %q:\n%s", width, want, got)
+// In the real frame the failed retry row offers y copy where the row holds it:
+// at 140x40 after the keys, at 80x24 after "needs sudo", the keys being on the
+// line under the row.
+func TestFailedRetryRowOffersYCopyWhereItFits(t *testing.T) {
+	cases := []struct {
+		width, height int
+		row           string
+	}{
+		{80, 24, "✗ Failed: needs sudo · y copy"},
+		{140, 40, "Enter  run in this terminal · Esc  close · y copy"},
+	}
+	for _, c := range cases {
+		m := updateModel(sudoFailedModel("install", "--cask", "foo"), tea.WindowSizeMsg{Width: c.width, Height: c.height})
+		got := ansi.Strip(m.View().Content)
+		if !strings.Contains(got, c.row) {
+			t.Errorf("%dx%d: the failed row lacks %q:\n%s", c.width, c.height, c.row, got)
 		}
-	}
-
-	m := sudoFailedModel("install", "--cask", "foo")
-	got := ansi.Strip(m.renderOperation(50, 24))
-	if want := "Enter  run in this terminal · Esc  close"; !strings.Contains(got, want) {
-		t.Errorf("width 50: the close hint is cut:\n%s", got)
-	}
-	if strings.Contains(got, "y copy") {
-		t.Errorf("width 50: the copy hint does not fit but is shown:\n%s", got)
 	}
 }
 

@@ -390,28 +390,47 @@ func retryUnderPty(t *testing.T) {
 	}
 }
 
-// When the retry runs, the failed row says only that sudo was needed and how to
-// continue; the command it runs is on the line under it. A command the retry
-// does not run keeps its message as it was.
-func TestFailedOverlaySaysWhatTheRetryRunsOnItsOwnLine(t *testing.T) {
-	const status = "Failed: needs sudo · Enter  run in this terminal · Esc  close"
-	for _, size := range [][2]int{{80, 24}, {140, 40}} {
-		width, height := size[0], size[1]
-		m := sudoFailedModel("install", "--cask", "foo")
-		lines := strings.Split(ansi.Strip(m.renderOperation(width, height)), "\n")
+// The failed row of a retry in the real frame. At 80x24 the main panel is 48
+// cells wide: the row keeps "needs sudo" and the y copy hint, and the Enter and
+// Esc keys go on the line under it, uncut, with the command under them. At
+// 140x40 the keys stay on the row. Either way the command is the line after
+// the keys.
+func TestFailedRetryRowInTheFrame(t *testing.T) {
+	cases := []struct {
+		width, height int
+		row, keys     string
+	}{
+		{80, 24, "✗ Failed: needs sudo · y copy", "Enter  run in this terminal · Esc  close"},
+		{140, 40, "✗ Failed: needs sudo · Enter  run in this terminal · Esc  close · y copy", ""},
+	}
+	for _, c := range cases {
+		m := updateModel(sudoFailedModel("install", "--cask", "foo"), tea.WindowSizeMsg{Width: c.width, Height: c.height})
+		lines := strings.Split(ansi.Strip(m.View().Content), "\n")
 		row := slices.IndexFunc(lines, func(l string) bool { return strings.Contains(l, "Failed:") })
-		if row < 0 || !strings.Contains(lines[row], status) {
-			t.Fatalf("%dx%d: status row lacks %q:\n%s", width, height, status, strings.Join(lines, "\n"))
+		if row < 0 || !strings.Contains(lines[row], c.row) {
+			t.Fatalf("%dx%d: status row lacks %q:\n%s", c.width, c.height, c.row, strings.Join(lines, "\n"))
 		}
-		if row+1 >= len(lines) || strings.TrimSpace(lines[row+1]) != "brew install --cask foo" {
-			t.Errorf("%dx%d: the line under the status row is not the command:\n%s", width, height, strings.Join(lines, "\n"))
+		next := row + 1
+		if c.keys != "" {
+			if next >= len(lines) || !strings.Contains(lines[next], c.keys) {
+				t.Errorf("%dx%d: the line under the status row lacks the keys %q:\n%s", c.width, c.height, c.keys, strings.Join(lines, "\n"))
+			}
+			next++
 		}
+		if next >= len(lines) || !strings.Contains(lines[next], "brew install --cask foo") {
+			t.Errorf("%dx%d: the command is not under the keys:\n%s", c.width, c.height, strings.Join(lines, "\n"))
+		}
+	}
+}
 
-		// The message is cut to the row at 80 columns, as it always was.
+// A command the retry does not run keeps its message as it was, cut to the row
+// at 80 columns.
+func TestRefusedCommandKeepsItsMessage(t *testing.T) {
+	const want = `Failed: needs sudo — run "brew services start moshi-hook"`
+	for _, size := range [][2]int{{80, 24}, {140, 40}} {
 		refused := sudoFailedModel("services", "start", "moshi-hook")
-		want := `Failed: needs sudo — run "brew services start moshi-hook"`
-		if got := ansi.Strip(refused.renderOperation(width, height)); !strings.Contains(got, want) {
-			t.Errorf("%dx%d: refused command lost its message %q:\n%s", width, height, want, got)
+		if got := ansi.Strip(refused.renderOperation(size[0], size[1])); !strings.Contains(got, want) {
+			t.Errorf("%dx%d: refused command lost its message %q:\n%s", size[0], size[1], want, got)
 		}
 	}
 }

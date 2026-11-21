@@ -30,9 +30,16 @@ const operationBarWidth = 40
 // operationCloseHint ends the status row of a finished operation: Esc closes it.
 const operationCloseHint = " · Esc to close"
 
-// operationRetryHint ends the status row of a failed operation that a retry in
-// the terminal can run: Enter runs it, Esc closes it.
-const operationRetryHint = " · Enter  run in this terminal · Esc  close"
+// operationRetryKeys says how a retry in the terminal is run and closed: Enter
+// runs it, Esc closes it. It ends the status row of a failed operation that the
+// row holds it, and is the line under the row when it does not.
+const operationRetryKeys = "Enter  run in this terminal · Esc  close"
+
+// operationRetryHint is operationRetryKeys after the status row's text.
+const operationRetryHint = " · " + operationRetryKeys
+
+// operationRetryFailure is the failed row's text for a refusal the retry runs.
+const operationRetryFailure = "Failed: needs sudo"
 
 // operationCopyHint ends the status row of an open overlay: y copies it.
 const operationCopyHint = " · y copy"
@@ -116,6 +123,9 @@ func (m Model) renderOperation(width, height int) string {
 		m.operationStatus(op, width),
 	}
 	if needs, ok := m.terminalRetry(); ok {
+		if m.retryKeysOwnLine(width) {
+			head = append(head, style.SubtleText.Render(operationRetryKeys))
+		}
 		head = append(head, style.SubtleText.Render("brew "+needs.Command))
 	}
 	if _, total := operationProgress(op); total > 0 {
@@ -142,24 +152,40 @@ func (m Model) operationStatus(op *Operation, width int) string {
 		return withCopy(style.InstalledBadge.Render(presentation.WithIcon(m.icons.OK,
 			"Completed in "+formatElapsed(op.Ended.Sub(op.Started))))+closeHint, width)
 	case opError:
-		hint := closeHint
-		failure := "Failed: " + op.Err.Error()
 		if _, ok := m.terminalRetry(); ok {
-			// The command is on the line under this row (renderOperation).
-			hint = style.SubtleText.Render(operationRetryHint)
-			failure = "Failed: needs sudo"
+			return m.retryFailedRow(width)
 		}
-		shown := presentation.WithIcon(m.icons.Error, failure)
-		if row := style.ErrorBadge.Render(shown) + hint; copyFits(row, width) {
+		shown := presentation.WithIcon(m.icons.Error, "Failed: "+op.Err.Error())
+		if row := style.ErrorBadge.Render(shown) + closeHint; copyFits(row, width) {
 			return withCopy(row, width)
 		}
-		text := textutil.Clip(shown, max(0, width-lipgloss.Width(hint)))
-		return style.ErrorBadge.Render(text) + hint
+		text := textutil.Clip(shown, max(0, width-lipgloss.Width(closeHint)))
+		return style.ErrorBadge.Render(text) + closeHint
 	case opCancelled:
 		return withCopy(style.SubtleText.Render("Cancelled")+closeHint, width)
 	default:
 		return withCopy(style.SubtleText.Render("Running "+formatElapsed(time.Since(op.Started))+" · Esc to cancel"), width)
 	}
+}
+
+// retryFailedRow is the failed row of a refusal that the retry runs in the
+// terminal: "needs sudo", then the keys when the row holds them within width. The
+// command is on the line under the row (renderOperation), and so are the keys
+// when the row cannot hold them (retryKeysOwnLine).
+func (m Model) retryFailedRow(width int) string {
+	shown := style.ErrorBadge.Render(presentation.WithIcon(m.icons.Error, operationRetryFailure))
+	if m.retryKeysOwnLine(width) {
+		return withCopy(shown, width)
+	}
+	return withCopy(shown+style.SubtleText.Render(operationRetryHint), width)
+}
+
+// retryKeysOwnLine is whether the failed row of a retry is too narrow for its
+// keys at width. Then the keys go on the line under the row, uncut.
+func (m Model) retryKeysOwnLine(width int) bool {
+	row := style.ErrorBadge.Render(presentation.WithIcon(m.icons.Error, operationRetryFailure)) +
+		style.SubtleText.Render(operationRetryHint)
+	return lipgloss.Width(row) > width
 }
 
 // withCopy ends a status row with the y copy hint where the row holds it within
