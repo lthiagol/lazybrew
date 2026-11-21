@@ -4,55 +4,39 @@
 
 - AC-01 (LB-17): `c05ebf0` lb20 AC-01: installed casks carry full_token [LB-17]
 - AC-02 (LB-19): `179adf2` lb20 AC-02: Search info asks brew for the row's kind [LB-19]
-- Receipt, state row, question: this commit (`work/inbox/runner-lb20-cask-followups.md`,
-  `work/STATE.md`, `work/questions.md`)
+- Receipt, state row, question: `6ba4360` (this file trimmed in a later commit)
 
-## AC-01 — installed casks carry full_token
+## AC-01 — full_token
 
-- Shape check, read-only: `brew info --json=v2 --cask claude-code` has
-  `"full_token": "claude-code"` and no `full_name`; the fixture matches.
-- Failing before the fix (fix swapped out with `git show HEAD:`):
-  ```
-  casks_token_test.go:96: FullName = "", want the full_token "claude-code"
-  casks_token_test.go:112: FullName = "", want the full_token "user/tap/bar"
-  tap_untap_test.go:155: confirm lacks "brew will refuse to untap while they are installed"
-  tap_untap_test.go:155: confirm lacks "gcloud"
-  ```
-- Fix: `caskJSON.FullToken`; `FullName` = full_token, else full_name.
-- Passing after: `go test ./internal/brew/ -run TestCaskFullName` ok; gui untap test ok.
-- Goldens changed: none (`FullName` is rendered nowhere except `installedFromTap`).
-- Trust-menu part: not done as written. See Q-lb20-trust-menu.
+- Read-only `brew info --json=v2 --cask claude-code`: `"full_token": "claude-code"`, no `full_name`. Matches fixture.
+- Fails before fix (`git show HEAD:` swapped in):
+  `casks_token_test.go:96: FullName = "", want the full_token "claude-code"`
+  `tap_untap_test.go:155: confirm lacks "gcloud"`
+- Fix: `caskJSON.FullToken`; FullName = full_token, else full_name.
+- Goldens changed: none.
+- Trust-menu part: not done as written (Q-lb20-trust-menu).
 
-## AC-02 — Search info passes the row's kind
+## AC-02 — info kind flag
 
-- Failing before the fix:
-  ```
-  search_info_test.go:225: row 0 (formula=true cask=false): brew args [info --json=v2 same], want [info --json=v2 --formula same]
-  search_info_test.go:225: row 1 (formula=false cask=true): brew args [info --json=v2 same], want [info --json=v2 --cask same]
-  ```
-- Fix: `fetchSelectedSearchInfo` adds `--cask` / `--formula` from the row; unknown row keeps no flag.
-- Added `TestSearchInfoCaskRowParsesBrewCaskFixture`: the `--cask` payload
-  (`casks_installed_token.json`) parses as type cask, name claude-code. Passes.
+- Fails before fix:
+  `search_info_test.go:225: row 0 (formula=true): brew args [info --json=v2 same], want [info --json=v2 --formula same]`
+  `search_info_test.go:225: row 1 (cask=true): brew args [info --json=v2 same], want [info --json=v2 --cask same]`
+- Fix: `fetchSelectedSearchInfo` adds `--cask`/`--formula`; unknown row keeps no flag.
+- Added `TestSearchInfoCaskRowParsesBrewCaskFixture`: passes.
 - Frames changed: none.
 
 ## Gate
 
-- `make test-fast PKG="./internal/brew/... ./internal/gui/..."`: all ok (after each AC).
-- `make ci`: exit 0. Output: all packages ok; coverage floors all met
-  (app 70.0 ≥ 64, brew 87.8 ≥ 78, config 92.6 ≥ 85, gui 90.7 ≥ 83, anim 88.2 ≥ 86,
-  modal 89.2 ≥ 88, presentation 100.0 ≥ 96, style 89.5 ≥ 88, task 96.2 ≥ 93,
-  logtail 92.3 ≥ 90). Log: scratchpad `ci.log`.
+- `make test-fast PKG="./internal/brew/... ./internal/gui/..."`: ok after each AC.
+- `make ci`: exit 0; all packages ok; all coverage floors met (gui 90.7 ≥ 83, brew 87.8 ≥ 78).
 - `GOOS=darwin go build ./...`: ok.
-- Floors not touched. No dependency change. No TUI launched. No brew write commands.
+- No floors touched, no new deps, no TUI, no brew writes.
 
-## Questions filed
+## Questions
 
-- `Q-lb20-trust-menu`: the brief asks that "the tap-trust menu lists" an installed
-  cask. The trust menu reads no installed packages. I tested the untap confirm
-  instead (`TestUntapConfirmListsInstalledCaskFromBrewPayload`). Ruling needed.
+- `Q-lb20-trust-menu`: the trust menu reads no installed packages. Tested the untap confirm instead. Ruling needed.
 
 ## Seen, not done
 
-- `work/backlog.md` still lists LB-17 and LB-19 as parked. Left for the orchestrator to close.
-- `work/STATE.md` has older rows at `lb12-cask-token`, `lb16-update-when-stale`,
-  `lb18-config-sample` still marked `implemented`. Not mine; left alone.
+- `work/backlog.md` still lists LB-17 and LB-19 as parked; orchestrator to close.
+- `work/STATE.md` rows lb12, lb16, lb18 still say `implemented`; not mine.

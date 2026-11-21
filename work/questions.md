@@ -815,3 +815,7 @@ Pinned by a test in `fix-lb19-keys-and-search-r2`.
 - **Ask.** Is the untap confirm what was meant, or should the trust menu gain an
   installed-from-tap section? Recommended: the untap confirm only; the trust menu
   lists the tap's own formulae and casks, which is correct.
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb20-trust-menu:** accepted. The trust menu
+lists the tap's own formulae and casks from tap-info (`FormulaNames`/`CaskNames`),
+not installed packages, so `full_token` only affects the untap confirm.
