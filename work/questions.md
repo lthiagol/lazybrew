@@ -994,3 +994,17 @@ tabs; the active tab is always in view; `‹` / `›` mark a cut side; every tab
 uses it, and rows that fit are drawn exactly as today. Mouse clicks on the tab row map through the
 window. Q-lb31-cleanup-autoremove: keep the note and the plain `brew cleanup` run (same as in a
 shell). `fix-lb31-cleanup-tabs-r1`.
+
+### Q-lb31-cleanup-path-cut — two bottle files look the same at 80x24
+
+- **Context (lb31 fix r2, F-r1-01):** at 80x24 the Path column is 22 to 28 cells. Two Homebrew
+  download-cache bottles, `~/Library/Caches/Homebrew/downloads/<hash>--<formula>-<ver>.arm64_sonoma.bottle.tar.gz`,
+  differ before the last 11 cells, so a middle cut shows both as `~/Library/….bottle.tar.gz`. The
+  cut rule in the fix brief (snap to `/` within 4 cells, else cut at the width) cannot separate
+  them. Python and llvm rows now keep their version (`<prefix>/…llvm/17.0.6`).
+- **Done:** the rule is in (`cutMiddle`, `cutSnap`). The bottle rows stay identical. The full path
+  is in `y` (copy).
+- **Ask.** Which way for names too long for the column? (1) (Recommended) when the last segment
+  does not fit, show its start and end and drop the directories (`…/0a1b2c--foo-1.0.arm64_s…ottle.tar.gz`
+  style), so the hash and formula show; (2) keep the middle cut and accept identical rows, the
+  full path only in `y`; (3) a second line per row for long paths.
