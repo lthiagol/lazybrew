@@ -20,15 +20,13 @@ func NewSearchService(runner Runner) SearchService {
 // Search asks brew for the formulae and the casks that match the query, in two
 // reads: `brew search --formula` and `brew search --cask`. Without a TTY brew
 // prints no section headers, so a single read cannot tell the two apart; each
-// read's flag says the type of its rows instead.
+// read's flag says the type of its rows instead. A read that fails adds no
+// rows; the search errors only when both reads fail.
 func (s *searchService) Search(ctx context.Context, query string) ([]SearchResult, error) {
-	formulae, err := s.searchType(ctx, "--formula", query)
-	if err != nil {
-		return nil, err
-	}
-	casks, err := s.searchType(ctx, "--cask", query)
-	if err != nil {
-		return nil, err
+	formulae, ferr := s.searchType(ctx, "--formula", query)
+	casks, cerr := s.searchType(ctx, "--cask", query)
+	if ferr != nil && cerr != nil {
+		return nil, ferr
 	}
 	return append(formulae, casks...), nil
 }
