@@ -35,9 +35,9 @@ var (
 	keyNext    = keyHint{key: "Tab", keys: "tab", desc: "next", help: "Next panel"}
 	keyPrev    = keyHint{key: "S-Tab", helpKey: "Shift+Tab", keys: "shift+tab", help: "Previous panel"}
 	keyJump    = keyHint{key: "1-7", keys: "1 2 3 4 5 6 7", desc: "jump", help: "Jump to panel"}
-	keyScroll  = keyHint{key: "j/k", keys: "j k down up", help: "Scroll list"}
+	keyScroll  = keyHint{key: "j/k", helpKey: "j/k up/down", keys: "j k down up", help: "Scroll list"}
 	keyEnds    = keyHint{key: "Home/End", keys: "home end g G", help: "Top/bottom (g/G outside Search)"}
-	keyTabs    = keyHint{key: "h/l", keys: "h l left right", help: "Switch tabs"}
+	keyTabs    = keyHint{key: "h/l", helpKey: "h/l left/right", keys: "h l left right", help: "Switch tabs"}
 	keySearch  = keyHint{key: "/", desc: "search", help: "Search packages"}
 	keyFilter  = keyHint{key: "/", desc: "filter", help: "Filter the list"}
 	keyHelp    = keyHint{key: "?", desc: "help", help: "This help"}

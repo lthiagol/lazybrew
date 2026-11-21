@@ -5,9 +5,16 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
+
+// all is the row's keys in the order the footer lists them. The tests read the
+// row flat; the footer itself keeps the two groups apart.
+func (r footerRow) all() []keyHint {
+	return append(append([]keyHint{}, r.panel...), r.global...)
+}
 
 // footerPanel and footerGlobal are a representative row: Formulae's own actions,
 // then the global keys with the arrow hint in front (lb29 AC-02 makes that hint
@@ -117,6 +124,34 @@ func TestFooterSeparatorsAreMuted(t *testing.T) {
 		}
 		if !strings.Contains(line, sgrColor("38", th.Accent)+"m") {
 			t.Errorf("keys are not in the accent role")
+		}
+	}
+}
+
+// TestFooterNeverClipsAPanel (lb29 AC-03): on each panel at 80, 100 and 140 columns
+// the row the renderer draws fits the width, so the frame cuts no hint, and the row
+// ends with a whole hint: "? more", or the last key the row kept.
+func TestFooterNeverClipsAPanel(t *testing.T) {
+	digits := map[PanelID]string{
+		PanelStatus: "1", PanelFormulae: "2", PanelCasks: "3", PanelOutdated: "4",
+		PanelTaps: "5", PanelServices: "6", PanelSearch: "7",
+	}
+	for id := PanelStatus; id <= PanelSearch; id++ {
+		for _, w := range []int{80, 100, 140} {
+			m := sendKey(updateModel(newTestModel(), tea.WindowSizeMsg{Width: w, Height: 30}), digits[id])
+			fit, more := fitFooter(m.footerHints(), w)
+			line := renderFooter(fit, more)
+			if got := lipgloss.Width(line); got > w {
+				t.Errorf("%s at %d columns: the row is %d cells, so the frame cuts it", id, w, got)
+			}
+			want := footerMore.key + " " + footerMore.desc
+			if !more {
+				last := fit.all()[len(fit.all())-1]
+				want = last.key + " " + last.desc
+			}
+			if plain := strings.TrimRight(plainLine(line), " "); !strings.HasSuffix(plain, want) {
+				t.Errorf("%s at %d columns: the row %q does not end with %q", id, w, plain, want)
+			}
 		}
 	}
 }

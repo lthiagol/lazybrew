@@ -65,15 +65,18 @@ Launch the interactive TUI. Available flags:
 |-----|--------|
 | `Tab` / `Shift+Tab` | Next / previous panel |
 | `1`–`7` | Jump to panel |
-| `j`/`k` | Scroll list |
-| `h`/`l` or `←`/`→` | Switch tabs |
+| `↑`/`↓` or `j`/`k` | Move the cursor / scroll the list |
+| `←`/`→` or `h`/`l` | Switch tabs |
 | `R` | Refresh all data |
 | `/` | Search packages. On Formulae and Casks, filter the list instead |
 | `q` | Quit |
 | `?` | Help |
 | `y` | Copy the text on screen (the Operation, or the panel's content) to the clipboard. On Search `y` types into the box unless an Operation is open |
 
-Per-panel actions appear in the bottom bar and `?` help screen.
+The bottom bar lists the active panel's actions, a dim `│`, then the global keys. When
+the terminal is too narrow it drops keys from the right and ends with `? more`; `?`
+lists every key. The bottom bar leaves out `Shift+Tab`, `j`/`k` and `h`/`l`; the `?` help
+screen lists them.
 
 On Status, `d`, `m` and `v` open the Doctor, Missing and Vulns tabs. `d` and `m` load
 their tab afresh. `v` runs `brew vulns`, which queries OSV.dev over the network;
