@@ -904,3 +904,18 @@ Completed-row change is `fix-lb25-search-polish-r1`.
 interface: `Icons.OK` becomes ✔ in both icon sets, so the dashboard "ready to brew", the
 command-log success, the success toast and the trusted tap show ✔ too (error and warn
 glyphs unchanged). `fix-lb25-search-polish-r2`.
+
+### Q-lb28-latte-contrast — Latte roles under the contrast floors: keep Latte, or lower the bound?
+
+- **Context (lb28-themes AC-03):** Latte keeps today's colours (its frames are
+  byte-identical to the base). Five of its roles sit under the floors on the
+  base: Muted 2.30:1 (overlay0; floor 3:1), Success 2.96:1, Warning 2.31:1,
+  Info 4.34:1, Subtle 4.37:1 (floor 4.5:1). The brief's rule is to derive a
+  role colour rather than lower a bound, but Latte's colours are pinned, so
+  that rule cannot apply here without changing Latte.
+- **Done in AC-03:** the contrast test does not lower the floors for Latte. It
+  pins each of the five roles at its measured ratio and fails if one falls
+  further (`latteBelow`, `internal/gui/style/contrast_test.go`).
+- **Ask.** Keep Latte as it is, with the five roles pinned (recommended: the
+  frames stay byte-identical), or darken those five roles in a later slice
+  (every Latte frame golden changes)?
