@@ -11,23 +11,20 @@ import (
 var logger atomic.Value
 
 func init() {
-	logger.Store(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{
-		Level: slog.LevelWarn,
-	})))
+	ResetLogger()
 }
 
 func Logger() *slog.Logger {
 	return logger.Load().(*slog.Logger)
 }
 
-func SetDebug(enabled bool) {
-	if enabled {
-		logger.Store(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		})))
-	} else {
-		logger.Store(slog.New(slog.NewTextHandler(io.Discard, nil)))
-	}
+// ResetLogger puts the brew logger back to its default, which discards
+// everything below warnings. It undoes EnableFileLogging; tests call it when
+// they are done. Nothing in production calls it.
+func ResetLogger() {
+	logger.Store(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{
+		Level: slog.LevelWarn,
+	})))
 }
 
 func EnableFileLogging(path string) error {
