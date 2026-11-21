@@ -153,6 +153,15 @@ func writeCases() []writeCase {
 		{"untrust tap", "untrust", "untrust x", func(c *Client) error {
 			return c.TrustWrite.UntrustTap(ctx, "x")
 		}},
+		{"untrust formula", "untrust", "untrust --formula x", func(c *Client) error {
+			return c.TrustWrite.UntrustFormula(ctx, "x")
+		}},
+		{"untrust cask", "untrust", "untrust --cask x", func(c *Client) error {
+			return c.TrustWrite.UntrustCask(ctx, "x")
+		}},
+		{"untrust command", "untrust", "untrust --command x", func(c *Client) error {
+			return c.TrustWrite.UntrustCommand(ctx, "x")
+		}},
 		{"services start", "services", "services start x", func(c *Client) error {
 			return c.ServicesWrite.Start(ctx, "x")
 		}},

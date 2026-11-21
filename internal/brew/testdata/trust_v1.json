@@ -1,0 +1,16 @@
+{
+  "taps": [
+    "octo/tools",
+    "acme/fonts"
+  ],
+  "formulae": [
+    "octo/tools/alpha",
+    "acme/fonts/beta"
+  ],
+  "casks": [
+    "acme/fonts/gamma-app"
+  ],
+  "commands": [
+    "octo/tools/zeta"
+  ]
+}
