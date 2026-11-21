@@ -59,3 +59,12 @@ Commits, in AC order:
 - Revert check: overlay-first check removed → `TestYOnSearchCopiesAFailedOverlay` and `TestYCopiesTheRetryCommandUnderTheStatusRow` fail (`y copied []`).
 - "Nothing to copy" is unreachable from the UI now (every panel renders text; every overlay has a status row). Branch kept as a guard.
 - Gate: `make ci` exit 0; `GOOS=darwin go build ./...` ok.
+
+## Fix r3 (F-r1-01 … F-r1-04)
+- F-r1-01 `22a1a87`: 80x24 row `✗ Failed: needs sudo · y copy`, keys on the line under it, command below. 140x40 unchanged. Before the fix `TestFailedRetryRowInTheFrame` failed: `✗ Fa… · Enter…`. The width-only tests are replaced by View tests at 80x24 and 140x40; the 50-cell case is dropped.
+- F-r1-02 `b05e324`: `copying` flag on the copy's Model; `fitLines` skips the cut for Logs and Config. Before: `TestYCopiesALongLogLineWhole` and `TestYCopiesALongConfigRowWhole` failed (`…` in the copy).
+- F-r1-03 `9762f16`: y does nothing while help is open (no help text copied). Before: `TestYWithHelpOpenCopiesNothing` copied the hidden panel.
+- F-r1-04 `ccd6fed`: README y row says Search types y unless an Operation is open.
+- Also `2907e72`: five unused `m =` reassignments in copy_test.go (SA4006) removed.
+- Goldens: none changed. Gate: `make ci` exit 0; `GOOS=darwin go build ./...` ok; deadcode no output; staticcheck back to the 5 baseline findings.
+- Seen, not done: the 80x24 footer shows no `y copy`; the Logs copy omits the stream/file header line.
