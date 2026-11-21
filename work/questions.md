@@ -835,3 +835,5 @@ not installed packages, so `full_token` only affects the untap confirm.
 never runs a cask zap (`uninstall --zap --cask <name>`): zap deletes user data and
 the brief lists four commands. Fix round r2 makes the code, the test and this
 decision log say so.
+
+**Correction (lb23 fix r2, F-r1-01):** until r2 the code did not refuse zap: the args brew gets are `uninstall --zap --cask <name>`, and the retry only checked `uninstall`, so a zap ran in the terminal. r2 refuses any args containing `--zap`; the test now uses those args.
