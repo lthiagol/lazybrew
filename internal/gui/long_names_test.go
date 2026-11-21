@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 )
 
@@ -25,14 +26,14 @@ const (
 func recordedModel(t *testing.T, id PanelID) (*Model, *[][]string) {
 	t.Helper()
 	calls := &[][]string{}
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		*calls = append(*calls, args)
 		return []byte("[]"), nil
 	}
 	// Installs, upgrades and uninstalls stream their output, so the streams
 	// are recorded too. The mock's own closed streams stand in for the output.
-	stream := brew.NewMockRunner()
+	stream := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		*calls = append(*calls, args)
 		return stream.ExecuteStream(ctx, args...)

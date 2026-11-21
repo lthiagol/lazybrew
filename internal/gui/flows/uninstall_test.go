@@ -9,12 +9,12 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/exp/teatest/v2"
-	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/testutil"
 )
 
 type uninstallRecordingRunner struct {
-	brew.MockRunner
+	brewtest.MockRunner
 	mu          sync.Mutex
 	streamCalls [][]string
 }

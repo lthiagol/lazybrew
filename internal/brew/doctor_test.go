@@ -5,10 +5,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 func TestDiagnosticsDoctorClean(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("Your system is ready to brew."), nil
 	}
@@ -25,7 +27,7 @@ func TestDiagnosticsDoctorClean(t *testing.T) {
 }
 
 func TestDiagnosticsDoctorExitCode1(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("Warning: Your Homebrew is outdated.\nRun `brew update` to get the latest.\n"), &BrewExitError{Command: "doctor", ExitCode: 1}
 	}
@@ -42,7 +44,7 @@ func TestDiagnosticsDoctorExitCode1(t *testing.T) {
 }
 
 func TestDiagnosticsDoctorRealError(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return nil, &BrewExitError{Command: "doctor", ExitCode: 2}
 	}
@@ -56,7 +58,7 @@ func TestDiagnosticsDoctorRealError(t *testing.T) {
 }
 
 func TestDiagnosticsDoctorWarnings(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("Warning: Your Homebrew is outdated.\nRun `brew update` to get the latest.\n\nWarning: Broken symlinks found.\n/opt/homebrew/bin/old-tool -> (missing)\n"), nil
 	}
@@ -76,7 +78,7 @@ func TestDiagnosticsDoctorWarnings(t *testing.T) {
 }
 
 func TestDiagnosticsVersion(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("Homebrew 6.0.0"), nil
 	}
@@ -93,7 +95,7 @@ func TestDiagnosticsVersion(t *testing.T) {
 }
 
 func TestDiagnosticsConfig(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("HOMEBREW_VERSION: 6.0.0\nHOMEBREW_PREFIX: /opt/homebrew\nHOMEBREW_CELLAR: /opt/homebrew/Cellar\nHOMEBREW_REPOSITORY: /opt/homebrew\nHOMEBREW_CORE_TAP: homebrew/core\nHOMEBREW_SYSTEM: macOS\n"), nil
 	}
@@ -116,7 +118,7 @@ func TestDiagnosticsConfig(t *testing.T) {
 }
 
 func TestDiagnosticsMissing(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("python@3.12: missing libsqlite\nnode: missing icu4c\n"), nil
 	}
@@ -138,7 +140,7 @@ func TestDiagnosticsMissing(t *testing.T) {
 func TestDiagnosticsMissingExitCode1ParsesOutput(t *testing.T) {
 	// `brew missing` exits 1 when dependencies are missing: the output
 	// must still be parsed (r1 finding 18).
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("node: missing icu4c\n"),
 			&BrewExitError{Command: "missing", ExitCode: 1}
@@ -159,7 +161,7 @@ func TestDiagnosticsMissingExitCode2IsError(t *testing.T) {
 	// text treated ANY failure of `brew missing` (the command name
 	// contains "missing") as success. A non-1 exit code must surface as
 	// an error.
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return nil, &BrewExitError{Command: "missing", ExitCode: 2, Stderr: "boom"}
 	}

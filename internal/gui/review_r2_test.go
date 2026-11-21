@@ -12,6 +12,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
@@ -129,7 +130,7 @@ func TestFailedBatchTaskDecrementsCounter(t *testing.T) {
 	// batch's start order nondeterministic, so key the failure on the
 	// call sequence, not the package name.
 	var calls atomic.Int32
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		n := calls.Add(1)
 		ch := make(chan string, 1)
@@ -345,7 +346,7 @@ func TestInstallKeyIOnFormulaeAndCasks(t *testing.T) {
 
 func TestCaskInstallFromCasksPanelUsesCaskWriter(t *testing.T) {
 	var gotArgs [][]string
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		gotArgs = append(gotArgs, args)
 		ch := make(chan string)

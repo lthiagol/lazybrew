@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 var sampleFormulaeJSON = `{
@@ -91,8 +93,8 @@ var sampleOutdatedJSON = `{
   ]
 }`
 
-func newMockFormulaeRunner() *MockRunner {
-	return NewMockRunner()
+func newMockFormulaeRunner() *brewtest.MockRunner {
+	return brewtest.NewMockRunner()
 }
 
 func TestFormulaeReaderList(t *testing.T) {

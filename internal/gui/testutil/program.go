@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/x/exp/teatest/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui"
 )
@@ -23,7 +24,7 @@ func NewModel(runner brew.Runner) *gui.Model {
 
 func NewTestModel(t *testing.T, opts ...teatest.TestOption) *teatest.TestModel {
 	t.Helper()
-	return teatest.NewTestModel(t, NewModel(brew.NewMockRunner()), opts...)
+	return teatest.NewTestModel(t, NewModel(brewtest.NewMockRunner()), opts...)
 }
 
 func NewTestModelWithRunner(t *testing.T, runner brew.Runner, opts ...teatest.TestOption) *teatest.TestModel {

@@ -5,11 +5,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
-// RecordingRunner wraps MockRunner and records all Execute calls.
+// RecordingRunner wraps brewtest.MockRunner and records all Execute calls.
 type RecordingRunner struct {
-	MockRunner
+	brewtest.MockRunner
 	Calls []RecordedCall
 }
 
@@ -83,7 +85,7 @@ func TestRecordingRunnerCapturesCalls(t *testing.T) {
 }
 
 func TestMockRunnerExecute(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("hello world"), nil
 	}
@@ -97,7 +99,7 @@ func TestMockRunnerExecute(t *testing.T) {
 }
 
 func TestMockRunnerExecuteJSON(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
 		if s, ok := result.(*string); ok {
 			*s = "parsed"
@@ -115,7 +117,7 @@ func TestMockRunnerExecuteJSON(t *testing.T) {
 }
 
 func TestMockRunnerExecuteStream(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		ch := make(chan string, 2)
 		errCh := make(chan error, 1)
@@ -139,7 +141,7 @@ func TestMockRunnerExecuteStream(t *testing.T) {
 }
 
 func TestMockRunnerBrewPath(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.BrewPathFn = func() string {
 		return "/custom/path/brew"
 	}
@@ -149,7 +151,7 @@ func TestMockRunnerBrewPath(t *testing.T) {
 }
 
 func TestMockRunnerDefaults(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	out, err := r.Execute(context.Background(), "version")
 	if err != nil {
 		t.Fatal(err)
@@ -160,7 +162,7 @@ func TestMockRunnerDefaults(t *testing.T) {
 }
 
 func TestMockRunnerBrewPathDefault(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	if got := r.BrewPath(); got != "/fake/brew" {
 		t.Errorf("got %q, want /fake/brew", got)
 	}

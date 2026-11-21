@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
@@ -13,7 +14,7 @@ import (
 // with runErr, and returns the toast the failure leaves.
 func failedServiceToast(t *testing.T, runErr error) string {
 	t.Helper()
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return nil, runErr
 	}

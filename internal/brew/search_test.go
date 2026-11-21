@@ -3,10 +3,12 @@ package brew
 import (
 	"context"
 	"testing"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 func TestSearchServiceSearch(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("==> Formulae\nneovim\nneovim-qt\n\n==> Casks\nneovide"), nil
 	}
@@ -39,7 +41,7 @@ func TestSearchServiceSearch(t *testing.T) {
 }
 
 func TestSearchServiceEmpty(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte("==> Formulae\n\n==> Casks"), nil
 	}
@@ -55,7 +57,7 @@ func TestSearchServiceEmpty(t *testing.T) {
 }
 
 func TestSearchServiceSearchDesc(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 2 && args[0] == "--desc" {
 			return []byte("ripgrep"), nil

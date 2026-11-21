@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // TestAutomaticRefreshKeepsDiagnosticsCache: brew doctor and brew config are
@@ -17,7 +18,7 @@ import (
 func TestAutomaticRefreshKeepsDiagnosticsCache(t *testing.T) {
 	var mu sync.Mutex
 	calls := map[string]int{}
-	runner := &brew.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
+	runner := &brewtest.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
 		key := strings.Join(args, " ")
 		mu.Lock()
 		calls[key]++
@@ -62,8 +63,8 @@ func TestAutomaticRefreshKeepsDiagnosticsCache(t *testing.T) {
 
 // slowRunner returns canned output for each command after d, and counts the
 // commands it ran.
-func slowRunner(d time.Duration, outputs map[string]string) *brew.MockRunner {
-	return &brew.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
+func slowRunner(d time.Duration, outputs map[string]string) *brewtest.MockRunner {
+	return &brewtest.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
 		time.Sleep(d)
 		return []byte(outputs[strings.Join(args, " ")]), nil
 	}}
@@ -123,7 +124,7 @@ func TestInvalidatePanelCacheDropsItsKeys(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.panel.String(), func(t *testing.T) {
-			client := brew.NewClient(brew.NewMockRunner())
+			client := brew.NewClient(brewtest.NewMockRunner())
 			for _, key := range all {
 				client.Cache.SetWithTTL(key, "seeded", time.Minute)
 			}

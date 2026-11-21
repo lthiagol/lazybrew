@@ -2,10 +2,12 @@ package brew
 
 import (
 	"testing"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 func newMockClient() *Client {
-	runner := NewMockRunner()
+	runner := brewtest.NewMockRunner()
 	return NewClient(runner)
 }
 

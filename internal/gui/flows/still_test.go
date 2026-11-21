@@ -3,7 +3,7 @@ package flows_test
 import (
 	"testing"
 
-	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/testutil"
 )
@@ -13,7 +13,7 @@ import (
 // at rest.
 func TestFlowModelsAreStill(t *testing.T) {
 	t.Setenv(config.AnimationsEnv, "1")
-	if testutil.NewModel(brew.NewMockRunner()).MotionOn() {
+	if testutil.NewModel(brewtest.NewMockRunner()).MotionOn() {
 		t.Fatal("the flows' model animates: their frames would not be the resting frames")
 	}
 }

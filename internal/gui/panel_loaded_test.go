@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -43,7 +44,7 @@ func TestNeverLoadedPanelSaysNotLoaded(t *testing.T) {
 // loaded.
 func TestFailedFirstFetchIsLoadedNotNotLoaded(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Err: assertAnError})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Err: brewtest.ErrTest})
 
 	got := m.panels[PanelCasks].renderSidebarContent(30, 5, nil, style.Icons{}, true)
 	if strings.Contains(got, "not loaded") {

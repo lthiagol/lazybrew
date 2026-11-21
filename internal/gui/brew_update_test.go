@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // TestBrewUpdateEntryPointsUseDiagnosticsUpdate: the startup update and the R
@@ -31,7 +32,7 @@ func TestBrewUpdateEntryPointsUseDiagnosticsUpdate(t *testing.T) {
 	for _, e := range entries {
 		t.Run(e.name, func(t *testing.T) {
 			var ran []string
-			runner := &brew.MockRunner{
+			runner := &brewtest.MockRunner{
 				ExecuteStreamFn: func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 					ran = append(ran, strings.Join(args, " "))
 					lines := make(chan string)

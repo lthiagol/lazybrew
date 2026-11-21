@@ -10,7 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/exp/teatest/v2"
-	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/testutil"
 )
 
@@ -21,7 +21,7 @@ func logsKeyPress(r rune) tea.KeyPressMsg {
 
 // logsRunner serves the Services panel one running service, moshi-hook, whose
 // stdout and stderr logs are the given files. It answers the two reads only.
-func logsRunner(t *testing.T, stdout, stderr string) *brew.MockRunner {
+func logsRunner(t *testing.T, stdout, stderr string) *brewtest.MockRunner {
 	t.Helper()
 	list, err := json.Marshal([]map[string]any{{
 		"name": "moshi-hook", "status": "started", "user": "agent",
@@ -39,7 +39,7 @@ func logsRunner(t *testing.T, stdout, stderr string) *brew.MockRunner {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &brew.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
+	return &brewtest.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 2 && args[0] == "services" && args[1] == "list" {
 			return list, nil
 		}

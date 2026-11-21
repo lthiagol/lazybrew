@@ -13,12 +13,13 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
 )
 
 // preloadRunner is a mock runner that logs every brew read it answers. A read
 // whose command line contains failArg fails.
-func preloadRunner(calls *[]string, failArg string) *brew.MockRunner {
+func preloadRunner(calls *[]string, failArg string) *brewtest.MockRunner {
 	// A panel's reads run at the same time, so the log is locked.
 	var mu sync.Mutex
 	read := func(args []string) ([]byte, error) {
@@ -37,7 +38,7 @@ func preloadRunner(calls *[]string, failArg string) *brew.MockRunner {
 		}
 		return []byte("{}"), nil
 	}
-	return &brew.MockRunner{
+	return &brewtest.MockRunner{
 		ExecuteFn: func(_ context.Context, args ...string) ([]byte, error) {
 			return read(args)
 		},

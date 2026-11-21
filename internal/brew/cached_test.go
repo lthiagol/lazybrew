@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // TestBrewReadsConcurrentCallsRunOnce: every cached reader runs its brew
@@ -67,7 +69,7 @@ func TestBrewReadsConcurrentCallsRunOnce(t *testing.T) {
 			var mu sync.Mutex
 			calls := 0
 			release := make(chan struct{})
-			runner := &MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
+			runner := &brewtest.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
 				if strings.Join(args, " ") != tc.command {
 					t.Errorf("unexpected command %q", strings.Join(args, " "))
 					return nil, nil

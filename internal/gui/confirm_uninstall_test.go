@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // uninstallConfirm opens the uninstall confirm for the selected row of panel
@@ -12,7 +13,7 @@ import (
 func uninstallConfirm(t *testing.T, panel PanelID, mutType mutationType) (DepCheckMsg, [][]string) {
 	t.Helper()
 	calls := &[][]string{}
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		*calls = append(*calls, args)
 		return []byte(""), nil

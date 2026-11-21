@@ -10,6 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 )
@@ -19,7 +20,7 @@ import (
 func servicesActionModel(t *testing.T, services []brew.Service) (*Model, *[][]string) {
 	t.Helper()
 	calls := &[][]string{}
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		*calls = append(*calls, args)
 		return []byte(""), nil

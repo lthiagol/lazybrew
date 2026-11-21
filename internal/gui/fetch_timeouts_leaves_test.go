@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // errBrewMissing mimics a plain brew failure (brew not installed, tap
@@ -79,7 +80,7 @@ func TestConfirmUninstallDepCheckNonTimeoutError(t *testing.T) {
 	brewReadTimeout = 50 * time.Millisecond
 	defer func() { brewReadTimeout = orig }()
 
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return nil, errBrewMissing
 	}

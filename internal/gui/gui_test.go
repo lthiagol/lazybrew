@@ -13,15 +13,14 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
-var assertAnError = errors.New("test error")
-
 func newTestModel() *Model {
 	cfg := testConfig()
-	client := brew.NewClient(brew.NewMockRunner())
+	client := brew.NewClient(brewtest.NewMockRunner())
 	return New(client, cfg)
 }
 
@@ -823,7 +822,7 @@ func TestModelTaskCompletedToast(t *testing.T) {
 
 func TestModelTaskCompletedErrorToast(t *testing.T) {
 	m := newTestModel()
-	err := assertAnError
+	err := brewtest.ErrTest
 	msg := TaskCompletedMsg{ID: "t1", Title: "Test", Err: err}
 	m = updateModel(m, msg)
 	if m.newestToast() == nil {
@@ -832,7 +831,7 @@ func TestModelTaskCompletedErrorToast(t *testing.T) {
 }
 
 func TestOutdatedFetchSurfacesError(t *testing.T) {
-	client := brew.NewClient(brew.NewMockRunner())
+	client := brew.NewClient(brewtest.NewMockRunner())
 	cmd := fetchPanelData(client, PanelOutdated)
 	if cmd == nil {
 		t.Fatal("fetchPanelData returned nil cmd")
@@ -920,7 +919,7 @@ func TestOperationCancelShowsCancelled(t *testing.T) {
 func TestOperationCompletedNotCancelledOnRealError(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, TaskStartedMsg{ID: "t1", Title: "Install foo"})
-	m = updateModel(m, TaskCompletedMsg{ID: "t1", Title: "Install foo", Err: assertAnError})
+	m = updateModel(m, TaskCompletedMsg{ID: "t1", Title: "Install foo", Err: brewtest.ErrTest})
 
 	if m.opState == nil {
 		t.Fatal("expected opState to be set")
@@ -1349,7 +1348,7 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 	fetchTabContentTimeout = 50 * time.Millisecond
 	defer func() { fetchTabContentTimeout = origTimeout }()
 
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
@@ -1523,7 +1522,7 @@ func TestDepsTabLoads(t *testing.T) {
 		`"bottle":{"stable":{"files":{"arm64_sonoma":{"url":"x"}}}},` +
 		`"pinned":false,"binaries":["rg"]}]}`
 
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "--installed" {
 			return []byte(ripgrepJSON), nil
@@ -1564,7 +1563,7 @@ func TestDepsTabLoads(t *testing.T) {
 }
 
 func TestFetchDepsTabReturnsContent(t *testing.T) {
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 3 && args[0] == "deps" && args[1] == "--tree" && args[2] == "ripgrep" {
 			return []byte("openssl\n└── ca-certificates\n"), nil
@@ -1712,7 +1711,7 @@ func TestRefreshDoesNotEnqueueEmptyStatusStub(t *testing.T) {
 func TestRefreshForcesCacheBypass(t *testing.T) {
 	// AC-04: R must re-shell even when per-class TTL has not expired.
 	var formulaeCalls int32
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 2 && args[0] == "info" && args[1] == "--json=v2" {
 			atomic.AddInt32(&formulaeCalls, 1)
@@ -1806,7 +1805,7 @@ func TestInitDoesNotFetchOutdated(t *testing.T) {
 	// We assert on the Init cmd batch: no fetchPanelData(PanelOutdated)
 	// fires because Init() does not include it.
 	var calls int32
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 1 && args[0] == "outdated" {
 			atomic.AddInt32(&calls, 1)
@@ -1887,7 +1886,7 @@ func TestSwitchToOutdatedRetriesAfterError(t *testing.T) {
 	m.activePanel = PanelStatus
 	m.panels[PanelOutdated].items = nil
 	m.panels[PanelOutdated].loading = false
-	m.panels[PanelOutdated].err = assertAnError
+	m.panels[PanelOutdated].err = brewtest.ErrTest
 
 	cmd := m.switchPanel(PanelOutdated)
 	if cmd == nil {
@@ -1906,7 +1905,7 @@ func TestStatusDashboardDoesNotShellCallOutdated(t *testing.T) {
 	// `brew outdated`. It reads from cache only and reports the count as
 	// not loaded when the cache has no outdated entries.
 	var outdatedCalls int32
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		switch {
 		case len(args) >= 1 && args[0] == "outdated":
@@ -1952,7 +1951,7 @@ func TestStatusDashboardReportsCachedOutdatedCount(t *testing.T) {
 	// When the cache has outdated entries (e.g. user previously visited
 	// Outdated panel), Status should reflect them without re-shelling.
 	var outdatedCalls int32
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		switch {
 		case len(args) >= 1 && args[0] == "outdated":
@@ -2002,8 +2001,8 @@ func TestStatusDashboardReportsCachedOutdatedCount(t *testing.T) {
 // outdatedCountingRunner returns a mock runner that counts every
 // `brew outdated` invocation and answers the other status sources with
 // empty results.
-func outdatedCountingRunner(calls *int32) *brew.MockRunner {
-	r := brew.NewMockRunner()
+func outdatedCountingRunner(calls *int32) *brewtest.MockRunner {
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		switch {
 		case len(args) >= 1 && args[0] == "outdated":
@@ -2123,7 +2122,7 @@ func TestStatusDashboardExplicitLoadFailureFallsBackToNotLoaded(t *testing.T) {
 	// A failing outdated read must not become a misleading 0: the count
 	// falls back to "not loaded" and the error joins the ⚠ lines.
 	var outdatedCalls int32
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 1 && args[0] == "outdated" {
 			atomic.AddInt32(&outdatedCalls, 1)
@@ -2374,7 +2373,7 @@ func TestStatusDashboardDoesNotWarnOnDoctorExitCode1(t *testing.T) {
 }
 
 func TestDoctorTabExitCode1ShowsWarnings(t *testing.T) {
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 1 && args[0] == "doctor" {
 			return []byte("Warning: Your Homebrew is outdated.\nRun brew update.\n"),
@@ -2402,7 +2401,7 @@ func TestDoctorTabExitCode1ShowsWarnings(t *testing.T) {
 }
 
 func TestDoctorTabRealErrorShowsError(t *testing.T) {
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 1 && args[0] == "doctor" {
 			return nil, &brew.BrewExitError{Command: "doctor", ExitCode: 2}
@@ -2433,8 +2432,8 @@ func TestDoctorTabRealErrorShowsError(t *testing.T) {
 // ignore the JSON shape expected by fetchStatusData for the other panels.
 // Other commands return empty JSON objects so the dashboard doesn't show
 // spurious "unexpected end of JSON input" warnings.
-func newStatusMockRunner(doctorFn func(ctx context.Context, args ...string) ([]byte, error)) *brew.MockRunner {
-	r := brew.NewMockRunner()
+func newStatusMockRunner(doctorFn func(ctx context.Context, args ...string) ([]byte, error)) *brewtest.MockRunner {
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) >= 1 && args[0] == "doctor" {
 			return doctorFn(ctx, args...)

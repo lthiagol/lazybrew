@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // failedInstallToast runs a brew install whose stream fails with err and returns
 // the error toast the failed task leaves.
 func failedInstallToast(t *testing.T, err error) string {
 	t.Helper()
-	mock := brew.NewMockRunner()
+	mock := brewtest.NewMockRunner()
 	mock.ExecuteStreamFn = func(context.Context, ...string) (<-chan string, <-chan error) {
 		lines := make(chan string)
 		close(lines)

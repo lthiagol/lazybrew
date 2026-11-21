@@ -7,10 +7,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 func TestTapsServiceList(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	var tapListCalls, tapInfoCalls int
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) == 1 && args[0] == "tap" {
@@ -97,7 +99,7 @@ func TestTapsServiceList(t *testing.T) {
 func TestTapsBatchLoadIsSingleInvocation(t *testing.T) {
 	const n = 12
 
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	var tapListCalls, tapInfoCalls int
 	var batchNames []string
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
@@ -162,7 +164,7 @@ func TestTapsBatchLoadIsSingleInvocation(t *testing.T) {
 // (names only) rather than an empty list. The GUI keeps rendering the
 // tap names; detail tabs may show no data until the next refresh.
 func TestTapsBatchLoadFallsBackToNameOnlyOnError(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) == 1 && args[0] == "tap" {
 			return []byte("homebrew/core\nhomebrew/cask\n"), nil
@@ -190,7 +192,7 @@ func TestTapsBatchLoadFallsBackToNameOnlyOnError(t *testing.T) {
 }
 
 func TestTapsBatchFailureDoesNotPoisonCache(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	var tapInfoCalls int
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) == 1 && args[0] == "tap" {
@@ -240,7 +242,7 @@ func TestTapsBatchFailureDoesNotPoisonCache(t *testing.T) {
 // the timed-out read comes back as an error from the runner, and the list is
 // flagged TrustUnknown with the names it has, not read as untrusted.
 func TestTapsTrustUnknownOnTapInfoTimeout(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) == 1 && args[0] == "tap" {
 			return []byte("homebrew/core\nuser/tap\n"), nil
@@ -272,7 +274,7 @@ func TestTapsTrustUnknownOnTapInfoTimeout(t *testing.T) {
 // TestTapsTrustKnownWhenTapInfoReads checks the flag is clear on a full read,
 // so the GUI only refuses trust actions when the state really is missing.
 func TestTapsTrustKnownWhenTapInfoReads(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if len(args) == 1 && args[0] == "tap" {
 			return []byte("user/tap\n"), nil
@@ -295,7 +297,7 @@ func TestTapsTrustKnownWhenTapInfoReads(t *testing.T) {
 }
 
 func TestTapsServiceTap(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -308,7 +310,7 @@ func TestTapsServiceTap(t *testing.T) {
 }
 
 func TestTapsServiceTapWithURL(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -321,7 +323,7 @@ func TestTapsServiceTapWithURL(t *testing.T) {
 }
 
 func TestTapsServiceUntap(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -334,7 +336,7 @@ func TestTapsServiceUntap(t *testing.T) {
 }
 
 func TestTapsServiceRepair(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -354,7 +356,7 @@ func TestTapsServiceRepair(t *testing.T) {
 }
 
 func TestTapsServiceGet(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(`[{
 			"name": "homebrew/core",
@@ -429,7 +431,7 @@ func TestTapInfoBatchFewTapsIsOneCallWithSameArgs(t *testing.T) {
 	st := &tapInfoStub{}
 	var calls int
 	var argv []string
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		if args[0] == "tap-info" {
 			calls++
@@ -462,7 +464,7 @@ func TestTapInfoBatchSplitsByNameCount(t *testing.T) {
 		names = append(names, fmt.Sprintf("user/tap-%d", i))
 	}
 	st := &tapInfoStub{}
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = st.execute
 
 	got, err := (&tapsReader{runner: r}).fetchTapInfoBatch(context.Background(), names)
@@ -506,7 +508,7 @@ func TestTapInfoBatchSplitsByByteBudget(t *testing.T) {
 		names = append(names, strings.Repeat(string(rune('a'+i)), 30))
 	}
 	st := &tapInfoStub{}
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = st.execute
 
 	if _, err := (&tapsReader{runner: r}).fetchTapInfoBatch(context.Background(), names); err != nil {
@@ -554,7 +556,7 @@ func TestTapInfoBatchStopsBeforeNextChunkOnCancel(t *testing.T) {
 		cancel()
 		return false
 	}}
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = st.execute
 
 	_, err := (&tapsReader{runner: r}).fetchTapInfoBatch(ctx, []string{"a/x", "b/y", "c/z"})
@@ -574,7 +576,7 @@ func TestTapsListSecondChunkFailureFallsBackAndDoesNotCache(t *testing.T) {
 		tapList: "a/x\nb/y\nc/z\n",
 		fail:    func(call int) bool { return call == 2 },
 	}
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = st.execute
 	reader := NewTapsReader(r, NewCache(time.Minute))
 
