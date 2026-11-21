@@ -41,3 +41,9 @@ receipt is `work/inbox/runner-lb02-fetch-timeouts.md`.
 the token (`claude-code`), so every cask action sends the wrong name.
 `parseCask` should read `token` (fall back to `name`), with a fixture in the
 current brew shape. Raised by cr1 (`Q-cr1-cask-name`).
+
+**LB-13 (parked)** — the Status, Outdated and Taps footers leave `[ ] tabs` off
+(Formulae, Casks and Services show it), and Status `j/k` are help-only although
+Status lists rows. Showing them changes footer frames and goldens. Raised by
+cr4 (`Q-cr4-gui-dedup-r2-footer-tabs`); the keymap test records the omission in
+`footerExempt`.
