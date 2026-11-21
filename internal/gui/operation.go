@@ -112,6 +112,9 @@ func (m Model) renderOperation(width, height int) string {
 		style.AccentText.Render(presentation.WithIcon(icon, op.Title)),
 		m.operationStatus(op, width),
 	}
+	if needs, ok := m.terminalRetry(); ok {
+		head = append(head, style.SubtleText.Render("brew "+needs.Command))
+	}
 	if _, total := operationProgress(op); total > 0 {
 		head = append(head, m.operationBar(op, width))
 	}
@@ -136,10 +139,13 @@ func (m Model) operationStatus(op *Operation, width int) string {
 			"Completed in "+formatElapsed(op.Ended.Sub(op.Started)))) + closeHint
 	case opError:
 		hint := closeHint
+		failure := "Failed: " + op.Err.Error()
 		if _, ok := m.terminalRetry(); ok {
+			// The command is on the line under this row (renderOperation).
 			hint = style.SubtleText.Render(operationRetryHint)
+			failure = "Failed: needs sudo"
 		}
-		text := textutil.Clip(presentation.WithIcon(m.icons.Error, "Failed: "+op.Err.Error()),
+		text := textutil.Clip(presentation.WithIcon(m.icons.Error, failure),
 			max(0, width-lipgloss.Width(hint)))
 		return style.ErrorBadge.Render(text) + hint
 	case opCancelled:
