@@ -186,6 +186,21 @@ func TestToastStackFitsAt80x24(t *testing.T) {
 	}
 }
 
+// TestSuccessToastDrawsBrewsCheckmark (lb25 fix r2): a success toast draws the
+// ✔ brew prints, in both sets, never ✓.
+func TestSuccessToastDrawsBrewsCheckmark(t *testing.T) {
+	for name, icons := range map[string]style.Icons{"nerd": style.NerdIcons, "unicode": style.UnicodeIcons} {
+		m := newTestModel()
+		m.width = 80
+		m.icons = icons
+		m.toasts = []*modal.Toast{modal.NewToast("msg", modal.ToastSuccess)}
+		got := strings.Join(plainLinesOf(m.toastBoxes()[0]), "")
+		if !strings.Contains(got, "✔ msg") || strings.Contains(got, "✓") {
+			t.Errorf("%s set: success toast %q should draw ✔ and no ✓", name, got)
+		}
+	}
+}
+
 // TestToastIconsFollowTypeAndSetting locks AC-04.1: each type draws its icon,
 // and under show_icons: false the toast draws none.
 func TestToastIconsFollowTypeAndSetting(t *testing.T) {

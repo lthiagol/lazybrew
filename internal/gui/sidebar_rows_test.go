@@ -107,6 +107,19 @@ func TestOutdatedRowsCountFormulaeThenCasks(t *testing.T) {
 	}
 }
 
+// TestTrustedTapRowDrawsCheckmark (lb25 fix r2): a trusted tap's row leads with
+// the ✔ brew prints, in both sets, never ✓.
+func TestTrustedTapRowDrawsCheckmark(t *testing.T) {
+	taps := &panelData{id: PanelTaps, taps: []brew.Tap{{Name: "lt/tap", Trusted: true}}}
+	taps.items = []string{"lt/tap"}
+	for name, icons := range map[string]style.Icons{"nerd": style.NerdIcons, "unicode": style.UnicodeIcons} {
+		got := plainLine(taps.sidebarRow(0, 30, nil, icons, false))
+		if !strings.Contains(got, "✔ lt/tap") || strings.Contains(got, "✓") {
+			t.Errorf("%s set: trusted tap row %q should draw ✔ and no ✓", name, got)
+		}
+	}
+}
+
 // TestTapAndServiceRowsShowTheirState (AC-01.2): a tap shows its trust, a
 // service its running state, both as the right-hand word.
 func TestTapAndServiceRowsShowTheirState(t *testing.T) {

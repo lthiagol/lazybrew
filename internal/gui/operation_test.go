@@ -119,7 +119,7 @@ func TestOperationElapsedWhileRunning(t *testing.T) {
 	}
 }
 
-// TestOperationStepMarks (v2-05 AC-05.1): earlier steps are ✓, the current step
+// TestOperationStepMarks (v2-05 AC-05.1): earlier steps are ✔, the current step
 // has the spinner, and its output is under it.
 func TestOperationStepMarks(t *testing.T) {
 	m := newTestModel()

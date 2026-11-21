@@ -69,7 +69,7 @@ func TestHealthReadsTheDoctorSummary(t *testing.T) {
 		doctor knownCount
 		want   string
 	}{
-		{"clean", knownCount{N: 0, Known: true}, "✓ ready to brew"},
+		{"clean", knownCount{N: 0, Known: true}, "✔ ready to brew"},
 		{"warnings", knownCount{N: 2, Known: true}, "⚠ 2 warnings"},
 		{"one warning", knownCount{N: 1, Known: true}, "⚠ 1 warning"},
 		{"never run", knownCount{}, "press d to run doctor"},
@@ -110,7 +110,7 @@ func TestDoctorTabBlocksEachWarning(t *testing.T) {
 		t.Fatalf("got:\n%s\nwant:\n%s", out, want)
 	}
 	clean := ansi.Strip(doctorView(nil, style.UnicodeIcons))
-	if clean != "✓ Your system is ready to brew." {
+	if clean != "✔ Your system is ready to brew." {
 		t.Fatalf("a clean run should say so in Success, got %q", clean)
 	}
 }
