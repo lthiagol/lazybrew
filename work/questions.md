@@ -948,3 +948,6 @@ brief's 167-cell sample cannot be drawn at 140; the narrow-width rules decide wh
 `x remove` wording stays). Q-lb29-info-keylines: keep the Tap Info and Services Info key lines
 in the new `·` style (one renderer); the 12 frames that differ outside the footer row are
 expected.
+
+**Ruling (orchestrator, 2026-11-21) — lb29 r1 F-r1-03:** the dialog key row (`[y]es [n]o esc cancel`) also takes
+the muted `·` separator, so every hint row in the interface reads the same. `fix-lb29-footer-redesign-r2`.
