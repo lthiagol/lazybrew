@@ -306,7 +306,7 @@ func TestPreloadOffStaysLazy(t *testing.T) {
 func TestPreloadWaitsForUpdateOnStart(t *testing.T) {
 	var calls []string
 	cfg := preloadConfig()
-	cfg.Brew.UpdateOnStart = true
+	cfg.Brew.UpdateOnStart = config.UpdateAlways
 	m := preloadModel(t, cfg, &calls, "")
 
 	m, _ = preloadStep(m, TaskCompletedMsg{ID: "brew-update"})

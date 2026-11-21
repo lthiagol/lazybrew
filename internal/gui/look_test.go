@@ -242,7 +242,7 @@ func TestHeaderShowsKnownCountsAndBadges(t *testing.T) {
 // TestHeaderUpdateBadge: the update status moved here from the bottom bar.
 func TestHeaderUpdateBadge(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
-	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "never updated") {
 		t.Fatalf("update_on_start with no update yet should say never updated: %q", plain)
 	}
@@ -292,7 +292,7 @@ func TestHeaderOperationInTheMiddle(t *testing.T) {
 // from the left and the app name stays, and the header keeps its width.
 func TestHeaderDropsBadgesNotTheName(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
-	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Summary: statusSummary{Version: "4.5.2-123-gabcdef"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 12345), Items: make([]string, 12345)})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
@@ -458,7 +458,7 @@ func TestHeaderKeepsAGapBeforeBadges(t *testing.T) {
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 125), Items: make([]string, 125)})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})
 		m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Items: []string{"a", "b"}})
-		m.cfg.Brew.UpdateOnStart = true
+		m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 		head := m.renderHeader()
 		plain := plainLine(head)
 		if lipgloss.Width(head) != w {
@@ -478,7 +478,7 @@ func TestHeaderKeepsAGapBeforeBadges(t *testing.T) {
 // stays whole. Only when no badge is left is the operation cut with an ellipsis.
 func TestHeaderOperationOutranksBadges(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 24})
-	m.cfg.Brew.UpdateOnStart = true
+	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, Summary: statusSummary{Version: "4.5.2"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, Formulae: make([]brew.Formula, 125), Items: make([]string, 125)})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Casks: make([]brew.Cask, 16), Items: make([]string, 16)})

@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 	"time"
 
@@ -118,7 +119,7 @@ func (m Model) updateStatusText() string {
 		return "updating…"
 	case !m.lastUpdate.IsZero():
 		return "updated " + agoText(time.Since(m.lastUpdate))
-	case m.cfg.Brew.UpdateOnStart:
+	case m.cfg.Brew.UpdateOnStart == config.UpdateAlways:
 		return "never updated"
 	}
 	return ""
