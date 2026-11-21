@@ -75,6 +75,10 @@ Launch the interactive TUI. Available flags:
 
 Per-panel actions appear in the bottom bar and `?` help screen.
 
+On Status, `d`, `m` and `v` open the Doctor, Missing and Vulns tabs. `d` and `m` load
+their tab afresh. `v` runs `brew vulns`, which queries OSV.dev over the network;
+opening the Vulns tab alone runs nothing.
+
 On Formulae and Casks, `/` opens a filter on the loaded list: type to narrow it by
 name (case-insensitive), `↑`/`↓` move the cursor, `Enter` keeps the filter and `Esc`
 clears it. Actions act on the row shown. To search brew from there, press `7`, then

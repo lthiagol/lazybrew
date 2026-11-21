@@ -106,11 +106,11 @@ var (
 // Status.
 var (
 	stCleanup    = keyHint{key: "c", desc: "cleanup", help: "Run brew cleanup"}
-	stDoctor     = keyHint{key: "d", desc: "doctor", help: "Run brew doctor"}
+	stDoctor     = keyHint{key: "d", desc: "doctor", help: "Open the Doctor tab and refresh it"}
 	stAutoremove = keyHint{key: "A", desc: "autoremove", help: "Run brew autoremove"}
 	stBrewfile   = keyHint{key: "B", desc: "brewfile", help: "Brewfile actions"}
-	stVulns      = keyHint{key: "v", desc: "vulns", help: "Vulnerability check"}
-	stMissing    = keyHint{key: "m", desc: "missing", help: "Missing dependencies"}
+	stVulns      = keyHint{key: "v", desc: "vulns", help: "Open the Vulns tab and run the check"}
+	stMissing    = keyHint{key: "m", desc: "missing", help: "Open the Missing tab and refresh it"}
 	stTabs       = keyHint{key: "h/l", keys: "h l left right", help: "Switch tabs"}
 )
 

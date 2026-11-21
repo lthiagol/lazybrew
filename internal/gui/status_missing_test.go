@@ -137,7 +137,7 @@ func TestMissingTabLoadsOnceAndStays(t *testing.T) {
 	}
 
 	nm, cmd := m.Update(RefreshMsg{LoadOutdated: true, ReloadDiagnostics: true})
-	m = landCmd(modelOf(nm), cmd)
+	landCmd(modelOf(nm), cmd)
 	if calls != 2 {
 		t.Fatalf("R should reload the Missing tab once, ran brew missing %d times", calls)
 	}

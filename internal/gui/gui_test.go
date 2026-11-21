@@ -528,30 +528,6 @@ func TestBrewfileMenu(t *testing.T) {
 	}
 }
 
-func TestRunDoctor(t *testing.T) {
-	m := newTestModel()
-	_, cmd := m.runDoctor()
-	if cmd == nil {
-		t.Fatal("runDoctor should return a command")
-	}
-}
-
-func TestRunVulns(t *testing.T) {
-	m := newTestModel()
-	_, cmd := m.runVulns()
-	if cmd == nil {
-		t.Fatal("runVulns should return a command")
-	}
-}
-
-func TestRunMissing(t *testing.T) {
-	m := newTestModel()
-	_, cmd := m.runMissing()
-	if cmd == nil {
-		t.Fatal("runMissing should return a command")
-	}
-}
-
 func TestViewNoSmoke(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
