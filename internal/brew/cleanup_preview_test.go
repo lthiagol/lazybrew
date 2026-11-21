@@ -107,6 +107,19 @@ func TestCleanupPreviewKeepsUnknownLines(t *testing.T) {
 	}
 }
 
+// brew writes a count of 1,000 or more with thousands separators. The count must
+// read as 1700, not as 0 from a failed parse of "1,700".
+func TestCleanupPreviewReadsThousandsSeparators(t *testing.T) {
+	p := parseCleanupPreview("Would remove: /x/cache/api (1,700 files, 64.4MB)\n")
+	want := []CleanupItem{{Path: "/x/cache/api", Files: 1700, Size: "64.4MB", Bytes: 64400000}}
+	if !reflect.DeepEqual(p.Items, want) {
+		t.Errorf("items:\n got %+v\nwant %+v", p.Items, want)
+	}
+	if len(p.Raw) != 0 {
+		t.Errorf("Raw = %q, want none", p.Raw)
+	}
+}
+
 // A failed dry run is an error. Exit 1 with a listing is a result: brew exits 1
 // when a keg cannot be removed and still lists what it would do.
 func TestCleanupPreviewExitCodes(t *testing.T) {
