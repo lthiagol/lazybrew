@@ -86,8 +86,21 @@ func TestEnterRunsTheFailedCommandInTheTerminal(t *testing.T) {
 	}
 }
 
+// An uninstall runs again in the terminal, as an install does.
+func TestEnterRunsAnUninstallInTheTerminal(t *testing.T) {
+	m := sudoFailedModel("uninstall", "--cask", "foo")
+	cmds := captureExec(m)
+
+	updateModel(m, enterKey)
+
+	if len(*cmds) != 1 || !slices.Equal((*cmds)[0].Args, []string{"/fake/brew", "uninstall", "--cask", "foo"}) {
+		t.Fatalf("uninstall: got %v, want uninstall --cask foo", *cmds)
+	}
+}
+
 // Only install, reinstall, upgrade and uninstall are run again. Anything else
-// that needed sudo keeps its message and Enter does nothing.
+// that needed sudo keeps its message and Enter does nothing. A cask zap is an
+// uninstall with --zap, which deletes user data, so it is refused too.
 func TestEnterDoesNothingForOtherCommands(t *testing.T) {
 	for _, args := range [][]string{
 		{"update"},
@@ -96,7 +109,7 @@ func TestEnterDoesNothingForOtherCommands(t *testing.T) {
 		{"trust", "foo/bar"},
 		{"cleanup"},
 		{"autoremove"},
-		{"zap", "--cask", "foo"},
+		{"uninstall", "--zap", "--cask", "foo"},
 	} {
 		m := sudoFailedModel(args...)
 		cmds := captureExec(m)

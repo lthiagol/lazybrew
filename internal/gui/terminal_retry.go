@@ -17,9 +17,10 @@ import (
 var terminalRetryCommands = []string{"install", "reinstall", "upgrade", "uninstall"}
 
 // terminalRetry is the sudo refusal the failed operation can run again in the
-// terminal, when it has one: the command is one of terminalRetryCommands, no
-// task is running or queued, and no batch is in flight. Then the TUI can
-// suspend without a write of lazybrew's in progress.
+// terminal, when it has one: the command is one of terminalRetryCommands and
+// not a cask zap (--zap, which deletes user data), no task is running or
+// queued, and no batch is in flight. Then the TUI can suspend without a write
+// of lazybrew's in progress.
 func (m Model) terminalRetry() (*brew.NeedsSudoError, bool) {
 	if m.opState == nil || m.opState.Status != opError || m.batchCount > 0 || !m.tasks.Idle() {
 		return nil, false
@@ -28,7 +29,7 @@ func (m Model) terminalRetry() (*brew.NeedsSudoError, bool) {
 	if !errors.As(m.opState.Err, &needs) || len(needs.Args) == 0 {
 		return nil, false
 	}
-	if !slices.Contains(terminalRetryCommands, needs.Args[0]) {
+	if !slices.Contains(terminalRetryCommands, needs.Args[0]) || slices.Contains(needs.Args, "--zap") {
 		return nil, false
 	}
 	return needs, true
