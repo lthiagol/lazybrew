@@ -12,7 +12,6 @@ import (
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
-	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 )
 
 // servicesActionModel is a Services panel over a mock runner that records every
@@ -31,7 +30,7 @@ func servicesActionModel(t *testing.T, services []brew.Service) (*Model, *[][]st
 	p.services = services
 	p.items = make([]string, len(services))
 	for i, s := range services {
-		p.items[i] = presentation.FormatService(s, 0)
+		p.items[i] = s.Name
 	}
 	p.selected = 0
 	return m, calls
@@ -286,7 +285,7 @@ func TestServicesSelectionKeepsNameAcrossReload(t *testing.T) {
 func dataLoaded(services []brew.Service) DataLoadedMsg {
 	items := make([]string, len(services))
 	for i, s := range services {
-		items[i] = presentation.FormatService(s, 0)
+		items[i] = s.Name
 	}
 	return DataLoadedMsg{PanelID: PanelServices, Items: items, Services: services}
 }

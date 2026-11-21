@@ -56,9 +56,12 @@ var panelTabs = map[PanelID][]tabInfo{
 }
 
 type panelData struct {
-	id              PanelID
-	title           string
-	icon            string
+	id    PanelID
+	title string
+	icon  string
+	// items holds one entry per row. On the package, tap and service panels it
+	// is the bare name; Status and Search have no typed rows, so it is their
+	// drawn text.
 	items           []string
 	unfilteredItems []string
 	// unfilteredFormulae holds the formulae the leaves filter narrows, so leaves
@@ -196,13 +199,6 @@ func (p *panelData) normalizeToHeight(vc int) {
 	if p.offset < 0 {
 		p.offset = 0
 	}
-}
-
-func (p *panelData) selectedItem() string {
-	if p.selected >= 0 && p.selected < len(p.items) {
-		return p.items[p.selected]
-	}
-	return ""
 }
 
 // nameAt is the real name of the row at index i, read from the typed slice the
