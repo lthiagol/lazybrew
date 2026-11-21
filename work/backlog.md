@@ -101,7 +101,7 @@ demand, cached, kept across panel switches; `m`/`v` jump to the tab and refresh.
 Dracula, Nord; `gui.theme` takes the names (`dark`/`light` stay as aliases for Mocha/
 Latte). Config only: no live switching (user ruling 2026-11-21).
 
-**LB-26 (planned, slice lb29-footer-redesign, last)** — footer: groups (panel actions |
+**LB-26 (closed, lb29-footer-redesign)** — footer: groups (panel actions |
 global), dim `·` between hints, one arrow hint `←↑↓→ navigate` (user ruling), `tab next`,
 `1-7 jump`; `h/j/k/l` and `shift+tab` leave the footer and stay on `?`. Touches every
 golden and the keymap test, so it goes after the key changes above.
