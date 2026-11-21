@@ -122,7 +122,7 @@ func hintViews(accent color.Color, hints []Hint) []string {
 	return out
 }
 
-// keyLine joins key hints with the gap the footer uses.
+// keyLine joins key hints with the muted dot the footer uses.
 func keyLine(hints ...string) string {
-	return strings.Join(hints, "   ")
+	return strings.Join(hints, " "+style.MutedText.Render("·")+" ")
 }
