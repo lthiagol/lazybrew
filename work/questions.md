@@ -830,3 +830,8 @@ not installed packages, so `full_token` only affects the untap confirm.
   suspended. Other commands (update, services, tap, trust, cleanup, autoremove,
   zap) never run this way.
 - **Raised by:** runner lane (slice lb23-sudo-in-terminal).
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb23-execprocess, zap:** the terminal retry
+never runs a cask zap (`uninstall --zap --cask <name>`): zap deletes user data and
+the brief lists four commands. Fix round r2 makes the code, the test and this
+decision log say so.
