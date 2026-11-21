@@ -232,6 +232,7 @@ func TestVulnsReportColours(t *testing.T) {
 	defer style.ApplyTheme(style.DarkTheme())
 	out := `{"findings":[{"formula":"a","version":"1","vulnerabilities":[
 		{"id":"C-1","severity":"CRITICAL","summary":"s"},
+		{"id":"H-1","severity":"HIGH","summary":"s"},
 		{"id":"L-1","severity":"LOW","summary":"s"},
 		{"id":"M-1","severity":"MEDIUM","summary":"s"},
 		{"id":"U-1","severity":"UNKNOWN","summary":"s"}],"patched":[]}],
@@ -241,6 +242,7 @@ func TestVulnsReportColours(t *testing.T) {
 
 	want := map[string]lipgloss.Style{
 		"CRITICAL 1": style.ErrorText.Bold(true),
+		"HIGH 1":     style.ErrorText,
 		"MEDIUM 1":   style.WarningText,
 		"LOW 1":      lipgloss.NewStyle().Foreground(style.InfoColor),
 		"UNKNOWN 1":  style.MutedText,
@@ -252,6 +254,10 @@ func TestVulnsReportColours(t *testing.T) {
 	}
 	if !strings.Contains(view, style.ErrorText.Bold(true).Render("CRITICAL")) {
 		t.Error("the block's worst severity is not drawn in the CRITICAL role")
+	}
+	// Regression F-r1-03: the HIGH table cell is drawn in the error role too.
+	if !strings.Contains(view, style.ErrorText.Render(padRight("HIGH", vulnSevW))) {
+		t.Error("the HIGH table cell is not drawn in the error role")
 	}
 }
 
