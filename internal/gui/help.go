@@ -42,7 +42,7 @@ func buildHelp() []helpPage {
 			title: "Formulae",
 			sections: []helpSection{
 				{
-					items: []keyHint{fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch, keyCopy},
+					items: []keyHint{keyFilter, fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch, keyCopy},
 				},
 			},
 		},
@@ -50,7 +50,7 @@ func buildHelp() []helpPage {
 			title: "Casks",
 			sections: []helpSection{
 				{
-					items: []keyHint{cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch, keyCopy},
+					items: []keyHint{keyFilter, cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch, keyCopy},
 				},
 			},
 		},

@@ -68,12 +68,17 @@ Launch the interactive TUI. Available flags:
 | `j`/`k` | Scroll list |
 | `h`/`l` or `←`/`→` | Switch tabs |
 | `R` | Refresh all data |
-| `/` | Search packages |
+| `/` | Search packages. On Formulae and Casks, filter the list instead |
 | `q` | Quit |
 | `?` | Help |
 | `y` | Copy the text on screen (the Operation, or the panel's content) to the clipboard. On Search `y` types into the box unless an Operation is open |
 
 Per-panel actions appear in the bottom bar and `?` help screen.
+
+On Formulae and Casks, `/` opens a filter on the loaded list: type to narrow it by
+name (case-insensitive), `↑`/`↓` move the cursor, `Enter` keeps the filter and `Esc`
+clears it. Actions act on the row shown. To search brew from there, press `7`, then
+`/`.
 
 Mouse capture is on by default and blocks the terminal's own text selection. Hold
 Option (macOS) or Shift to select, or set `gui.mouse: false`.

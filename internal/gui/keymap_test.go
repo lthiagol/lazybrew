@@ -540,7 +540,7 @@ func TestModalHintsMatchUpdate(t *testing.T) {
 // keyTable lists every entry of the key tables in keybindings.go. The tests
 // walk it: a new entry goes here too, or the tests cannot see it.
 var keyTable = []keyHint{
-	keyNext, keyPrev, keyJump, keyScroll, keyEnds, keyTabs, keySearch,
+	keyNext, keyPrev, keyJump, keyScroll, keyEnds, keyTabs, keySearch, keyFilter,
 	keyHelp, keyRefresh, keyLog, keyQuit, keyClose, keyHelpOff,
 	keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll, keyCopy,
 	fInstall, fRemove, fReinstall, fPin, fLeaves, fFetch,
