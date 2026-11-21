@@ -110,3 +110,14 @@ golden and the keymap test, so it goes after the key changes above.
 3), Success 2.96, Warning 2.31, Info 4.34, Subtle 4.37 (floor 4.5). Remap them to darker
 official Latte tokens (e.g. Subtext1/Overlay2 for Muted, Green/Yellow shades) and update
 the `light` goldens, if the user finds light mode hard to read. Raised by lb28 (`Q-lb28-latte-contrast`).
+
+## Planned — user requests, 2026-11-21 (after the macOS smoke)
+
+**LB-28 (planned, slice lb30-taps-and-trust)** — the Taps pane becomes `Taps & Trust`: beside the
+taps it lists the individually trusted formulae, casks and commands (`brew trust --json=v1`),
+with an Info tab and `t` to untrust one. Fix the stale `ListTrusted` JSON shape. User ruling:
+name `Taps & Trust`, commands shown too.
+
+**LB-29 (planned, slice lb31-cleanup-tabs)** — Status tabs `Cleanup` (brew cleanup -n: list, sizes,
+total; `c` runs it after a confirm) and `Unused` (brew autoremove -n; `A` runs it after a confirm),
+loaded on open and refreshed after the run. Seven Status tabs must still fit at 80 columns.
