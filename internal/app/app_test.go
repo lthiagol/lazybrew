@@ -2,11 +2,14 @@ package app
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
+	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // TestMain points HOME at an empty directory, so the config the app loads is
@@ -62,6 +65,33 @@ func TestNewWithConfigPath(t *testing.T) {
 	}
 	if m == nil {
 		t.Fatal("New() returned nil model")
+	}
+}
+
+// TestNewAppliesTheConfiguredTheme: gui.theme picks the palette the app draws
+// with, by name, whatever the case.
+func TestNewAppliesTheConfiguredTheme(t *testing.T) {
+	defer style.ApplyTheme(style.DarkTheme())
+	cases := []struct {
+		theme  string
+		accent string
+	}{
+		{"dark", "#cba6f7"},
+		{"light", "#8839ef"},
+		{"Catppuccin-Macchiato", "#c6a0f6"},
+		{"dracula", "#bd93f9"},
+	}
+	for _, tc := range cases {
+		path := filepath.Join(t.TempDir(), "config.yml")
+		if err := os.WriteFile(path, []byte("gui:\n  theme: "+tc.theme+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := New(Options{ConfigPath: path, Runner: brewtest.NewMockRunner()}); err != nil {
+			t.Fatalf("theme %q: New() returned error: %v", tc.theme, err)
+		}
+		if style.AccentColor != lipgloss.Color(tc.accent) {
+			t.Errorf("theme %q: accent = %v, want %s", tc.theme, style.AccentColor, tc.accent)
+		}
 	}
 }
 

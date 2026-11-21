@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -149,6 +150,15 @@ const (
 	IconsUnicode = "unicode"
 )
 
+// themeNames are the names gui.theme accepts, in the order the errors list
+// them. The GUI's registry (style.ThemeNames) must match: a test in this
+// package checks it, so config does not import the GUI.
+var themeNames = []string{
+	"dark", "light",
+	"catppuccin-mocha", "catppuccin-macchiato", "catppuccin-frappe", "catppuccin-latte",
+	"dracula", "nord",
+}
+
 // Load reads the config file and then applies LAZYBREW_ICONS, LAZYBREW_ANIMATIONS
 // and LAZYBREW_PRELOAD. An unknown icon set or switch is an error, from the file
 // or from the environment.
@@ -160,6 +170,10 @@ func Load(path string) (*Config, error) {
 	if !validIcons(cfg.GUI.Icons) {
 		return nil, fmt.Errorf("gui.icons: unknown value %q (want %s or %s)",
 			cfg.GUI.Icons, IconsNerd, IconsUnicode)
+	}
+	if !validTheme(cfg.GUI.Theme) {
+		return nil, fmt.Errorf("gui.theme: unknown value %q (want one of %s)",
+			cfg.GUI.Theme, strings.Join(themeNames, ", "))
 	}
 	if v := os.Getenv(IconsEnv); v != "" {
 		if !validIcons(v) {
@@ -194,6 +208,16 @@ func boolEnv(name string, dst *bool) error {
 
 func validIcons(name string) bool {
 	return name == IconsNerd || name == IconsUnicode
+}
+
+// validTheme reports whether name is a theme gui.theme accepts, in any case.
+func validTheme(name string) bool {
+	for _, t := range themeNames {
+		if strings.EqualFold(t, name) {
+			return true
+		}
+	}
+	return false
 }
 
 // DefaultPath is the config file read when no --config path is given.

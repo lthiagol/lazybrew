@@ -44,12 +44,12 @@ func New(opts Options) (tea.Model, error) {
 		}
 	}
 
-	switch cfg.GUI.Theme {
-	case "light":
-		style.ApplyTheme(style.LightTheme())
-	default:
-		style.ApplyTheme(style.DarkTheme())
+	theme, ok := style.ThemeByName(cfg.GUI.Theme)
+	if !ok {
+		// Load already rejects unknown names; this catches the two lists drifting apart.
+		return nil, fmt.Errorf("gui.theme: unknown value %q", cfg.GUI.Theme)
 	}
+	style.ApplyTheme(theme)
 
 	var runner brew.Runner
 	if opts.Runner != nil {

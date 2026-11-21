@@ -14,7 +14,7 @@ import (
 // added to Config without a line here fails TestSampleCommentsCoverEveryKey.
 var sampleComments = map[string]string{
 	"gui":                      "the interface",
-	"gui.theme":                "dark or light",
+	"gui.theme":                "dark, light, catppuccin-mocha, catppuccin-macchiato, catppuccin-frappe, catppuccin-latte, dracula or nord",
 	"gui.sidebar_width":        "percent of the terminal width, 15-50",
 	"gui.show_icons":           "true or false; false draws no icons",
 	"gui.icons":                "nerd or unicode (no Nerd Font needed)",
