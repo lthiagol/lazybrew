@@ -129,9 +129,9 @@
 
 ## Status Panel Actions
 
-- [x] `d` doctor — output in modal / status path — `TestRunDoctor`, doctor tab/dashboard tests; real `brew doctor` completes
-- [x] `m` missing — output lines shown — `TestRunMissing`, `TestDiagnosticsMissing`; real `brew missing` completes
-- [x] `v` vulns — runs (or clear error if tap missing) — `TestRunVulns` returns cmd
+- [x] `d` doctor — output in modal / status path — `TestStatusKeysOpenTheirTabs`, `TestStatusDoctorKeyRefreshes`; real `brew doctor` completes
+- [x] `m` missing — output lines shown — `TestStatusKeysOpenTheirTabs`, `TestMissingTabFetchesRows`, `TestDiagnosticsMissing`; real `brew missing` completes
+- [x] `v` vulns — runs (or clear error if tap missing) — `TestVulnsKeyRunsOnceWhileRunning`, `TestVulnsResultShapes`, `flows.TestStatusTabsFlow`
 - [x] `R` refresh — panels reload — `TestRefreshKey`, tiered refresh suite, `flows.TestRefreshFlow`
 
 ---
