@@ -951,3 +951,13 @@ expected.
 
 **Ruling (orchestrator, 2026-11-21) — lb29 r1 F-r1-03:** the dialog key row (`[y]es [n]o esc cancel`) also takes
 the muted `·` separator, so every hint row in the interface reads the same. `fix-lb29-footer-redesign-r2`.
+
+### Q-lb30-dashboard-taps — the Status dashboard still says Taps
+
+- **Context (lb30 AC-02):** the Taps sidebar box and its help page are now `Taps & Trust`.
+  The Status dashboard card and its count label (`Taps`, `Official`, `Third-party`) still
+  say `Taps`, because they count taps only; the trusted items are not in that count.
+- **Done:** the dashboard keeps `Taps`. The panel's identifier (`PanelTaps.String()`, used
+  by the key dispatch) is also still `Taps`; only the display title changed (`PanelID.Title()`).
+- **Ask.** Keep `Taps` on the dashboard (recommended: its numbers are taps only), or rename
+  the card to `Taps & Trust` too?
