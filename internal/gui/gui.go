@@ -36,9 +36,14 @@ func (m Model) Init() tea.Cmd {
 		// (preload.go); otherwise they lazy-load on first switch via
 		// lazyLoadPanel().
 		if m.activePanel == PanelStatus {
-			cmds = append(cmds, fetchStatusData(m.client, false))
+			cmds = append(cmds, launchRead(fetchStatusData(m.client, false)))
 		} else {
-			cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
+			cmds = append(cmds, launchRead(fetchPanelData(m.client, m.activePanel)))
+		}
+		// Auto mode reads when brew last updated while the panel above loads.
+		// The read decides whether `brew update` runs (lastUpdateMsg).
+		if m.cfg.Brew.UpdateOnStart == config.UpdateAuto {
+			cmds = append(cmds, m.lastUpdateCmd())
 		}
 	}
 	// Init starts the one auto-refresh chain, with or without update_on_start.
@@ -47,6 +52,57 @@ func (m Model) Init() tea.Cmd {
 	}
 	cmds = append(cmds, func() tea.Msg { return m.spinner.Tick() })
 	return tea.Batch(cmds...)
+}
+
+// launchRead marks the data a launch read returns, so that Update can drop it
+// once a stale update has begun (DataLoadedMsg.launch).
+func launchRead(read tea.Cmd) tea.Cmd {
+	return func() tea.Msg {
+		msg := read()
+		if data, ok := msg.(DataLoadedMsg); ok {
+			data.launch = true
+			return data
+		}
+		return msg
+	}
+}
+
+// lastUpdateCmd reads when brew last updated. It is the launch check of auto
+// mode; its result is a lastUpdateMsg.
+func (m Model) lastUpdateCmd() tea.Cmd {
+	client := m.client
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), brewReadTimeout)
+		defer cancel()
+		at, err := client.Diagnostics.LastUpdate(ctx)
+		return lastUpdateMsg{at: at, err: err}
+	}
+}
+
+// updateIsStale is the auto-mode test: brew's last update is unknown, unreadable
+// or older than brew.update_stale_hours.
+func (m Model) updateIsStale(msg lastUpdateMsg) bool {
+	if msg.err != nil || msg.at.IsZero() {
+		return true
+	}
+	return time.Since(msg.at) >= time.Duration(m.cfg.Brew.UpdateStaleHours)*time.Hour
+}
+
+// updatePending is true while auto mode has not decided whether to update, or
+// its update is running. The preload waits for it, so the preload reads the
+// metadata the update has just fetched.
+func (m Model) updatePending() bool {
+	return m.cfg.Brew.UpdateOnStart == config.UpdateAuto && (!m.updateChecked || m.isUpdating)
+}
+
+// preloadAfterCheck starts the preload when the launch check has found brew
+// fresh, and the Status dashboard landed before the check did. A Status load
+// that lands after the check starts the preload itself (DataLoadedMsg).
+func (m *Model) preloadAfterCheck() tea.Cmd {
+	if !m.cfg.GUI.Preload || m.preload.started || !m.panels[PanelStatus].loaded || m.updatePending() {
+		return nil
+	}
+	return tea.Batch(m.startPreload()...)
 }
 
 func (m Model) updateTickerCmd() tea.Cmd {
@@ -255,12 +311,25 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, arm
 
 	case StartUpdateMsg:
-		if m.isUpdating || m.cfg.Brew.UpdateOnStart != config.UpdateAlways {
+		if m.isUpdating || m.cfg.Brew.UpdateOnStart == config.UpdateNever {
 			return m, nil
 		}
-		m.isUpdating = true
-		m.updateOutput = nil
-		return m, m.startBrewUpdate()
+		cmd := m.beginUpdate()
+		return m, cmd
+
+	case lastUpdateMsg:
+		m.updateChecked = true
+		if !m.updateIsStale(msg) {
+			m.lastUpdate = msg.at
+			cmd := m.preloadAfterCheck()
+			return m, cmd
+		}
+		m.launchStale = true
+		if m.isUpdating {
+			return m, nil
+		}
+		cmd := m.beginUpdate()
+		return m, cmd
 
 	case TaskOutputMsg:
 		if m.isUpdating {
@@ -287,9 +356,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					toastTick = m.setToast(summary, modal.ToastSuccess)
 				}
 			}
+			// The update changed brew's metadata, so the outdated count is
+			// read again here: it would be stale otherwise.
 			cmds := []tea.Cmd{
 				m.tasks.RunNext(),
-				func() tea.Msg { return RefreshMsg{} },
+				func() tea.Msg { return RefreshMsg{LoadOutdated: true, ReloadDiagnostics: true} },
 			}
 			if toastTick != nil {
 				cmds = append(cmds, toastTick)
@@ -418,13 +489,20 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case DataLoadedMsg:
+		// A launch read that lands after a stale update began holds the data the
+		// update replaces. The update's refresh reads the panels again, so the
+		// stale read is dropped rather than applied over it.
+		if msg.launch && m.launchStale {
+			return m, nil
+		}
 		cmd := m.landData(msg, false)
 		if msg.PanelID != PanelStatus {
 			m.absorbLanded(msg)
 		}
 		// The first Status load starts the preload. With update_on_start that
 		// is the load after the brew update, so the preload reads fresh data.
-		if msg.PanelID == PanelStatus && m.cfg.GUI.Preload && !m.preload.started {
+		// In auto mode it waits for the launch check (updatePending).
+		if msg.PanelID == PanelStatus && m.cfg.GUI.Preload && !m.preload.started && !m.updatePending() {
 			cmd = tea.Batch(cmd, tea.Batch(m.startPreload()...))
 		}
 		return m, cmd
@@ -480,8 +558,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		//   * Active panel always refreshes (AC-04: R forces it even
 		//     if TTL not expired — cache keys invalidated below).
 		//   * Other loaded panels refresh; unloaded stay lazy.
-		// LoadOutdated is set only by the R key: the status refresh below
-		// loads the outdated count only when the user asked for it.
+		// LoadOutdated is set by the R key and by the end of a brew update:
+		// the status refresh below loads the outdated count only then.
 		// Bust cache for force-refreshed classes so per-class TTLs do
 		// not short-circuit the shell (AC-04).
 		m.invalidatePanelCache(PanelStatus)

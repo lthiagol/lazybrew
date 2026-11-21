@@ -14,6 +14,11 @@ type TaskOutputMsg = task.TaskOutputMsg
 type TaskCompletedMsg = task.TaskCompletedMsg
 
 type DataLoadedMsg struct {
+	// launch marks a read the launch started (Init). Once a stale update has
+	// begun, such a read is dropped: it holds the metadata the update replaces,
+	// and the update's refresh reads the panels again.
+	launch bool
+
 	PanelID  PanelID
 	Items    []string
 	Formulae []brew.Formula
@@ -53,11 +58,12 @@ type SearchInfoLoadedMsg struct {
 
 // RefreshMsg asks the app to refresh its panels.
 //
-// LoadOutdated marks the one path allowed to shell out to `brew outdated`:
-// the user pressing R. Every other emitter (the auto-refresh tick, the
-// install/uninstall paths, task completion) leaves it false, so those
-// refreshes read the outdated entries from the cache only and the dashboard
-// never triggers a `brew outdated` call on its own.
+// LoadOutdated marks the paths allowed to shell out to `brew outdated`: the
+// user pressing R, and the end of a brew update, which leaves the count stale
+// otherwise. Every other emitter (the auto-refresh tick, the install/uninstall
+// paths, other task completions) leaves it false, so those refreshes read the
+// outdated entries from the cache only and the dashboard never triggers a
+// `brew outdated` call on its own.
 //
 // ReloadDiagnostics works the same way for `brew doctor` and `brew config`,
 // the slowest reads: only the R key sets it. Other refreshes reuse the cached
@@ -86,6 +92,13 @@ type opAutoCloseMsg struct {
 type UpdateTickMsg struct{}
 
 type StartUpdateMsg struct{}
+
+// lastUpdateMsg is the launch read of when brew last updated. err is set when
+// the read failed; auto mode then treats the update as stale.
+type lastUpdateMsg struct {
+	at  time.Time
+	err error
+}
 
 type DepCheckMsg struct {
 	MutType mutationType

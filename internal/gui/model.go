@@ -74,7 +74,11 @@ type Model struct {
 	pendingTrustCaskIdx    int
 	lastUpdate             time.Time
 	isUpdating             bool
-	updateOutput           []string
+	// updateChecked is set once auto mode's launch read (lastUpdateMsg) lands.
+	updateChecked bool
+	// launchStale is set when that read found brew stale and ran brew update.
+	launchStale  bool
+	updateOutput []string
 
 	// logs is the Services Logs tab's view of its service's log (logs.go).
 	logs logsView

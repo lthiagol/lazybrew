@@ -58,11 +58,13 @@ func preloadModel(t *testing.T, cfg *config.Config, calls *[]string, failArg str
 	return New(brew.NewClient(preloadRunner(calls, failArg)), cfg)
 }
 
-// preloadConfig is the production default with the preload on: the tests here
-// turn it on by hand.
+// preloadConfig is the production default with the preload on, and with
+// update_on_start off: these tests drive the preload directly, with no launch
+// check to wait for. The tests that need an update set it themselves.
 func preloadConfig() *config.Config {
 	cfg := config.Default()
 	cfg.GUI.Preload = true
+	cfg.Brew.UpdateOnStart = config.UpdateNever
 	return cfg
 }
 

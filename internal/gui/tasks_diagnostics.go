@@ -7,6 +7,14 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
+// beginUpdate marks the update running and queues it. The flag is set before
+// the task is queued, so nothing that reads it sees a gap.
+func (m *Model) beginUpdate() tea.Cmd {
+	m.isUpdating = true
+	m.updateOutput = nil
+	return m.startBrewUpdate()
+}
+
 // startBrewUpdate enqueues `brew update` and starts it. It runs through
 // DiagnosticsWrite.Update, so the update's cache group is dropped when it
 // finishes. A dropped enqueue resets isUpdating and returns a warning toast.

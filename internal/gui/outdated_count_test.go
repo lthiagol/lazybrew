@@ -154,7 +154,10 @@ func TestRKeyLoadsOutdatedWhenUpdateOnStart(t *testing.T) {
 // load flag on the R path: the brew-update completion handler serves both
 // the R key and the Init path, so it must emit a plain refresh — otherwise
 // the count would be loaded at startup, which M9 forbids.
-func TestBrewUpdateCompletionStaysPlain(t *testing.T) {
+// TestBrewUpdateCompletionLoadsOutdated: the end of a brew update changes brew's
+// metadata, so its completion reloads the outdated count. This replaces the M9
+// check that the completion stayed plain (lb16 AC-03).
+func TestBrewUpdateCompletionLoadsOutdated(t *testing.T) {
 	m := newTestModel()
 	m.cfg.Brew.UpdateOnStart = config.UpdateAlways
 
@@ -167,8 +170,8 @@ func TestBrewUpdateCompletionStaysPlain(t *testing.T) {
 		t.Fatal("expected a RefreshMsg, got none")
 	}
 	for _, refresh := range refreshes {
-		if refresh.LoadOutdated {
-			t.Error("the brew-update completion must stay plain, got RefreshMsg{LoadOutdated: true}")
+		if !refresh.LoadOutdated || !refresh.ReloadDiagnostics {
+			t.Errorf("the brew-update completion = %+v, want LoadOutdated and ReloadDiagnostics", refresh)
 		}
 	}
 }
