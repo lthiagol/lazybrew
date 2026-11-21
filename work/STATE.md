@@ -69,6 +69,7 @@ PKG=<pkgs>`. Never run brew write commands from an agent on this machine
 | lb18-config-sample | ddbb3d0, fb8b195, 6717737, f11cea1, e61fd8d, 22a6e03, 327b323, 4201a0d | closed | ok (r1 + minor fix, orchestrator-verified) |
 | lb19-keys-and-search | cee6eb5, e00a573, 3b0677a, 28aa5a4, 85290cd, b0039d1, 4f70534, 4c78f98, ee85b8f, 42696cb | closed | ok (r2) |
 | lb20-cask-followups | c05ebf0, 179adf2 | closed | ok (r1) |
+| lb21-backlog-sweep | 88f5f32, 90b1c5d, 557e6a4, d0c4000 | closed | ok (r1) |
 | lb12-cask-token | 93d0659, 6a8b551 | implemented | awaiting reviewer |
 | lb16-update-when-stale | 75ecbba, 0ecc2ba, 080e9e5, e82b38d | implemented | awaiting reviewer |
 | lb18-config-sample | ddbb3d0, fb8b195, 6717737, f11cea1 | implemented | awaiting reviewer |
