@@ -99,7 +99,7 @@ See the config ADR topic (configuration schema decisions).
 | `gui.mouse` | Wired | `View().MouseMode = tea.MouseModeCellMotion` |
 | `gui.auto_refresh_seconds` | Planned | Tick in M20.8 |
 | `brew.path` | Planned | Custom runner path in M20.8 |
-| `brew.update_on_start` | Wired | Non-blocking update on launch |
+| `brew.update_on_start` | Wired | `auto` (default): update on launch when brew's last update is older than `brew.update_stale_hours`; `true`: every launch; `false`: never |
 
 ## Testing Tiers
 
