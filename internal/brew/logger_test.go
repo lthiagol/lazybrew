@@ -1,6 +1,7 @@
 package brew
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,5 +86,42 @@ func TestTimeoutError(t *testing.T) {
 	msg := err.Error()
 	if msg == "" {
 		t.Error("error message should not be empty")
+	}
+}
+
+// TestResetLoggerClosesTheLogFile (LB-21): ResetLogger closes the debug log file
+// EnableFileLogging opened, so a write to it after the reset fails.
+func TestResetLoggerClosesTheLogFile(t *testing.T) {
+	if err := EnableFileLogging(filepath.Join(t.TempDir(), "debug.log")); err != nil {
+		t.Fatal(err)
+	}
+	logMu.Lock()
+	f := logFile
+	logMu.Unlock()
+
+	ResetLogger()
+
+	if _, err := f.WriteString("after reset"); !errors.Is(err, os.ErrClosed) {
+		t.Errorf("write to the debug log after ResetLogger: err = %v, want os.ErrClosed", err)
+	}
+}
+
+// TestEnableFileLoggingClosesThePreviousFile (LB-21): a second EnableFileLogging
+// replaces the first file and closes it, so no file is left open behind it.
+func TestEnableFileLoggingClosesThePreviousFile(t *testing.T) {
+	t.Cleanup(ResetLogger)
+	if err := EnableFileLogging(filepath.Join(t.TempDir(), "first.log")); err != nil {
+		t.Fatal(err)
+	}
+	logMu.Lock()
+	first := logFile
+	logMu.Unlock()
+
+	if err := EnableFileLogging(filepath.Join(t.TempDir(), "second.log")); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := first.WriteString("after replace"); !errors.Is(err, os.ErrClosed) {
+		t.Errorf("write to the replaced debug log: err = %v, want os.ErrClosed", err)
 	}
 }

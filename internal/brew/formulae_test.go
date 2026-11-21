@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
@@ -466,48 +467,50 @@ func TestFormulaeOutdatedDoesNotCallList(t *testing.T) {
 }
 
 func TestFormulaeOutdatedCoalescesConcurrentCalls(t *testing.T) {
-	r := newMockFormulaeRunner()
-	var calls int32
-	gate := make(chan struct{})
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		atomic.AddInt32(&calls, 1)
-		<-gate
-		return []byte(sampleOutdatedJSON), nil
-	}
-	cache := NewCache(time.Minute)
-	reader := NewFormulaeReader(r, cache)
-
-	const goroutines = 8
-	results := make([][]Formula, goroutines)
-	errs := make([]error, goroutines)
-	var wg sync.WaitGroup
-	for i := 0; i < goroutines; i++ {
-		i := i
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			o, err := reader.Outdated(context.Background())
-			results[i] = o
-			errs[i] = err
-		}()
-	}
-
-	// Wait for first caller to enter fn; then release.
-	time.Sleep(20 * time.Millisecond)
-	close(gate)
-	wg.Wait()
-
-	if got := atomic.LoadInt32(&calls); got != 1 {
-		t.Fatalf("expected 1 brew invocation for %d concurrent callers, got %d", goroutines, got)
-	}
-	for i, r := range results {
-		if r == nil {
-			t.Errorf("result[%d] = nil", i)
+	synctest.Test(t, func(t *testing.T) {
+		r := newMockFormulaeRunner()
+		var calls int32
+		gate := make(chan struct{})
+		r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+			atomic.AddInt32(&calls, 1)
+			<-gate
+			return []byte(sampleOutdatedJSON), nil
 		}
-		if errs[i] != nil {
-			t.Errorf("errs[%d] = %v", i, errs[i])
+		cache := NewCache(time.Minute)
+		reader := NewFormulaeReader(r, cache)
+
+		const goroutines = 8
+		results := make([][]Formula, goroutines)
+		errs := make([]error, goroutines)
+		var wg sync.WaitGroup
+		for i := 0; i < goroutines; i++ {
+			i := i
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				o, err := reader.Outdated(context.Background())
+				results[i] = o
+				errs[i] = err
+			}()
 		}
-	}
+
+		// Release fn once every caller is durably blocked: the first inside fn, the rest behind it.
+		synctest.Wait()
+		close(gate)
+		wg.Wait()
+
+		if got := atomic.LoadInt32(&calls); got != 1 {
+			t.Fatalf("expected 1 brew invocation for %d concurrent callers, got %d", goroutines, got)
+		}
+		for i, r := range results {
+			if r == nil {
+				t.Errorf("result[%d] = nil", i)
+			}
+			if errs[i] != nil {
+				t.Errorf("errs[%d] = %v", i, errs[i])
+			}
+		}
+	})
 }
 
 func TestFormulaeOutdatedCachesWithinTTL(t *testing.T) {

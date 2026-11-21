@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
@@ -253,47 +254,49 @@ func TestCasksWriterUpgradeAll(t *testing.T) {
 }
 
 func TestCasksOutdatedCoalescesConcurrentCalls(t *testing.T) {
-	r := brewtest.NewMockRunner()
-	var calls int32
-	gate := make(chan struct{})
-	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		atomic.AddInt32(&calls, 1)
-		<-gate
-		return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
-	}
-	cache := NewCache(time.Minute)
-	reader := NewCasksReader(r, cache)
-
-	const goroutines = 8
-	results := make([][]Cask, goroutines)
-	errs := make([]error, goroutines)
-	var wg sync.WaitGroup
-	for i := 0; i < goroutines; i++ {
-		i := i
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			o, err := reader.Outdated(context.Background())
-			results[i] = o
-			errs[i] = err
-		}()
-	}
-
-	time.Sleep(20 * time.Millisecond)
-	close(gate)
-	wg.Wait()
-
-	if got := atomic.LoadInt32(&calls); got != 1 {
-		t.Fatalf("expected 1 brew invocation for %d concurrent callers, got %d", goroutines, got)
-	}
-	for i, r := range results {
-		if r == nil {
-			t.Errorf("result[%d] = nil", i)
+	synctest.Test(t, func(t *testing.T) {
+		r := brewtest.NewMockRunner()
+		var calls int32
+		gate := make(chan struct{})
+		r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+			atomic.AddInt32(&calls, 1)
+			<-gate
+			return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
 		}
-		if errs[i] != nil {
-			t.Errorf("errs[%d] = %v", i, errs[i])
+		cache := NewCache(time.Minute)
+		reader := NewCasksReader(r, cache)
+
+		const goroutines = 8
+		results := make([][]Cask, goroutines)
+		errs := make([]error, goroutines)
+		var wg sync.WaitGroup
+		for i := 0; i < goroutines; i++ {
+			i := i
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				o, err := reader.Outdated(context.Background())
+				results[i] = o
+				errs[i] = err
+			}()
 		}
-	}
+
+		synctest.Wait()
+		close(gate)
+		wg.Wait()
+
+		if got := atomic.LoadInt32(&calls); got != 1 {
+			t.Fatalf("expected 1 brew invocation for %d concurrent callers, got %d", goroutines, got)
+		}
+		for i, r := range results {
+			if r == nil {
+				t.Errorf("result[%d] = nil", i)
+			}
+			if errs[i] != nil {
+				t.Errorf("errs[%d] = %v", i, errs[i])
+			}
+		}
+	})
 }
 
 func TestCasksOutdatedCachesWithinTTL(t *testing.T) {
