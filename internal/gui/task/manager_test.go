@@ -406,9 +406,9 @@ func TestManager_DrainsOutputBeforeError(t *testing.T) {
 	}
 }
 
-// TestManager_CancelledStatus locks the StatusCancelled wiring: a task
-// whose error is context.Canceled must be recorded as cancelled, not
-// failed (r1 finding 23 wires the previously unused status).
+// TestManager_CancelledCompletion: a task cancelled through its context
+// completes with context.Canceled as its error, so a cancel reads as a cancel,
+// not a failure (r1 finding 23).
 func TestManager_CancelledCompletion(t *testing.T) {
 	m := NewManager(10)
 
