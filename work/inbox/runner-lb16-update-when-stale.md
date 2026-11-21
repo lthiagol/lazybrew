@@ -34,3 +34,19 @@
 - If the stale launch update fails to enqueue (queue full), the preload waits for the next Status load.
 - The `R` path still runs its outdated read in the same batch as `brew update`, not after it. The new test covers the completion path only.
 - AC commits lack the `Co-Authored-By` line the attribution rule asks for. AGENTS.md forbids amending, so they are left as they are.
+
+## Fix r1 — `R` runs `brew update` under `auto`
+
+Brief: `work/briefs/fix-lb16-update-when-stale-r1.md`; ruling `Q-lb16-r-key-auto`: yes.
+
+- Commit `bc26bb6` — `lb16 fix r1: R runs brew update under auto [LB-16]`.
+- Failing run before the gate change: `go test ./internal/gui/ -run TestRKey -v` →
+  `TestRKeyUnderAutoRunsOneUpdateAndLoadsOutdated`: "R under auto ran brew update 0 times, want 1".
+  The never and while-updating tests passed before the fix; all R-key and launch-check tests pass after it.
+- Tests changed: `TestRKeyRequestsOutdatedLoad`, `TestRefreshKey` (gui_test.go) now find the
+  `RefreshMsg` in `drainCmds`, since under `auto` R returns a batch. Same assertion.
+- Goldens: none changed. README: `R` runs the update with `auto` and `true`; `false` only reloads.
+- Per commit: `make test-fast PKG="./internal/gui/... ./internal/config/..."` ok; gofmt clean; vet ok.
+- `make ci` → exit 0: vet, `-race` tests, all coverage floors met (gui 90.0≥83, config 88.5≥85, brew 87.1≥78, others ok), build.
+  Log: /tmp/claude-1000/-home-agent-coding-lazybrew/eb0d39e2-09a6-4ce1-8bc1-babfee76080a/scratchpad/make-ci-r1.log
+- No brew write command run. `STATE.md` not touched (the fix brief does not ask for it).
