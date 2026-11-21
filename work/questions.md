@@ -794,3 +794,8 @@ explicit request, and the user wants to manage brew from the TUI alone. Done in
 
 **Ruling (orchestrator, 2026-11-21) — Q-lb16-true-launch-diagnostics:** accepted
 as the brief says; `brew doctor` after an update is the reason `R` reloads it.
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb19-search-partial:** when one of the two
+typed search reads (`--formula`, `--cask`) fails with anything but exit 1, keep
+the rows of the read that worked; the search errors only when both reads fail.
+Pinned by a test in `fix-lb19-keys-and-search-r2`.
