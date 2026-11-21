@@ -366,6 +366,52 @@ func TestLaunchStatusLandingAfterFailedEnqueueIsApplied(t *testing.T) {
 	}
 }
 
+// The report behind lb16: brew outdated listed one package before the update and
+// two after it, and the count stayed at one. Once the stale update ends, the
+// count, the Outdated list and the header all show both packages.
+func TestStaleUpdateShowsEveryOutdatedPackage(t *testing.T) {
+	var updates, outdated int32
+	r := launchRunner(brewRepoWithFetchHead(t, time.Time{}), &updates, &outdated)
+	base := r.ExecuteFn
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "outdated" {
+			atomic.AddInt32(&outdated, 1)
+			if atomic.LoadInt32(&updates) == 0 {
+				return []byte(`{"formulae":[{"name":"ripgrep","installed_versions":["14.1.0"],"current_version":"14.1.1","pinned":false}]}`), nil
+			}
+			return []byte(`{"formulae":[{"name":"ripgrep","installed_versions":["14.1.0"],"current_version":"14.1.1","pinned":false},` +
+				`{"name":"wget","installed_versions":["1.24.5"],"current_version":"1.25.0","pinned":false}]}`), nil
+		}
+		return base(ctx, args...)
+	}
+	m := updateModel(New(brew.NewClient(r), testConfig()), tea.WindowSizeMsg{Width: 140, Height: 40})
+
+	// Before the update brew lists one package. The user has opened the Outdated
+	// panel, which loads it lazily, and R reads the count.
+	m = feedBack(m, m.lazyLoadPanel(PanelOutdated))
+	nm, cmd := m.Update(RefreshMsg{LoadOutdated: true, ReloadDiagnostics: true})
+	m = feedBack(asModel(nm), cmd)
+	if got := m.status.Outdated; !got.Known || got.N != 1 {
+		t.Fatalf("Outdated before the update = %+v, want 1 known", got)
+	}
+	if n := len(m.panels[PanelOutdated].formulae); n != 1 {
+		t.Fatalf("the Outdated list has %d packages before the update, want 1", n)
+	}
+
+	nm, cmd = m.Update(lastUpdateMsg{})
+	m = feedBack(asModel(nm), cmd)
+
+	if got := m.status.Outdated; !got.Known || got.N != 2 {
+		t.Errorf("Outdated after the update = %+v, want 2 known", got)
+	}
+	if n := len(m.panels[PanelOutdated].formulae); n != 2 {
+		t.Errorf("the Outdated list has %d packages after the update, want 2", n)
+	}
+	if plain := plainLine(m.renderHeader()); !strings.Contains(plain, "2 outdated") {
+		t.Errorf("header after the update = %q, want it to say 2 outdated", plain)
+	}
+}
+
 // R is an explicit request, so under auto it runs brew update too, as it does
 // under true (Q-lb16-r-key-auto).
 func TestRKeyUnderAutoRunsOneUpdateAndLoadsOutdated(t *testing.T) {

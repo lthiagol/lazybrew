@@ -16,7 +16,8 @@ import (
 
 // launchCheckRunner is the runner of the launch check: `brew --repository`
 // prints repo, `brew update` is counted in updates, and `brew outdated` reports
-// one formula.
+// one formula until the update has run, then two: the update brings in a
+// package brew had not listed before.
 func launchCheckRunner(repo string, updates *atomic.Int32) *brewtest.MockRunner {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
@@ -24,7 +25,11 @@ func launchCheckRunner(repo string, updates *atomic.Int32) *brewtest.MockRunner 
 		case len(args) == 1 && args[0] == "--repository":
 			return []byte(repo + "\n"), nil
 		case len(args) >= 1 && args[0] == "outdated":
-			return []byte(`{"formulae":[{"name":"ripgrep","installed_versions":["14.1.0"],"current_version":"14.1.1","pinned":false}]}`), nil
+			if updates.Load() == 0 {
+				return []byte(`{"formulae":[{"name":"ripgrep","installed_versions":["14.1.0"],"current_version":"14.1.1","pinned":false}]}`), nil
+			}
+			return []byte(`{"formulae":[{"name":"ripgrep","installed_versions":["14.1.0"],"current_version":"14.1.1","pinned":false},` +
+				`{"name":"wget","installed_versions":["1.24.5"],"current_version":"1.25.0","pinned":false}]}`), nil
 		}
 		return []byte{}, nil
 	}
@@ -64,7 +69,7 @@ func launchRepo(t *testing.T, at time.Time) string {
 
 // A brew that was last updated long ago is updated at launch. The outdated
 // count, which the update changed, is read again once the update ends, and it
-// shows on the header.
+// shows on the header. The Outdated panel lists the package the update brought in.
 func TestLaunchCheckStaleFlow(t *testing.T) {
 	var updates atomic.Int32
 	tm := testutil.NewTestModelWithRunner(t, launchCheckRunner(launchRepo(t, time.Time{}), &updates),
@@ -72,8 +77,10 @@ func TestLaunchCheckStaleFlow(t *testing.T) {
 
 	// One wait, not two: a wait consumes the output it reads, so a text that
 	// arrives in the same frame as an earlier one is never seen by a later wait.
-	// The count only appears once the update has ended, so it is the one to wait for.
-	waitForScreen(t, tm, "1 outdated")
+	// The count of two only appears once the update has ended, so it is the one to wait for.
+	waitForScreen(t, tm, "2 outdated")
+	tm.Send(tea.KeyPressMsg{Code: '4', Text: "4"})
+	waitForScreen(t, tm, "wget")
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
 
