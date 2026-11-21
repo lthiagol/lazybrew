@@ -156,13 +156,13 @@ func TestServicesFooterLeadsWithStateActions(t *testing.T) {
 	m := loadServices(newTestModel(), servicesList(), servicesInfo())
 
 	selectService(m, "moshi-hook")
-	running := m.footerHints()
+	running := m.footerHints().all()
 	if running[0].key != "S" || running[1].key != "r" {
 		t.Errorf("running footer starts %q %q, want S and r", running[0].key, running[1].key)
 	}
 
 	selectService(m, "dbus")
-	stopped := m.footerHints()
+	stopped := m.footerHints().all()
 	if stopped[0].key != "s" || stopped[1].key != "f" {
 		t.Errorf("stopped footer starts %q %q, want s and f", stopped[0].key, stopped[1].key)
 	}

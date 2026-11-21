@@ -293,7 +293,7 @@ func footerOn(id PanelID) []keyHint {
 		m := newTestModel()
 		m.activePanel = id
 		setup(m)
-		out = append(out, m.footerHints()...)
+		out = append(out, m.footerHints().all()...)
 	}
 	show(func(m *Model) {})
 	show(func(m *Model) { m.activeTab = servicesLogsTab })

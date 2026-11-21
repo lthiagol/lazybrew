@@ -122,7 +122,7 @@ func renderTapInfo(p *panelData, width int) string {
 		return header
 	}
 	keys := tapActionHints(*t, !p.trustUnknown)
-	return header + "\n\n" + tapDetails(t, !p.trustUnknown, width) + "\n\n" + footerLine(keys, width)
+	return header + "\n\n" + tapDetails(t, !p.trustUnknown, width) + "\n\n" + footerLine(keys, nil, width)
 }
 
 // renderServiceInfo is the Info tab of Services: the selected service's detail
@@ -138,7 +138,7 @@ func renderServiceInfo(p *panelData, width int, icons style.Icons) string {
 		fields = serviceInfoDetail(*info, width, icons)
 	}
 	keys := append(serviceActionHints(*s), svCleanup)
-	return fields + "\n\n" + footerLine(keys, width)
+	return fields + "\n\n" + footerLine(keys, nil, width)
 }
 
 // serviceListDetail is the Info tab before `brew services info` has loaded: the
