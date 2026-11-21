@@ -164,11 +164,11 @@ func TestFinishedRunsEndWithTheCloseHint(t *testing.T) {
 		want string
 	}{
 		{"success", Operation{Title: "stop moshi-hook", Status: opSuccess, Started: start, Ended: start},
-			"✓ Completed in 0s · Esc to close"},
+			"✓ Completed in 0s · Esc to close · y copy"},
 		{"failed", Operation{Title: "stop moshi-hook", Status: opError, Err: errors.New("boom"), Started: start, Ended: start},
-			"✗ Failed: boom · Esc to close"},
+			"✗ Failed: boom · Esc to close · y copy"},
 		{"cancelled", Operation{Title: "stop moshi-hook", Status: opCancelled, Started: start, Ended: start},
-			"Cancelled · Esc to close"},
+			"Cancelled · Esc to close · y copy"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -184,7 +184,7 @@ func TestFinishedRunsEndWithTheCloseHint(t *testing.T) {
 
 	m := newTestModel()
 	m.opState = &Operation{Title: "stop moshi-hook", Status: opRunning, Started: time.Now()}
-	if got := statusRow(t, m, 80); !strings.HasSuffix(got, "Esc to cancel") || strings.Contains(got, "close") {
+	if got := statusRow(t, m, 80); !strings.HasSuffix(got, "Esc to cancel · y copy") || strings.Contains(got, "close") {
 		t.Fatalf("a running row should keep its cancel hint, got %q", got)
 	}
 }

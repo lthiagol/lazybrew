@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -26,11 +27,18 @@ func (m Model) copyScreen() (tea.Model, tea.Cmd) {
 }
 
 // copyText is the text y copies, ANSI-free and untruncated: the open
-// Operation's title and every output line, or else the main panel's content
-// for the selected item. It is "" when there is nothing to copy.
+// Operation's title, its status row, the command a retry runs, and every output
+// line, or else the main panel's content for the selected item. It is "" when
+// there is nothing to copy.
 func (m Model) copyText() string {
 	if op := m.opState; op != nil {
-		lines := []string{op.Title}
+		// The status row is not cut for a copy, and the y hint on it is the
+		// key just pressed, so it is not copied.
+		status := ansi.Strip(m.operationStatus(op, math.MaxInt))
+		lines := []string{op.Title, strings.TrimSuffix(status, operationCopyHint)}
+		if needs, ok := m.terminalRetry(); ok {
+			lines = append(lines, "brew "+needs.Command)
+		}
 		for _, line := range op.Lines {
 			lines = append(lines, ansi.Strip(line))
 		}
