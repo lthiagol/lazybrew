@@ -259,7 +259,7 @@ func TestYCopiesTheVulnsReportWhole(t *testing.T) {
 	if out := ansi.Strip(m.View().Content); !strings.Contains(out, "CVE-2026-1") {
 		t.Fatalf("the report should be on screen:\n%s", out)
 	}
-	m = sendKey(m, "y")
+	sendKey(m, "y")
 
 	if len(*copied) != 1 {
 		t.Fatalf("y copied %d times, want 1", len(*copied))
