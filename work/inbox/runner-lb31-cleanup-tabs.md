@@ -73,3 +73,8 @@ tab re-reads and shows `Nothing to clean up` / `Nothing unused`. Both PASS.
 - Rename: `TestTabWindowAt60Columns` → `TestTabWindowAt60CellContent`.
 - Gate: `GOFLAGS=-p=1 make ci` exit 0 (fmt, vet, race, floors met, build); `GOOS=darwin go build ./...` ok; `make test-fast` on brew and gui ok.
 - Commits 9a5b520, 66f79c8, 2ea1e4b lack the Co-Authored-By trailer (missed); not amended, AGENTS.md forbids amending unless asked.
+
+## Fix r3 — F-r1-01 (commit 5f97ec8, test in the same commit)
+- Ruling Q-lb31-cleanup-path-cut: `cutPath` cuts a last segment wider than the Path column alone, directories dropped; otherwise the whole path is cut as in r2.
+- At 80x24 (Path 23 cells) the two bottles render `0a1b2c3d4e5…ttle.tar.gz` and `9f8e7d6c5b4…ttle.tar.gz`. Red on HEAD: `TestCleanupViewBottleRowsAt80x24` (both rows `~/Library/…ttle.tar.gz`). The llvm/python rows are unchanged (`TestCleanupViewRowsAt80x24` green).
+- Gate: `GOFLAGS=-p=1 make ci` exit 0; `GOOS=darwin go build ./...` ok.
