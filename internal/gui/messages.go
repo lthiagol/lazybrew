@@ -51,6 +51,12 @@ type SearchDoneMsg struct {
 	Err     error
 }
 
+// SearchMarksMsg carries the installed marks re-read for the rows of the last
+// search, in the rows' order.
+type SearchMarksMsg struct {
+	Results []brew.SearchResult
+}
+
 type SearchInfoLoadedMsg struct {
 	Content string
 	Err     error

@@ -91,7 +91,7 @@ func buildHelp() []helpPage {
 			sections: []helpSection{
 				{
 					heading: "Actions",
-					items:   []keyHint{sType, sExecute, sInstall, sFetch},
+					items:   []keyHint{sType, sExecute, sInstall, sUninstall, sZap, sFetch},
 				},
 			},
 		},

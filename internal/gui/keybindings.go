@@ -119,6 +119,8 @@ var (
 	sInstall    = keyHint{key: "i", desc: "install", help: "Install selected result"}
 	sInstallCap = keyHint{key: "I", desc: "install"}
 	sFetch      = keyHint{key: "F", desc: "fetch", help: "Fetch selected result"}
+	sUninstall  = keyHint{key: "x", desc: "uninstall", help: "Uninstall installed result"}
+	sZap        = keyHint{key: "X", help: "Zap installed cask result"}
 )
 
 // serviceActionHints are the Services actions that apply to a service in its
@@ -196,7 +198,7 @@ func panelHints(id PanelID) []keyHint {
 	case PanelOutdated:
 		return []keyHint{keyNavigate, keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll}
 	case PanelSearch:
-		return []keyHint{keyNavigate, sExecute, sInstall, sInstallCap, sFetch}
+		return []keyHint{keyNavigate, sExecute, sInstall, sInstallCap, sUninstall, sFetch}
 	default:
 		return []keyHint{keyNavigate, keyPanelTabs}
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -25,37 +26,62 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 			if err != nil {
 				return nil, err
 			}
-			return m.markInstalled(ctx, results), nil
+			return markInstalled(ctx, m.client, results), nil
 		})
 		if err != nil {
 			return SearchDoneMsg{Err: err}
 		}
+		return SearchDoneMsg{Results: searchItems(results), Raw: results}
+	}
+}
 
-		items := make([]string, len(results))
-		for i, r := range results {
-			typ := ""
-			switch {
-			case r.IsFormula:
-				typ = "formula"
-			case r.IsCask:
-				typ = "cask"
-			}
-			installed := ""
-			if r.Installed {
-				installed = "installed"
-			}
-			items[i] = r.Name + "  " + typ + "  " + installed + "  " + r.Description
+// searchItems is the rows the Search panel shows: name, type, installed mark,
+// description. A row with no description ends after its marks.
+func searchItems(results []brew.SearchResult) []string {
+	items := make([]string, len(results))
+	for i, r := range results {
+		typ := ""
+		switch {
+		case r.IsFormula:
+			typ = "formula"
+		case r.IsCask:
+			typ = "cask"
 		}
-		return SearchDoneMsg{Results: items, Raw: results}
+		installed := ""
+		if r.Installed {
+			installed = "installed"
+		}
+		items[i] = r.Name + "  " + typ + "  " + installed + "  " + r.Description
+	}
+	return items
+}
+
+// remarkSearch re-reads the installed lists and sets the marks on the rows the
+// Search panel shows, without a new search. It runs after a write completes,
+// since the write invalidated the lists it reads.
+func (m *Model) remarkSearch() tea.Cmd {
+	if len(m.searchResults) == 0 {
+		return nil
+	}
+	rows := slices.Clone(m.searchResults)
+	client := m.client
+	return func() tea.Msg {
+		marked, err := boundedRead(brewReadTimeout, "installed", func(ctx context.Context) ([]brew.SearchResult, error) {
+			return markInstalled(ctx, client, rows), nil
+		})
+		if err != nil {
+			return SearchMarksMsg{}
+		}
+		return SearchMarksMsg{Results: marked}
 	}
 }
 
 // markInstalled sets Installed on the search rows from the installed formula
 // and cask lists. A list that cannot be read marks nothing of its type: the
 // rows keep their types and the search still succeeds.
-func (m *Model) markInstalled(ctx context.Context, results []brew.SearchResult) []brew.SearchResult {
-	formulae, ferr := m.client.Formulae.List(ctx)
-	casks, cerr := m.client.Casks.List(ctx)
+func markInstalled(ctx context.Context, client *brew.Client, results []brew.SearchResult) []brew.SearchResult {
+	formulae, ferr := client.Formulae.List(ctx)
+	casks, cerr := client.Casks.List(ctx)
 	if ferr != nil {
 		formulae = nil
 	}
@@ -63,6 +89,15 @@ func (m *Model) markInstalled(ctx context.Context, results []brew.SearchResult) 
 		casks = nil
 	}
 	return brew.MarkInstalled(results, formulae, casks)
+}
+
+// selectedSearchRow is the Search row under the cursor, if there is one.
+func (m Model) selectedSearchRow() (brew.SearchResult, bool) {
+	i := m.panels[PanelSearch].selected
+	if i < 0 || i >= len(m.searchResults) {
+		return brew.SearchResult{}, false
+	}
+	return m.searchResults[i], true
 }
 
 func (m Model) fetchSelectedSearchInfo() tea.Cmd {
@@ -99,10 +134,10 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 
 	// Search results can be casks: installing from Search used to route
 	// every result through FormulaeWrite.Install, ignoring the result's
-	// type flag (r1 finding 12).
+	// type flag (r1 finding 12). Uninstall from Search follows the same flag.
 	searchIsCask := false
-	if m.activePanel == PanelSearch && panel.selected < len(m.searchResults) {
-		searchIsCask = m.searchResults[panel.selected].IsCask
+	if r, ok := m.selectedSearchRow(); ok {
+		searchIsCask = r.IsCask
 	}
 
 	title := label + " " + name
@@ -121,7 +156,7 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 	// Search or from the Casks panel itself (r2 finding NEW-4: the "i install"
 	// hint on Casks had no handler, and the handler must not fall back to
 	// brew's formula writer). The other mutations follow the panel alone.
-	isCask := m.activePanel == PanelCasks || (mutType == mutInstall && searchIsCask)
+	isCask := m.activePanel == PanelCasks || (m.activePanel == PanelSearch && searchIsCask)
 	var writer packageWriter = m.client.FormulaeWrite
 	if isCask {
 		writer = m.client.CasksWrite
@@ -397,6 +432,17 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 	if name == "" {
 		return m, nil
 	}
+	searchIsCask := false
+	if m.activePanel == PanelSearch {
+		r, ok := m.selectedSearchRow()
+		if !ok || mutType == mutZap && !r.IsCask {
+			return m, nil
+		}
+		if !r.Installed {
+			return m, m.setToast(name+" is not installed", modal.ToastInfo)
+		}
+		searchIsCask = r.IsCask
+	}
 
 	label := "Uninstall"
 	message := "Uninstall " + name + "? This cannot be undone."
@@ -406,7 +452,7 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 	}
 	// Only formulae have dependents, so a cask's confirm does not ask brew for
 	// them (Q4): brew uses has no answer for a cask.
-	isCask := m.activePanel == PanelCasks
+	isCask := m.activePanel == PanelCasks || (m.activePanel == PanelSearch && searchIsCask)
 	client := m.client
 
 	return m, func() tea.Msg {
