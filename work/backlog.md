@@ -61,3 +61,13 @@ hazard. Narrow it to a reset-only helper later. Raised by the cr5 r1 review.
 writes `full_token`, not `full_name`, so `installedFromTap` never lists casks
 and the untap warning misses them. Read `full_token`. Raised by the lb12 r1
 review.
+
+**LB-18 (parked)** — `TestSearchTabCyclesAllPanelsFlow` takes about 21 s under
+`-race` (15 keys, a `View()` check after each). Make it cheaper (fewer waits,
+or drive the model without a teatest program) if `make ci` time matters. Raised
+by the lb19 r2 review.
+
+**LB-19 (parked)** — Search → info runs `brew info --json=v2 <name>` with no
+`--cask`; for a name that is both a formula and a cask brew may show the
+formula. The row's type is now certain, so pass `--cask` for cask rows. Raised
+by the lb19 r1 review.
