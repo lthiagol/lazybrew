@@ -3,7 +3,6 @@ verdict: ok
 # Review: cr5-dead-code, round r2 (fix commits 2b46654, adb681f; receipt e4010f3)
 
 ## Earlier findings
-
 | Finding | Status | Evidence |
 |---|---|---|
 | F-r1-01 | fixed | render.go: the `renderMainPanelIn` and `contentWidthIn` docs now carry the deleted text ("main column … exactly l.mainW wide and l.bodyH rows tall"; "the main box less its border and the padding either side"). Neither names a removed function |
@@ -38,5 +37,4 @@ TestUsesTabReissuesFetchOnDataLoaded sets `formulaUsesTab` and a formula with no
 - `staticcheck ./...` → only SA1019 at keymap_test.go:38 and :434.
 
 ## Findings
-
 None.
