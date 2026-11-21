@@ -117,7 +117,7 @@ func TestEnterRunsTheFailedBatchMemberWithItsArgs(t *testing.T) {
 	m.opState.BatchDone, m.opState.BatchTotal = 1, 2
 	cmds := captureExec(m)
 
-	m = updateModel(m, enterKey)
+	updateModel(m, enterKey)
 
 	if len(*cmds) != 1 || !slices.Equal((*cmds)[0].Args, []string{"/fake/brew", "install", "--cask", "bar"}) {
 		t.Fatalf("batch member args: got %v, want install --cask bar", *cmds)
@@ -230,7 +230,7 @@ func TestRetryCallbackNamesTheExitStatus(t *testing.T) {
 		cb = fn
 		return nil
 	}
-	m = updateModel(m, enterKey)
+	updateModel(m, enterKey)
 	if cb == nil {
 		t.Fatal("Enter did not hand the command to the terminal runner")
 	}
