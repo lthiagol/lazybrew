@@ -67,7 +67,7 @@ func TestYCopiesTheStatusRowWithoutTheCopyHint(t *testing.T) {
 	copied := captureClipboard(m)
 	m.opState = &Operation{Title: "install foo", Status: opError, Err: errors.New("boom"), Started: time.Now(), Ended: time.Now()}
 
-	m = sendKey(m, "y")
+	sendKey(m, "y")
 
 	if len(*copied) != 1 || !strings.Contains((*copied)[0], "\n✗ Failed: boom · Esc to close") {
 		t.Fatalf("y copied %q, want the status row", *copied)
@@ -119,7 +119,7 @@ func TestYOnFormulaeCopiesAFailedOverlay(t *testing.T) {
 		Lines:   []string{"Error: boom"},
 	}
 
-	m = sendKey(m, "y")
+	sendKey(m, "y")
 
 	want := "install foo\n✗ Failed: boom · Esc to close\nError: boom"
 	if len(*copied) != 1 || (*copied)[0] != want {
@@ -135,7 +135,7 @@ func TestYCopiesTheRetryCommandUnderTheStatusRow(t *testing.T) {
 	copied := captureClipboard(m)
 	m.activePanel = PanelSearch
 
-	m = sendKey(m, "y")
+	sendKey(m, "y")
 
 	want := "install foo\n✗ Failed: needs sudo · Enter  run in this terminal · Esc  close\nbrew install --cask foo"
 	if len(*copied) != 1 || (*copied)[0] != want {
@@ -274,7 +274,7 @@ func TestYCopiesALongLogLineWhole(t *testing.T) {
 	m.logs.loaded, m.logs.err = true, nil
 	m.logs.lines = []string{"short", long}
 
-	m = sendKey(m, "y")
+	sendKey(m, "y")
 
 	if len(*copied) != 1 || !strings.Contains((*copied)[0], "\n"+long) {
 		t.Fatalf("y copied %q, want the %d-cell line whole", *copied, len(long))
@@ -294,7 +294,7 @@ func TestYCopiesALongConfigRowWhole(t *testing.T) {
 	long := "HOMEBREW_PREFIX: " + strings.Repeat("0123456789", 50) + "END"
 	m.tabContent[tabKey(PanelStatus, statusConfigTab, statusItemName)] = long
 
-	m = sendKey(m, "y")
+	sendKey(m, "y")
 
 	if len(*copied) != 1 || (*copied)[0] != long {
 		t.Fatalf("y copied %q, want the row whole", *copied)
