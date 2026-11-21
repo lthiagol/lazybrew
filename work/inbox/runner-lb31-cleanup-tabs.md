@@ -65,3 +65,11 @@ tab re-reads and shows `Nothing to clean up` / `Nothing unused`. Both PASS.
 - Clicks: `handleTabBarClick` maps through the window; a click on a marker calls `selectTab` for the neighbouring tab.
 - Tests changed: `TestStatusTabRowShowsEveryName` is now `TestStatusTabRowShowsTheActiveTab` (it required Dashboard at 80x24, which the window hides with Vulns active). `TestSlidingTabBarAtRestIsTheRestingBar`: signature only. No golden changed.
 - Gate: `GOFLAGS=-p=1 make ci` exit 0 (fmt, vet, race tests, floors met, build). `GOOS=darwin go build ./...` ok. deadcode: no output. staticcheck: the same five pre-existing findings, none in lb31 files.
+
+## Fix r2 — F-r1-01, F-r1-02 (commits 9a5b520, 66f79c8; rename 2ea1e4b)
+- F-r1-01, partly met. `cutMiddle` moves the cut to a `/` only within `cutSnap` (4) cells, else cuts at the width; a cut already after a `/` keeps that segment. At 80x24 (Path 22 cells): `<prefix>/Cellar/llvm/17.0.6` → `<prefix>/…llvm/17.0.6` (was `…/17.0.6`); python keeps `…/3.12.4_1`. Red on HEAD: `TestCutMiddle`, `TestCutMiddleKeepsWholeSegmentAtCut`, `TestCleanupViewRowsAt80x24`.
+- Not met: the two bottle files still both render `~/Library/….bottle.tar.gz` at 80x24 (they differ before the last 11 cells). The cut rule cannot separate them; no test asserts it. Question Q-lb31-cleanup-path-cut.
+- F-r1-02: `TestCleanupPreviewReadsThousandsSeparators` (`1,700 files` → 1700). Mutation `atoiComma` without `ReplaceAll` → `Files:0, want 1700`, FAIL; source restored.
+- Rename: `TestTabWindowAt60Columns` → `TestTabWindowAt60CellContent`.
+- Gate: `GOFLAGS=-p=1 make ci` exit 0 (fmt, vet, race, floors met, build); `GOOS=darwin go build ./...` ok; `make test-fast` on brew and gui ok.
+- Commits 9a5b520, 66f79c8, 2ea1e4b lack the Co-Authored-By trailer (missed); not amended, AGENTS.md forbids amending unless asked.
