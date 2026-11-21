@@ -37,7 +37,7 @@ receipt is `work/inbox/runner-lb02-fetch-timeouts.md`.
 
 **LB-03 closed** — the status dashboard now says the outdated count is not loaded until the user presses R, which is the only path that loads it; receipt `work/inbox/runner-lb03-dashboard-outdated-count.md`.
 
-**LB-12 (parked)** — cask rows carry brew's display name (`Claude Code`), not
+**LB-12 (closed, lb12-cask-token r1)** — cask rows carry brew's display name (`Claude Code`), not
 the token (`claude-code`), so every cask action sends the wrong name.
 `parseCask` should read `token` (fall back to `name`), with a fixture in the
 current brew shape. Raised by cr1 (`Q-cr1-cask-name`).
@@ -56,3 +56,8 @@ it ever does. Raised by the cr5 r1 review.
 **LB-15 (parked)** — `brew.SetDebug` is kept only for `app/debug_log_test.go`
 (a cross-package logger reset); its `true` branch logs to stderr, the C13
 hazard. Narrow it to a reset-only helper later. Raised by the cr5 r1 review.
+
+**LB-17 (parked)** — installed casks get an empty `Cask.FullName`: `brew info`
+writes `full_token`, not `full_name`, so `installedFromTap` never lists casks
+and the untap warning misses them. Read `full_token`. Raised by the lb12 r1
+review.
