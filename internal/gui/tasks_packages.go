@@ -21,7 +21,11 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 
 	return func() tea.Msg {
 		results, err := boundedRead(brewSearchTimeout, "search", func(ctx context.Context) ([]brew.SearchResult, error) {
-			return m.client.Search.Search(ctx, query)
+			results, err := m.client.Search.Search(ctx, query)
+			if err != nil {
+				return nil, err
+			}
+			return m.markInstalled(ctx, results), nil
 		})
 		if err != nil {
 			return SearchDoneMsg{Err: err}
@@ -35,9 +39,6 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 				typ = "formula"
 			case r.IsCask:
 				typ = "cask"
-			default:
-				// Headerless/odd search output: type unknown (r1 finding 21).
-				typ = "unknown"
 			}
 			installed := ""
 			if r.Installed {
@@ -47,6 +48,21 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 		}
 		return SearchDoneMsg{Results: items, Raw: results}
 	}
+}
+
+// markInstalled sets Installed on the search rows from the installed formula
+// and cask lists. A list that cannot be read marks nothing of its type: the
+// rows keep their types and the search still succeeds.
+func (m *Model) markInstalled(ctx context.Context, results []brew.SearchResult) []brew.SearchResult {
+	formulae, ferr := m.client.Formulae.List(ctx)
+	casks, cerr := m.client.Casks.List(ctx)
+	if ferr != nil {
+		formulae = nil
+	}
+	if cerr != nil {
+		casks = nil
+	}
+	return brew.MarkInstalled(results, formulae, casks)
 }
 
 func (m Model) fetchSelectedSearchInfo() tea.Cmd {
