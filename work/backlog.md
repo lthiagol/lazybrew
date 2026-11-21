@@ -118,7 +118,7 @@ taps it lists the individually trusted formulae, casks and commands (`brew trust
 with an Info tab and `t` to untrust one. Fix the stale `ListTrusted` JSON shape. User ruling:
 name `Taps & Trust`, commands shown too.
 
-**LB-29 (planned, slice lb31-cleanup-tabs)** — Status tabs `Cleanup` (brew cleanup -n: list, sizes,
+**LB-29 (closed, lb31-cleanup-tabs)** — Status tabs `Cleanup` (brew cleanup -n: list, sizes,
 total; `c` runs it after a confirm) and `Unused` (brew autoremove -n; `A` runs it after a confirm),
 loaded on open and refreshed after the run. Seven Status tabs must still fit at 80 columns.
 
@@ -129,3 +129,8 @@ theme-coloured severities (CRITICAL/HIGH error, MEDIUM warning, LOW info, UNKNOW
 per-package next step (upgrade available → version from Outdated, no fix released, fixed
 upstream not released), commit-hash lists collapsed (kept in `y` copy), dimmed footer for
 patched/skipped counts, text fallback when the JSON cannot be read. User request 2026-11-21.
+
+**LB-31 (parked)** — one unexplained `GOFLAGS=-p=1 make ci` failure (exit 2 at `make test`, log lost)
+right after the lb31 r3 builder exited; five later full runs (one `make ci`, one `go test ./... -race`,
+four `-count=4` on gui/brew/config) passed. Suspect a timing-sensitive test under load. If it shows
+again, keep the log and file the test name.
