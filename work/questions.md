@@ -837,3 +837,15 @@ the brief lists four commands. Fix round r2 makes the code, the test and this
 decision log say so.
 
 **Correction (lb23 fix r2, F-r1-01):** until r2 the code did not refuse zap: the args brew gets are `uninstall --zap --cask <name>`, and the retry only checked `uninstall`, so a zap ran in the terminal. r2 refuses any args containing `--zap`; the test now uses those args.
+
+### Q-lb24-y-search — does `y` type or copy on Search?
+
+- **Decision (brief lb24-copy-and-wording, AC-01):** `y` copies on every panel
+  except Search. On Search with the box not focused, `y` types into the box, as
+  `g`, `G`, `h` and `l` do there; otherwise a search that starts with `y` would
+  copy the results and drop the letter. So Search's footer and help do not show `y`.
+- **Open edge:** with an Operation overlay open on Search, `y` types into the
+  hidden box rather than copying the overlay.
+- **Raised by:** runner lane (slice lb24-copy-and-wording).
+- **Ask.** Keep `y` typing on Search (recommended), or make it copy there and
+  accept that a query cannot start with `y` unless the box has focus?
