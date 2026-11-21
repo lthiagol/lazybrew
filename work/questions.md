@@ -1008,3 +1008,8 @@ shell). `fix-lb31-cleanup-tabs-r1`.
   does not fit, show its start and end and drop the directories (`…/0a1b2c--foo-1.0.arm64_s…ottle.tar.gz`
   style), so the hash and formula show; (2) keep the middle cut and accept identical rows, the
   full path only in `y`; (3) a second line per row for long paths.
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb31-cleanup-path-cut:** option 1: when the last path segment
+does not fit the Path column, drop the directories and show that segment's start and end
+(`0a1b2c--foo-1.0.arm64_s…ottle.tar.gz`), so rows stay distinct; the middle cut with `/` snapping stays
+for paths whose last segment fits. The full path is in `y`. `fix-lb31-cleanup-tabs-r3`.
