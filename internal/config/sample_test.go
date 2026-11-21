@@ -130,8 +130,9 @@ func TestSampleFollowsDefaults(t *testing.T) {
 	if line := sampleLine(got, "auto_refresh_pause"); !strings.Contains(line, "auto_refresh_pause: 0s ") {
 		t.Errorf("auto_refresh_pause line = %q, want the changed default 0s", line)
 	}
-	if line := sampleLine(Sample(), "casks_ttl"); !strings.Contains(line, "casks_ttl: 5m ") {
-		t.Errorf("Sample() casks_ttl line = %q, want the real default 5m", line)
+	want := sampleDuration(DefaultCasksTTL)
+	if line := sampleLine(Sample(), "casks_ttl"); !strings.Contains(line, "casks_ttl: "+want+" ") {
+		t.Errorf("Sample() casks_ttl line = %q, want the real default %s", line, want)
 	}
 }
 
