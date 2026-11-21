@@ -111,18 +111,22 @@ gui:                             # the interface
   auto_refresh_pause: 500ms      # a duration, e.g. 500ms; 0 turns the pause off
 brew:                            # how lazybrew runs brew
   path: ""                       # the brew binary; empty auto-detects it
-  update_on_start: auto          # auto, true or false: when lazybrew runs brew update
+  update_on_start: true          # true: brew update at every launch; the other two values are below
+  # update_on_start: auto        # brew update at launch only when brew's last update is older than update_stale_hours
+  # update_on_start: false       # never run brew update at launch
   update_stale_hours: 6          # 1 or more hours; auto updates when brew's last update is older
   # ... the TTLs follow, one per class; see the sample
 ```
 
 `brew.update_on_start` says whether lazybrew runs `brew update` when it starts.
-`auto` (the default) reads when brew last updated, and runs `brew update` only
-if that was more than `update_stale_hours` ago. The header shows `updating…`
-while it runs and `updated 2h ago` after. `true` runs `brew update` at every
-launch. `false` never runs `brew update` on its own: lazybrew does not update
-behind your back, and the outdated list is only as fresh as your last
-`brew update`. The `R` key runs `brew update` with `auto` and `true`; with
+`true` (the default) runs `brew update` at every launch. The header shows
+`updating…` while it runs and `updated 2h ago` after. If the update fails
+(offline, for example) lazybrew shows the error in a toast and loads the panels
+from brew's old metadata. To keep the old behaviour, set `auto`: it reads when
+brew last updated, and runs `brew update` only if that was more than
+`update_stale_hours` ago. `false` never runs `brew update` on its own: lazybrew
+does not update behind your back, and the outdated list is only as fresh as your
+last `brew update`. The `R` key runs `brew update` with `auto` and `true`; with
 `false` it only reloads.
 
 `LAZYBREW_ICONS=unicode` (or `nerd`) overrides `gui.icons` for one run.

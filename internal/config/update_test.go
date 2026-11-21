@@ -16,10 +16,10 @@ func loadBrewYAML(t *testing.T, body string) (*Config, error) {
 	return Load(path)
 }
 
-func TestUpdateOnStartDefaultsToAutoWithSixHours(t *testing.T) {
+func TestUpdateOnStartDefaultsToAlwaysWithSixHours(t *testing.T) {
 	cfg := Default()
-	if cfg.Brew.UpdateOnStart != UpdateAuto {
-		t.Errorf("UpdateOnStart = %q, want auto", cfg.Brew.UpdateOnStart)
+	if cfg.Brew.UpdateOnStart != UpdateAlways {
+		t.Errorf("UpdateOnStart = %q, want true (always)", cfg.Brew.UpdateOnStart)
 	}
 	if cfg.Brew.UpdateStaleHours != 6 {
 		t.Errorf("UpdateStaleHours = %d, want 6", cfg.Brew.UpdateStaleHours)
@@ -29,8 +29,8 @@ func TestUpdateOnStartDefaultsToAutoWithSixHours(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Brew.UpdateOnStart != UpdateAuto || cfg.Brew.UpdateStaleHours != 6 {
-		t.Errorf("a file without the keys: update_on_start=%q update_stale_hours=%d, want auto and 6",
+	if cfg.Brew.UpdateOnStart != UpdateAlways || cfg.Brew.UpdateStaleHours != 6 {
+		t.Errorf("a file without the keys: update_on_start=%q update_stale_hours=%d, want true and 6",
 			cfg.Brew.UpdateOnStart, cfg.Brew.UpdateStaleHours)
 	}
 }

@@ -53,8 +53,9 @@ type BrewConfig struct {
 }
 
 // UpdateMode is brew.update_on_start. never (false) leaves brew's metadata as it
-// is; always (true) runs `brew update` at every launch; auto runs it at launch
-// only when brew's last update is older than brew.update_stale_hours.
+// is; always (true, the default) runs `brew update` at every launch; auto runs
+// it at launch only when brew's last update is older than
+// brew.update_stale_hours.
 type UpdateMode string
 
 const (
@@ -119,7 +120,7 @@ func Default() *Config {
 		},
 		Brew: BrewConfig{
 			Path:             "",
-			UpdateOnStart:    UpdateAuto,
+			UpdateOnStart:    UpdateAlways,
 			UpdateStaleHours: DefaultUpdateStaleHours,
 			FormulaeTTL:      DefaultFormulaeTTL,
 			CasksTTL:         DefaultCasksTTL,

@@ -18,8 +18,8 @@ func TestDefaultConfig(t *testing.T) {
 	if !cfg.GUI.ShowIcons {
 		t.Error("ShowIcons should default to true")
 	}
-	if cfg.Brew.UpdateOnStart != UpdateAuto {
-		t.Errorf("UpdateOnStart = %q, should default to auto", cfg.Brew.UpdateOnStart)
+	if cfg.Brew.UpdateOnStart != UpdateAlways {
+		t.Errorf("UpdateOnStart = %q, should default to true", cfg.Brew.UpdateOnStart)
 	}
 	if cfg.Brew.OutdatedTTL != DefaultOutdatedTTL {
 		t.Errorf("OutdatedTTL = %s, want %s (30m default)", cfg.Brew.OutdatedTTL, DefaultOutdatedTTL)

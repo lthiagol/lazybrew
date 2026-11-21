@@ -22,12 +22,15 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// testConfig is the production default with the background preload off. The
-// tests read each panel themselves and count the reads they expect; a preload
-// running behind them would add reads to every count. The preload tests turn it
-// on by hand, and TestProductionDefaultPreloads pins the production default.
+// testConfig is the production default with the background preload and the
+// launch update off. The tests read each panel themselves and count the reads
+// they expect; a preload or a `brew update` running behind them would add reads
+// to every count. The preload tests turn the preload on by hand, the launch
+// tests set update_on_start themselves, and TestProductionDefaultPreloads and
+// TestProductionDefaultUpdatesOnLaunch pin the production defaults.
 func testConfig() *config.Config {
 	cfg := config.Default()
 	cfg.GUI.Preload = false
+	cfg.Brew.UpdateOnStart = config.UpdateNever
 	return cfg
 }
