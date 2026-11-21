@@ -43,3 +43,8 @@ Commits (one per AC, in order):
 ## Seen, not done
 - `DESIGN.md:93` still lists `gui.theme` as `dark` or `light`.
 - `SMOKE-CHECKLIST.md` has no entry for the new themes.
+
+## Fix r2 (`1a58d2a`, [LB-25])
+- F-r1-01 `theme.go:122`, `theme_test.go:450`: Surface comment says selection; value unchanged.
+- F-r1-02: README sample regenerated from `--config-sample` (30 lines, `cmp` identical); lead-in now "Here is the sample:".
+- F-r1-03: `themes` comment names `config.themeNames` and `TestRegistryMatchesConfig`. Gate: `GOFLAGS=-p=1 make ci` exit 0 (floors met); `test-fast` style+config ok.
