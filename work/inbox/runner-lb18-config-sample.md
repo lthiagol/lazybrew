@@ -35,3 +35,14 @@ The flag branch in `main()` sits before `app.New`; `runConfigFlags` does not ref
 **For the next session**
 - While checking, I launched the app by mistake (`go run ./cmd/lazybrew </dev/null`). No brew write happened: brew's FETCH_HEAD is still 06:14:31, and auto mode updates only after 6 h.
 - A `make run` (pid 1238068, started 07:13, repo cwd) is not mine; left running.
+
+## Fix r1
+
+- Commits, one per finding: F-r1-01 `e61fd8d`, F-r1-02 `22a6e03`, F-r1-03 `327b323`, F-r1-04 `4201a0d`. README's sample block was kept in step with the new TTL prose (`diff` empty).
+- F-r1-01: `TestSampleStatesTheRules` failed on 7 lines before the fix (six `*_ttl`, `update_stale_hours`); passes after.
+- F-r1-02: with `DefaultCasksTTL` set to 7m, `TestSampleFollowsDefaults` passes; the mutation was reverted and `config.go` is clean.
+- F-r1-03: `TestConfigSampleAndCreateTogetherAreRejected` failed (exit 0) before the fix. By hand: exit 1, stdout empty, one stderr line, no file.
+- F-r1-04: passes on current code. A first draft built the path with `DefaultPath()` and survived a mutation, so it now pins the literal `~/.config/lazybrew/config.yml`; the mutation fails it.
+- Gate: `make ci` exit 0 (fmt-check, vet, `-race`, floors; config 92.6 ≥ 85). `GOOS=darwin go build ./...` exit 0. Per commit: `make test-fast PKG="./internal/config/... ./cmd/lazybrew/..."` ok.
+- Flags via `env PATH=/nonexistent ./bin/lazybrew`: sample exit 0; create gives 0755 dir and 0644 file; a second create exits 1 and leaves the file equal to `--config-sample`.
+- No TUI launch, no brew write. No questions filed.
