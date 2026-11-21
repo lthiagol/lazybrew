@@ -209,6 +209,31 @@ func TestSearchMarkClearsAfterUninstall(t *testing.T) {
 	}
 }
 
+// TestStaleSearchMarksDoNotLandOnNewRows (lb19 AC-04, F-r1-03): marks read for
+// an older result set arrive after a newer search. They are matched by name, so
+// no row of the new set changes its mark.
+func TestStaleSearchMarksDoNotLandOnNewRows(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelSearch
+	// The new search's first row is not installed; the old marks say the old
+	// search's first row (jq) is. A positional match would mark the new row.
+	fresh := []brew.SearchResult{{Name: "wget", IsFormula: true}, {Name: "claude-code", IsCask: true}}
+	m = updateModel(m, SearchDoneMsg{Results: searchItems(fresh), Raw: fresh})
+
+	m = updateModel(m, SearchMarksMsg{Results: []brew.SearchResult{{Name: "jq", IsFormula: true, Installed: true}}})
+
+	for _, r := range m.searchResults {
+		if r.Installed {
+			t.Errorf("row %q became installed from marks for another search", r.Name)
+		}
+	}
+	for i, item := range m.panels[PanelSearch].items {
+		if strings.Contains(item, "installed") {
+			t.Errorf("item %d shows installed from marks for another search: %q", i, item)
+		}
+	}
+}
+
 // lastToastIs reports whether the newest toast says message.
 func lastToastIs(m *Model, message string) bool {
 	return len(m.toasts) > 0 && m.toasts[len(m.toasts)-1].Message == message
