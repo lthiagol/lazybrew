@@ -138,6 +138,14 @@ func TestVersionAfter(t *testing.T) {
 		{"v1.10", "v1.9", true},
 		{"1.0.1", "1.0", true},
 		{"1.0", "1.0", false},
+		// Regression F-r1-02: a release is later than its pre-releases.
+		{"2.0.0", "2.0.0-rc1", true},
+		{"v2.0.0", "2.0.0-rc1", true},
+		{"2.0.0-rc1", "2.0.0", false},
+		{"2.0.0-rc2", "2.0.0-rc1", true},
+		{"2.0.0-rc1", "1.9.9", true},
+		{"2.0", "2.0.0-rc1", true},
+		{"1.0", "1.0.0", false},
 	}
 	for _, c := range cases {
 		if got := versionAfter(c.a, c.b); got != c.want {
