@@ -26,9 +26,9 @@ func missingRunner(out string, err error, calls *int) *brewtest.MockRunner {
 	return r
 }
 
-// openStatusTab presses key on a loaded Status panel and lands what it starts,
+// pressStatus presses key on a loaded Status panel and lands what it starts,
 // as the program does.
-func openStatusTab(m *Model, key string) *Model {
+func pressStatus(m *Model, key string) *Model {
 	nm, cmd := m.Update(tea.KeyPressMsg{Code: []rune(key)[0], Text: key})
 	return landCmd(modelOf(nm), cmd)
 }
@@ -114,9 +114,9 @@ func TestMissingTabLoadsOnceAndStays(t *testing.T) {
 	m := loadedStatus(140, 40)
 	m.client = brew.NewClient(missingRunner("wget: openssl@3\n", &brew.BrewExitError{Command: "missing", ExitCode: 1}, &calls))
 
-	m = openStatusTab(m, "l")
-	m = openStatusTab(m, "l")
-	m = openStatusTab(m, "l")
+	m = pressStatus(m, "l")
+	m = pressStatus(m, "l")
+	m = pressStatus(m, "l")
 	if m.activeTab != statusMissingTab {
 		t.Fatalf("three l presses should reach the Missing tab, got tab %d", m.activeTab)
 	}
@@ -124,11 +124,11 @@ func TestMissingTabLoadsOnceAndStays(t *testing.T) {
 		t.Fatalf("opening the tab ran brew missing %d times, want 1", calls)
 	}
 
-	m = openStatusTab(m, "2")
-	m = openStatusTab(m, "1")
-	m = openStatusTab(m, "l")
-	m = openStatusTab(m, "l")
-	m = openStatusTab(m, "l")
+	m = pressStatus(m, "2")
+	m = pressStatus(m, "1")
+	m = pressStatus(m, "l")
+	m = pressStatus(m, "l")
+	m = pressStatus(m, "l")
 	if calls != 1 {
 		t.Fatalf("returning to the tab ran brew missing again (%d calls), want the cached 1", calls)
 	}
@@ -164,9 +164,9 @@ func TestMissingTabFrames(t *testing.T) {
 					calls := 0
 					m := loadedStatus(size.w, size.h)
 					m.client = brew.NewClient(missingRunner(c.out, c.err, &calls))
-					m = openStatusTab(m, "l")
-					m = openStatusTab(m, "l")
-					m = openStatusTab(m, "l")
+					m = pressStatus(m, "l")
+					m = pressStatus(m, "l")
+					m = pressStatus(m, "l")
 					view := m.View().Content
 					assertFrameSize(t, view, size.w, size.h)
 					if !strings.Contains(ansi.Strip(view), c.want) {
