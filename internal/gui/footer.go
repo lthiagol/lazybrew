@@ -12,7 +12,7 @@ import (
 // globalHints are the keys every panel answers to, listed after the panel's
 // own in the footer.
 var globalHints = []keyHint{
-	keyNext, keyPrev, keyJump, keySearch, keyHelp, keyRefresh, keyLog, keyQuit,
+	keyArrows, keyNext, keyJump, keySearch, keyRefresh, keyLog, keyHelp, keyQuit,
 }
 
 // footerRow is the key row the footer shows, in the two groups it draws: the
@@ -54,9 +54,10 @@ func (m Model) globalFooterHints() []keyHint {
 	}
 	var hints []keyHint
 	for _, h := range globalHints {
-		if h != keySearch {
-			hints = append(hints, h)
+		if h == keySearch {
+			h = keyFilter
 		}
+		hints = append(hints, h)
 	}
 	return hints
 }

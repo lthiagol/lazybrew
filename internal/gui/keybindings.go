@@ -31,8 +31,9 @@ func (h keyHint) helpKeyText() string {
 
 // Keys every panel answers to.
 var (
+	keyArrows  = keyHint{key: "←↑↓→", keys: "up down left right", desc: "navigate"}
 	keyNext    = keyHint{key: "Tab", keys: "tab", desc: "next", help: "Next panel"}
-	keyPrev    = keyHint{key: "S-Tab", helpKey: "Shift+Tab", keys: "shift+tab", desc: "prev", help: "Previous panel"}
+	keyPrev    = keyHint{key: "S-Tab", helpKey: "Shift+Tab", keys: "shift+tab", help: "Previous panel"}
 	keyJump    = keyHint{key: "1-7", keys: "1 2 3 4 5 6 7", desc: "jump", help: "Jump to panel"}
 	keyScroll  = keyHint{key: "j/k", keys: "j k down up", help: "Scroll list"}
 	keyEnds    = keyHint{key: "Home/End", keys: "home end g G", help: "Top/bottom (g/G outside Search)"}
@@ -49,8 +50,6 @@ var (
 
 // Keys the panels share, with the same words wherever they appear.
 var (
-	keyNavigate        = keyHint{key: "j/k", keys: "j k down up", desc: "navigate"}
-	keyPanelTabs       = keyHint{key: "h/l", keys: "h l left right", desc: "tabs"}
 	keyUpgradeSelected = keyHint{key: "u", keys: "u", desc: "upgrade", help: "Upgrade selected"}
 	keyUpgradeAll      = keyHint{key: "U", desc: "upgrade all", help: "Upgrade all"}
 	keyCopy            = keyHint{key: "y", desc: "copy", help: "Copy the shown text"}
@@ -165,7 +164,7 @@ func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
 // tapsHints is the Taps footer: the actions for the selected tap lead, then the
 // keys that apply to any tap.
 func tapsHints(p *panelData) []keyHint {
-	hints := []keyHint{keyNavigate, keyPanelTabs, tAdd, keyCopy}
+	hints := []keyHint{tAdd, keyCopy}
 	if t := p.selectedTap(); t != nil {
 		hints = append(tapActionHints(*t, !p.trustUnknown), hints...)
 	}
@@ -175,7 +174,7 @@ func tapsHints(p *panelData) []keyHint {
 // servicesHints is the Services footer: the actions for the selected service
 // lead, then the keys that apply in any state.
 func servicesHints(p *panelData) []keyHint {
-	hints := []keyHint{keyNavigate, keyPanelTabs, svCleanup, keyCopy}
+	hints := []keyHint{svCleanup, keyCopy}
 	if s := p.selectedService(); s != nil {
 		hints = append(serviceActionHints(*s), hints...)
 	}
@@ -184,23 +183,24 @@ func servicesHints(p *panelData) []keyHint {
 
 // panelHints lists the footer keys of a panel with no state applied: the Taps
 // and Services footers are made by tapsHints and servicesHints, which apply it.
+// The arrow hint and the list keys are on every footer, so no panel lists them.
 func panelHints(id PanelID) []keyHint {
 	switch id {
 	case PanelFormulae:
-		return []keyHint{keyNavigate, keyPanelTabs, keyFilter, fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch, keyCopy}
+		return []keyHint{fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch, keyCopy}
 	case PanelCasks:
-		return []keyHint{keyNavigate, keyPanelTabs, keyFilter, cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch, keyCopy}
+		return []keyHint{cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch, keyCopy}
 	case PanelServices:
-		return []keyHint{keyNavigate, keyPanelTabs, svStart, svStop, svRestart, svRun, svCleanup, keyCopy}
+		return []keyHint{svStart, svStop, svRestart, svRun, svCleanup, keyCopy}
 	case PanelTaps:
-		return []keyHint{keyNavigate, keyPanelTabs, tAdd, tUntap, tTrust, tRepair, keyCopy}
+		return []keyHint{tAdd, tUntap, tTrust, tRepair, keyCopy}
 	case PanelStatus:
-		return []keyHint{keyNavigate, keyPanelTabs, keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, keyCopy}
+		return []keyHint{keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, keyCopy}
 	case PanelOutdated:
-		return []keyHint{keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll, keyCopy}
+		return []keyHint{keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll, keyCopy}
 	case PanelSearch:
-		return []keyHint{keyNavigate, sExecute, sInstall, sUninstall, sFetch}
+		return []keyHint{sExecute, sInstall, sUninstall, sFetch}
 	default:
-		return []keyHint{keyNavigate, keyPanelTabs}
+		return nil
 	}
 }

@@ -283,12 +283,12 @@ func TestLogsFooterListsStreamOnLogsOnly(t *testing.T) {
 		}
 		return false
 	}
-	if hints := m.footerHints().all(); !hasHint(hints, "h/l", "tabs") || hasHint(hints, "e", "stream") {
-		t.Errorf("Info footer = %v, want h/l tabs and no e", hints)
+	if hints := m.footerHints().all(); !hasHint(hints, "←↑↓→", "navigate") || hasHint(hints, "e", "stream") {
+		t.Errorf("Info footer = %v, want the arrow hint and no e", hints)
 	}
 	m = pressKey(m, "l")
-	if hints := m.footerHints().all(); !hasHint(hints, "e", "stream") || !hasHint(hints, "h/l", "tabs") {
-		t.Errorf("Logs footer = %v, want e stream and h/l tabs", hints)
+	if hints := m.footerHints().all(); !hasHint(hints, "e", "stream") || !hasHint(hints, "←↑↓→", "navigate") {
+		t.Errorf("Logs footer = %v, want e stream and the arrow hint", hints)
 	}
 }
 

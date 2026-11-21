@@ -88,14 +88,14 @@ func TestTapsFooterAndInfoAgreeOnActions(t *testing.T) {
 }
 
 // TestTapsFooterLeadsWithTheTapActions: the state's actions come first, then
-// navigate, the tabs, then add tap, which is always there.
+// add tap, which is always there. The list keys are on the arrow hint, not here.
 func TestTapsFooterLeadsWithTheTapActions(t *testing.T) {
 	m := tapsModel([]brew.Tap{{Name: "user/tool"}}, true)
 	var got []string
 	for _, h := range m.panelKeyHints() {
 		got = append(got, h.key+" "+h.desc)
 	}
-	want := []string{"t trust", "x untap", "r repair", "j/k navigate", "h/l tabs", "a add tap"}
+	want := []string{"t trust", "x untap", "r repair", "a add tap"}
 	if strings.Join(got[:len(want)], "|") != strings.Join(want, "|") {
 		t.Fatalf("Taps footer = %v, want it to start with %v", got, want)
 	}
