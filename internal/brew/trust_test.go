@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 func TestTrustServiceListTrusted(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
 		data := result.(*trustJSON)
 		*data = trustJSON{
@@ -38,7 +40,7 @@ func TestTrustServiceListTrusted(t *testing.T) {
 }
 
 func TestTrustServiceGetTapTrustStatusOfficial(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	cache := NewCache(time.Minute)
 	svc := NewTrustReader(r, cache)
 
@@ -52,7 +54,7 @@ func TestTrustServiceGetTapTrustStatusOfficial(t *testing.T) {
 }
 
 func TestTrustServiceGetTapTrustStatusUntrusted(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
 		data := result.(*trustJSON)
 		*data = trustJSON{}
@@ -71,7 +73,7 @@ func TestTrustServiceGetTapTrustStatusUntrusted(t *testing.T) {
 }
 
 func TestTrustServiceTrustTap(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -84,7 +86,7 @@ func TestTrustServiceTrustTap(t *testing.T) {
 }
 
 func TestTrustServiceUntrustTap(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -97,7 +99,7 @@ func TestTrustServiceUntrustTap(t *testing.T) {
 }
 
 func TestTrustServiceTrustFormula(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -110,7 +112,7 @@ func TestTrustServiceTrustFormula(t *testing.T) {
 }
 
 func TestTrustServiceTrustCask(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}

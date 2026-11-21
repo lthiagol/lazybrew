@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui"
 )
@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 
 func TestAppModelIsStill(t *testing.T) {
 	t.Setenv(config.AnimationsEnv, "0")
-	m, err := New(Options{Runner: brew.NewMockRunner()})
+	m, err := New(Options{Runner: brewtest.NewMockRunner()})
 	if err != nil {
 		t.Fatal("New() returned error:", err)
 	}
@@ -36,7 +36,7 @@ func TestAppModelIsStill(t *testing.T) {
 }
 
 func TestNewWithDefaults(t *testing.T) {
-	m, err := New(Options{Runner: brew.NewMockRunner()})
+	m, err := New(Options{Runner: brewtest.NewMockRunner()})
 	if err != nil {
 		t.Fatal("New() returned error:", err)
 	}
@@ -46,7 +46,7 @@ func TestNewWithDefaults(t *testing.T) {
 }
 
 func TestNewWithDebug(t *testing.T) {
-	m, err := New(Options{Debug: true, Runner: brew.NewMockRunner()})
+	m, err := New(Options{Debug: true, Runner: brewtest.NewMockRunner()})
 	if err != nil {
 		t.Fatal("New() with debug returned error:", err)
 	}
@@ -56,7 +56,7 @@ func TestNewWithDebug(t *testing.T) {
 }
 
 func TestNewWithConfigPath(t *testing.T) {
-	m, err := New(Options{ConfigPath: "/nonexistent/config.yml", Runner: brew.NewMockRunner()})
+	m, err := New(Options{ConfigPath: "/nonexistent/config.yml", Runner: brewtest.NewMockRunner()})
 	if err != nil {
 		t.Fatal("New() with config path returned error:", err)
 	}

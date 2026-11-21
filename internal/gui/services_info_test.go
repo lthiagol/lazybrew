@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // servicesRunner answers the two reads the Services panel makes: `services
 // list` with list, and `services info` with info or infoErr.
-func servicesRunner(list, info string, infoErr error) *brew.MockRunner {
-	r := brew.NewMockRunner()
+func servicesRunner(list, info string, infoErr error) *brewtest.MockRunner {
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		switch strings.Join(args, " ") {
 		case "services list --json":

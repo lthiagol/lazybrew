@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // captureStderr points os.Stderr at a file for the rest of the test, so
@@ -42,7 +43,7 @@ func TestDebugWithoutHomeLogsNothingToStderr(t *testing.T) {
 	t.Setenv("HOME", "")
 	stderr := captureStderr(t)
 
-	if _, err := New(Options{Debug: true, ConfigPath: "/nonexistent/config.yml", Runner: brew.NewMockRunner()}); err != nil {
+	if _, err := New(Options{Debug: true, ConfigPath: "/nonexistent/config.yml", Runner: brewtest.NewMockRunner()}); err != nil {
 		t.Fatal("New() returned error:", err)
 	}
 	brew.Logger().Debug("probe-after-setup")
@@ -62,7 +63,7 @@ func TestDebugLogGoesToTheFileNotStderr(t *testing.T) {
 	t.Setenv("HOME", home)
 	stderr := captureStderr(t)
 
-	if _, err := New(Options{Debug: true, ConfigPath: "/nonexistent/config.yml", Runner: brew.NewMockRunner()}); err != nil {
+	if _, err := New(Options{Debug: true, ConfigPath: "/nonexistent/config.yml", Runner: brewtest.NewMockRunner()}); err != nil {
 		t.Fatal("New() returned error:", err)
 	}
 	brew.Logger().Debug("probe-to-file")

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-)
 
-var assertAnError = errors.New("test error")
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
+)
 
 func afterTask() (<-chan string, <-chan error, error) {
 	errCh := make(chan error, 1)
@@ -258,7 +258,7 @@ func TestManager_RunImmediateError(t *testing.T) {
 	task := &Task{
 		ID: "fail",
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
-			return nil, nil, assertAnError
+			return nil, nil, brewtest.ErrTest
 		},
 	}
 
@@ -268,7 +268,7 @@ func TestManager_RunImmediateError(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected TaskCompletedMsg, got %T", msg)
 	}
-	if comp.Err != assertAnError {
+	if comp.Err != brewtest.ErrTest {
 		t.Errorf("expected error, got %v", comp.Err)
 	}
 	if task.Status != StatusFailed {
@@ -462,7 +462,7 @@ func TestManager_ErrorDoesNotDropBufferedLines(t *testing.T) {
 					for i := 0; i < lines; i++ {
 						out <- fmt.Sprint(i)
 					}
-					errCh <- assertAnError
+					errCh <- brewtest.ErrTest
 					close(out)
 				}()
 				return out, errCh, nil

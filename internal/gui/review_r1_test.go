@@ -11,6 +11,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
@@ -61,7 +62,7 @@ func TestBatchToggleOffThenUpgradeSkipsDeselected(t *testing.T) {
 
 func TestTapAddFlowRunsBrewTap(t *testing.T) {
 	var gotArgs [][]string
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		gotArgs = append(gotArgs, args)
 		return []byte(""), nil
@@ -153,7 +154,7 @@ func TestToastTickChainKeepsRearmingUntilExpired(t *testing.T) {
 
 func TestServicesCleanupTaskIsSerialized(t *testing.T) {
 	var gotArgs [][]string
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		gotArgs = append(gotArgs, args)
 		return []byte(""), nil
@@ -256,7 +257,7 @@ func TestOutdatedInfoTabShowsCorrectCask(t *testing.T) {
 
 func TestSearchInstallUsesCaskWriterForCasks(t *testing.T) {
 	var gotArgs [][]string
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		gotArgs = append(gotArgs, args)
 		ch := make(chan string)
@@ -297,7 +298,7 @@ func TestSearchInstallUsesCaskWriterForCasks(t *testing.T) {
 
 func TestSearchInstallUsesFormulaWriterForFormulae(t *testing.T) {
 	var gotArgs [][]string
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		gotArgs = append(gotArgs, args)
 		ch := make(chan string)
@@ -335,7 +336,7 @@ func TestSearchInstallUsesFormulaWriterForFormulae(t *testing.T) {
 
 func TestTogglePinLooksUpPinnedStateByName(t *testing.T) {
 	var gotArgs [][]string
-	r := brew.NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		gotArgs = append(gotArgs, args)
 		return []byte(""), nil

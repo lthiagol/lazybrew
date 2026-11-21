@@ -6,10 +6,12 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 func TestCasksReaderList(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(`{
 			"casks": [
@@ -70,7 +72,7 @@ func TestCasksReaderList(t *testing.T) {
 
 func TestCasksReaderListCached(t *testing.T) {
 	callCount := 0
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		callCount++
 		return []byte(`{"casks":[]}`), nil
@@ -87,7 +89,7 @@ func TestCasksReaderListCached(t *testing.T) {
 }
 
 func TestCasksReaderGet(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(`{
 			"casks": [{
@@ -115,7 +117,7 @@ func TestCasksReaderGet(t *testing.T) {
 }
 
 func TestCasksReaderGetMissing(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(`{"casks":[]}`), nil
 	}
@@ -132,7 +134,7 @@ func TestCasksReaderGetMissing(t *testing.T) {
 }
 
 func TestCasksReaderOutdated(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
 	}
@@ -153,7 +155,7 @@ func TestCasksReaderOutdated(t *testing.T) {
 }
 
 func TestCasksWriterInstall(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		ch := make(chan string, 1)
 		errCh := make(chan error, 1)
@@ -175,7 +177,7 @@ func TestCasksWriterInstall(t *testing.T) {
 }
 
 func TestCasksWriterZap(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		ch := make(chan string, 1)
 		errCh := make(chan error, 1)
@@ -197,7 +199,7 @@ func TestCasksWriterZap(t *testing.T) {
 }
 
 func TestCasksWriterPin(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -210,7 +212,7 @@ func TestCasksWriterPin(t *testing.T) {
 }
 
 func TestCasksWriterUnpin(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -223,7 +225,7 @@ func TestCasksWriterUnpin(t *testing.T) {
 }
 
 func TestCasksWriterUninstall(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		if len(args) < 2 || args[0] != "uninstall" || args[1] != "--cask" {
 			t.Errorf("args = %v, want [uninstall --cask <name>]", args)
@@ -248,7 +250,7 @@ func TestCasksWriterUninstall(t *testing.T) {
 }
 
 func TestCasksWriterReinstall(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		if len(args) < 2 || args[0] != "reinstall" || args[1] != "--cask" {
 			t.Errorf("args = %v, want [reinstall --cask <name>]", args)
@@ -273,7 +275,7 @@ func TestCasksWriterReinstall(t *testing.T) {
 }
 
 func TestCasksWriterUpgrade(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		if len(args) < 2 || args[0] != "upgrade" || args[1] != "--cask" {
 			t.Errorf("args = %v, want [upgrade --cask <name>]", args)
@@ -298,7 +300,7 @@ func TestCasksWriterUpgrade(t *testing.T) {
 }
 
 func TestCasksWriterUpgradeAll(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteStreamFn = func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 		if len(args) != 2 || args[0] != "upgrade" || args[1] != "--cask" {
 			t.Errorf("args = %v, want [upgrade --cask] (no name)", args)
@@ -322,7 +324,7 @@ func TestCasksWriterUpgradeAll(t *testing.T) {
 }
 
 func TestCasksOutdatedCoalescesConcurrentCalls(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	var calls int32
 	gate := make(chan struct{})
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
@@ -366,7 +368,7 @@ func TestCasksOutdatedCoalescesConcurrentCalls(t *testing.T) {
 }
 
 func TestCasksOutdatedCachesWithinTTL(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	var calls int32
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		atomic.AddInt32(&calls, 1)

@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // TestRefreshReadsEachListOnce: one RefreshMsg, with the formulae, casks, taps
@@ -35,7 +36,7 @@ func TestRefreshReadsEachListOnce(t *testing.T) {
 		"tap":                               true,
 		"services list --json":              true,
 	}
-	runner := &brew.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
+	runner := &brewtest.MockRunner{ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
 		key := strings.Join(args, " ")
 		mu.Lock()
 		calls[key]++

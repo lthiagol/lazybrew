@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // errBrewKilled mimics what the brew runner reports when exec.CommandContext
@@ -20,8 +21,8 @@ var errBrewKilled = errors.New("signal: killed")
 
 // blockingRunner returns a mock runner whose every invocation blocks until its
 // context is done and then fails the way a killed brew process fails.
-func blockingRunner() *brew.MockRunner {
-	r := brew.NewMockRunner()
+func blockingRunner() *brewtest.MockRunner {
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		<-ctx.Done()
 		return nil, errBrewKilled

@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // streamingRunner is a mock whose ExecuteStream yields no lines and reports
 // err once on its error channel, as a failed brew command does.
-func streamingRunner(err error) *MockRunner {
-	return &MockRunner{
+func streamingRunner(err error) *brewtest.MockRunner {
+	return &brewtest.MockRunner{
 		ExecuteStreamFn: func(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 			lines := make(chan string)
 			close(lines)

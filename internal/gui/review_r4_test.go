@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
@@ -130,7 +131,7 @@ func TestBatchSelectionKeptOnFailedOutdatedRefresh(t *testing.T) {
 	m := newTestModel()
 	seedOutdatedBatch(m, 2)
 
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Err: assertAnError})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelOutdated, Err: brewtest.ErrTest})
 	if len(m.batch.selected) != 2 {
 		t.Fatalf("a failed refresh keeps the list, so the selection must survive, got %d entries", len(m.batch.selected))
 	}

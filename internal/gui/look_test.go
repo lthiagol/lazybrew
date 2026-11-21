@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
@@ -116,7 +117,7 @@ func TestSidebarLabelStates(t *testing.T) {
 	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "2" {
 		t.Fatalf("loaded label = %q, want the count 2", got)
 	}
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Err: assertAnError})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Err: brewtest.ErrTest})
 	if got := plainLine(m.sidebarLabel(m.panels[PanelCasks]).full); got != "!" {
 		t.Fatalf("failed label = %q, want !", got)
 	}
@@ -137,7 +138,7 @@ func TestSidebarTitlesCarryIconOnlyWhenShown(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.GUI.ShowIcons = false
-	off := updateModel(New(brew.NewClient(brew.NewMockRunner()), cfg), tea.WindowSizeMsg{Width: 140, Height: 40})
+	off := updateModel(New(brew.NewClient(brewtest.NewMockRunner()), cfg), tea.WindowSizeMsg{Width: 140, Height: 40})
 	if top := plainLine(strings.Split(off.renderSidebar(), "\n")[0]); !strings.HasPrefix(top, "╭─ 1 Status ") {
 		t.Fatalf("show_icons off: title should be \"1 Status\" with no stray space, got %q", top)
 	}
@@ -428,7 +429,7 @@ func TestOperationAndLogGlyphsFollowIcons(t *testing.T) {
 			cfg := testConfig()
 			cfg.GUI.Icons = tc.icons
 			cfg.GUI.ShowIcons = tc.show
-			m := New(brew.NewClient(brew.NewMockRunner()), cfg)
+			m := New(brew.NewClient(brewtest.NewMockRunner()), cfg)
 
 			m.opState = &Operation{Title: "upgrading curl", Status: opRunning}
 			title := strings.Split(m.renderOperation(60, 10), "\n")[0]
@@ -541,7 +542,7 @@ func TestSidebarLabelsAtEightyColumns(t *testing.T) {
 	m = updateModel(m, tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Items: []string{"a", "b", "c"}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelSearch, Err: assertAnError})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelSearch, Err: brewtest.ErrTest})
 	m.panels[PanelOutdated].loading = true
 
 	rows := strings.Split(m.renderSidebar(), "\n")

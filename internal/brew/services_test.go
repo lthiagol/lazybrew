@@ -8,10 +8,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 func TestServicesServiceList(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(`[
 			{"name":"postgresql@16","status":"started","user":"thiago","file":"~/Library/LaunchAgents/homebrew.mxcl.postgresql@16.plist","exit_code":0},
@@ -48,7 +50,7 @@ func TestServicesServiceList(t *testing.T) {
 }
 
 func TestServicesServiceStart(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -61,7 +63,7 @@ func TestServicesServiceStart(t *testing.T) {
 }
 
 func TestServicesServiceStop(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -74,7 +76,7 @@ func TestServicesServiceStop(t *testing.T) {
 }
 
 func TestServicesServiceRestart(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -87,7 +89,7 @@ func TestServicesServiceRestart(t *testing.T) {
 }
 
 func TestServicesServiceRun(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -107,7 +109,7 @@ func TestServicesServiceRun(t *testing.T) {
 }
 
 func TestServicesServiceCleanupInvalidatesCache(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -136,7 +138,7 @@ func servicesInfoFixture(t *testing.T) []byte {
 }
 
 func TestServicesServiceInfoParsesRealShape(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	var gotArgs []string
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		gotArgs = args
@@ -194,7 +196,7 @@ func TestServicesServiceInfoParsesRealShape(t *testing.T) {
 }
 
 func TestServicesServiceInfoParsesSchedule(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(`[
 			{"name":"backup","service_name":"sh.brew.backup","running":false,"loaded":true,"schedulable":true,
@@ -228,7 +230,7 @@ func TestServicesServiceInfoParsesSchedule(t *testing.T) {
 }
 
 func TestServicesServiceInfoIsCached(t *testing.T) {
-	r := NewMockRunner()
+	r := brewtest.NewMockRunner()
 	calls := 0
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		calls++
@@ -256,7 +258,7 @@ func TestServicesWritesInvalidateServicesInfo(t *testing.T) {
 	}
 	for name, write := range writes {
 		t.Run(name, func(t *testing.T) {
-			r := NewMockRunner()
+			r := brewtest.NewMockRunner()
 			r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 				return []byte(""), nil
 			}
@@ -296,7 +298,7 @@ func TestServicesWriteNeedsSudoIsNamed(t *testing.T) {
 	for refusal, stderr := range refusals {
 		for action, write := range writes {
 			t.Run(refusal+"/"+action, func(t *testing.T) {
-				r := NewMockRunner()
+				r := brewtest.NewMockRunner()
 				r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 					return nil, &BrewExitError{Command: "services " + action, ExitCode: 1, Stderr: stderr}
 				}
@@ -321,7 +323,7 @@ func TestServicesWriteNeedsSudoIsNamed(t *testing.T) {
 func TestServicesWriteOtherErrorsUnchanged(t *testing.T) {
 	brewErr := &BrewExitError{Command: "services stop", ExitCode: 1, Stderr: "Error: Failed to stop moshi-hook: timed out"}
 	for _, cause := range []error{brewErr, errors.New("boom")} {
-		r := NewMockRunner()
+		r := brewtest.NewMockRunner()
 		r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 			return nil, cause
 		}

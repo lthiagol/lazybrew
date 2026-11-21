@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 var errWriteBoom = errors.New("boom")
@@ -17,7 +19,7 @@ func TestStreamingWriteInvalidatesAfterItFinishes(t *testing.T) {
 	ctx := context.Background()
 	var mu sync.Mutex
 	reads := 0
-	runner := &MockRunner{
+	runner := &brewtest.MockRunner{
 		ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
 			mu.Lock()
 			reads++
@@ -63,7 +65,7 @@ func TestStreamingWriteInvalidatesAfterItFinishes(t *testing.T) {
 // TestAutoremoveClearsFormulaeList: autoremove removes formulae, so the cached
 // formulae list must go.
 func TestAutoremoveClearsFormulaeList(t *testing.T) {
-	client := NewClient(NewMockRunner())
+	client := NewClient(brewtest.NewMockRunner())
 	client.Cache.Set(KeyFormulaeList, []Formula{{Name: "orphan"}})
 
 	_, errs := client.DiagnosticsWrite.Autoremove(context.Background(), false)
@@ -201,7 +203,7 @@ func TestWritesInvalidateTheirGroup(t *testing.T) {
 			}
 			t.Run(name, func(t *testing.T) {
 				var ran []string
-				runner := &MockRunner{
+				runner := &brewtest.MockRunner{
 					ExecuteFn: func(ctx context.Context, args ...string) ([]byte, error) {
 						ran = append(ran, strings.Join(args, " "))
 						if fail {

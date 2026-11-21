@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // A brew command whose sudo had no terminal names the command the user runs in
@@ -17,7 +19,7 @@ func TestSudoWithoutTerminalNamesTheCommand(t *testing.T) {
 	}
 	for name, stderr := range cases {
 		t.Run(name, func(t *testing.T) {
-			mock := NewMockRunner()
+			mock := brewtest.NewMockRunner()
 			mock.ExecuteFn = func(context.Context, ...string) ([]byte, error) {
 				return nil, &BrewExitError{Command: "install --cask foo", ExitCode: 1, Stderr: stderr}
 			}
@@ -39,7 +41,7 @@ func TestSudoWithoutTerminalNamesTheCommand(t *testing.T) {
 }
 
 func TestSudoStreamWithoutTerminalNamesTheCommand(t *testing.T) {
-	mock := NewMockRunner()
+	mock := brewtest.NewMockRunner()
 	mock.ExecuteStreamFn = func(context.Context, ...string) (<-chan string, <-chan error) {
 		lines := make(chan string)
 		close(lines)
@@ -59,7 +61,7 @@ func TestSudoStreamWithoutTerminalNamesTheCommand(t *testing.T) {
 // Other failures pass through untouched: the same error value comes back.
 func TestNonSudoFailureIsUnchanged(t *testing.T) {
 	want := &BrewExitError{Command: "install foo", ExitCode: 1, Stderr: "Error: No available formula"}
-	mock := NewMockRunner()
+	mock := brewtest.NewMockRunner()
 	mock.ExecuteFn = func(context.Context, ...string) ([]byte, error) { return nil, want }
 	_, err := NewClient(mock).Runner.Execute(context.Background(), "install", "foo")
 	if err != want {

@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // searchFormulaInstalled is `brew info --json=v2 jq` for an installed formula,
@@ -172,7 +173,7 @@ func TestSearchInfoCaskInstalledShowsVersionAndStatus(t *testing.T) {
 // error of the message (C11). brew's exit error carries only the exit code;
 // the line that says what went wrong is in its stderr.
 func TestSearchInfoBrewErrorIsShownAsBrewSaysIt(t *testing.T) {
-	runner := brew.NewMockRunner()
+	runner := brewtest.NewMockRunner()
 	runner.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return nil, &brew.BrewExitError{Command: "info --json=v2 zz", ExitCode: 1,
 			Stderr: "Error: No available formula with the name \"zz\".\n"}
