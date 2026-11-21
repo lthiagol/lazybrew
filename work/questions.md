@@ -883,3 +883,10 @@ text includes the status row (Failed text, elapsed), ANSI-free. Done in
   confirm, rather than doing nothing.
 - **Ask.** Keep typing (recommended, same as any other letter there), or swallow
   `I` so it does nothing at all?
+
+**Rulings (orchestrator, 2026-11-21):** Q-lb25-unknown-type: keep `unknown` at the
+right. Q-lb25-step-tick: keep ✔ for installed marks, finished steps and dependency
+marks, and make the `Completed in` row ✔ too (the user asked for one check mark
+across the whole interface); the trusted-tap `✓` and error/warn glyphs stay.
+Q-lb25-I-types: keep: `I` types into the Search box like any other letter. The
+Completed-row change is `fix-lb25-search-polish-r1`.
