@@ -737,3 +737,16 @@ arming it in `Init` in both branches preserves behaviour.
 **Ruling (orchestrator, 2026-11-20) — Q-cr1-cask-name:** real bug, out of cr1
 scope. Parked in `work/backlog.md` as LB-12 for a follow-up slice; the user
 decides when it runs.
+
+### Q-cr4-gui-dedup-r2-footer-tabs — should Status, Outdated and Taps footers show the tab keys
+
+- **Evidence.** `panelHints` (keybindings.go) leaves `[ ] tabs` off the Status,
+  Outdated and Taps footers, though all three have tabs (`panelTabs`). Status
+  states it as help-only (`stTabs`); Outdated and Taps show the keys only on
+  the Global help page (`keyTabs`). Formulae, Casks and Services show
+  `keyPanelTabs` in the footer.
+- **Effect.** The keymap test (`footerExempt`, keymap_test.go, cr4 fix r2)
+  exempts these keys from the footer, so the omission is recorded, not checked.
+- **Ask.** Is the omission on purpose? Showing the keys changes footer frames
+  and goldens, so it is out of the cr4 scope. Also: Status `j/k` are help-only
+  (`keyScroll`), though Status does list rows (`statusRows`).
