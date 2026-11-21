@@ -17,6 +17,8 @@ type DiagnosticsReader interface {
 	Vulns(ctx context.Context) (string, error)
 	Config(ctx context.Context) (*BrewConfig, error)
 	LastUpdate(ctx context.Context) (time.Time, error)
+	CleanupPreview(ctx context.Context) (CleanupPreview, error)
+	AutoremovePreview(ctx context.Context) (AutoremovePreview, error)
 	SetCacheTTLs(ttls CacheTTLs)
 }
 
