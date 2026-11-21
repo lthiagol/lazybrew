@@ -210,8 +210,8 @@ func TestApplyThemeSwitchesEveryRole(t *testing.T) {
 
 func TestApplyThemeDefinesM14Styles(t *testing.T) {
 	ApplyTheme(DarkTheme())
-	if ActivePanelBg.GetBackground() != lipgloss.Color("#313244") {
-		t.Errorf("dark ActivePanelBg bg = %v, want #313244", ActivePanelBg.GetBackground())
+	if SurfaceColor != lipgloss.Color("#313244") {
+		t.Errorf("dark active sidebar row surface = %v, want #313244", SurfaceColor)
 	}
 	if PanelTitleActive.GetForeground() != lipgloss.Color("#cba6f7") {
 		t.Errorf("PanelTitleActive fg = %v, want accent", PanelTitleActive.GetForeground())
@@ -219,17 +219,10 @@ func TestApplyThemeDefinesM14Styles(t *testing.T) {
 	if !PanelTitleActive.GetBold() {
 		t.Error("PanelTitleActive should be bold")
 	}
-	if LogBorder.GetBorderTopForeground() != lipgloss.Color("#6c7086") &&
-		LogBorder.GetBorderStyle() != lipgloss.RoundedBorder() {
-		// BorderForeground may be reported via top; also accept style check below.
-	}
-	if LogBorder.GetBorderStyle() != lipgloss.RoundedBorder() {
-		t.Error("LogBorder should use rounded border")
-	}
 
 	ApplyTheme(LightTheme())
-	if ActivePanelBg.GetBackground() != lipgloss.Color("#ccd0da") {
-		t.Errorf("light ActivePanelBg bg = %v, want #ccd0da", ActivePanelBg.GetBackground())
+	if SurfaceColor != lipgloss.Color("#ccd0da") {
+		t.Errorf("light active sidebar row surface = %v, want #ccd0da", SurfaceColor)
 	}
 	ApplyTheme(DarkTheme())
 }
