@@ -38,3 +38,13 @@
 ## Seen, not done
 - Success path re-reads installed lists after each successful task while Search has rows (cached).
 - AC-01 flow assertion is weak; a footer-level check would fix it.
+
+## Fix r2 (findings F-r1-01 … F-r1-06, one commit each)
+- F-r1-01 85290cd: `TestSearchTabCyclesAllPanelsFlow` (flows). Red with the AC-01 tab cases removed from keys.go: `after 2 keys: main title is not Status`. Green with the fix; 3/3 on repeat. Per-key `View()` is read from a teatest program run per key prefix: the renderer writes cursor-positioned diffs, so a panel title is never contiguous in the output stream. `TestSearchTabCycleFlow` kept as is.
+- F-r1-02 b0039d1: `TestSearchMarkClearsAfterUninstall` runs the batch its TaskCompletedMsg update returns. Red with `remarkSearch()` removed from it: `the row still says installed after the uninstall`.
+- F-r1-03 4f70534: `TestStaleSearchMarksDoNotLandOnNewRows`. Red without the name guard: `row "wget" became installed from marks for another search`.
+- F-r1-04 4c78f98: `TestRemarkKeepsMarksOfUnreadableList`. Red before the fix: `formula list unreadable: jq Installed = false, want true`. `markInstalled` keeps the marks of an unreadable type; doc comments in tasks_packages.go and brew/search.go corrected.
+- F-r1-05 ee85b8f: `TestSearchKeepsTheReadThatWorked` (ruling Q-lb19-search-partial). Red before the fix: `--cask failed: Search err = test error, want the other read's rows`. Both reads run; error only when both fail (the first read's error is returned).
+- F-r1-06 42696cb: `TestRetiredTabAndPageKeysDoNothing` extended to the open help screen. Red with a `pgdown` case in helpKey: `PgUp/PgDn scrolled the help screen: offset 2->7`.
+- Gate: `make ci` exit 0 (gui 90.6% ≥ 83, brew 87.8% ≥ 78, all floors met). `GOOS=darwin go build ./...` ok. `make test-fast` passed per commit.
+- No brew write commands run; the TUI was not launched. STATE.md row not changed (orchestrator's after re-review).
