@@ -45,6 +45,39 @@ func TestSearchServiceSearch(t *testing.T) {
 	}
 }
 
+// TestSearchKeepsTheReadThatWorked (lb19 AC-02, Q-lb19-search-partial): when one
+// typed read fails, the rows of the other read are kept. The search errors only
+// when both reads fail.
+func TestSearchKeepsTheReadThatWorked(t *testing.T) {
+	for _, tc := range []struct{ failFlag, want string }{{"--cask", "jq"}, {"--formula", "neovide"}} {
+		r := brewtest.NewMockRunner()
+		r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+			switch {
+			case args[1] == tc.failFlag:
+				return nil, brewtest.ErrTest
+			case args[1] == "--formula":
+				return []byte("jq\n"), nil
+			}
+			return []byte("neovide\n"), nil
+		}
+		results, err := NewSearchService(r).Search(context.Background(), "x")
+		if err != nil {
+			t.Fatalf("%s failed: Search err = %v, want the other read's rows", tc.failFlag, err)
+		}
+		if len(results) != 1 || results[0].Name != tc.want {
+			t.Errorf("%s failed: results = %+v, want only %s", tc.failFlag, results, tc.want)
+		}
+	}
+
+	both := brewtest.NewMockRunner()
+	both.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return nil, brewtest.ErrTest
+	}
+	if _, err := NewSearchService(both).Search(context.Background(), "x"); err == nil {
+		t.Error("both reads failed: Search err = nil, want an error")
+	}
+}
+
 func TestSearchServiceEmpty(t *testing.T) {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
