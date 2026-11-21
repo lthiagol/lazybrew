@@ -68,13 +68,15 @@ func (m Model) installedList(c depCheck) map[string]installedPkg {
 func (p *panelData) indexInstalled() {
 	switch p.id {
 	case PanelFormulae:
-		p.installed = make(map[string]installedPkg, len(p.formulae))
-		for _, f := range p.formulae {
+		formulae := p.fullFormulae()
+		p.installed = make(map[string]installedPkg, len(formulae))
+		for _, f := range formulae {
 			p.installed[f.Name] = installedPkg{version: f.Version, desc: f.Description}
 		}
 	case PanelCasks:
-		p.installed = make(map[string]installedPkg, len(p.casks))
-		for _, c := range p.casks {
+		casks := p.fullCasks()
+		p.installed = make(map[string]installedPkg, len(casks))
+		for _, c := range casks {
 			p.installed[c.Name] = installedPkg{version: c.Version, desc: c.Description}
 		}
 	default:

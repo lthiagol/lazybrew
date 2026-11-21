@@ -301,21 +301,17 @@ func (m Model) confirmUntap() (tea.Model, tea.Cmd) {
 }
 
 // installedFromTap names the installed formulae and casks whose full name is
-// under the tap: user/repo/<name>. A filtered Formulae list (leaves) is read
-// from the list it was filtered from, so a package the filter hides still counts.
+// under the tap: user/repo/<name>. A filtered list (leaves, or the query) is read
+// from the full list it was filtered from, so a package the filter hides still counts.
 func installedFromTap(m Model, tap string) []string {
 	prefix := tap + "/"
-	formulae := m.panels[PanelFormulae].formulae
-	if m.panels[PanelFormulae].leavesActive {
-		formulae = m.panels[PanelFormulae].unfilteredFormulae
-	}
 	var names []string
-	for _, f := range formulae {
+	for _, f := range m.panels[PanelFormulae].fullFormulae() {
 		if strings.HasPrefix(f.FullName, prefix) {
 			names = append(names, f.Name)
 		}
 	}
-	for _, c := range m.panels[PanelCasks].casks {
+	for _, c := range m.panels[PanelCasks].fullCasks() {
 		if strings.HasPrefix(c.FullName, prefix) {
 			names = append(names, c.Name)
 		}
