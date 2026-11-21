@@ -119,7 +119,7 @@ line to follow lazybrew's default for that key. The start of the sample:
 #   LAZYBREW_PRELOAD=0|1         gui.preload
 
 gui:                             # the interface
-  theme: dark                    # dark or light
+  theme: dark                    # one of the names under Themes below
   sidebar_width: 35              # percent of the terminal width, 15-50
   show_icons: true               # true or false; false draws no icons
   icons: nerd                    # nerd or unicode (no Nerd Font needed)
@@ -147,6 +147,15 @@ brew last updated, and runs `brew update` only if that was more than
 does not update behind your back, and the outdated list is only as fresh as your
 last `brew update`. The `R` key runs `brew update` with `auto` and `true`; with
 `false` it only reloads.
+
+**Themes.** `gui.theme` takes one of these names, in any case. Set it in the
+file and restart lazybrew; an unknown name is a config error that lists them.
+
+- `dark`: Catppuccin Mocha, the default.
+- `light`: Catppuccin Latte.
+- `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte`: the four Catppuccin flavours.
+- `dracula`: Dracula.
+- `nord`: Nord.
 
 `LAZYBREW_ICONS=unicode` (or `nerd`) overrides `gui.icons` for one run.
 
