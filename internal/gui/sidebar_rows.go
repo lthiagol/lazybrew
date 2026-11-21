@@ -142,6 +142,10 @@ func (p *panelData) typedRow(idx int, ic style.Icons) (sidebarCells, bool) {
 		if idx < len(p.services) {
 			return serviceCells(p.services[idx], ic), true
 		}
+	case PanelSearch:
+		if idx < len(p.results) {
+			return searchCells(p.results[idx], ic), true
+		}
 	}
 	return sidebarCells{}, false
 }
@@ -197,6 +201,24 @@ func tapCells(t brew.Tap, trustKnown bool, ic style.Icons) sidebarCells {
 		c.iconRole, c.right = style.SubtleText, ""
 	case !t.Trusted:
 		c.icon, c.iconRole, c.right = ic.Warn, style.OutdatedBadge, "untrusted"
+	}
+	return c
+}
+
+// searchCells is a Search row: the installed mark, or a blank cell as wide as
+// the mark for a row that is not installed, so names line up; then the name;
+// then the type, flush right. A row that brew gave no type says unknown.
+func searchCells(r brew.SearchResult, ic style.Icons) sidebarCells {
+	c := sidebarCells{name: r.Name, icon: strings.Repeat(" ", lipgloss.Width(ic.Installed)), iconRole: style.SubtleText}
+	if r.Installed {
+		c.icon, c.iconRole = ic.Installed, style.InstalledBadge
+	}
+	c.right, c.rightRole = "unknown", style.SubtleText
+	switch {
+	case r.IsFormula:
+		c.right = "formula"
+	case r.IsCask:
+		c.right = "cask"
 	}
 	return c
 }

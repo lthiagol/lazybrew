@@ -58,9 +58,9 @@ var panelTabs = map[PanelID][]tabInfo{
 type panelData struct {
 	id    PanelID
 	title string
-	// items holds one entry per row. On the package, tap and service panels it
-	// is the bare name; Status and Search have no typed rows, so it is their
-	// drawn text.
+	// items holds one entry per row. On the package, tap, service and Search
+	// panels it is the bare name; Status has no typed rows, so it is its drawn
+	// text.
 	items           []string
 	unfilteredItems []string
 	// unfilteredFormulae holds the formulae the leaves filter narrows, so leaves

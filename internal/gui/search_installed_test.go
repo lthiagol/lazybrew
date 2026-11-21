@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // searchRunner answers the two typed search reads with the headerless rows
@@ -51,29 +51,37 @@ func searchDone(t *testing.T, r *brewtest.MockRunner, query string) SearchDoneMs
 	return done
 }
 
-// TestSearchRowsCarryTypeAndInstalledState (lb19 AC-02): each row names its
-// type, a row for an installed cask says installed, and no row says unknown.
+// TestSearchRowsCarryTypeAndInstalledState (lb19 AC-02, lb25 AC-02): each row
+// names its type and installed state in its result, and its cells draw them:
+// the mark for an installed row, the type word, and no row says unknown.
 func TestSearchRowsCarryTypeAndInstalledState(t *testing.T) {
 	done := searchDone(t, searchRunner(nil), "claude-code")
 	if done.Err != nil {
 		t.Fatal(done.Err)
 	}
-	want := map[string]string{
-		"claude-code-router":    "claude-code-router  formula  ",
-		"claude-code-templates": "claude-code-templates  formula  ",
-		"claude-code":           "claude-code  cask  installed  ",
-		"claude-code@latest":    "claude-code@latest  cask  ",
+	want := map[string]struct {
+		typ       string
+		installed bool
+	}{
+		"claude-code-router":    {"formula", false},
+		"claude-code-templates": {"formula", false},
+		"claude-code":           {"cask", true},
+		"claude-code@latest":    {"cask", false},
 	}
-	if len(done.Results) != len(want) {
-		t.Fatalf("got %d rows, want %d: %q", len(done.Results), len(want), done.Results)
+	if len(done.Raw) != len(want) {
+		t.Fatalf("got %d rows, want %d: %+v", len(done.Raw), len(want), done.Raw)
 	}
-	for _, row := range done.Results {
-		name, _, _ := strings.Cut(row, "  ")
-		if !strings.HasPrefix(row, want[name]) {
-			t.Errorf("row %q, want prefix %q", row, want[name])
+	for i, r := range done.Raw {
+		if done.Results[i] != r.Name {
+			t.Errorf("item %d is %q, want the row's name %q", i, done.Results[i], r.Name)
 		}
-		if strings.Contains(row, "unknown") {
-			t.Errorf("row %q still says unknown", row)
+		w := want[r.Name]
+		cells := searchCells(r, style.UnicodeIcons)
+		if cells.right != w.typ {
+			t.Errorf("row %q type = %q, want %q", r.Name, cells.right, w.typ)
+		}
+		if marked := cells.icon == style.UnicodeIcons.Installed; marked != w.installed {
+			t.Errorf("row %q installed mark = %v, want %v", r.Name, marked, w.installed)
 		}
 	}
 }
@@ -86,9 +94,9 @@ func TestSearchInstalledListUnreadableKeepsTypes(t *testing.T) {
 	if done.Err != nil {
 		t.Fatalf("search failed on an unreadable installed list: %v", done.Err)
 	}
-	for _, row := range done.Results {
-		if strings.Contains(row, "installed") {
-			t.Errorf("row %q marked installed with no installed list", row)
+	for _, r := range done.Raw {
+		if r.Installed {
+			t.Errorf("row %q marked installed with no installed list", r.Name)
 		}
 	}
 	if done.Raw[0].IsFormula != true || done.Raw[2].IsCask != true {

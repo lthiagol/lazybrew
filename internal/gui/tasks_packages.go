@@ -35,23 +35,12 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 	}
 }
 
-// searchItems is the rows the Search panel shows: name, type, installed mark,
-// description. A row with no description ends after its marks.
+// searchItems is the name of each row the Search panel shows. The row itself
+// is drawn from its SearchResult (searchCells), so the items hold no text.
 func searchItems(results []brew.SearchResult) []string {
 	items := make([]string, len(results))
 	for i, r := range results {
-		typ := ""
-		switch {
-		case r.IsFormula:
-			typ = "formula"
-		case r.IsCask:
-			typ = "cask"
-		}
-		installed := ""
-		if r.Installed {
-			installed = "installed"
-		}
-		items[i] = r.Name + "  " + typ + "  " + installed + "  " + r.Description
+		items[i] = r.Name
 	}
 	return items
 }
