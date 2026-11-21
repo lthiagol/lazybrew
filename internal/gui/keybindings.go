@@ -52,6 +52,7 @@ var (
 	keyPanelTabs       = keyHint{key: "h/l", keys: "h l left right", desc: "tabs"}
 	keyUpgradeSelected = keyHint{key: "u", keys: "u", desc: "upgrade", help: "Upgrade selected"}
 	keyUpgradeAll      = keyHint{key: "U", desc: "upgrade all", help: "Upgrade all"}
+	keyCopy            = keyHint{key: "y", desc: "copy", help: "Copy the shown text"}
 )
 
 // Formulae.
@@ -164,7 +165,7 @@ func tapActionHints(t brew.Tap, trustKnown bool) []keyHint {
 // tapsHints is the Taps footer: the actions for the selected tap lead, then the
 // keys that apply to any tap.
 func tapsHints(p *panelData) []keyHint {
-	hints := []keyHint{keyNavigate, keyPanelTabs, tAdd}
+	hints := []keyHint{keyNavigate, keyPanelTabs, tAdd, keyCopy}
 	if t := p.selectedTap(); t != nil {
 		hints = append(tapActionHints(*t, !p.trustUnknown), hints...)
 	}
@@ -174,7 +175,7 @@ func tapsHints(p *panelData) []keyHint {
 // servicesHints is the Services footer: the actions for the selected service
 // lead, then the keys that apply in any state.
 func servicesHints(p *panelData) []keyHint {
-	hints := []keyHint{keyNavigate, keyPanelTabs, svCleanup}
+	hints := []keyHint{keyNavigate, keyPanelTabs, svCleanup, keyCopy}
 	if s := p.selectedService(); s != nil {
 		hints = append(serviceActionHints(*s), hints...)
 	}
@@ -186,17 +187,17 @@ func servicesHints(p *panelData) []keyHint {
 func panelHints(id PanelID) []keyHint {
 	switch id {
 	case PanelFormulae:
-		return []keyHint{keyNavigate, keyPanelTabs, fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch}
+		return []keyHint{keyNavigate, keyPanelTabs, fInstall, fRemove, fReinstall, keyUpgradeSelected, keyUpgradeAll, fPin, fLeaves, fFetch, keyCopy}
 	case PanelCasks:
-		return []keyHint{keyNavigate, keyPanelTabs, cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch}
+		return []keyHint{keyNavigate, keyPanelTabs, cInstall, cRemove, cZap, cReinstall, cUpgrade, keyUpgradeAll, cFetch, keyCopy}
 	case PanelServices:
-		return []keyHint{keyNavigate, keyPanelTabs, svStart, svStop, svRestart, svRun, svCleanup}
+		return []keyHint{keyNavigate, keyPanelTabs, svStart, svStop, svRestart, svRun, svCleanup, keyCopy}
 	case PanelTaps:
-		return []keyHint{keyNavigate, keyPanelTabs, tAdd, tUntap, tTrust, tRepair}
+		return []keyHint{keyNavigate, keyPanelTabs, tAdd, tUntap, tTrust, tRepair, keyCopy}
 	case PanelStatus:
-		return []keyHint{keyNavigate, keyPanelTabs, keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing}
+		return []keyHint{keyNavigate, keyPanelTabs, keyRefresh, stCleanup, stDoctor, stAutoremove, stBrewfile, stVulns, stMissing, keyCopy}
 	case PanelOutdated:
-		return []keyHint{keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll}
+		return []keyHint{keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll, oSelect, oSelectAll, keyCopy}
 	case PanelSearch:
 		return []keyHint{keyNavigate, sExecute, sInstall, sInstallCap, sUninstall, sFetch}
 	default:

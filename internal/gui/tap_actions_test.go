@@ -76,7 +76,7 @@ func TestTapsFooterAndInfoAgreeOnActions(t *testing.T) {
 			m := tapsModel([]brew.Tap{c.tap}, c.trustKnown)
 			info := ansi.Strip(renderTapInfo(m.panels[PanelTaps], 100))
 			for _, h := range m.panelKeyHints() {
-				if h.key == "j/k" || h.key == "h/l" || h.key == "a" {
+				if h.key == "j/k" || h.key == "h/l" || h.key == "a" || h.key == "y" {
 					continue
 				}
 				if !strings.Contains(info, h.key+" "+h.desc) {

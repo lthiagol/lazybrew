@@ -534,7 +534,7 @@ func TestModalHintsMatchUpdate(t *testing.T) {
 var keyTable = []keyHint{
 	keyNext, keyPrev, keyJump, keyScroll, keyEnds, keyTabs, keySearch,
 	keyHelp, keyRefresh, keyLog, keyQuit, keyClose, keyHelpOff,
-	keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll,
+	keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll, keyCopy,
 	fInstall, fRemove, fReinstall, fPin, fLeaves, fFetch,
 	cInstall, cRemove, cZap, cReinstall, cUpgrade, cFetch,
 	oSelect, oSelectAll,
