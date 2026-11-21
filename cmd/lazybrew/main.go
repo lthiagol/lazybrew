@@ -10,7 +10,18 @@ import (
 	"github.com/lthiagol/lazybrew/internal/app"
 )
 
-var version = "1.0.0-rc1"
+// version is set at link time with -ldflags "-X main.version=...". Left empty,
+// it falls back to the module version in the build info, then to "dev".
+var version = ""
+
+// buildVersion is the module version the binary was built from. A build from a
+// checkout records "(devel)", which is not a version, so it reads as "dev".
+func buildVersion() string {
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
 
 func main() {
 	showVersion := flag.Bool("version", false, "Print version and exit")
@@ -18,10 +29,8 @@ func main() {
 	enableDebug := flag.Bool("debug", false, "Enable debug logging")
 	flag.Parse()
 
-	if info, ok := debug.ReadBuildInfo(); ok && version == "1.0.0-rc1" {
-		if info.Main.Version != "(devel)" {
-			version = info.Main.Version
-		}
+	if version == "" {
+		version = buildVersion()
 	}
 
 	if *showVersion {
