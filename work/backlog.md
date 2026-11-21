@@ -105,3 +105,8 @@ Latte). Config only: no live switching (user ruling 2026-11-21).
 global), dim `·` between hints, one arrow hint `←↑↓→ navigate` (user ruling), `tab next`,
 `1-7 jump`; `h/j/k/l` and `shift+tab` leave the footer and stay on `?`. Touches every
 golden and the keymap test, so it goes after the key changes above.
+
+**LB-27 (parked)** — Latte (`light`) roles under the contrast floors: Muted 2.30:1 (floor
+3), Success 2.96, Warning 2.31, Info 4.34, Subtle 4.37 (floor 4.5). Remap them to darker
+official Latte tokens (e.g. Subtext1/Overlay2 for Muted, Green/Yellow shades) and update
+the `light` goldens, if the user finds light mode hard to read. Raised by lb28 (`Q-lb28-latte-contrast`).

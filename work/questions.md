@@ -919,3 +919,7 @@ glyphs unchanged). `fix-lb25-search-polish-r2`.
 - **Ask.** Keep Latte as it is, with the five roles pinned (recommended: the
   frames stay byte-identical), or darken those five roles in a later slice
   (every Latte frame golden changes)?
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb28-latte-contrast:** keep Latte exactly as it is
+(official palette, `light` frames stay byte-identical). Its low-contrast roles are parked as
+LB-27; the test keeps `latteBelow` so they cannot get worse.
