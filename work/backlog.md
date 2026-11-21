@@ -85,7 +85,7 @@ nothing in production calls it, but `init()` does (wording).
 
 ## Planned — user requests, 2026-11-21 (macOS smoke follow-ups), in this order
 
-**LB-22 (planned, slice lb25-search-polish)** — Search rows on the cell system: name
+**LB-22 (closed, lb25-search-polish)** — Search rows on the cell system: name
 left, `formula`/`cask` right-aligned; a green mark before the name replaces the word
 `installed`; drop the duplicate `I` (Search `i` only). Decided: a green check ✔ (like brew) marks installed on Formulae, Casks and Search alike.
 
