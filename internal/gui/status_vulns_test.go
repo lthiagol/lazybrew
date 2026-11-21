@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -191,6 +192,88 @@ func TestVulnsTabFrames(t *testing.T) {
 					}
 				})
 			}
+		}
+	}
+}
+
+// TestVulnsTimeoutShowsErrorAndHint: a check that outlasts its budget shows the
+// timeout as the error line, with the hint to retry with v (F-r1-03).
+func TestVulnsTimeoutShowsErrorAndHint(t *testing.T) {
+	defer func(d time.Duration) { brewVulnsTimeout = d }(brewVulnsTimeout)
+	brewVulnsTimeout = 50 * time.Millisecond
+
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	m := loadedStatus(140, 40)
+	m.client = brew.NewClient(r)
+	m = pressStatus(m, "v")
+
+	if m.vulns.status != vulnsFailed {
+		t.Fatalf("status %v, want failed", m.vulns.status)
+	}
+	out := ansi.Strip(m.View().Content)
+	if !strings.Contains(out, "brew vulns timed out after 50ms") {
+		t.Errorf("the tab should name the timeout:\n%s", out)
+	}
+	if !strings.Contains(out, vulnsHint) {
+		t.Errorf("a timeout should keep the hint to retry with v:\n%s", out)
+	}
+}
+
+// TestVulnsRunningFrameFitsAt80x24: while the check runs, the tab shows the
+// spinner and Checking… in a frame of the terminal's size, in both themes.
+func TestVulnsRunningFrameFitsAt80x24(t *testing.T) {
+	defer style.ApplyTheme(style.DarkTheme())
+	for theme, th := range map[string]*style.Theme{"dark": style.DarkTheme(), "light": style.LightTheme()} {
+		style.ApplyTheme(th)
+		t.Run(theme, func(t *testing.T) {
+			calls := 0
+			m := loadedStatus(80, 24)
+			m.client = brew.NewClient(vulnsRunner("CVE-2026-1: openssl@3\n", nil, &calls))
+			nm, _ := m.Update(vKey) // the check is started, not landed: it is running
+			m = modelOf(nm)
+
+			view := m.View().Content
+			assertFrameSize(t, view, 80, 24)
+			if !strings.Contains(ansi.Strip(view), "Checking…") {
+				t.Errorf("a running check should say so:\n%s", ansi.Strip(view))
+			}
+		})
+	}
+}
+
+// TestYCopiesTheVulnsReportWhole: y on the Vulns tab copies the whole report,
+// every line uncut and ANSI-free, although the pane at 80 columns wraps it.
+func TestYCopiesTheVulnsReportWhole(t *testing.T) {
+	report := "CVE-2026-1: openssl@3 " + strings.Repeat("affected-advisory ", 6) + "end\n" +
+		"CVE-2026-2: node " + strings.Repeat("unfixed-version ", 8) + "end\n"
+	calls := 0
+	m := loadedStatus(80, 24)
+	copied := captureClipboard(m)
+	m.client = brew.NewClient(vulnsRunner(report, nil, &calls))
+	m = pressStatus(m, "v")
+
+	if out := ansi.Strip(m.View().Content); !strings.Contains(out, "CVE-2026-1") {
+		t.Fatalf("the report should be on screen:\n%s", out)
+	}
+	m = sendKey(m, "y")
+
+	if len(*copied) != 1 {
+		t.Fatalf("y copied %d times, want 1", len(*copied))
+	}
+	got := (*copied)[0]
+	if ansi.Strip(got) != got {
+		t.Errorf("the copy holds escape codes: %q", got)
+	}
+	if strings.Contains(got, "…") {
+		t.Errorf("the copy is cut: %q", got)
+	}
+	for _, line := range strings.Split(strings.TrimRight(report, "\n"), "\n") {
+		if !strings.Contains(got, line) {
+			t.Errorf("the copy lacks %q whole:\n%s", line, got)
 		}
 	}
 }
