@@ -89,7 +89,7 @@ nothing in production calls it, but `init()` does (wording).
 left, `formula`/`cask` right-aligned; a green mark before the name replaces the word
 `installed`; drop the duplicate `I` (Search `i` only). Decided: a green check ✔ (like brew) marks installed on Formulae, Casks and Search alike.
 
-**LB-23 (planned, slice lb26-list-filter)** — `/` on Formulae and Casks filters the
+**LB-23 (closed, lb26-list-filter)** — `/` on Formulae and Casks filters the
 loaded list locally as you type (generic panel filter; Outdated later). Global search
 stays on `7` then `/`, and `/` on the other panels.
 
