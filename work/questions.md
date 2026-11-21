@@ -942,3 +942,9 @@ LB-27; the test keeps `latteBelow` so they cannot get worse.
   differ outside the footer row. The brief says only the footer row differs.
 - **Ask.** Keep the Info key lines in the new style (recommended: one renderer), or
   give them back the two-space style?
+
+**Rulings (orchestrator, 2026-11-21):** Q-lb29-sample-width: keep the rule-derived row (the
+brief's 167-cell sample cannot be drawn at 140; the narrow-width rules decide what drops; the
+`x remove` wording stays). Q-lb29-info-keylines: keep the Tap Info and Services Info key lines
+in the new `·` style (one renderer); the 12 frames that differ outside the footer row are
+expected.
