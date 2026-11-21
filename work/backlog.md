@@ -71,3 +71,9 @@ by the lb19 r2 review.
 `--cask`; for a name that is both a formula and a cask brew may show the
 formula. The row's type is now certain, so pass `--cask` for cask rows. Raised
 by the lb19 r1 review.
+
+**LB-20 (parked)** — two edges from the lb19 r2 review: (a) if one typed search
+read exits 1 (no results) and the other fails, the user sees an empty list and no
+error, which reads as "no results"; (b) two writes that finish back to back can
+land their Search re-marks out of order, so a slow first re-mark could restore a
+stale mark (the name guard does not cover it).
