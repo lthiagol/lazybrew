@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -25,10 +26,12 @@ const vulnSummaryMin = 20
 // vulnsReportView is a finished check: brew's text when its JSON could not be
 // read, else the report. A report with nothing found says so; otherwise it is the
 // summary, the severity chips, one block per affected package, and the footer.
+// A copy (y) draws the same report with nothing wrapped and the full lists in it.
 func (m Model) vulnsReportView(r brew.VulnReport, width int) string {
 	if !r.Parsed {
 		return vulnsTextView(r.Text, width)
 	}
+	full := m.copying
 	affected := affectedPackages(r.Findings)
 	var out []string
 	if len(affected) == 0 {
@@ -37,10 +40,10 @@ func (m Model) vulnsReportView(r brew.VulnReport, width int) string {
 	} else {
 		out = append(out, vulnsSummary(r, affected, width)...)
 		for _, f := range affected {
-			out = append(out, vulnBlock(f, width)...)
+			out = append(out, m.vulnBlock(f, width, full)...)
 		}
 	}
-	if footer := vulnsFooter(r, width); len(footer) > 0 {
+	if footer := vulnsFooter(r, width, full); len(footer) > 0 {
 		out = append(out, "")
 		out = append(out, footer...)
 	}
@@ -84,6 +87,17 @@ func worstRank(f brew.VulnFinding) int {
 	worst := 0
 	for _, v := range f.Vulnerabilities {
 		worst = max(worst, brew.SeverityRank(v.Severity))
+	}
+	return worst
+}
+
+// worstSeverity is the severity of the worst of a finding's vulnerabilities.
+func worstSeverity(f brew.VulnFinding) string {
+	worst := ""
+	for _, v := range f.Vulnerabilities {
+		if brew.SeverityRank(v.Severity) > brew.SeverityRank(worst) {
+			worst = v.Severity
+		}
 	}
 	return worst
 }
@@ -150,27 +164,129 @@ func vulnsSummary(r brew.VulnReport, affected []brew.VulnFinding, width int) []s
 }
 
 // vulnBlock is one affected package: its name and version, its worst severity and
-// how many vulnerabilities it has, then a table of them.
-func vulnBlock(f brew.VulnFinding, width int) []string {
+// how many vulnerabilities it has, the next step, then a table of them. full is a
+// copy, where the header is one line and nothing is wrapped.
+func (m Model) vulnBlock(f brew.VulnFinding, width int, full bool) []string {
 	name := f.Formula
 	if f.Version != "" {
 		name += " " + f.Version
 	}
 	worst := severityWord(worstSeverity(f))
-	head := style.TextStyle.Bold(true).Render(name) + "  " +
+	left := style.TextStyle.Bold(true).Render(name) + "  " +
 		severityStyle(worst).Render(worst) + style.MutedText.Render(fmt.Sprintf(" ×%d", len(f.Vulnerabilities)))
-	return append([]string{head}, append(vulnTable(sortedVulns(f.Vulnerabilities), width), "")...)
+	step, role := m.vulnNextStep(f)
+	head := vulnHeader(left, role.Render(step), width, full)
+	return append(head, append(vulnTable(sortedVulns(f.Vulnerabilities), width, full), "")...)
 }
 
-// worstSeverity is the severity of the worst of a finding's vulnerabilities.
-func worstSeverity(f brew.VulnFinding) string {
-	worst := ""
-	for _, v := range f.Vulnerabilities {
-		if brew.SeverityRank(v.Severity) > brew.SeverityRank(worst) {
-			worst = v.Severity
+// vulnHeader is a block's header: its left part, with the next step at the right
+// when the width has room for it. A copy keeps the step on the same line, two
+// cells after the name, since the copy has no width to right-align to.
+func vulnHeader(left, step string, width int, full bool) []string {
+	switch {
+	case full:
+		return []string{left + "  " + step}
+	case lipgloss.Width(left)+2+lipgloss.Width(step) <= width:
+		return []string{left + strings.Repeat(" ", width-lipgloss.Width(left)-lipgloss.Width(step)) + step}
+	}
+	return []string{left, step}
+}
+
+// vulnNextStep is what to do about a package, as a short phrase and its role. An
+// Outdated formula, when the Outdated list has loaded, is upgraded; else a released
+// fix is named (the highest); else the fix is said to be upstream only, or missing.
+// A package whose vulnerabilities are all UNKNOWN draws its phrase muted.
+func (m Model) vulnNextStep(f brew.VulnFinding) (string, lipgloss.Style) {
+	text, role := "no fix yet", style.WarningText
+	if fix, ok := highestReleasedFix(f); ok {
+		text = "fix in " + fix
+	} else if hasFixedVersion(f) {
+		text, role = "fixed upstream, not released", style.MutedText
+	}
+	if old, ok := m.outdatedFormula(f.Formula); ok {
+		text, role = "upgrade", style.SuccessText
+		if old.NewVersion != "" {
+			text += " → " + old.NewVersion
 		}
 	}
-	return worst
+	if allUnknown(f) {
+		role = style.MutedText
+	}
+	return text, role
+}
+
+// outdatedFormula is the formula of that name on the Outdated panel. It is not
+// found while the panel has not loaded: then there is no claim to make.
+func (m Model) outdatedFormula(name string) (brew.Formula, bool) {
+	p := m.panels[PanelOutdated]
+	if !p.loaded {
+		return brew.Formula{}, false
+	}
+	for _, f := range p.formulae {
+		if f.Name == name {
+			return f, true
+		}
+	}
+	return brew.Formula{}, false
+}
+
+// highestReleasedFix is the highest released fix version among a finding's
+// advisories. A commit SHA is not a release and is never named.
+func highestReleasedFix(f brew.VulnFinding) (string, bool) {
+	best, found := "", false
+	for _, v := range f.Vulnerabilities {
+		for _, fix := range v.FixedVersions {
+			if brew.ReleasedFix(fix) && (!found || versionAfter(fix, best)) {
+				best, found = fix, true
+			}
+		}
+	}
+	return best, found
+}
+
+// hasFixedVersion is whether any advisory of a finding names a fix, released or not.
+func hasFixedVersion(f brew.VulnFinding) bool {
+	for _, v := range f.Vulnerabilities {
+		if len(v.FixedVersions) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// allUnknown is whether every advisory of a finding has an UNKNOWN severity.
+func allUnknown(f brew.VulnFinding) bool {
+	for _, v := range f.Vulnerabilities {
+		if severityWord(v.Severity) != "UNKNOWN" {
+			return false
+		}
+	}
+	return true
+}
+
+// versionAfter is whether version a is later than b. Dotted parts compare as
+// numbers where both are numbers, else as text; a leading v is ignored.
+func versionAfter(a, b string) bool {
+	pa, pb := versionParts(a), versionParts(b)
+	for i := range min(len(pa), len(pb)) {
+		if pa[i] == pb[i] {
+			continue
+		}
+		na, errA := strconv.Atoi(pa[i])
+		nb, errB := strconv.Atoi(pb[i])
+		if errA == nil && errB == nil {
+			return na > nb
+		}
+		return pa[i] > pb[i]
+	}
+	return len(pa) > len(pb)
+}
+
+// versionParts splits a version at its dots, dashes, underscores and pluses.
+func versionParts(v string) []string {
+	return strings.FieldsFunc(strings.TrimPrefix(v, "v"), func(r rune) bool {
+		return r == '.' || r == '-' || r == '_' || r == '+'
+	})
 }
 
 // sortedVulns is a copy of vulns, worst first and then by ID.
@@ -188,17 +304,21 @@ func sortedVulns(vulns []brew.Vulnerability) []brew.Vulnerability {
 
 // vulnTable is the ID, Severity and Summary of each vulnerability. The summary is
 // wrapped to the width left, so no word is cut; the other cells sit on its first
-// line only.
-func vulnTable(vulns []brew.Vulnerability, width int) []string {
+// line only. A copy (full) keeps each summary on one line and adds the fixed
+// versions under it.
+func vulnTable(vulns []brew.Vulnerability, width int, full bool) []string {
 	idW := lipgloss.Width("ID")
 	for _, v := range vulns {
 		idW = max(idW, lipgloss.Width(v.ID))
 	}
 	sumW := max(vulnSummaryMin, width-idW-vulnSevW-2*tableGap)
+	if full {
+		sumW = 0
+	}
 	gap := strings.Repeat(" ", tableGap)
+	blank := strings.Repeat(" ", idW) + gap + strings.Repeat(" ", vulnSevW) + gap
 
 	rows := []string{style.MutedText.Render(padRight("ID", idW) + gap + padRight("Severity", vulnSevW) + gap + "Summary")}
-	blank := strings.Repeat(" ", idW) + gap + strings.Repeat(" ", vulnSevW) + gap
 	for _, v := range vulns {
 		sev := severityWord(v.Severity)
 		for i, line := range wrapWords(v.Summary, sumW) {
@@ -208,14 +328,21 @@ func vulnTable(vulns []brew.Vulnerability, width int) []string {
 			}
 			rows = append(rows, lead+line)
 		}
+		if full && len(v.FixedVersions) > 0 {
+			rows = append(rows, blank+"fixed versions: "+strings.Join(v.FixedVersions, ", "))
+		}
 	}
 	return rows
 }
 
 // wrapWords breaks s into lines at most w cells wide, at spaces only. A word is
 // kept whole unless it is wider than w, when it is cut across lines. Hyphens do
-// not break a word, so "-d" and "AES-GCM-SIV" stay as they are written.
+// not break a word, so "-d" and "AES-GCM-SIV" stay as they are written. A width
+// of 0 or less keeps s on one line.
 func wrapWords(s string, w int) []string {
+	if w <= 0 {
+		return []string{strings.Join(strings.Fields(s), " ")}
+	}
 	var lines []string
 	line := ""
 	for _, word := range strings.Fields(s) {
@@ -245,9 +372,12 @@ func wrapWords(s string, w int) []string {
 }
 
 // vulnsFooter is the muted footer: the findings the formula patches resolve, per
-// package, and the packages brew did not scan. The names of the packages not
-// scanned are in the copy only.
-func vulnsFooter(r brew.VulnReport, width int) []string {
+// package, and the packages brew did not scan. A copy names the packages not
+// scanned, and the patched IDs under each package that has them; the view counts.
+func vulnsFooter(r brew.VulnReport, width int, full bool) []string {
+	if full {
+		width = 0
+	}
 	var lines []string
 	var parts []string
 	patched := 0
@@ -260,19 +390,34 @@ func vulnsFooter(r brew.VulnReport, width int) []string {
 	if patched > 0 {
 		text := fmt.Sprintf("%d resolved by formula %s (%s)", patched, plural(patched, "patch", "patches"), strings.Join(parts, ", "))
 		lines = append(lines, mutedLines(text, width)...)
+		if full {
+			for _, f := range r.Findings {
+				if len(f.Patched) == 0 {
+					continue
+				}
+				ids := make([]string, len(f.Patched))
+				for i, v := range f.Patched {
+					ids[i] = v.ID
+				}
+				lines = append(lines, style.MutedText.Render(f.Formula+" patched: "+strings.Join(ids, ", ")))
+			}
+		}
 	}
 	if n := len(r.SkippedFormulae); n > 0 {
 		text := fmt.Sprintf("%d %s not scanned (no supported source URL)", n, plural(n, "package", "packages"))
+		if full {
+			text += ": " + strings.Join(r.SkippedFormulae, ", ")
+		}
 		lines = append(lines, mutedLines(text, width)...)
 	}
 	return lines
 }
 
-// mutedLines is text in the muted role, wrapped to width.
+// mutedLines is text in the muted role, wrapped to width (one line at 0).
 func mutedLines(text string, width int) []string {
 	var out []string
-	for _, line := range wrapContent(text, width) {
-		out = append(out, style.MutedText.Render(strings.TrimRight(line, " ")))
+	for _, line := range wrapWords(text, width) {
+		out = append(out, style.MutedText.Render(line))
 	}
 	return out
 }

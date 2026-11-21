@@ -79,8 +79,12 @@ lists every key. The bottom bar leaves out `Shift+Tab`, `j`/`k` and `h`/`l`; the
 screen lists them.
 
 On Status, `d`, `m` and `v` open the Doctor, Missing and Vulns tabs. `d` and `m` load
-their tab afresh. `v` runs `brew vulns`, which queries OSV.dev over the network;
-opening the Vulns tab alone runs nothing.
+their tab afresh. `v` runs `brew vulns --json`, which queries OSV.dev over the network;
+opening the Vulns tab alone runs nothing. The tab shows a summary, the severity counts,
+then each affected package with a table of its advisories and a next step: `upgrade → <version>`
+when Outdated lists it, else the highest released `fix in <version>`, else whether a fix is only
+upstream or missing. `y` copies the whole report, with the full fix versions and the packages
+not scanned. If brew's JSON cannot be read, the tab shows brew's text instead.
 
 On Status, `c` and `A` open the Cleanup and Unused tabs. They show what `brew cleanup -n`
 and `brew autoremove -n` would do, and read nothing else. Press `c` or `A` again on its
