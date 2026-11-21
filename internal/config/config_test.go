@@ -205,3 +205,25 @@ func TestLoadInvalidYAML(t *testing.T) {
 		t.Error("expected error for invalid YAML")
 	}
 }
+
+// TestLoadEmptyPathReadsDefaultPath pins the location: the file is written at
+// the literal ~/.config/lazybrew/config.yml, not at whatever DefaultPath returns.
+func TestLoadEmptyPathReadsDefaultPath(t *testing.T) {
+	clearEnvOverrides(t)
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	path := filepath.Join(home, ".config", "lazybrew", "config.yml")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("gui:\n  theme: light\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.GUI.Theme != "light" {
+		t.Errorf("Load(\"\") theme = %q, want light from %s", cfg.GUI.Theme, path)
+	}
+}
