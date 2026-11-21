@@ -203,8 +203,9 @@ func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
 
 func (m Model) handleTabBarClick(ix int) (tea.Model, tea.Cmd) {
 	x := 0
+	gap := tabGap(m.activePanel)
 	for i, tab := range m.tabs {
-		w := tabWidth(tab.name)
+		w := tabWidth(tab.name, gap)
 		if ix >= x && ix < x+w {
 			if i == m.activeTab {
 				return m, nil

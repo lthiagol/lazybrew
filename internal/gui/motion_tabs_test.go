@@ -182,10 +182,10 @@ func TestSlidingFramesAreTerminalSize(t *testing.T) {
 // TestTabWidthMatchesTheRender holds the arithmetic width of a tab to the
 // width of the tab the style draws, for every tab of every panel.
 func TestTabWidthMatchesTheRender(t *testing.T) {
-	for _, tabs := range panelTabs {
+	for panel, tabs := range panelTabs {
 		for _, tab := range tabs {
-			want := lipgloss.Width(style.TabInactive.Render(" " + tab.name + " "))
-			if got := tabWidth(tab.name); got != want {
+			want := lipgloss.Width(style.TabInactive.Render(tabLabel(tab.name, tabGap(panel))))
+			if got := tabWidth(tab.name, tabGap(panel)); got != want {
 				t.Errorf("tabWidth(%q) = %d; the rendered tab is %d wide", tab.name, got, want)
 			}
 		}
@@ -195,10 +195,10 @@ func TestTabWidthMatchesTheRender(t *testing.T) {
 // TestActiveTabWidthMatchesTheRender holds tabWidth to the active tab too:
 // handleTabBarClick measures every tab with it, not only the inactive ones.
 func TestActiveTabWidthMatchesTheRender(t *testing.T) {
-	for _, tabs := range panelTabs {
+	for panel, tabs := range panelTabs {
 		for _, tab := range tabs {
-			want := lipgloss.Width(style.TabActive.Render(" " + tab.name + " "))
-			if got := tabWidth(tab.name); got != want {
+			want := lipgloss.Width(style.TabActive.Render(tabLabel(tab.name, tabGap(panel))))
+			if got := tabWidth(tab.name, tabGap(panel)); got != want {
 				t.Errorf("tabWidth(%q) = %d; the active tab is %d wide", tab.name, got, want)
 			}
 		}

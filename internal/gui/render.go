@@ -295,34 +295,53 @@ func (m Model) renderTabBar(width int) string {
 	}
 
 	var tabs []string
+	gap := tabGap(m.activePanel)
 	for i, tab := range m.tabs {
 		if i == m.activeTab {
-			tabs = append(tabs, style.TabActive.Render(" "+tab.name+" "))
+			tabs = append(tabs, style.TabActive.Render(tabLabel(tab.name, gap)))
 		} else {
-			tabs = append(tabs, style.TabInactive.Render(" "+tab.name+" "))
+			tabs = append(tabs, style.TabInactive.Render(tabLabel(tab.name, gap)))
 		}
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+}
+
+// tabGap is the space drawn either side of a tab's name, inside the tab style's
+// own one-cell padding. The Status bar has none: its five names fit the main
+// pane at 80 columns only without it (F-r1-02). Every other bar keeps one.
+func tabGap(p PanelID) int {
+	if p == PanelStatus {
+		return 0
+	}
+	return 1
+}
+
+// tabLabel is a tab's name as the bar draws it: the name with gap spaces
+// either side.
+func tabLabel(name string, gap int) string {
+	pad := strings.Repeat(" ", gap)
+	return pad + name + pad
 }
 
 // activeTabSpan is where the active tab's underline rests: its column from the
 // left of the tab bar, and its width. The underline spans the tab's padding
 // too, as the tab's bottom border does.
 func (m Model) activeTabSpan() (x, w int) {
+	gap := tabGap(m.activePanel)
 	for i, tab := range m.tabs {
 		if i == m.activeTab {
-			return x, tabWidth(tab.name)
+			return x, tabWidth(tab.name, gap)
 		}
-		x += tabWidth(tab.name)
+		x += tabWidth(tab.name, gap)
 	}
 	return 0, 0
 }
 
-// tabWidth is the width of a tab drawn with its name: the name, a space either
-// side, and the style's one-cell padding either side. TestTabWidthMatchesTheRender
-// holds it to the rendered tab.
-func tabWidth(name string) int {
-	return lipgloss.Width(name) + 4
+// tabWidth is the width of a tab drawn with its name: the name, gap spaces
+// either side, and the style's one-cell padding either side.
+// TestTabWidthMatchesTheRender holds it to the rendered tab.
+func tabWidth(name string, gap int) int {
+	return lipgloss.Width(name) + 2*gap + 2
 }
 
 // renderTabBarSliding draws the tab bar while the underline is on its way to
@@ -330,11 +349,12 @@ func tabWidth(name string) int {
 // wide. At rest the same geometry draws exactly what renderTabBar draws.
 func (m Model) renderTabBarSliding(x, w float64) string {
 	var tabs []string
+	gap := tabGap(m.activePanel)
 	for i, tab := range m.tabs {
 		if i == m.activeTab {
-			tabs = append(tabs, style.TabActive.UnsetBorderBottom().Render(" "+tab.name+" "))
+			tabs = append(tabs, style.TabActive.UnsetBorderBottom().Render(tabLabel(tab.name, gap)))
 		} else {
-			tabs = append(tabs, style.TabInactive.Render(" "+tab.name+" "))
+			tabs = append(tabs, style.TabInactive.Render(tabLabel(tab.name, gap)))
 		}
 	}
 	row := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
