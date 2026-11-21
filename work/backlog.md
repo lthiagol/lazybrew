@@ -97,7 +97,7 @@ stays on `7` then `/`, and `/` on the other panels.
 become Status tabs beside Config and Doctor (Config | Doctor | Missing | Vulns): run on
 demand, cached, kept across panel switches; `m`/`v` jump to the tab and refresh.
 
-**LB-25 (planned, slice lb28-themes)** — themes: Catppuccin Mocha/Macchiato/Frappe/Latte,
+**LB-25 (closed, lb28-themes)** — themes: Catppuccin Mocha/Macchiato/Frappe/Latte,
 Dracula, Nord; `gui.theme` takes the names (`dark`/`light` stay as aliases for Mocha/
 Latte). Config only: no live switching (user ruling 2026-11-21).
 
