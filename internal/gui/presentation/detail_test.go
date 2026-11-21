@@ -114,3 +114,19 @@ func TestInfoWithoutIconsDrawsNoGlyph(t *testing.T) {
 		t.Fatalf("no icon should leave the word alone, got:\n%s", got)
 	}
 }
+
+// TestCaskInfoShowsDisplayNameBesideToken (LB-12): the Name row is the token
+// brew acts on, and the display name sits under it when it reads differently.
+func TestCaskInfoShowsDisplayNameBesideToken(t *testing.T) {
+	got := ansi.Strip(FormatCaskInfo(brew.Cask{Name: "claude-code", DisplayName: "Claude Code", Version: "2.1.311"}, 60, style.UnicodeIcons))
+	if !strings.Contains(got, "claude-code") || !strings.Contains(got, "Display") || !strings.Contains(got, "Claude Code") {
+		t.Fatalf("want the token and its display name, got:\n%s", got)
+	}
+}
+
+func TestCaskInfoOmitsDisplayRowWhenSameAsToken(t *testing.T) {
+	got := ansi.Strip(FormatCaskInfo(brew.Cask{Name: "firefox", DisplayName: "firefox", Version: "135"}, 60, style.UnicodeIcons))
+	if strings.Contains(got, "Display") {
+		t.Fatalf("no Display row when the display name equals the token, got:\n%s", got)
+	}
+}
