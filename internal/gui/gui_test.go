@@ -1072,10 +1072,10 @@ func TestActiveSidebarTitleStyles(t *testing.T) {
 	if !strings.Contains(side, "Formulae") {
 		t.Fatal("sidebar should contain inactive Formulae title")
 	}
-	// Active title path uses PanelTitleActive (Accent) + ActivePanelBg.
-	// Assert styles are wired by rendering active title fragment with them.
-	activeFrag := style.ActivePanelBg.Render(style.PanelTitleActive.Render("1 Status"))
-	inactiveFrag := style.PanelTitle.Render("2 Formulae")
+	// The focused box's title is PanelTitleActive; an unfocused one is
+	// SubtleText (box.go).
+	activeFrag := style.PanelTitleActive.Render("1 Status")
+	inactiveFrag := style.SubtleText.Render("2 Formulae")
 	if activeFrag == inactiveFrag {
 		t.Fatal("active and inactive title styles should render differently")
 	}

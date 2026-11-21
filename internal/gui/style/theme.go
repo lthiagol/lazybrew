@@ -27,10 +27,8 @@ var (
 	// SecondaryColor is the Pinned role (teal), kept under its old name.
 	SecondaryColor color.Color
 
-	ActiveBorder   lipgloss.Style
-	InactiveBorder lipgloss.Style
-	SelectedItem   lipgloss.Style
-	NormalItem     lipgloss.Style
+	SelectedItem lipgloss.Style
+	NormalItem   lipgloss.Style
 	// The foreground styles of the text roles, built once per theme: a render
 	// reuses them rather than building one per row (cr3 AC-06).
 	TextStyle        lipgloss.Style
@@ -40,19 +38,13 @@ var (
 	ErrorText        lipgloss.Style
 	TabActive        lipgloss.Style
 	TabInactive      lipgloss.Style
-	HintKey          lipgloss.Style
-	HintDesc         lipgloss.Style
-	PanelTitle       lipgloss.Style
 	PanelTitleActive lipgloss.Style
-	ActivePanelBg    lipgloss.Style
-	LogBorder        lipgloss.Style
 	OutdatedBadge    lipgloss.Style
 	PinnedBadge      lipgloss.Style
 	InstalledBadge   lipgloss.Style
 	ErrorBadge       lipgloss.Style
 	SubtleText       lipgloss.Style
 	AccentText       lipgloss.Style
-	DocStyle         lipgloss.Style
 )
 
 // Theme maps the semantic roles onto one palette. Each theme carries its own
@@ -114,8 +106,6 @@ func ApplyTheme(t *Theme) {
 	SubtleColor = t.Subtle
 	SecondaryColor = t.Pinned
 
-	ActiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Focus)
-	InactiveBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Border)
 	SelectedItem = lipgloss.NewStyle().Foreground(t.Accent).Bold(true)
 	TextStyle = lipgloss.NewStyle().Foreground(t.Text)
 	MutedText = lipgloss.NewStyle().Foreground(t.Muted)
@@ -132,19 +122,13 @@ func ApplyTheme(t *Theme) {
 	TabInactive = lipgloss.NewStyle().
 		Foreground(t.Subtle).
 		Padding(0, 1)
-	HintKey = lipgloss.NewStyle().Foreground(t.Accent).Bold(true).Padding(0, 1)
-	HintDesc = lipgloss.NewStyle().Foreground(t.Subtle)
-	PanelTitle = lipgloss.NewStyle().Foreground(t.Text).Bold(true)
 	PanelTitleActive = lipgloss.NewStyle().Foreground(t.Focus).Bold(true)
-	ActivePanelBg = lipgloss.NewStyle().Background(t.Surface)
-	LogBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Border)
 	OutdatedBadge = WarningText
 	PinnedBadge = lipgloss.NewStyle().Foreground(t.Pinned)
 	InstalledBadge = SuccessText
 	ErrorBadge = ErrorText
 	SubtleText = lipgloss.NewStyle().Foreground(t.Subtle)
 	AccentText = lipgloss.NewStyle().Foreground(t.Accent).Bold(true)
-	DocStyle = lipgloss.NewStyle().Padding(1, 2)
 }
 
 func init() {

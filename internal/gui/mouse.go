@@ -165,7 +165,7 @@ func (m Model) handleSidebarClick(y int) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleMainClick(x, y, sw int) (tea.Model, tea.Cmd) {
-	// Main panel sits to the right of the sidebar. Its ActiveBorder (1 cell)
+	// Main panel sits to the right of the sidebar. Its border (1 cell)
 	// wraps tabs + content; the Log box is a separate box below.
 	mx := x - sw
 	my := y
