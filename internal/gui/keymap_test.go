@@ -387,13 +387,43 @@ func TestSearchDoesNotAnswerCapitalI(t *testing.T) {
 	}
 }
 
+// TestFooterShowsTheArrowHintOnEveryPanel (lb29 AC-02): the arrow hint stands for
+// the four arrow keys on every footer, and the footer has no per-panel navigate or
+// tabs hint. Dropping the arrow hint from the global keys fails it.
+func TestFooterShowsTheArrowHintOnEveryPanel(t *testing.T) {
+	for id := PanelStatus; id <= PanelSearch; id++ {
+		footer := footerOn(id)
+		if !slices.Contains(footer, keyArrows) {
+			t.Errorf("%s: the footer lacks the arrow hint %q %q", id, keyArrows.key, keyArrows.desc)
+		}
+		for _, h := range footer {
+			if h.key == keyScroll.key || h.key == keyTabs.key || h == keyPrev {
+				t.Errorf("%s: the footer lists %q %q, which lb29 moves to the help screen", id, h.key, h.desc)
+			}
+		}
+	}
+}
+
+// TestHelpKeepsTheKeysTheFooterDropped (lb29 AC-02): j/k, h/l and Shift+Tab leave the
+// footer but stay on the help screen of every panel.
+func TestHelpKeepsTheKeysTheFooterDropped(t *testing.T) {
+	for id := PanelStatus; id <= PanelSearch; id++ {
+		help := helpOn(id)
+		for _, want := range []keyHint{keyScroll, keyTabs, keyPrev} {
+			if !slices.Contains(help, want) {
+				t.Errorf("%s: the help screen lacks %q %q", id, want.key, want.help)
+			}
+		}
+	}
+}
+
 // footerExempt is the keys a panel answers that its footer leaves out on purpose.
 // The footers are pinned by goldens, so each omission is recorded here instead of
 // being changed. A listed key is checked on the help only. Each entry says why.
 var footerExempt = map[PanelID]map[string]bool{
-	// Search has no tabs: h and l type there, and the arrows do nothing. X zaps
-	// an installed cask row; its footer word is left out, and its help line shows it.
-	PanelSearch: {"left": true, "right": true, "X": true},
+	// Search has no tabs: h and l type there. X zaps an installed cask row; its
+	// footer word is left out, and its help line shows it.
+	PanelSearch: {"X": true},
 }
 
 // onFooterAndHelp reports whether k is shown on the footer and on the help. The
@@ -542,7 +572,7 @@ func TestModalHintsMatchUpdate(t *testing.T) {
 var keyTable = []keyHint{
 	keyNext, keyPrev, keyJump, keyScroll, keyEnds, keyTabs, keySearch, keyFilter,
 	keyHelp, keyRefresh, keyLog, keyQuit, keyClose, keyHelpOff,
-	keyNavigate, keyPanelTabs, keyUpgradeSelected, keyUpgradeAll, keyCopy,
+	keyArrows, keyUpgradeSelected, keyUpgradeAll, keyCopy,
 	fInstall, fRemove, fReinstall, fPin, fLeaves, fFetch,
 	cInstall, cRemove, cZap, cReinstall, cUpgrade, cFetch,
 	oSelect, oSelectAll,

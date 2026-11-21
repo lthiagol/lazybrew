@@ -342,7 +342,7 @@ func TestFooterLeadsWithThePanelsKeys(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 80, Height: 40})
 	m = sendKey(m, "2")
 	plain := strings.TrimRight(plainLine(m.renderBottomBar()), " ")
-	if !strings.HasPrefix(plain, " j/k navigate") {
+	if !strings.HasPrefix(plain, " i install") {
 		t.Fatalf("Formulae footer should lead with its own keys, got %q", plain)
 	}
 	if !strings.HasSuffix(plain, "? more") {
@@ -354,7 +354,7 @@ func TestFooterLeadsWithThePanelsKeys(t *testing.T) {
 	if strings.Contains(plain, "more") {
 		t.Fatalf("a footer that fits must not say ? more, got %q", plain)
 	}
-	if !strings.HasPrefix(plain, " j/k navigate · h/l tabs · R refresh") {
+	if !strings.HasPrefix(plain, " R refresh · c cleanup · d doctor") {
 		t.Fatalf("Status footer should lead with its own keys, got %q", plain)
 	}
 }
