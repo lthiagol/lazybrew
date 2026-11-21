@@ -171,3 +171,28 @@ func TestTrustServiceTrustCask(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// A Taps refresh drops the trust list with the taps, so R and the auto-refresh
+// read the trust state again (lb30 AC-03). The taps group is the one the panel
+// refresh invalidates.
+func TestTapsRefreshReadsTheTrustListAgain(t *testing.T) {
+	var runs int
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		runs++
+		return []byte(`{"taps":[],"formulae":[],"casks":[],"commands":[]}`), nil
+	}
+	cache := NewCache(time.Minute)
+	svc := NewTrustReader(r, cache)
+
+	if _, err := svc.ListTrusted(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	cache.InvalidateFor("taps")
+	if _, err := svc.ListTrusted(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if runs != 2 {
+		t.Fatalf("trust list ran %d times, want 2: the taps refresh kept the cached trust list", runs)
+	}
+}

@@ -44,7 +44,7 @@ var invalidateGroups = map[string][]CacheKey{
 	"formulae":    {KeyFormulaeList},
 	"casks":       {KeyCasksList},
 	"outdated":    {KeyOutdatedFormulae, KeyOutdatedCasks},
-	"taps":        {KeyTapsList},
+	"taps":        {KeyTapsList, KeyTrustList},
 	"status":      {KeyFormulaeList, KeyCasksList, KeyTapsList, KeyServicesList},
 	"diagnostics": {KeyDoctorResult, KeyConfig},
 }
