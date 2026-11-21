@@ -23,11 +23,6 @@ type footerRow struct {
 	global []keyHint
 }
 
-// all is the row's keys in the order the footer lists them.
-func (r footerRow) all() []keyHint {
-	return append(append([]keyHint{}, r.panel...), r.global...)
-}
-
 // footerHints is the key row the footer shows: the keys of the open modal,
 // else the help screen's keys while help is open, else the active panel's
 // keys, then the global ones.
