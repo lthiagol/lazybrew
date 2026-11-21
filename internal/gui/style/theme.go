@@ -94,8 +94,13 @@ func LightTheme() *Theme { return themeFrom(Latte) }
 // MacchiatoTheme is Catppuccin Macchiato.
 func MacchiatoTheme() *Theme { return themeFrom(Macchiato) }
 
-// FrappeTheme is Catppuccin Frappé.
-func FrappeTheme() *Theme { return themeFrom(Frappe) }
+// FrappeTheme is Catppuccin Frappé. Its Muted is overlay1, not overlay0:
+// overlay0 is 2.87:1 on the base, under the 3:1 floor; overlay1 is 3.65:1.
+func FrappeTheme() *Theme {
+	t := themeFrom(Frappe)
+	t.Muted = Frappe.Overlay1
+	return t
+}
 
 // DraculaTheme is Dracula, from its official palette (draculatheme.com).
 // Its roles are not Catppuccin-shaped, so each is set here, with the colour
