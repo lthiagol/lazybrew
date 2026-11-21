@@ -157,6 +157,34 @@ func TestCleanupViewRowsAt80x24(t *testing.T) {
 	}
 }
 
+// Two download-cache bottles differ only in their hash and formula, and their names
+// are wider than the path column at 80x24 (23 cells). The directories go, and the
+// name keeps its start (the hash that tells the rows apart) and its end (the bottle
+// suffix). A Cellar row whose last segment fits is cut as before.
+func TestCleanupViewBottleRowsAt80x24(t *testing.T) {
+	width := contentWidthIn(loadedStatus(80, 24).screenLayout())
+	const dir = "/home/user/Library/Caches/Homebrew/downloads/"
+	p := brew.CleanupPreview{Items: []brew.CleanupItem{
+		{Path: dir + "0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f--llvm-17.0.6.arm64_sonoma.bottle.tar.gz", Files: 1, Size: "48.2MB", Bytes: 48200000},
+		{Path: dir + "9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706f5e4d3c2b1a0--python@3.12-3.12.4_1.arm64_sonoma.bottle.tar.gz", Files: 1, Size: "47.9MB", Bytes: 47900000},
+		{Path: testPrefix + "/Cellar/llvm/17.0.6", Kind: "empty directory"},
+	}}
+	rows := cleanupTable(p.Items, width, "/home/user", testPrefix)
+	if len(rows) != 4 {
+		t.Fatalf("rows = %q, want a header and three rows", rows)
+	}
+	want := []string{
+		"0a1b2c3d4e5…ttle.tar.gz",
+		"9f8e7d6c5b4…ttle.tar.gz",
+		"<prefix>/…llvm/17.0.6",
+	}
+	for i, w := range want {
+		if got := ansi.Strip(rows[i+1]); !strings.HasSuffix(got, w) {
+			t.Errorf("row %d %q does not end with %q", i+1, got, w)
+		}
+	}
+}
+
 // The Status tab row holds all seven names whole at 140x40, in both themes. At
 // 80x24 it does not fit (the names need 60 cells, the bar has about 50), so that
 // size is an open question, not a passing check: see Q-lb31-tabs-80.
