@@ -149,7 +149,7 @@ func (m Model) operationStatus(op *Operation, width int) string {
 	closeHint := style.SubtleText.Render(operationCloseHint)
 	switch op.Status {
 	case opSuccess:
-		return withCopy(style.InstalledBadge.Render(presentation.WithIcon(m.icons.OK,
+		return withCopy(style.InstalledBadge.Render(presentation.WithIcon(m.icons.Installed,
 			"Completed in "+formatElapsed(op.Ended.Sub(op.Started))))+closeHint, width)
 	case opError:
 		if _, ok := m.terminalRetry(); ok {
@@ -316,7 +316,7 @@ func (m Model) operationBody(op *Operation, room int) []string {
 	return rows
 }
 
-// stepMark is the mark of a step: a finished step is ✓; the last step takes
+// stepMark is the mark of a step: a finished step is ✔; the last step takes
 // the state of the run, the spinner while it runs, ✗ on failure, ■ when
 // cancelled.
 func (m Model) stepMark(op *Operation, last bool) string {

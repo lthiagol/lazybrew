@@ -79,7 +79,7 @@ func TestFormatElapsed(t *testing.T) {
 	}
 }
 
-// TestOperationFinalStates (v2-05 AC-05.1): the run ends as ✓ Completed in,
+// TestOperationFinalStates (v2-05 AC-05.1): the run ends as ✔ Completed in,
 // ✗ Failed: or Cancelled.
 func TestOperationFinalStates(t *testing.T) {
 	start := time.Now().Add(-time.Hour)
@@ -89,7 +89,7 @@ func TestOperationFinalStates(t *testing.T) {
 		want string
 	}{
 		{"completed", Operation{Title: "upgrade bash", Status: opSuccess, Started: start, Ended: start.Add(34 * time.Second)},
-			"✓ Completed in 34s"},
+			"✔ Completed in 34s"},
 		{"failed", Operation{Title: "upgrade bash", Status: opError, Err: errors.New("boom"), Started: start, Ended: start.Add(2 * time.Second)},
 			"✗ Failed: boom"},
 		{"cancelled", Operation{Title: "upgrade bash", Status: opCancelled, Started: start, Ended: start.Add(time.Second)},
