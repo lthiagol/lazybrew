@@ -338,8 +338,9 @@ func helpOn(id PanelID) []keyHint {
 }
 
 // TestPanelKeysAreOnFooterAndHelp holds each panel's dispatch to its footer and
-// its help screen, both ways. A key the panel answers must be on its footer and
-// on its help through an entry that has a footer word and a help line. Every
+// its help screen, both ways. A key the panel answers must be on its footer, when
+// the table gives it a footer word, and on its help, when the table gives it a
+// help line (see onFooterAndHelp). Every
 // footer and help line must name a key the panel answers. Both lists come from
 // the real footer and help, and the dispatch from the source of handleKey.
 func TestPanelKeysAreOnFooterAndHelp(t *testing.T) {
@@ -350,9 +351,18 @@ func TestPanelKeysAreOnFooterAndHelp(t *testing.T) {
 			t.Fatalf("%s: the dispatch answers no key", id)
 		}
 		footer, help := footerOn(id), helpOn(id)
+		exempt := footerExempt[id]
 		for k := range answers {
-			if !onFooterAndHelp(k, footer, help) {
+			if !onFooterAndHelp(k, footer, help, exempt[k]) {
 				t.Errorf("%s: the dispatch answers %q, which its footer and help do not both show", id, k)
+			}
+		}
+		for k := range exempt {
+			if !answers[k] {
+				t.Errorf("%s: footerExempt lists %q, which the panel does not answer; drop it", id, k)
+			}
+			if slices.ContainsFunc(footer, func(h keyHint) bool { return slices.Contains(h.dispatchKeys(), k) }) {
+				t.Errorf("%s: footerExempt lists %q, but the footer shows it; drop it from footerExempt", id, k)
 			}
 		}
 		for _, h := range footer {
@@ -368,18 +378,42 @@ func TestPanelKeysAreOnFooterAndHelp(t *testing.T) {
 	}
 }
 
-// onFooterAndHelp reports whether a table entry that answers k is on the footer,
-// when it has a footer word, and on the help, when it has a help line.
-func onFooterAndHelp(k string, footer, help []keyHint) bool {
+// footerExempt is the keys a panel answers that its footer leaves out on purpose.
+// The footers are pinned by goldens, so each omission is recorded here instead of
+// being changed. A listed key is checked on the help only. Each entry says why.
+var footerExempt = map[PanelID]map[string]bool{
+	// Status shows j/k as keyScroll and its tabs as stTabs, both help-only.
+	PanelStatus: {"j": true, "k": true, "down": true, "up": true, "[": true, "]": true, "left": true, "right": true},
+	// Outdated and Taps have tabs, which the Global help page lists as keyTabs.
+	PanelOutdated: {"[": true, "]": true, "left": true, "right": true},
+	PanelTaps:     {"[": true, "]": true, "left": true, "right": true},
+	// Search has no tabs, so [ ] do nothing there.
+	PanelSearch: {"[": true, "]": true, "left": true, "right": true},
+}
+
+// onFooterAndHelp reports whether k is shown on the footer and on the help. The
+// two are checked apart. When some table entry for k has a footer word, one such
+// entry must be on the footer, and when some entry for k has a help line, one such
+// entry must be on the help. An entry with a footer word and no help line shows k
+// on the footer only, and the reverse on the help only, so one check cannot cover
+// for the other. An exempt key (see footerExempt) skips the footer. k must have a
+// footer word or a help line.
+func onFooterAndHelp(k string, footer, help []keyHint, exempt bool) bool {
+	var footerWord, helpLine, onFooter, onHelp bool
 	for _, e := range keyTable {
-		if !slices.Contains(e.dispatchKeys(), k) || e.desc == "" && e.help == "" {
+		if !slices.Contains(e.dispatchKeys(), k) {
 			continue
 		}
-		if (e.desc == "" || slices.Contains(footer, e)) && (e.help == "" || slices.Contains(help, e)) {
-			return true
+		if e.desc != "" {
+			footerWord = true
+			onFooter = onFooter || slices.Contains(footer, e)
+		}
+		if e.help != "" {
+			helpLine = true
+			onHelp = onHelp || slices.Contains(help, e)
 		}
 	}
-	return false
+	return (footerWord || helpLine) && (exempt || !footerWord || onFooter) && (!helpLine || onHelp)
 }
 
 // answersAny reports whether the panel answers one of h's keys.
