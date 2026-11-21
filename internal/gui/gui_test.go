@@ -1254,7 +1254,7 @@ func TestDepsTabShowsWithoutFetch(t *testing.T) {
 	}
 }
 
-func TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply(t *testing.T) {
+func TestUsesTabReissuesFetchOnDataLoaded(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.activeTab = formulaUsesTab
@@ -1272,7 +1272,7 @@ func TestDepsReissuesFetchOnDataLoadedWhenFastPathDoesNotApply(t *testing.T) {
 	})
 
 	if cmd == nil {
-		t.Fatal("expected loadTabContent cmd re-issued for Used By (no fast path) after DataLoadedMsg")
+		t.Fatal("expected loadTabContent cmd re-issued for Used By after DataLoadedMsg: its content is not on the model")
 	}
 	msg := cmd()
 	tMsg, ok := msg.(TabContentMsg)
@@ -1373,7 +1373,7 @@ func TestFetchTabContentCmdTimesOut(t *testing.T) {
 	}
 }
 
-func TestDepsFastPathRendersCachedDependencies(t *testing.T) {
+func TestDepsRendersDependenciesWithoutFetch(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.activeTab = formulaDepsTab
@@ -1388,18 +1388,18 @@ func TestDepsFastPathRendersCachedDependencies(t *testing.T) {
 
 	cmd := m.loadTabContent()
 	if cmd != nil {
-		t.Fatal("expected nil cmd from fast path (Dependencies already on model)")
+		t.Fatal("expected nil cmd: the Dependencies are already on the model, so no fetch")
 	}
 
 	content := ansi.Strip(m.renderContent(100, 20))
 	for _, want := range []string{"pcre2", "rust", "cmake"} {
 		if !strings.Contains(content, want) {
-			t.Errorf("fast-path content missing %q, got %q", want, content)
+			t.Errorf("deps content missing %q, got %q", want, content)
 		}
 	}
 }
 
-func TestDepsFastPathNoDependenciesShowsExplicitMessage(t *testing.T) {
+func TestDepsNoDependenciesShowsEmptyState(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelFormulae
 	m.activeTab = formulaDepsTab
@@ -1412,7 +1412,7 @@ func TestDepsFastPathNoDependenciesShowsExplicitMessage(t *testing.T) {
 
 	cmd := m.loadTabContent()
 	if cmd != nil {
-		t.Fatal("expected nil cmd from fast path (no deps means no shell call)")
+		t.Fatal("expected nil cmd: a formula with no dependencies needs no shell call")
 	}
 
 	content := ansi.Strip(m.renderContent(100, 20))
@@ -1440,7 +1440,7 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 	p.selected = 0
 
 	if cmd := m.loadTabContent(); cmd != nil {
-		t.Fatal("expected fast-path nil cmd for ripgrep")
+		t.Fatal("expected nil cmd for ripgrep: its deps are already on the model")
 	}
 	if c := ansi.Strip(m.renderContent(100, 20)); !strings.Contains(c, "pcre2") {
 		t.Fatalf("expected ripgrep deps pcre2, got %q", c)
@@ -1467,7 +1467,7 @@ func TestDepsSelectionChangeUpdatesContent(t *testing.T) {
 	}
 }
 
-func TestDepsTabViewLeavesLoadingAfterFastPath(t *testing.T) {
+func TestDepsTabViewLeavesLoadingWithoutFetch(t *testing.T) {
 	m := newTestModel()
 	m = updateModel(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.activePanel = PanelFormulae
@@ -1482,14 +1482,14 @@ func TestDepsTabViewLeavesLoadingAfterFastPath(t *testing.T) {
 	p.selected = 0
 
 	if cmd := m.loadTabContent(); cmd != nil {
-		t.Fatal("expected fast-path nil cmd")
+		t.Fatal("expected nil cmd: the deps are already on the model")
 	}
 	view := m.View().Content
 	if !strings.Contains(view, "pcre2") {
 		t.Fatalf("View should contain deps content pcre2, got:\n%s", view[:min(len(view), 500)])
 	}
 	if strings.Contains(view, "Loading...") {
-		t.Error("View must leave Loading state after fast-path deps populate")
+		t.Error("View must leave Loading state after the deps populate")
 	}
 }
 
