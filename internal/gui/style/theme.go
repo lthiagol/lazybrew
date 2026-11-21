@@ -119,7 +119,7 @@ func FrappeTheme() *Theme {
 //	Text        #f8f8f2   foreground
 //	Border      #6272a4   comment; unfocused borders
 //	Focus       #bd93f9   purple, as the accent
-//	Surface     #44475a   current line, the active sidebar row
+//	Surface     #44475a   selection, the active sidebar row
 //	Background  #282a36   background
 func DraculaTheme() *Theme {
 	return &Theme{
@@ -177,9 +177,9 @@ func NordTheme() *Theme {
 	}
 }
 
-// themes is the one place the theme names live. The names gui.theme accepts
-// are config's list (config.ThemeNames); a test checks the two agree. Each
-// name maps to a constructor, so every lookup gets its own copy of the theme.
+// themes maps each name gui.theme accepts to its constructor, so every lookup
+// gets its own copy of the theme. The names are listed twice: here, and in
+// config.themeNames. TestRegistryMatchesConfig ties the two lists together.
 var themes = []struct {
 	name  string
 	theme func() *Theme
