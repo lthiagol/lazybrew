@@ -87,7 +87,7 @@ nothing in production calls it, but `init()` does (wording).
 
 **LB-22 (planned, slice lb25-search-polish)** — Search rows on the cell system: name
 left, `formula`/`cask` right-aligned; a green mark before the name replaces the word
-`installed`; drop the duplicate `I` (Search `i` only). Open: dot or check glyph.
+`installed`; drop the duplicate `I` (Search `i` only). Decided: a green check ✔ (like brew) marks installed on Formulae, Casks and Search alike.
 
 **LB-23 (planned, slice lb26-list-filter)** — `/` on Formulae and Casks filters the
 loaded list locally as you type (generic panel filter; Outdated later). Global search
@@ -99,9 +99,9 @@ demand, cached, kept across panel switches; `m`/`v` jump to the tab and refresh.
 
 **LB-25 (planned, slice lb28-themes)** — themes: Catppuccin Mocha/Macchiato/Frappe/Latte,
 Dracula, Nord; `gui.theme` takes the names (`dark`/`light` stay as aliases for Mocha/
-Latte); live rotation on a global key (`ctrl+t`), session only, toast with the name.
+Latte). Config only: no live switching (user ruling 2026-11-21).
 
 **LB-26 (planned, slice lb29-footer-redesign, last)** — footer: groups (panel actions |
-global), dim `·` between hints, arrow glyphs (`↑↓ navigate`, `←→ tabs`), `tab next`,
+global), dim `·` between hints, one arrow hint `←↑↓→ navigate` (user ruling), `tab next`,
 `1-7 jump`; `h/j/k/l` and `shift+tab` leave the footer and stay on `?`. Touches every
 golden and the keymap test, so it goes after the key changes above.
