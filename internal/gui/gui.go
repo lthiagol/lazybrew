@@ -155,6 +155,43 @@ func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
 	return RefreshMsg{}
 }
 
+// finishedMutation is what a finished write leaves behind on success: the
+// toast, the refresh of the panels, the Search marks read again, and the close
+// of its Operation after 2 s. The task manager's completion and a retry in the
+// terminal (terminal_retry.go) both end here.
+func (m Model) finishedMutation(id, title string) (tea.Model, tea.Cmd) {
+	closeCmd := m.autoCloseCmd()
+	switch id {
+	case "cleanup-preview":
+		m.pendingAction = "cleanup"
+		m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup",
+			"Run brew cleanup?").WithDetail("This will remove old versions.")
+		return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
+	case "autoremove-preview":
+		m.pendingAction = "autoremove"
+		m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Autoremove",
+			"Remove orphaned dependencies?").
+			WithDetail("Removes dependencies that no installed package needs any more.")
+		return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
+	}
+	var toastTick tea.Cmd
+	if title != "" {
+		toastTick = m.setToast(title+" completed", modal.ToastSuccess)
+	}
+	cmds := []tea.Cmd{
+		m.tasks.RunNext(),
+		func() tea.Msg { return RefreshMsg{} },
+		closeCmd,
+		// A write changes which rows are installed, so the Search marks
+		// are read again from the lists the write invalidated.
+		m.remarkSearch(),
+	}
+	if toastTick != nil {
+		cmds = append(cmds, toastTick)
+	}
+	return m, tea.Batch(cmds...)
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	next, cmd := m.animate(msg)
 	return followLogs(next, cmd)
@@ -438,36 +475,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if errors.Is(msg.Err, context.Canceled) {
 			return m, tea.Batch(m.tasks.RunNext(), serviceReload(msg.ID), tapsReload(msg.ID))
 		}
-		closeCmd := m.autoCloseCmd()
-		switch msg.ID {
-		case "cleanup-preview":
-			m.pendingAction = "cleanup"
-			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup",
-				"Run brew cleanup?").WithDetail("This will remove old versions.")
-			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
-		case "autoremove-preview":
-			m.pendingAction = "autoremove"
-			m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Autoremove",
-				"Remove orphaned dependencies?").
-				WithDetail("Removes dependencies that no installed package needs any more.")
-			return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
-		}
-		var toastTick tea.Cmd
-		if msg.Title != "" {
-			toastTick = m.setToast(msg.Title+" completed", modal.ToastSuccess)
-		}
-		cmds := []tea.Cmd{
-			m.tasks.RunNext(),
-			func() tea.Msg { return RefreshMsg{} },
-			closeCmd,
-			// A write changes which rows are installed, so the Search marks
-			// are read again from the lists the write invalidated.
-			m.remarkSearch(),
-		}
-		if toastTick != nil {
-			cmds = append(cmds, toastTick)
-		}
-		return m, tea.Batch(cmds...)
+		return m.finishedMutation(msg.ID, msg.Title)
+
+	case SudoRunDoneMsg:
+		return m.sudoRetryDone(msg)
 
 	case MutationResultMsg:
 		if msg.Leaves != nil && m.activePanel == PanelFormulae {

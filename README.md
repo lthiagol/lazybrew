@@ -74,6 +74,11 @@ Launch the interactive TUI. Available flags:
 
 Per-panel actions appear in the bottom bar and `?` help screen.
 
+When an install, reinstall, upgrade or uninstall fails because sudo needs a
+password, the failed operation shows `Enter  run in this terminal`. Enter suspends
+lazybrew and runs the same brew command in your terminal, so sudo can ask for
+the password; then lazybrew shows the result and refreshes. `Esc` closes it.
+
 On Search, `i` installs a result that is not installed, `x` uninstalls one that is,
 and `X` zaps an installed cask. Installed results are marked `installed`.
 
