@@ -60,3 +60,9 @@ Plan commit (questions, STATE row): `dfa7d36`.
 - show_icons off: Search rows carry no mark, as Formulae rows do.
 - Not checked: real-terminal width of ✔ (macOS); the TUI was not launched against real brew.
 - No brew write commands were run.
+
+## Fix r1 — Completed row ✔ (commit 51bd21e, [Q-lb25-step-tick])
+- Test first: `TestCompletedRowMatchesTheStepTicks` failed at 80x24 and 140x40: `operation_dismiss_test.go:355: the Completed row should carry ✔`; the row read `✓ Completed in 34s`.
+- Fix: `operation.go:152` draws the row with `m.icons.Installed` (smaller than changing `OK`, which also draws the trusted tap and toasts). `Icons.OK` stays ✓ at `sidebar_rows.go:196` (trusted tap), `toasts.go:64` (toast), `dashboard.go:111`, `:198`, `command_log.go:153`. Question: Q-lb25-ok-uses.
+- Goldens changed: `operation_test.go` TestOperationFinalStates; `operation_dismiss_test.go` TestFinishedRunsEndWithTheCloseHint (success row).
+- Gate: `make test-fast PKG=./internal/gui/...` ok; `GOFLAGS=-p=1 make ci` exit 0, "All coverage floors met"; `GOOS=darwin go build ./...` ok. `-p=1` because /tmp is at 93% (link failed otherwise).

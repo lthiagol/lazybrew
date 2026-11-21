@@ -890,3 +890,12 @@ marks, and make the `Completed in` row ✔ too (the user asked for one check mar
 across the whole interface); the trusted-tap `✓` and error/warn glyphs stay.
 Q-lb25-I-types: keep: `I` types into the Search box like any other letter. The
 Completed-row change is `fix-lb25-search-polish-r1`.
+
+### Q-lb25-ok-uses — dashboard and command-log success ticks: ✓ or ✔?
+
+- **Context (fix r1):** the Completed row is ✔ now. `Icons.OK` stays ✓ for the
+  dashboard "ready to brew" (`dashboard.go:111`, `:198`), the command-log success
+  (`command_log.go:153`), the success toast (`toasts.go:64`) and the trusted tap
+  (`sidebar_rows.go:196`). The fix brief keeps toasts and the trusted tap on ✓.
+- **Ask.** Make the dashboard and command-log ticks ✔ too, so one check mark
+  shows across the interface (recommended), or leave them ✓?
