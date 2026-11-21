@@ -114,7 +114,8 @@ func TestHelpSectionsLineUp(t *testing.T) {
 			var descAt []int
 			for _, it := range sec.items {
 				row := ansi.Strip(helpUnitRow(page, it.help))
-				descAt = append(descAt, strings.Index(row, it.help))
+				// Cells, not bytes: the arrows in a key column are multi-byte.
+				descAt = append(descAt, ansi.StringWidth(row[:strings.Index(row, it.help)]))
 			}
 			for _, at := range descAt[1:] {
 				if at != descAt[0] {
