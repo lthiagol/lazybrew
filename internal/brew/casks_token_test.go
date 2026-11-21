@@ -1,9 +1,13 @@
 package brew
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // TestCaskNameIsTokenInRealBrewShape (LB-12, Q-cr1-cask-name): brew writes the
@@ -44,5 +48,33 @@ func TestCaskNameFallsBackToDisplayName(t *testing.T) {
 	}
 	if c.DisplayName != "Google Chrome" {
 		t.Fatalf("DisplayName = %q, want %q", c.DisplayName, "Google Chrome")
+	}
+}
+
+// TestOutdatedAndInstalledCaskNamesAgree (LB-12): the Outdated and Casks lists
+// both name a cask by its token, so a row in one finds the same cask in the other.
+func TestOutdatedAndInstalledCaskNamesAgree(t *testing.T) {
+	raw, err := os.ReadFile("testdata/casks_installed_token.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, installed, err := ParseInfo(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte(`{"casks":[{"name":"claude-code","full_name":"claude-code","installed_versions":["2.1.310"],"current_version":"2.1.311"}]}`), nil
+	}
+	outdated, err := NewCasksReader(r, NewCache(time.Minute)).Outdated(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(outdated) != 1 || len(installed) != 1 {
+		t.Fatalf("want one outdated and one installed cask, got %d and %d", len(outdated), len(installed))
+	}
+	if outdated[0].Name != installed[0].Name {
+		t.Fatalf("Outdated names %q, Casks names %q: they must match", outdated[0].Name, installed[0].Name)
 	}
 }

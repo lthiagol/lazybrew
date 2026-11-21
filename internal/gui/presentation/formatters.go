@@ -27,14 +27,20 @@ func FormatFormulaInfo(f brew.Formula, width int, icons style.Icons) string {
 // FormatCaskInfo is the Info tab of a cask, as detail rows.
 func FormatCaskInfo(c brew.Cask, width int, icons style.Icons) string {
 	status, role := caskStatus(c, icons)
-	return Info([]Field{
-		{Label: "Name", Value: c.Name},
-		{Label: "Version", Value: c.Version},
-		{Label: "Tap", Value: c.Tap},
-		{Label: "Status", Value: status, Role: role},
-		{Label: "Homepage", Value: c.Homepage, Role: style.InfoColor},
-		{Label: "Description", Value: c.Description, Prose: true, Right: true},
-	}, width)
+	fields := []Field{{Label: "Name", Value: c.Name}}
+	// The token is what brew acts on; the display name is shown beside it
+	// only when it reads differently (LB-12).
+	if c.DisplayName != "" && c.DisplayName != c.Name {
+		fields = append(fields, Field{Label: "Display", Value: c.DisplayName})
+	}
+	fields = append(fields,
+		Field{Label: "Version", Value: c.Version},
+		Field{Label: "Tap", Value: c.Tap},
+		Field{Label: "Status", Value: status, Role: role},
+		Field{Label: "Homepage", Value: c.Homepage, Role: style.InfoColor},
+		Field{Label: "Description", Value: c.Description, Prose: true, Right: true},
+	)
+	return Info(fields, width)
 }
 
 // formulaStatus is the Status row of a formula: its icon and word, in the
