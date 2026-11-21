@@ -2,8 +2,6 @@ package gui
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -59,33 +57,17 @@ func vulnsCmd(client *brew.Client) tea.Cmd {
 }
 
 // vulnsTabView is the Vulns tab: the hint until a check runs, the spinner while
-// it runs, then the report or the empty line, or brew's error line and the hint.
-func (m Model) vulnsTabView() string {
+// it runs, then the report, or brew's error line and the hint.
+func (m Model) vulnsTabView(width int) string {
 	switch m.vulns.status {
 	case vulnsRunning:
 		return m.spinner.View() + style.SubtleText.Render(" Checking…")
 	case vulnsDone:
-		return vulnsReportView(m.vulns.report)
+		return m.vulnsReportView(m.vulns.report, width)
 	case vulnsFailed:
 		return style.ErrorText.Render(vulnsErrorLine(m.vulns.err)) + "\n" + style.SubtleText.Render(vulnsHint)
 	}
 	return style.SubtleText.Render(vulnsHint)
-}
-
-// vulnsReportView is a finished check: brew's text when its JSON could not be
-// read, the empty line when brew found nothing, else the summary line.
-func vulnsReportView(r brew.VulnReport) string {
-	if !r.Parsed {
-		if strings.TrimSpace(r.Text) == "" {
-			return style.SuccessText.Render("No known vulnerabilities")
-		}
-		return strings.TrimRight(r.Text, "\n")
-	}
-	n := 0
-	for _, f := range r.Findings {
-		n += len(f.Vulnerabilities)
-	}
-	return fmt.Sprintf("%d vulnerabilities in %d of %d packages", n, len(r.Findings), r.Checked)
 }
 
 // vulnsErrorLine is brew's own first error line, or the error's text when brew

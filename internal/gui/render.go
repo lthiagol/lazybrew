@@ -592,7 +592,7 @@ func (m Model) renderContent(width, height int) string {
 			}
 			return m.renderDashboard(width)
 		case statusVulnsTab:
-			return m.vulnsTabView()
+			return m.vulnsTabView(width)
 		case statusCleanupTab:
 			return m.cleanupTabView(width)
 		case statusUnusedTab:
