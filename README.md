@@ -109,7 +109,7 @@ gui:                             # the interface
 brew:                            # how lazybrew runs brew
   path: ""                       # the brew binary; empty auto-detects it
   update_on_start: auto          # auto, true or false: when lazybrew runs brew update
-  update_stale_hours: 6          # hours; auto updates when brew's last update is older
+  update_stale_hours: 6          # 1 or more hours; auto updates when brew's last update is older
   # ... the TTLs follow, one per class; see the sample
 ```
 
