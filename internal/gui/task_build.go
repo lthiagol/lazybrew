@@ -65,7 +65,7 @@ func streamTask(id, title string, run func(ctx context.Context) (<-chan string, 
 // a time. The send is buffered by one and guarded by ctx: a send that finds the
 // buffer full waits for the manager to read, or for the task to be cancelled,
 // so a manager that stops reading cannot leak the goroutine. The error reaches
-// errCh only after the last line is sent, and the manager reads lines to the
+// errCh once, after the last line is sent, and the manager reads lines to the
 // close of out even after the error is in.
 func linesTask(id, title string, fetch func(ctx context.Context) ([]string, error)) *task.Task {
 	return &task.Task{
@@ -77,20 +77,26 @@ func linesTask(id, title string, fetch func(ctx context.Context) ([]string, erro
 			go func() {
 				defer close(out)
 				lines, err := fetch(ctx)
-				if err != nil {
-					errCh <- err
-					return
+				if err == nil {
+					err = sendLines(ctx, out, lines)
 				}
-				for _, line := range lines {
-					select {
-					case out <- line:
-					case <-ctx.Done():
-						return
-					}
-				}
-				errCh <- nil
+				errCh <- err
 			}()
 			return out, errCh, nil
 		},
 	}
+}
+
+// sendLines sends lines to out in order, and stops early when ctx is cancelled.
+// It returns ctx.Err(), so a cancelled task always ends with an error, and nil
+// only when every line went out and the task was not cancelled.
+func sendLines(ctx context.Context, out chan<- string, lines []string) error {
+	for _, line := range lines {
+		select {
+		case out <- line:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return ctx.Err()
 }
