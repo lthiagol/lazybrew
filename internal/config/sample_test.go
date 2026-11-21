@@ -104,6 +104,20 @@ func TestSampleHeaderNamesEnvOverrides(t *testing.T) {
 	}
 }
 
+// TestSampleStatesTheRules checks that the prose names the rule loadFile
+// enforces: a TTL of 0 or less keeps the default, and update_stale_hours must be
+// 1 or more.
+func TestSampleStatesTheRules(t *testing.T) {
+	for path, prose := range sampleComments {
+		if strings.HasSuffix(path, "_ttl") && !strings.Contains(prose, "0 or less keeps the default") {
+			t.Errorf("%s comment %q does not say 0 or less keeps the default", path, prose)
+		}
+	}
+	if !strings.Contains(sampleComments["brew.update_stale_hours"], "1 or more") {
+		t.Errorf("brew.update_stale_hours comment %q does not say 1 or more", sampleComments["brew.update_stale_hours"])
+	}
+}
+
 func TestSampleFollowsDefaults(t *testing.T) {
 	cfg := Default()
 	cfg.Brew.CasksTTL = 7 * time.Minute

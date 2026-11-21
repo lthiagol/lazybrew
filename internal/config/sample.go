@@ -26,13 +26,13 @@ var sampleComments = map[string]string{
 	"brew":                     "how lazybrew runs brew",
 	"brew.path":                "the brew binary; empty auto-detects it",
 	"brew.update_on_start":     "auto, true or false: when lazybrew runs brew update",
-	"brew.update_stale_hours":  "hours; auto updates when brew's last update is older",
-	"brew.formulae_ttl":        "a duration, e.g. 5m; how long formula results are reused",
-	"brew.casks_ttl":           "a duration, e.g. 5m; how long cask results are reused",
-	"brew.outdated_ttl":        "a duration, e.g. 30m; how long the outdated list is reused",
-	"brew.taps_ttl":            "a duration, e.g. 1h; how long tap results are reused",
-	"brew.services_ttl":        "a duration, e.g. 30s; how long service results are reused",
-	"brew.doctor_ttl":          "a duration, e.g. 1h; how long doctor output is reused",
+	"brew.update_stale_hours":  "1 or more hours; auto updates when brew's last update is older",
+	"brew.formulae_ttl":        "a duration, e.g. 5m; how long formula results are reused; 0 or less keeps the default",
+	"brew.casks_ttl":           "a duration, e.g. 5m; how long cask results are reused; 0 or less keeps the default",
+	"brew.outdated_ttl":        "a duration, e.g. 30m; how long the outdated list is reused; 0 or less keeps the default",
+	"brew.taps_ttl":            "a duration, e.g. 1h; how long tap results are reused; 0 or less keeps the default",
+	"brew.services_ttl":        "a duration, e.g. 30s; how long service results are reused; 0 or less keeps the default",
+	"brew.doctor_ttl":          "a duration, e.g. 1h; how long doctor output is reused; 0 or less keeps the default",
 }
 
 var durationType = reflect.TypeOf(time.Duration(0))
