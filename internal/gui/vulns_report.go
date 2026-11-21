@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"cmp"
 	"fmt"
 	"sort"
 	"strconv"
@@ -264,22 +265,45 @@ func allUnknown(f brew.VulnFinding) bool {
 	return true
 }
 
-// versionAfter is whether version a is later than b. Dotted parts compare as
-// numbers where both are numbers, else as text; a leading v is ignored.
+// versionAfter is whether version a is later than b. The part before a dash is
+// the release and the part after it a pre-release. Releases compare first; a
+// release is later than its own pre-releases. A leading v is ignored.
 func versionAfter(a, b string) bool {
-	pa, pb := versionParts(a), versionParts(b)
-	for i := range min(len(pa), len(pb)) {
-		if pa[i] == pb[i] {
+	relA, preA, _ := strings.Cut(a, "-")
+	relB, preB, _ := strings.Cut(b, "-")
+	if c := compareParts(versionParts(relA), versionParts(relB)); c != 0 {
+		return c > 0
+	}
+	if preA == "" || preB == "" {
+		return preA == "" && preB != ""
+	}
+	return compareParts(versionParts(preA), versionParts(preB)) > 0
+}
+
+// compareParts orders two split versions: a part missing from the shorter one is
+// 0, parts compare as numbers where both are numbers and else as text.
+func compareParts(pa, pb []string) int {
+	for i := range max(len(pa), len(pb)) {
+		a, b := partAt(pa, i), partAt(pb, i)
+		if a == b {
 			continue
 		}
-		na, errA := strconv.Atoi(pa[i])
-		nb, errB := strconv.Atoi(pb[i])
+		na, errA := strconv.Atoi(a)
+		nb, errB := strconv.Atoi(b)
 		if errA == nil && errB == nil {
-			return na > nb
+			return cmp.Compare(na, nb)
 		}
-		return pa[i] > pb[i]
+		return strings.Compare(a, b)
 	}
-	return len(pa) > len(pb)
+	return 0
+}
+
+// partAt is part i of a split version, or "0" past its end.
+func partAt(parts []string, i int) string {
+	if i < len(parts) {
+		return parts[i]
+	}
+	return "0"
 }
 
 // versionParts splits a version at its dots, dashes, underscores and pluses.
