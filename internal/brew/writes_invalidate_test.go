@@ -68,7 +68,7 @@ func TestAutoremoveClearsFormulaeList(t *testing.T) {
 	client := NewClient(brewtest.NewMockRunner())
 	client.Cache.Set(KeyFormulaeList, []Formula{{Name: "orphan"}})
 
-	_, errs := client.DiagnosticsWrite.Autoremove(context.Background(), false)
+	_, errs := client.DiagnosticsWrite.Autoremove(context.Background())
 	<-errs
 
 	if _, ok := client.Cache.Get(KeyFormulaeList); ok {
@@ -182,11 +182,11 @@ func writeCases() []writeCase {
 			return drain(errs)
 		}},
 		{"cleanup", "cleanup", "cleanup", func(c *Client) error {
-			_, errs := c.DiagnosticsWrite.Cleanup(ctx, false)
+			_, errs := c.DiagnosticsWrite.Cleanup(ctx)
 			return drain(errs)
 		}},
 		{"autoremove", "autoremove", "autoremove", func(c *Client) error {
-			_, errs := c.DiagnosticsWrite.Autoremove(ctx, false)
+			_, errs := c.DiagnosticsWrite.Autoremove(ctx)
 			return drain(errs)
 		}},
 	}

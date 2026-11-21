@@ -82,6 +82,10 @@ On Status, `d`, `m` and `v` open the Doctor, Missing and Vulns tabs. `d` and `m`
 their tab afresh. `v` runs `brew vulns`, which queries OSV.dev over the network;
 opening the Vulns tab alone runs nothing.
 
+On Status, `c` and `A` open the Cleanup and Unused tabs. They show what `brew cleanup -n`
+and `brew autoremove -n` would do, and read nothing else. Press `c` or `A` again on its
+tab to confirm and run the real command; the tab then reads brew again.
+
 On Formulae and Casks, `/` opens a filter on the loaded list: type to narrow it by
 name (case-insensitive), `↑`/`↓` move the cursor, `Enter` keeps the filter and `Esc`
 clears it. Actions act on the row shown. To search brew from there, press `7`, then

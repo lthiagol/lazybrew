@@ -257,6 +257,9 @@ func TestCleanupTabReadsOnOpen(t *testing.T) {
 	}
 	m = pressStatus(m, "h")
 	m = pressStatus(m, "l")
+	if m.activeTab != statusCleanupTab {
+		t.Fatalf("h then l should come back to the Cleanup tab, got tab %d", m.activeTab)
+	}
 	if n := calls["cleanup"]; n != 1 {
 		t.Fatalf("brew cleanup ran %d times, want 1", n)
 	}

@@ -320,7 +320,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m.serviceCleanup()
 		}
 		if m.activePanel == PanelStatus {
-			return m.brewCleanup()
+			return m.previewKey(statusCleanupTab)
 		}
 	case "d":
 		if m.activePanel == PanelStatus {
@@ -332,7 +332,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "A":
 		if m.activePanel == PanelStatus {
-			return m.runAutoremove()
+			return m.previewKey(statusUnusedTab)
 		}
 	case "B":
 		if m.activePanel == PanelStatus {

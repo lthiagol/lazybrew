@@ -687,19 +687,36 @@ func TestInitDispatchesFetch(t *testing.T) {
 	}
 }
 
-func TestBrewCleanupFlow(t *testing.T) {
-	m := newTestModel()
-	_, cmd := m.brewCleanup()
-	if cmd == nil {
-		t.Fatal("brewCleanup should return a command")
+// TestPreviewKeysOpenTabThenConfirm: c and A open their tab and read it; the
+// next press on that tab opens the confirm for the real run, and nothing runs.
+func TestPreviewKeysOpenTabThenConfirm(t *testing.T) {
+	cases := []struct {
+		key     rune
+		tab     int
+		pending string
+		title   string
+	}{
+		{'c', statusCleanupTab, "cleanup", "Cleanup"},
+		{'A', statusUnusedTab, "autoremove", "Autoremove"},
 	}
-}
-
-func TestRunAutoremove(t *testing.T) {
-	m := newTestModel()
-	_, cmd := m.runAutoremove()
-	if cmd == nil {
-		t.Fatal("runAutoremove should return a command")
+	for _, tc := range cases {
+		m := newTestModel()
+		m = updateModel(m, tea.KeyPressMsg{Code: tc.key, Text: string(tc.key)})
+		if m.activeTab != tc.tab {
+			t.Fatalf("%q should open tab %d, got tab %d", tc.key, tc.tab, m.activeTab)
+		}
+		if m.activeModal != nil {
+			t.Fatalf("%q on another tab should not open a confirm", tc.key)
+		}
+		nm, cmd := m.Update(tea.KeyPressMsg{Code: tc.key, Text: string(tc.key)})
+		m = modelOf(nm)
+		if cmd != nil {
+			t.Errorf("%q on its tab should open the confirm, not run a command", tc.key)
+		}
+		if m.pendingAction != tc.pending || m.activeModal == nil {
+			t.Fatalf("%q on its tab: pendingAction %q, modal %v; want %q and a confirm",
+				tc.key, m.pendingAction, m.activeModal, tc.pending)
+		}
 	}
 }
 

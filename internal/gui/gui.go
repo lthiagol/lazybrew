@@ -161,19 +161,6 @@ func (m Model) evaluateAutoRefresh(now time.Time) tea.Msg {
 // terminal (terminal_retry.go) both end here.
 func (m Model) finishedMutation(id, title string) (tea.Model, tea.Cmd) {
 	closeCmd := m.autoCloseCmd()
-	switch id {
-	case "cleanup-preview":
-		m.pendingAction = "cleanup"
-		m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup",
-			"Run brew cleanup?").WithDetail("This will remove old versions.")
-		return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
-	case "autoremove-preview":
-		m.pendingAction = "autoremove"
-		m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Autoremove",
-			"Remove orphaned dependencies?").
-			WithDetail("Removes dependencies that no installed package needs any more.")
-		return m, tea.Batch(m.tasks.RunNext(), m.activeModal.Init(), closeCmd)
-	}
 	var toastTick tea.Cmd
 	if title != "" {
 		toastTick = m.setToast(title+" completed", modal.ToastSuccess)
