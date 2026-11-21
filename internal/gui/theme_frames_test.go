@@ -8,6 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
@@ -74,11 +75,11 @@ var themeScreens = []themeScreen{
 func TestEveryThemeDrawsItsScreensFromItsRoles(t *testing.T) {
 	defer style.ApplyTheme(style.DarkTheme())
 	var accents []style.Theme
-	for _, name := range style.ThemeNames() {
+	for _, name := range config.ThemeNames() {
 		th, _ := style.ThemeByName(name)
 		accents = append(accents, *th)
 	}
-	for _, name := range style.ThemeNames() {
+	for _, name := range config.ThemeNames() {
 		th, _ := style.ThemeByName(name)
 		style.ApplyTheme(th)
 		for _, sc := range themeScreens {
