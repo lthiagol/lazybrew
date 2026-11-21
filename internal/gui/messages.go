@@ -64,7 +64,7 @@ type AutoremovePreviewMsg struct {
 // VulnsMsg is the result of the Vulns tab's check: brew's report, or the error
 // that stopped it.
 type VulnsMsg struct {
-	Report string
+	Report brew.VulnReport
 	Err    error
 }
 

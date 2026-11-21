@@ -1,0 +1,427 @@
+{
+  "findings": [
+    {
+      "formula": "libxml2",
+      "version": "2.15.4",
+      "tag": "2.15.4",
+      "repo_url": "https://gitlab.gnome.org/GNOME/libxml2",
+      "vulnerabilities": [
+        {
+          "id": "OSV-2021-777",
+          "severity": "HIGH",
+          "summary": "Heap-use-after-free in xmlAddNextSibling",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "OSV-2024-698",
+          "severity": "HIGH",
+          "summary": "Heap-use-after-free in xmlCharEncCloseFunc",
+          "aliases": [],
+          "fixed_versions": []
+        }
+      ],
+      "patched": []
+    },
+    {
+      "formula": "openssl@4",
+      "version": "4.1.0",
+      "tag": "openssl-4.1.0",
+      "repo_url": "https://github.com/openssl/openssl",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2026-124709",
+          "severity": "HIGH",
+          "summary": "Unbounded Memory Retention in QUIC Server for Rejected Streams",
+          "aliases": [],
+          "fixed_versions": [
+            "ead311df1037e7994a6d86c7e862d71ad59c52c7",
+            "22291a6af12f158fbb13bfbd572a33dbdbf290d2",
+            "f3acb0a3328046741479482c51cec815839e1b05"
+          ]
+        },
+        {
+          "id": "CVE-2026-35190",
+          "severity": "MEDIUM",
+          "summary": "Out-of-Bounds Read in TLS 1.3 Key-Share Processing with Suite B Certificate Flag",
+          "aliases": [],
+          "fixed_versions": [
+            "ade64619df04056b3e5fd1c1befe9425a7c80eb6",
+            "9a812981b927c5714b7c2e5d138618105cea2152",
+            "9491b0d9cc7950af1f3dc89499bd5433b9cd4f43"
+          ]
+        },
+        {
+          "id": "CVE-2026-88822",
+          "severity": "MEDIUM",
+          "summary": "QUIC Uses Uninitialized Stack Bytes During Automated Peer Detection",
+          "aliases": [],
+          "fixed_versions": [
+            "7b4f5344aa0401e7b777640050b5257ed2a70e88",
+            "911eee8eb7550b95a206f1ad8cbdb986098982f3",
+            "1a73dc590cbad62d6f0329ea4779eadaa8d8fd75"
+          ]
+        },
+        {
+          "id": "CVE-2026-88823",
+          "severity": "HIGH",
+          "summary": "AES-GCM-SIV AAD Forgery After Zero-length Incremental AAD Update",
+          "aliases": [],
+          "fixed_versions": [
+            "6747b1a278816dd7db46438040a70b0b5e5e0a90",
+            "2f5fc833ff9b5bfe00b32f8b5c74f73c5773c682",
+            "159e1de0c448d7b9f09ad768c8e141def4aa1eb4"
+          ]
+        },
+        {
+          "id": "CVE-2026-95691",
+          "severity": "HIGH",
+          "summary": "Retransmitted QUIC CRYPTO Frames Can Cause DoS or One-byte Disclosure",
+          "aliases": [],
+          "fixed_versions": [
+            "dd90ceb99a3c2ddba336bb4a00be9ebabd84c2a1",
+            "ec9d4de9d03989b29db5a3d7efdb4c285deaf386",
+            "f6244675833e097c2429a40d1b206d95385bd42f"
+          ]
+        },
+        {
+          "id": "CVE-2026-95692",
+          "severity": "HIGH",
+          "summary": "Out-of-Bounds Read and Incorrect IV Length Handling in AES-GCM-SIV",
+          "aliases": [],
+          "fixed_versions": [
+            "70a47ac78b6f3be1b22fb1551bd0bfcff4f29613",
+            "510872388f5d145cf870868b3d288a23822cb776",
+            "257a3427aa0ef8d9dd2ef5b3e2d1c021a221b116"
+          ]
+        }
+      ],
+      "patched": []
+    },
+    {
+      "formula": "ffmpeg",
+      "version": "9.0.2",
+      "tag": "9.0.2",
+      "repo_url": "https://github.com/ffmpeg/ffmpeg",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2026-125202",
+          "severity": "UNKNOWN",
+          "summary": "FFmpeg through 9.0.2 Heap Buffer Overflow via HEVC VAAPI Tile Arrays",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-125219",
+          "severity": "UNKNOWN",
+          "summary": "FFmpeg through 9.0.2 Heap Buffer Overflow via HEVC VDPAU Tile Arrays",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-125237",
+          "severity": "UNKNOWN",
+          "summary": "FFmpeg 8.1 through 9.0.2 Denial of Service via DPX Vulkan Hwaccel Error Path",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-125239",
+          "severity": "UNKNOWN",
+          "summary": "FFmpeg through 9.0.2 Heap Buffer Overflow via HEVC DXVA Tile Parameters",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-125248",
+          "severity": "UNKNOWN",
+          "summary": "FFmpeg 9.0 through 9.0.2 Integer Overflow via FFV1 Vulkan Encoder Remap Buffer",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-125249",
+          "severity": "UNKNOWN",
+          "summary": "FFmpeg 7.1 through 9.0.2 Heap Out-of-Bounds Write via Vulkan Slice Buffer Sizing",
+          "aliases": [],
+          "fixed_versions": []
+        }
+      ],
+      "patched": []
+    },
+    {
+      "formula": "libsndfile",
+      "version": "1.2.2",
+      "tag": "1.2.2",
+      "repo_url": "https://github.com/libsndfile/libsndfile",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2024-50612",
+          "severity": "MEDIUM",
+          "summary": null,
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2024-50613",
+          "severity": "MEDIUM",
+          "summary": null,
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2025-52194",
+          "severity": "HIGH",
+          "summary": null,
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2025-56226",
+          "severity": "MEDIUM",
+          "summary": null,
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-109828",
+          "severity": "UNKNOWN",
+          "summary": "libsndfile WAV Parsing wavlike.c wavlike_subchunk_parse uninitialized variable",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-37555",
+          "severity": "HIGH",
+          "summary": null,
+          "aliases": [],
+          "fixed_versions": [
+            "9a829113c88a51e57c1e46473e90609e4b7df151"
+          ]
+        }
+      ],
+      "patched": []
+    },
+    {
+      "formula": "libssh2",
+      "version": "1.11.1",
+      "tag": "1.11.1",
+      "repo_url": "https://github.com/libssh2/libssh2",
+      "vulnerabilities": [
+        {
+          "id": "OSV-2025-433",
+          "severity": "UNKNOWN",
+          "summary": "Null-dereference READ in _libssh2_packet_add",
+          "aliases": [],
+          "fixed_versions": []
+        }
+      ],
+      "patched": [
+        {
+          "id": "CVE-2025-15661",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 - Heap Buffer Over-read via sftp_symlink() in sftp.c",
+          "aliases": [],
+          "fixed_versions": [
+            "2dae3024897e1898d389835151f4e9606227721d"
+          ]
+        },
+        {
+          "id": "CVE-2026-55199",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 - Pre-Authentication DoS via SSH_MSG_EXT_INFO Handler",
+          "aliases": [],
+          "fixed_versions": [
+            "17626857d20b3c9a1addfa45979dadcee1cd84a4"
+          ]
+        },
+        {
+          "id": "CVE-2026-55200",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 - Out-of-Bounds Write via Unchecked packet_length in transport.c",
+          "aliases": [],
+          "fixed_versions": [
+            "97acf3dfda80c91c3a8c9f2372546301d4a1a7a8"
+          ]
+        },
+        {
+          "id": "CVE-2026-58050",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 - Integer Overflow in publickey Subsystem Attribute Allocation",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-58051",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 - Free of Uninitialized Pointer in publickey List Cleanup",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-66032",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 Double-Free Heap Corruption via sftp_open()",
+          "aliases": [],
+          "fixed_versions": [
+            "5e4776146552d898b9c0e1b313cd093fa8dc92d0"
+          ]
+        },
+        {
+          "id": "CVE-2026-66033",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 Integer Underflow DoS via AES-GCM Cipher Negotiation",
+          "aliases": [],
+          "fixed_versions": [
+            "a2ed82d40964bbc0d64cd717aa0a5a892117d2e6"
+          ]
+        },
+        {
+          "id": "CVE-2026-66034",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 Heap Out-of-Bounds Read via publickey subsystem",
+          "aliases": [],
+          "fixed_versions": [
+            "a13bb6c773f0d55ad1628cede57e99803cd898d9"
+          ]
+        },
+        {
+          "id": "CVE-2026-66035",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 Heap Buffer Overflow via ETM Cipher Negotiation",
+          "aliases": [],
+          "fixed_versions": [
+            "42e33d81577ed4b95d4b4f6f845e5ee8efe5eeb4"
+          ]
+        },
+        {
+          "id": "CVE-2026-7598",
+          "severity": "UNKNOWN",
+          "summary": "libssh2 userauth.c userauth_password integer overflow",
+          "aliases": [],
+          "fixed_versions": [
+            "256d04b60d80bf1190e96b0ad1e91b2174d744b1"
+          ]
+        },
+        {
+          "id": "OSV-2022-24",
+          "severity": "UNKNOWN",
+          "summary": "Null-dereference READ in session_startup",
+          "aliases": [],
+          "fixed_versions": [
+            "b89858b83d68d7e29e0c5b0bb803f8a68271710c"
+          ]
+        },
+        {
+          "id": "OSV-2024-847",
+          "severity": "UNKNOWN",
+          "summary": "Null-dereference READ in _libssh2_packet_add",
+          "aliases": [],
+          "fixed_versions": [
+            "b89858b83d68d7e29e0c5b0bb803f8a68271710c"
+          ]
+        },
+        {
+          "id": "OSV-2025-90",
+          "severity": "UNKNOWN",
+          "summary": "Null-dereference READ in ubsan_GetStackTrace",
+          "aliases": [],
+          "fixed_versions": [
+            "631e2f82a32ef016299ebb1af66efeae0161f68e"
+          ]
+        },
+        {
+          "id": "OSV-2025-92",
+          "severity": "UNKNOWN",
+          "summary": "Null-dereference READ in session_startup",
+          "aliases": [],
+          "fixed_versions": [
+            "631e2f82a32ef016299ebb1af66efeae0161f68e"
+          ]
+        }
+      ]
+    },
+    {
+      "formula": "gitleaks",
+      "version": "8.30.1",
+      "tag": "v8.30.1",
+      "repo_url": "https://github.com/gitleaks/gitleaks",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2026-124039",
+          "severity": "UNKNOWN",
+          "summary": "Gitleaks through 8.30.1 World-Readable Report Files via --report-path",
+          "aliases": [],
+          "fixed_versions": []
+        }
+      ],
+      "patched": []
+    },
+    {
+      "formula": "expat",
+      "version": "2.10.0",
+      "tag": "R_2_10_0",
+      "repo_url": "https://github.com/libexpat/libexpat",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2026-124317",
+          "severity": "UNKNOWN",
+          "summary": "libexpat through 2.10.0 Out-of-Bounds Read via unknown_toUtf8 and unknown_toUtf16",
+          "aliases": [],
+          "fixed_versions": []
+        },
+        {
+          "id": "CVE-2026-128241",
+          "severity": "UNKNOWN",
+          "summary": "libexpat xmlwf through 2.10.0 Symlink Following via -d Output Directory",
+          "aliases": [],
+          "fixed_versions": []
+        }
+      ],
+      "patched": []
+    }
+  ],
+  "skipped_formulae": [
+    "glib",
+    "libedit",
+    "mpg123",
+    "m4",
+    "bzip2",
+    "libxrandr",
+    "alsa-lib",
+    "libxi",
+    "mpdecimal",
+    "dav1d",
+    "ncurses",
+    "libxfixes",
+    "krb5",
+    "libxext",
+    "keyutils",
+    "orc",
+    "libxscrnsaver",
+    "ca-certificates",
+    "libcap",
+    "libxrender",
+    "python@3.14",
+    "libx11",
+    "lpeg",
+    "libxdmcp",
+    "python@3.15",
+    "libtool",
+    "libxau",
+    "openldap",
+    "libunistring",
+    "xorgproto",
+    "readline",
+    "libxcb",
+    "libsoxr",
+    "lame",
+    "sqlite",
+    "rjyo/moshi/moshi-hook",
+    "libxcursor"
+  ],
+  "checked": 90,
+  "complete": false,
+  "outdated_without_sbom": [],
+  "unscanned_formulae": {}
+}

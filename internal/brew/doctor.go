@@ -14,7 +14,7 @@ import (
 type DiagnosticsReader interface {
 	Doctor(ctx context.Context) ([]DoctorWarning, error)
 	Missing(ctx context.Context) ([]MissingDep, error)
-	Vulns(ctx context.Context) (string, error)
+	VulnsReport(ctx context.Context) (VulnReport, error)
 	Config(ctx context.Context) (*BrewConfig, error)
 	LastUpdate(ctx context.Context) (time.Time, error)
 	CleanupPreview(ctx context.Context) (CleanupPreview, error)
@@ -179,23 +179,22 @@ func (s *diagnosticsReader) parseMissingOutput(text string) []MissingDep {
 	return missing
 }
 
-// Vulns is brew vulns' report. brew vulns exits 1 when it finds vulnerabilities
-// and prints them on stdout, so exit 1 with a report is a result. Exit 1 with no
-// report, or with an Error: line on stderr, is a failure: brew did not run the
-// check (an unknown command, a network error).
-func (s *diagnosticsReader) Vulns(ctx context.Context) (string, error) {
-	output, err := s.runner.Execute(ctx, "vulns")
-	if err == nil {
-		return string(output), nil
+// VulnsReport is brew vulns' report, read from its JSON. brew vulns exits 1 when
+// it finds vulnerabilities and prints the report on stdout, so exit 1 with a
+// report is a result. Exit 1 with no report, or with an Error: line on stderr, is
+// a failure: brew did not run the check (an unknown command, a network error).
+func (s *diagnosticsReader) VulnsReport(ctx context.Context) (VulnReport, error) {
+	output, err := s.runner.Execute(ctx, "vulns", "--json", "--max-summary", "0")
+	if err != nil {
+		var exit *BrewExitError
+		if !errors.As(err, &exit) || exit.ExitCode != 1 {
+			return VulnReport{}, err
+		}
+		if strings.TrimSpace(string(output)) == "" || hasErrorLine(exit.Stderr) {
+			return VulnReport{}, err
+		}
 	}
-	var exit *BrewExitError
-	if !errors.As(err, &exit) || exit.ExitCode != 1 {
-		return "", err
-	}
-	if strings.TrimSpace(string(output)) == "" || hasErrorLine(exit.Stderr) {
-		return "", err
-	}
-	return string(output), nil
+	return parseVulnReport(output), nil
 }
 
 // hasErrorLine reports whether a line of stderr starts with Error:.

@@ -159,14 +159,14 @@ func TestDiagnosticsMissingExitCode2IsError(t *testing.T) {
 	}
 }
 
-// vulnsOnce runs Vulns against one brew answer.
-func vulnsOnce(t *testing.T, out string, err error) (string, error) {
+// vulnsOnce runs VulnsReport against one brew answer.
+func vulnsOnce(t *testing.T, out string, err error) (VulnReport, error) {
 	t.Helper()
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		return []byte(out), err
 	}
-	return NewDiagnosticsReader(r, NewCache(time.Minute)).Vulns(context.Background())
+	return NewDiagnosticsReader(r, NewCache(time.Minute)).VulnsReport(context.Background())
 }
 
 func TestDiagnosticsVulnsExitCode1WithReportIsResult(t *testing.T) {
@@ -175,8 +175,8 @@ func TestDiagnosticsVulnsExitCode1WithReportIsResult(t *testing.T) {
 	if err != nil {
 		t.Fatalf("exit 1 with a report is a result, got error %v", err)
 	}
-	if report != "CVE-2026-1: openssl@3\n" {
-		t.Fatalf("report %q", report)
+	if report.Parsed || report.Text != "CVE-2026-1: openssl@3\n" {
+		t.Fatalf("a text report should fall back to its text, got %+v", report)
 	}
 }
 
@@ -201,23 +201,5 @@ func TestDiagnosticsVulnsErrorLineIsError(t *testing.T) {
 	})
 	if !IsExitCode(err, 1) {
 		t.Fatalf("expected the exit 1 error, got %v", err)
-	}
-}
-
-func TestParseDoctorWarnings(t *testing.T) {
-	tests := []struct {
-		input string
-		count int
-	}{
-		{"", 0},
-		{"Your system is ready to brew.", 0},
-		{"Warning: First warning.\nDetail line.\n\nWarning: Second warning.\n", 2},
-		{"Warning: Only one.", 1},
-	}
-	for _, tt := range tests {
-		warnings := parseDoctorWarnings(tt.input)
-		if len(warnings) != tt.count {
-			t.Errorf("parseDoctorWarnings(%q) = %d warnings, want %d", tt.input[:min(len(tt.input), 30)], len(warnings), tt.count)
-		}
 	}
 }
