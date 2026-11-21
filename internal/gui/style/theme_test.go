@@ -3,6 +3,7 @@ package style
 import (
 	"image/color"
 	"regexp"
+	"strings"
 	"testing"
 
 	"charm.land/lipgloss/v2"
@@ -48,6 +49,44 @@ var latteHex = map[string]struct {
 	"Mantle": {Latte.Mantle, "#e6e9ef"}, "Crust": {Latte.Crust, "#dce0e8"},
 }
 
+var macchiatoHex = map[string]struct {
+	got color.Color
+	hex string
+}{
+	"Rosewater": {Macchiato.Rosewater, "#f4dbd6"}, "Flamingo": {Macchiato.Flamingo, "#f0c6c6"},
+	"Pink": {Macchiato.Pink, "#f5bde6"}, "Mauve": {Macchiato.Mauve, "#c6a0f6"},
+	"Red": {Macchiato.Red, "#ed8796"}, "Maroon": {Macchiato.Maroon, "#ee99a0"},
+	"Peach": {Macchiato.Peach, "#f5a97f"}, "Yellow": {Macchiato.Yellow, "#eed49f"},
+	"Green": {Macchiato.Green, "#a6da95"}, "Teal": {Macchiato.Teal, "#8bd5ca"},
+	"Sky": {Macchiato.Sky, "#91d7e3"}, "Sapphire": {Macchiato.Sapphire, "#7dc4e4"},
+	"Blue": {Macchiato.Blue, "#8aadf4"}, "Lavender": {Macchiato.Lavender, "#b7bdf8"},
+	"Text": {Macchiato.Text, "#cad3f5"}, "Subtext1": {Macchiato.Subtext1, "#b8c0e0"},
+	"Subtext0": {Macchiato.Subtext0, "#a5adcb"}, "Overlay2": {Macchiato.Overlay2, "#939ab7"},
+	"Overlay1": {Macchiato.Overlay1, "#8087a2"}, "Overlay0": {Macchiato.Overlay0, "#6e738d"},
+	"Surface2": {Macchiato.Surface2, "#5b6078"}, "Surface1": {Macchiato.Surface1, "#494d64"},
+	"Surface0": {Macchiato.Surface0, "#363a4f"}, "Base": {Macchiato.Base, "#24273a"},
+	"Mantle": {Macchiato.Mantle, "#1e2030"}, "Crust": {Macchiato.Crust, "#181926"},
+}
+
+var frappeHex = map[string]struct {
+	got color.Color
+	hex string
+}{
+	"Rosewater": {Frappe.Rosewater, "#f2d5cf"}, "Flamingo": {Frappe.Flamingo, "#eebebe"},
+	"Pink": {Frappe.Pink, "#f4b8e4"}, "Mauve": {Frappe.Mauve, "#ca9ee6"},
+	"Red": {Frappe.Red, "#e78284"}, "Maroon": {Frappe.Maroon, "#ea999c"},
+	"Peach": {Frappe.Peach, "#ef9f76"}, "Yellow": {Frappe.Yellow, "#e5c890"},
+	"Green": {Frappe.Green, "#a6d189"}, "Teal": {Frappe.Teal, "#81c8be"},
+	"Sky": {Frappe.Sky, "#99d1db"}, "Sapphire": {Frappe.Sapphire, "#85c1dc"},
+	"Blue": {Frappe.Blue, "#8caaee"}, "Lavender": {Frappe.Lavender, "#babbf1"},
+	"Text": {Frappe.Text, "#c6d0f5"}, "Subtext1": {Frappe.Subtext1, "#b5bfe2"},
+	"Subtext0": {Frappe.Subtext0, "#a5adce"}, "Overlay2": {Frappe.Overlay2, "#949cbb"},
+	"Overlay1": {Frappe.Overlay1, "#838ba7"}, "Overlay0": {Frappe.Overlay0, "#737994"},
+	"Surface2": {Frappe.Surface2, "#626880"}, "Surface1": {Frappe.Surface1, "#51576d"},
+	"Surface0": {Frappe.Surface0, "#414559"}, "Base": {Frappe.Base, "#303446"},
+	"Mantle": {Frappe.Mantle, "#292c3c"}, "Crust": {Frappe.Crust, "#232634"},
+}
+
 // TestPaletteTokensAreOfficialHex checks every token of both flavours: each
 // is a valid #rrggbb literal and carries exactly the official value.
 func TestPaletteTokensAreOfficialHex(t *testing.T) {
@@ -55,7 +94,7 @@ func TestPaletteTokensAreOfficialHex(t *testing.T) {
 	for name, set := range map[string]map[string]struct {
 		got color.Color
 		hex string
-	}{"Mocha": mochaHex, "Latte": latteHex} {
+	}{"Mocha": mochaHex, "Latte": latteHex, "Macchiato": macchiatoHex, "Frappe": frappeHex} {
 		if len(set) != 26 {
 			t.Errorf("%s defines %d tokens, want 26", name, len(set))
 		}
@@ -277,6 +316,154 @@ func TestSharedTextStylesDrawWhatTheyReplace(t *testing.T) {
 			if b.badge.Render("sample") != b.shared.Render("sample") {
 				t.Errorf("%s should draw the shared style of its role", b.name)
 			}
+		}
+	}
+}
+
+// roleSet is every role of a theme, by its name.
+func roleSet(t *Theme) map[string]color.Color {
+	return map[string]color.Color{
+		"Accent":     t.Accent,
+		"Success":    t.Success,
+		"Warning":    t.Warning,
+		"Error":      t.Error,
+		"Info":       t.Info,
+		"Pinned":     t.Pinned,
+		"Muted":      t.Muted,
+		"Subtle":     t.Subtle,
+		"Text":       t.Text,
+		"Border":     t.Border,
+		"Focus":      t.Focus,
+		"Surface":    t.Surface,
+		"Background": t.Background,
+	}
+}
+
+// TestEveryThemeSetsEveryRole: each registered theme has all 13 roles non-nil.
+func TestEveryThemeSetsEveryRole(t *testing.T) {
+	for _, name := range ThemeNames() {
+		th, ok := ThemeByName(name)
+		if !ok {
+			t.Fatalf("ThemeByName(%q) not found", name)
+		}
+		for role, c := range roleSet(th) {
+			if c == nil {
+				t.Errorf("%s: role %s is nil", name, role)
+			}
+		}
+	}
+}
+
+// TestThemeRegistryNames: the names gui.theme accepts, in display order, and
+// each one resolves; the lookup ignores case; an unknown name is not found.
+func TestThemeRegistryNames(t *testing.T) {
+	want := []string{
+		"dark", "light",
+		"catppuccin-mocha", "catppuccin-macchiato", "catppuccin-frappe", "catppuccin-latte",
+		"dracula", "nord",
+	}
+	if got := ThemeNames(); strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("ThemeNames() = %v, want %v", got, want)
+	}
+	for _, name := range want {
+		if _, ok := ThemeByName(name); !ok {
+			t.Errorf("ThemeByName(%q) not found", name)
+		}
+		if _, ok := ThemeByName(strings.ToUpper(name)); !ok {
+			t.Errorf("ThemeByName(%q) should ignore case", strings.ToUpper(name))
+		}
+	}
+	if _, ok := ThemeByName("solarized"); ok {
+		t.Error("ThemeByName(solarized) should not be found")
+	}
+}
+
+// TestDarkAndLightResolveToMochaAndLatte: the old names keep exactly the
+// themes they had, and the Catppuccin names resolve to their flavours.
+func TestDarkAndLightResolveToMochaAndLatte(t *testing.T) {
+	cases := map[string]*Theme{
+		"dark":                 DarkTheme(),
+		"catppuccin-mocha":     DarkTheme(),
+		"light":                LightTheme(),
+		"catppuccin-latte":     LightTheme(),
+		"catppuccin-frappe":    FrappeTheme(),
+		"catppuccin-macchiato": MacchiatoTheme(),
+	}
+	for name, want := range cases {
+		got, ok := ThemeByName(name)
+		if !ok {
+			t.Fatalf("ThemeByName(%q) not found", name)
+		}
+		if *got != *want {
+			t.Errorf("ThemeByName(%q) = %+v, want %+v", name, *got, *want)
+		}
+	}
+}
+
+// TestCatppuccinConstructorsFollowTheirPalette: each flavour's theme maps the
+// same roles as Mocha does, from its own palette.
+func TestCatppuccinConstructorsFollowTheirPalette(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		theme *Theme
+		p     Palette
+	}{
+		{"Macchiato", MacchiatoTheme(), Macchiato},
+		{"Frappe", FrappeTheme(), Frappe},
+	} {
+		if *tc.theme != *themeFrom(tc.p) {
+			t.Errorf("%s theme does not map its palette's roles", tc.name)
+		}
+	}
+}
+
+// TestDraculaRoles and TestNordRoles pin each role to the colour the comment
+// table in theme.go gives it: the official value, or the derived one.
+func TestDraculaRoles(t *testing.T) {
+	want := map[string]string{
+		"Accent":     "#bd93f9", // purple
+		"Success":    "#50fa7b", // green
+		"Warning":    "#ffb86c", // orange
+		"Error":      "#ff5555", // red
+		"Info":       "#8be9fd", // cyan
+		"Pinned":     "#ff79c6", // pink
+		"Muted":      "#6272a4", // comment
+		"Subtle":     "#bababa", // derived: foreground at 70 % over background
+		"Text":       "#f8f8f2", // foreground
+		"Border":     "#6272a4", // comment
+		"Focus":      "#bd93f9", // purple
+		"Surface":    "#44475a", // current line
+		"Background": "#282a36", // background
+	}
+	checkRoles(t, "Dracula", DraculaTheme(), want)
+}
+
+func TestNordRoles(t *testing.T) {
+	want := map[string]string{
+		"Accent":     "#88c0d0", // nord8
+		"Success":    "#a3be8c", // nord14
+		"Warning":    "#ebcb8b", // nord13
+		"Error":      "#d19aa1", // derived: nord11 at 60 % over nord6
+		"Info":       "#81a1c1", // nord9
+		"Pinned":     "#b48ead", // nord15
+		"Muted":      "#848c9d", // derived: nord3 at 60 % over nord4
+		"Subtle":     "#d8dee9", // nord4
+		"Text":       "#eceff4", // nord6
+		"Border":     "#4c566a", // nord3
+		"Focus":      "#88c0d0", // nord8
+		"Surface":    "#3b4252", // nord1
+		"Background": "#2e3440", // nord0
+	}
+	checkRoles(t, "Nord", NordTheme(), want)
+}
+
+// checkRoles compares each role's colour with the hex it must carry.
+func checkRoles(t *testing.T, name string, th *Theme, want map[string]string) {
+	t.Helper()
+	got := roleSet(th)
+	for role, hex := range want {
+		if g := got[role]; g != lipgloss.Color(hex) {
+			t.Errorf("%s %s = %v, want %s", name, role, g, hex)
 		}
 	}
 }
