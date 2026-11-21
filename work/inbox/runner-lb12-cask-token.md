@@ -1,8 +1,8 @@
 # Receipt — runner lb12-cask-token
 
 **Commits** (one per AC, in order)
-- AC-01 `93d0659` lb12 AC-01: parseCask reads token, display name kept apart [LB-12]
-- AC-02 `6a8b551` lb12 AC-02: cask consumers use the token; display name beside it [LB-12]
+- AC-01 `93d0659` lb12 AC-01: parseCask reads token [LB-12]
+- AC-02 `6a8b551` lb12 AC-02: cask consumers use the token [LB-12]
 
 ## AC-01 — parseCask reads token
 
@@ -17,38 +17,36 @@ $ go test ./internal/brew/ -run 'TestCaskName' -count=1
 FAIL
 ```
 
-Fix: `caskJSON.Token`; `Name` = token, else the first display name; `DisplayName` = first display name. Both tests pass after it.
-The no-token case's `Name` assertion already passed before the fix; only its `DisplayName` half failed.
-Fixture: `internal/brew/testdata/casks_installed_token.json` (new, one claude-code entry in brew's current shape).
-`casks_depends_test.go` keyed its lookups by display name. I changed the keys to `gcloud-cli` / `claude-code`; the assertions are unchanged.
+Fix: `caskJSON.Token`; `Name` = token, else first display name; `DisplayName` = first display name. Both pass after.
+Fixture: `internal/brew/testdata/casks_installed_token.json` (new).
+`casks_depends_test.go` keyed by display name; keys changed to `gcloud-cli` / `claude-code`, assertions unchanged.
 
 ## AC-02 — consumers
 
-Every reader of `Cask.Name` now gets the token:
-- Casks and Outdated rows, `nameAt`/`selectedName`, confirms, upgrade/uninstall/zap/fetch/reinstall: all read `Name`.
-- `depviews.indexInstalled` keys on the token, matching the tokens in `depends_on` (`TestCaskInstalledMapKeysByToken`).
-- `installedFromTap` and the `ParseInfo` search-info path: token.
-- `FormatCaskInfo`: Name row = token. A "Display" row shows `DisplayName` only when it differs from `Name`.
-- Outdated ↔ Casks: no join exists in code. Both lists now carry the token (`TestOutdatedAndInstalledCaskNamesAgree`).
+- Casks and Outdated rows, `nameAt`, confirms, upgrade/uninstall/zap/fetch: all read `Name`, now the token.
+- `depviews.indexInstalled` keys on the token, matching `depends_on` (`TestCaskInstalledMapKeysByToken`).
+- `FormatCaskInfo`: Name row = token; "Display" row only when `DisplayName` differs.
+- Outdated ↔ Casks: no join in code; both carry the token (`TestOutdatedAndInstalledCaskNamesAgree`).
+- New gui test `TestCaskUpgradeSendsTokenFromBrewPayload` (asserts `upgrade --cask claude-code`).
 
-Failing run on the fixed-up tree, mutating `parseCask` back to `name := string(c.Name)`:
+Failing run, with `parseCask` mutated back to `name := string(c.Name)`:
 
 ```
 --- FAIL: TestCaskUpgradeSendsTokenFromBrewPayload
     cask_token_test.go:56: confirm must name the token, got view: ... Upgrade Claude Code? ...
 ```
 
-The file was restored byte-for-byte (`cmp`) and the test passes again. The run stopped at the confirm-text check, before the brew-args check, so the args assertion itself was not shown failing.
+Restored (`cmp`), passes again. The run stopped at the confirm-text check, before the brew-args check, so the args check was not shown failing.
 
-Goldens: none changed. `git diff --name-only a0aaecc 6a8b551` lists no golden or snapshot file. Test fixtures use struct literals, so no existing frame carried a token that differs from its name. The Casks list shows the token for real payloads only.
+Goldens: none changed (`git diff --name-only a0aaecc 6a8b551` has no golden or snapshot file).
 
 ## Gate
 
-- Per commit: `make test-fast` (all packages, no `-race`) passed before AC-01 and before AC-02.
-- `make ci`, exit 0: gofmt check, `go vet`, `go test ./... -race -count=1`, coverage floors all met (brew 87.0 ≥ 78, gui 89.9 ≥ 83, presentation 100.0 ≥ 96), `go build`.
+- Per commit: `make test-fast` (all packages) passed before each commit.
+- `make ci`: exit 0. Coverage: brew 87.0 ≥ 78, gui 89.9 ≥ 83, presentation 100.0 ≥ 96.
 - `GOOS=darwin go build ./...`: ok.
-- `git diff --shortstat a0aaecc 6a8b551`: 8 files changed, 248 insertions(+), 16 deletions(-).
-- No brew write command was run. `bin/lazybrew` was built by `make ci` and not run.
+- `git diff --shortstat a0aaecc 6a8b551`: 8 files, 248 insertions(+), 16 deletions(-).
+- No brew write command run.
 
 ## Questions filed
 
@@ -56,6 +54,6 @@ None.
 
 ## Seen, not done
 
-- Installed casks have an empty `FullName`. The `brew info` payload has `full_token`, not `full_name`, so `installedFromTap` never sees installed casks in the tap-trust menu. This predates LB-12 and is outside its scope.
-- Outdated cask rows carry no `DisplayName`, because the outdated payload has only the token. Their details show the token alone.
-- LB-12 in `work/backlog.md` is closed by this slice. The orchestrator should strike it.
+- Installed casks have empty `FullName`: payload has `full_token`, not `full_name`, so `installedFromTap` never sees them. Predates LB-12.
+- Outdated cask rows have no `DisplayName` (outdated payload has only the token).
+- LB-12 in `work/backlog.md` is closed by this slice; orchestrator to strike it.
