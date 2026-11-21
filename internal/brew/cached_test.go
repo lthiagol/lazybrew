@@ -51,7 +51,7 @@ func TestBrewReadsConcurrentCallsRunOnce(t *testing.T) {
 			_, err := c.Services.Info(context.Background())
 			return err
 		}},
-		{"trust", "trust --json=v1", `{"entries":[]}`, func(c *Client) error {
+		{"trust", "trust --json=v1", `{"taps":[],"formulae":[],"casks":[],"commands":[]}`, func(c *Client) error {
 			_, err := c.Trust.ListTrusted(context.Background())
 			return err
 		}},
