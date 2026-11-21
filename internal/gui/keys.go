@@ -1,10 +1,10 @@
 package gui
 
 import (
-	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 

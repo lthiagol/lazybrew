@@ -2,11 +2,11 @@ package gui
 
 import (
 	"fmt"
-	"github.com/lthiagol/lazybrew/internal/config"
 	"strings"
 	"time"
 
 	"charm.land/lipgloss/v2"
+	"github.com/lthiagol/lazybrew/internal/config"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 	"github.com/lthiagol/lazybrew/internal/gui/textutil"
