@@ -24,8 +24,8 @@ type DiagnosticsReader interface {
 
 type DiagnosticsWriter interface {
 	Update(ctx context.Context) (<-chan string, <-chan error)
-	Cleanup(ctx context.Context, dryRun bool) (<-chan string, <-chan error)
-	Autoremove(ctx context.Context, dryRun bool) (<-chan string, <-chan error)
+	Cleanup(ctx context.Context) (<-chan string, <-chan error)
+	Autoremove(ctx context.Context) (<-chan string, <-chan error)
 }
 
 type MissingDep struct {
@@ -247,18 +247,12 @@ func (s *diagnosticsWriter) Update(ctx context.Context) (<-chan string, <-chan e
 	return streamWrite(ctx, s.runner, s.cache, "update", "update")
 }
 
-func (s *diagnosticsWriter) Cleanup(ctx context.Context, dryRun bool) (<-chan string, <-chan error) {
-	args := []string{"cleanup"}
-	if dryRun {
-		args = append(args, "-n")
-	}
-	return streamWrite(ctx, s.runner, s.cache, "cleanup", args...)
+// Cleanup runs brew cleanup. The dry run is CleanupPreview, a read.
+func (s *diagnosticsWriter) Cleanup(ctx context.Context) (<-chan string, <-chan error) {
+	return streamWrite(ctx, s.runner, s.cache, "cleanup", "cleanup")
 }
 
-func (s *diagnosticsWriter) Autoremove(ctx context.Context, dryRun bool) (<-chan string, <-chan error) {
-	args := []string{"autoremove"}
-	if dryRun {
-		args = append(args, "-n")
-	}
-	return streamWrite(ctx, s.runner, s.cache, "autoremove", args...)
+// Autoremove runs brew autoremove. The dry run is AutoremovePreview, a read.
+func (s *diagnosticsWriter) Autoremove(ctx context.Context) (<-chan string, <-chan error) {
+	return streamWrite(ctx, s.runner, s.cache, "autoremove", "autoremove")
 }

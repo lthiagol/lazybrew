@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/presentation"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 	"github.com/lthiagol/lazybrew/internal/gui/textutil"
@@ -96,6 +97,52 @@ func (p *previewCache) dropPreview(tab int) {
 	case statusUnusedTab:
 		p.unused, p.unusedErr = nil, nil
 	}
+}
+
+// previewKey is c (Cleanup) and A (Unused) on Status. Off its tab, the key opens
+// the tab and reads brew again, as d and m do. On its tab, the key asks to run the
+// real command, and the run goes through the task manager after the confirm.
+func (m Model) previewKey(tab int) (tea.Model, tea.Cmd) {
+	if m.activeTab != tab {
+		m.activeTab = tab
+		m.previews.dropPreview(tab)
+		return m, m.loadTabContent()
+	}
+	if tab == statusCleanupTab {
+		return m.confirmCleanup()
+	}
+	return m.confirmAutoremove()
+}
+
+// confirmCleanup asks before brew cleanup runs. It names brew's total, and says
+// that cleanup also removes the unused formulae the tab lists.
+func (m Model) confirmCleanup() (tea.Model, tea.Cmd) {
+	m.pendingAction = "cleanup"
+	question := "Run brew cleanup?"
+	detail := "Deletes the files this tab lists."
+	if p := m.previews.cleanup; p != nil {
+		if p.Total != "" {
+			question = "Run brew cleanup, freeing about " + p.Total + "?"
+		}
+		if n := len(p.Unused); n > 0 {
+			detail += fmt.Sprintf(" Also removes %d unused %s.", n, plural(n, "formula", "formulae"))
+		}
+	}
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Cleanup", question).WithDetail(detail)
+	return m, m.activeModal.Init()
+}
+
+// confirmAutoremove asks before brew autoremove uninstalls the unused formulae.
+func (m Model) confirmAutoremove() (tea.Model, tea.Cmd) {
+	m.pendingAction = "autoremove"
+	question := "Uninstall the unused formulae?"
+	if p := m.previews.unused; p != nil && len(p.Formulae) > 0 {
+		n := len(p.Formulae)
+		question = fmt.Sprintf("Uninstall %d unused %s?", n, plural(n, "formula", "formulae"))
+	}
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Autoremove", question).
+		WithDetail("Runs brew autoremove: removes the formulae this tab lists.")
+	return m, m.activeModal.Init()
 }
 
 // cleanupTabView is the Cleanup tab: brew's total, then the paths biggest first.

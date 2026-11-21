@@ -72,40 +72,22 @@ func (m Model) openDiagnosticsTab(tab int) (tea.Model, tea.Cmd) {
 	return m, m.loadTabContent()
 }
 
-func (m Model) brewCleanup() (tea.Model, tea.Cmd) {
-	client := m.client
-	t := streamTask("cleanup-preview", "Cleanup Preview", func(ctx context.Context) (<-chan string, <-chan error) {
-		return client.DiagnosticsWrite.Cleanup(ctx, true)
-	})
-
-	c := m.enqueue(t)
-	return m, c
-}
-
-func (m Model) runAutoremove() (tea.Model, tea.Cmd) {
-	client := m.client
-	t := streamTask("autoremove-preview", "Autoremove Preview", func(ctx context.Context) (<-chan string, <-chan error) {
-		return client.DiagnosticsWrite.Autoremove(ctx, true)
-	})
-
-	c := m.enqueue(t)
-	return m, c
-}
-
+// executeCleanup runs brew cleanup through the task manager, after its confirm.
 func (m Model) executeCleanup() (tea.Model, tea.Cmd) {
 	client := m.client
 	t := streamTask("cleanup", "Cleanup", func(ctx context.Context) (<-chan string, <-chan error) {
-		return client.DiagnosticsWrite.Cleanup(ctx, false)
+		return client.DiagnosticsWrite.Cleanup(ctx)
 	})
 
 	c := m.enqueue(t)
 	return m, c
 }
 
+// executeAutoremove runs brew autoremove through the task manager, after its confirm.
 func (m Model) executeAutoremove() (tea.Model, tea.Cmd) {
 	client := m.client
 	t := streamTask("autoremove", "Autoremove", func(ctx context.Context) (<-chan string, <-chan error) {
-		return client.DiagnosticsWrite.Autoremove(ctx, false)
+		return client.DiagnosticsWrite.Autoremove(ctx)
 	})
 
 	c := m.enqueue(t)

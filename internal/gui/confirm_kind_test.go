@@ -88,11 +88,13 @@ func TestConfirmKindsByCallSite(t *testing.T) {
 			return nm
 		}, modal.ActionDanger, "Cleanup Services", ""},
 		{"cleanup", func(m *Model) tea.Model {
-			nm, _ := m.Update(TaskCompletedMsg{ID: "cleanup-preview", Title: "Cleanup"})
+			m.activeTab = statusCleanupTab
+			nm, _ := m.previewKey(statusCleanupTab)
 			return nm
 		}, modal.ActionDanger, "Cleanup", ""},
 		{"autoremove", func(m *Model) tea.Model {
-			nm, _ := m.Update(TaskCompletedMsg{ID: "autoremove-preview", Title: "Autoremove"})
+			m.activeTab = statusUnusedTab
+			nm, _ := m.previewKey(statusUnusedTab)
 			return nm
 		}, modal.ActionDanger, "Autoremove", ""},
 	}
