@@ -401,19 +401,16 @@ func TestDarkAndLightResolveToMochaAndLatte(t *testing.T) {
 }
 
 // TestCatppuccinConstructorsFollowTheirPalette: each flavour's theme maps the
-// same roles as Mocha does, from its own palette.
+// same roles as Mocha does, from its own palette. Frappé is the one exception:
+// its Muted is overlay1 (see FrappeTheme).
 func TestCatppuccinConstructorsFollowTheirPalette(t *testing.T) {
-	for _, tc := range []struct {
-		name  string
-		theme *Theme
-		p     Palette
-	}{
-		{"Macchiato", MacchiatoTheme(), Macchiato},
-		{"Frappe", FrappeTheme(), Frappe},
-	} {
-		if *tc.theme != *themeFrom(tc.p) {
-			t.Errorf("%s theme does not map its palette's roles", tc.name)
-		}
+	if *MacchiatoTheme() != *themeFrom(Macchiato) {
+		t.Error("Macchiato theme does not map its palette's roles")
+	}
+	want := themeFrom(Frappe)
+	want.Muted = Frappe.Overlay1
+	if *FrappeTheme() != *want {
+		t.Error("Frappé theme does not map its palette's roles")
 	}
 }
 
