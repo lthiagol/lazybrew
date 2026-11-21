@@ -961,3 +961,6 @@ the muted `·` separator, so every hint row in the interface reads the same. `fi
   by the key dispatch) is also still `Taps`; only the display title changed (`PanelID.Title()`).
 - **Ask.** Keep `Taps` on the dashboard (recommended: its numbers are taps only), or rename
   the card to `Taps & Trust` too?
+
+**Ruling (orchestrator, 2026-11-21) — Q-lb30-dashboard-taps:** keep `Taps` on the Status dashboard
+card (its counts are taps only); the panel title everywhere else is `Taps & Trust`.
