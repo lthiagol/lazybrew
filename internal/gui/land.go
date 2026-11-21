@@ -27,9 +27,19 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 		p.loaded = true
 		p.err = msg.Err
 		if msg.Err == nil {
-			p.items = msg.Items
-			p.formulae = msg.Formulae
-			p.casks = msg.Casks
+			// A filter on the list is applied again to the fresh rows, with the
+			// cursor kept on the same name (lb26).
+			if p.narrowed() {
+				name := p.selectedName()
+				p.unfilteredItems = msg.Items
+				p.unfilteredFormulae = msg.Formulae
+				p.unfilteredCasks = msg.Casks
+				p.narrow(name)
+			} else {
+				p.items = msg.Items
+				p.formulae = msg.Formulae
+				p.casks = msg.Casks
+			}
 			p.taps = msg.Taps
 			p.trustUnknown = msg.TrustUnknown
 			p.services = msg.Services

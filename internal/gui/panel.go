@@ -63,17 +63,23 @@ type panelData struct {
 	// text.
 	items           []string
 	unfilteredItems []string
-	// unfilteredFormulae holds the formulae the leaves filter narrows, so leaves
-	// off can restore them. formulae is index-aligned with items.
+	// unfiltered* hold the full list while a filter narrows it (the leaves
+	// filter or the `/` query); items, formulae and casks are then the rows that
+	// pass. formulae and casks are index-aligned with items. See filter.go.
 	unfilteredFormulae []brew.Formula
+	unfilteredCasks    []brew.Cask
 	leavesActive       bool
-	selected           int
-	offset             int
-	height             int
-	loading            bool
-	err                error
-	formulae           []brew.Formula
-	casks              []brew.Cask
+	// leaves is the set of names the leaves filter keeps.
+	leaves map[string]bool
+	// query is the `/` filter's text: a case-insensitive substring of the name.
+	query    string
+	selected int
+	offset   int
+	height   int
+	loading  bool
+	err      error
+	formulae []brew.Formula
+	casks    []brew.Cask
 	// installed is the installed list the package tables read, built by
 	// indexInstalled when the panel's data lands. installedGen counts its builds.
 	installed    map[string]installedPkg
@@ -291,45 +297,6 @@ func (p *panelData) serviceInfoFor(name string) *brew.ServiceInfo {
 		}
 	}
 	return nil
-}
-
-// toggleLeaves narrows a Formulae panel to the leaves (the formulae that no
-// other formula needs), or restores the full list when the filter is on. The
-// full list is kept while the filter is on, so restoring it loses nothing.
-func (p *panelData) toggleLeaves(leaves []string) {
-	if p.leavesActive {
-		p.items = p.unfilteredItems
-		p.formulae = p.unfilteredFormulae
-		p.indexInstalled()
-		p.unfilteredItems = nil
-		p.unfilteredFormulae = nil
-		p.leavesActive = false
-		p.normalize()
-		return
-	}
-	p.unfilteredItems = p.items
-	p.unfilteredFormulae = p.formulae
-	leavesSet := make(map[string]bool, len(leaves))
-	for _, l := range leaves {
-		leavesSet[l] = true
-	}
-	filtered := make([]string, 0, len(leaves))
-	for i, item := range p.items {
-		if leavesSet[p.nameAt(i)] {
-			filtered = append(filtered, item)
-		}
-	}
-	formulae := make([]brew.Formula, 0, len(leaves))
-	for _, f := range p.formulae {
-		if leavesSet[f.Name] {
-			formulae = append(formulae, f)
-		}
-	}
-	p.items = filtered
-	p.formulae = formulae
-	p.indexInstalled()
-	p.leavesActive = true
-	p.normalize()
 }
 
 // selectNamed moves the cursor of p to the row of rows called name, when the
