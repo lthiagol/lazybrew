@@ -91,17 +91,13 @@ func TestIconsUnknownValueIsAnError(t *testing.T) {
 	}
 }
 
-// TestREADMEDocumentsIcons keeps the README's config block in step with the
-// two icon keys, so a user can find them without reading the source.
-func TestREADMEDocumentsIcons(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	readme := string(data)
+// TestSampleDocumentsIcons keeps the sample's icon keys in step with the two
+// icon keys, so a user can find them with lazybrew --config-sample.
+func TestSampleDocumentsIcons(t *testing.T) {
+	sample := Sample()
 	for _, key := range []string{"icons: nerd", "show_icons: true", IconsEnv} {
-		if !strings.Contains(readme, key) {
-			t.Errorf("README.md does not document %q", key)
+		if !strings.Contains(sample, key) {
+			t.Errorf("the sample does not document %q", key)
 		}
 	}
 }

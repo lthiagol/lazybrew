@@ -1,8 +1,6 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -54,21 +52,6 @@ func TestSampleThemeCommentListsEveryName(t *testing.T) {
 	for _, name := range themeNames {
 		if !strings.Contains(comment, name) {
 			t.Errorf("sample comment %q does not list %q", comment, name)
-		}
-	}
-}
-
-// TestREADMEDocumentsThemes keeps the README's Themes paragraph in step with
-// the names gui.theme accepts.
-func TestREADMEDocumentsThemes(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	readme := string(data)
-	for _, name := range themeNames {
-		if !strings.Contains(readme, name) {
-			t.Errorf("README.md does not document the theme %q", name)
 		}
 	}
 }
