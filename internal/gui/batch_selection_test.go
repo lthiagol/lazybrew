@@ -53,6 +53,7 @@ func TestCancelledTrustMenuDoesNotPoisonBrewfileMenu(t *testing.T) {
 	p.items = []string{"user/tap"}
 	p.selected = 0
 	p.taps = []brew.Tap{{Name: "user/tap", FormulaNames: []string{"f1"}}}
+	p.setTapRows()
 
 	// Open the trust menu and cancel it.
 	m = sendKey(m, "5")
@@ -218,6 +219,7 @@ func TestTrustMenuCaskOnlyTapOpensCaskSubmenu(t *testing.T) {
 	p.items = []string{"user/casktap"}
 	p.selected = 0
 	p.taps = []brew.Tap{{Name: "user/casktap", CaskNames: []string{"firefox", "chrome"}}}
+	p.setTapRows()
 
 	nm, _ := m.startTrustMenu()
 	mm := asModel(nm)
@@ -258,6 +260,7 @@ func TestTrustMenuFormulaOnlyTapOpensFormulaSubmenu(t *testing.T) {
 	p.items = []string{"user/ftap"}
 	p.selected = 0
 	p.taps = []brew.Tap{{Name: "user/ftap", FormulaNames: []string{"ripgrep"}}}
+	p.setTapRows()
 
 	nm, _ := m.startTrustMenu()
 	mm := asModel(nm)
@@ -285,6 +288,7 @@ func TestTrustMenuBothKindsKeepsSubmenuPositions(t *testing.T) {
 		FormulaNames: []string{"ripgrep"},
 		CaskNames:    []string{"firefox"},
 	}}
+	p.setTapRows()
 
 	nm, _ := m.startTrustMenu()
 	mm := asModel(nm)
@@ -304,6 +308,7 @@ func TestTrustMenuBothKindsKeepsSubmenuPositions(t *testing.T) {
 		FormulaNames: []string{"ripgrep"},
 		CaskNames:    []string{"firefox"},
 	}}
+	p2.setTapRows()
 	nm3, _ := m2.startTrustMenu()
 	mm3 := asModel(nm3)
 	nm4, _ := mm3.handleModalResult(&modal.MenuResult{SelectedIndex: 2}, nil)

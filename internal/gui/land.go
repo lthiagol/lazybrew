@@ -46,6 +46,11 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 			p.taps = msg.Taps
 			p.trustUnknown = msg.TrustUnknown
 			p.trusted = msg.Trusted
+			if msg.PanelID == PanelTaps {
+				// The Taps rows, and their names, come from the taps and trusted
+				// entries, not from msg.Items.
+				p.setTapRows()
+			}
 			p.services = msg.Services
 			p.serviceInfo = msg.ServiceInfo
 			if msg.PanelID == PanelStatus {

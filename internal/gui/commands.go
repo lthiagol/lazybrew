@@ -439,20 +439,11 @@ func fetchPanelData(client *brew.Client, panel PanelID) tea.Cmd {
 			if err != nil {
 				return DataLoadedMsg{PanelID: panel, Err: err}
 			}
-			rows := trustedRows(trusted)
-			items := make([]string, 0, len(list.Taps)+len(rows))
-			for _, t := range list.Taps {
-				items = append(items, t.Name)
-			}
-			for _, e := range rows {
-				items = append(items, e.Name)
-			}
 			return DataLoadedMsg{
 				PanelID:      panel,
-				Items:        items,
 				Taps:         list.Taps,
 				TrustUnknown: list.TrustUnknown,
-				Trusted:      rows,
+				Trusted:      trustedRows(trusted),
 				TrustErr:     trustErr,
 			}
 

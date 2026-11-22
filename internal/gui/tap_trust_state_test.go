@@ -43,7 +43,7 @@ func TestTapsViewSaysTrustUnknownOnBorderAndTapInfo(t *testing.T) {
 
 func TestTapRowsCarryNoTrustWordWhenTrustUnknown(t *testing.T) {
 	p := &panelData{id: PanelTaps, taps: []brew.Tap{{Name: "user/tool"}}, trustUnknown: true}
-	p.items = []string{"user/tool"}
+	p.setTapRows()
 	got := plainLine(p.sidebarRow(0, 30, nil, style.UnicodeIcons, false))
 	if strings.Contains(got, "untrusted") || strings.Contains(got, "trusted") {
 		t.Fatalf("an unread tap row carries no trust word: %q", got)

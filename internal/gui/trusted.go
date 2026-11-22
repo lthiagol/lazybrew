@@ -14,9 +14,9 @@ import (
 // tab alone. The tab's index is tapInfoTab, the first of the Taps tabs.
 var trustedItemTabs = []tabInfo{{"Info", tapInfoTab}}
 
-// trustedRows is the rows of the Taps list below the taps: every trusted
-// formula, cask and command, in that order, alphabetical within each kind. A tap
-// is a row of its own and is not repeated here.
+// trustedRows is every trusted formula, cask and command, in kind order and
+// alphabetical within each kind. tapRows places them under their taps. A tap is
+// not in this list.
 func trustedRows(entries []brew.TrustEntry) []brew.TrustEntry {
 	rows := make([]brew.TrustEntry, 0, len(entries))
 	for _, kind := range []brew.TrustType{brew.TrustTypeFormula, brew.TrustTypeCask, brew.TrustTypeCommand} {
@@ -33,6 +33,64 @@ func trustedRows(entries []brew.TrustEntry) []brew.TrustEntry {
 	return rows
 }
 
+// tapRow is one row of the Taps list: a tap, or a trusted item. tap and item are
+// indexes into the panel's taps and trusted; the one that does not apply is -1.
+// under is set on an item that sits under its tap.
+type tapRow struct {
+	tap, item int
+	under     bool
+}
+
+// tapRows is the Taps list in display order: the taps alphabetical, each followed
+// by its trusted items indented under it, then the trusted items whose tap is not
+// on the list, unindented. trusted must be in trustedRows order, so the items under
+// a tap keep kind order, then name.
+func tapRows(taps []brew.Tap, trusted []brew.TrustEntry) []tapRow {
+	order := make([]int, len(taps))
+	for i := range order {
+		order[i] = i
+	}
+	slices.SortStableFunc(order, func(a, b int) int {
+		return strings.Compare(taps[a].Name, taps[b].Name)
+	})
+	rows := make([]tapRow, 0, len(taps)+len(trusted))
+	listed := make(map[string]bool, len(taps))
+	for _, i := range order {
+		listed[taps[i].Name] = true
+		rows = append(rows, tapRow{tap: i, item: -1})
+		for j, e := range trusted {
+			if e.Tap == taps[i].Name {
+				rows = append(rows, tapRow{tap: -1, item: j, under: true})
+			}
+		}
+	}
+	for j, e := range trusted {
+		if !listed[e.Tap] {
+			rows = append(rows, tapRow{tap: -1, item: j})
+		}
+	}
+	return rows
+}
+
+// setTapRows builds the Taps list from taps and trusted: the typed rows and the
+// names the cursor and the filters read. Every Taps lookup goes through tapRowAt,
+// so no index walks taps or trusted directly.
+func (p *panelData) setTapRows() {
+	p.tapRows = tapRows(p.taps, p.trusted)
+	p.items = make([]string, len(p.tapRows))
+	for i := range p.tapRows {
+		p.items[i] = p.nameAt(i)
+	}
+}
+
+// tapRowAt is the Taps row at index i, false when there is none.
+func (p *panelData) tapRowAt(i int) (tapRow, bool) {
+	if i < 0 || i >= len(p.tapRows) {
+		return tapRow{}, false
+	}
+	return p.tapRows[i], true
+}
+
 // selectTapRow moves the Taps cursor to the tap, or the trusted item, called name
 // in the list the cursor was on. A name the reload no longer has leaves the cursor
 // where it was; normalize then clamps it to the rows that are left.
@@ -40,13 +98,9 @@ func selectTapRow(p *panelData, name string, trusted bool) {
 	if name == "" {
 		return
 	}
-	if !trusted {
-		selectNamed(p, p.taps, func(t brew.Tap) string { return t.Name }, name)
-		return
-	}
-	for i, e := range p.trusted {
-		if e.Name == name {
-			p.selected = len(p.taps) + i
+	for i := range p.items {
+		if r, _ := p.tapRowAt(i); (r.tap < 0) == trusted && p.nameAt(i) == name {
+			p.selected = i
 			return
 		}
 	}

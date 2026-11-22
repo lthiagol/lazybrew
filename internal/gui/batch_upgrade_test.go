@@ -307,6 +307,7 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 	m.activePanel = PanelTaps
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
 	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
+	m.panels[PanelTaps].setTapRows()
 	m.panels[PanelTaps].selected = 0
 	_, cmd = m.executeUntap()
 	check("executeUntap", cmd, "untap:")
@@ -314,6 +315,7 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 	m = newTestModel()
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
 	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
+	m.panels[PanelTaps].setTapRows()
 	m.panels[PanelTaps].selected = 0
 	_, cmd = m.executeRepair()
 	check("executeRepair", cmd, "repair:")
@@ -321,6 +323,7 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 	m = newTestModel()
 	m.panels[PanelTaps].items = []string{"homebrew/foo"}
 	m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
+	m.panels[PanelTaps].setTapRows()
 	m.panels[PanelTaps].selected = 0
 	cmd = m.executeTrustAction(0)
 	check("executeTrustAction", cmd, "trust:")

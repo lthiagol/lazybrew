@@ -44,6 +44,7 @@ func TestUntapConfirmShowsWarning(t *testing.T) {
 	m.activePanel = PanelTaps
 	m.panels[PanelTaps].items = []string{"user/tap  3 formulae"}
 	m.panels[PanelTaps].taps = []brew.Tap{{Name: "user/tap"}}
+	m.panels[PanelTaps].setTapRows()
 	m.panels[PanelTaps].selected = 0
 
 	nm, _ := m.confirmUntap()

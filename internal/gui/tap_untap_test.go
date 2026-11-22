@@ -16,6 +16,7 @@ func untapModel(formulae []brew.Formula, casks []brew.Cask) *Model {
 	m.activePanel = PanelTaps
 	m.panels[PanelTaps].items = []string{"user/tap  3 formulae"}
 	m.panels[PanelTaps].taps = []brew.Tap{{Name: "user/tap"}}
+	m.panels[PanelTaps].setTapRows()
 	m.panels[PanelTaps].selected = 0
 	m.panels[PanelFormulae].formulae = formulae
 	m.panels[PanelCasks].casks = casks

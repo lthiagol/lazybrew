@@ -540,7 +540,7 @@ func TestSidebarLabelsAtEightyColumns(t *testing.T) {
 	m := newTestModel()
 	m.cfg.GUI.SidebarWidth = 30
 	m = updateModel(m, tea.WindowSizeMsg{Width: 80, Height: 24})
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Items: []string{"a", "b", "c"}})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelTaps, Taps: []brew.Tap{{Name: "a/a"}, {Name: "b/b"}, {Name: "c/c"}}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelSearch, Err: brewtest.ErrTest})
 	m.panels[PanelOutdated].loading = true

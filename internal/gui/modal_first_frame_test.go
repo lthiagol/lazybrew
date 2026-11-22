@@ -35,6 +35,7 @@ func TestModalsShowContentOnFirstFrame(t *testing.T) {
 				m = sendKey(m, "5")
 				m.panels[PanelTaps].items = []string{"homebrew/foo"}
 				m.panels[PanelTaps].taps = []brew.Tap{{Name: "homebrew/foo"}}
+				m.panels[PanelTaps].setTapRows()
 				return sendKey(m, "T")
 			},
 			want: "Trust entire tap: homebrew/foo",

@@ -30,6 +30,7 @@ func TestTapInfoSplitsWhenItFits(t *testing.T) {
 		Name: "lthiagol/tap", Remote: "https://x.io/t",
 		FormulaCount: 3, CaskCount: 1,
 	}}}
+	p.setTapRows()
 	wide := ansi.Strip(renderTapInfo(p, 82))
 	_, col := lineWith(t, wide, "Formulae:")
 	if col < 2*82/5 {
@@ -48,6 +49,7 @@ func TestTapInfoSplitsWhenItFits(t *testing.T) {
 func TestTapInfoKeepsARemoteWhole(t *testing.T) {
 	const remote = "https://github.com/danielfoehrkn/homebrew-switch"
 	p := &panelData{taps: []brew.Tap{{Name: "danielfoehrkn/switch", Remote: remote, FormulaCount: 0}}}
+	p.setTapRows()
 	out := ansi.Strip(renderTapInfo(p, 87))
 	if !strings.Contains(out, remote) {
 		t.Fatalf("at 87 cells the remote should be whole on one row, got:\n%s", out)

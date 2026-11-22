@@ -13,14 +13,18 @@ import (
 // gives way: a version is dropped before a name is cut to a stub.
 const minSidebarName = 6
 
-// sidebarCells is one sidebar row before it is laid out: a status glyph, the
-// name, right-aligned text (a version, a status word) and a trailing glyph.
-// Each part carries its own role, so a highlighted row can take the row
+// tapItemIndent is the lead of a trusted item under its tap: a tree mark drawn
+// before the item's glyph.
+const tapItemIndent = "   └ "
+
+// sidebarCells is one sidebar row before it is laid out: an indent, a status
+// glyph, the name, right-aligned text (a version, a status word) and a trailing
+// glyph. Each part carries its own role, so a highlighted row can take the row
 // background on every part.
 type sidebarCells struct {
-	icon, name, right, tail string
-	iconRole, rightRole     lipgloss.Style
-	tailRole                lipgloss.Style
+	indent, icon, name, right, tail string
+	iconRole, rightRole             lipgloss.Style
+	tailRole                        lipgloss.Style
 }
 
 // sidebarRow draws row idx of the panel's list at width w. A row the typed
@@ -88,7 +92,7 @@ func layoutSidebarRow(c sidebarCells, r sidebarRowRoles, w int, hl bool) string 
 		right = " " + c.right
 	}
 
-	fixed := lipgloss.Width(r.marker) + lipgloss.Width(lead) + lipgloss.Width(tail)
+	fixed := lipgloss.Width(r.marker) + lipgloss.Width(c.indent) + lipgloss.Width(lead) + lipgloss.Width(tail)
 	room := w - fixed - lipgloss.Width(right)
 	if right != "" && room < minSidebarName {
 		right = ""
@@ -99,6 +103,9 @@ func layoutSidebarRow(c sidebarCells, r sidebarRowRoles, w int, hl bool) string 
 	name += strings.Repeat(" ", max(0, room-lipgloss.Width(name)))
 
 	line := cell(r.marker, r.markerRole)
+	if c.indent != "" {
+		line += cell(c.indent, style.SubtleText)
+	}
 	if lead != "" {
 		line += cell(c.icon, c.iconRole) + sep
 	}
@@ -135,11 +142,11 @@ func (p *panelData) typedRow(idx int, ic style.Icons) (sidebarCells, bool) {
 			return outdatedCells(c.Name, c.Version, c.NewVersion, ic), true
 		}
 	case PanelTaps:
-		if idx < len(p.taps) {
-			return tapCells(p.taps[idx], !p.trustUnknown, ic), true
-		}
-		if j := idx - len(p.taps); j < len(p.trusted) {
-			return trustedCells(p.trusted[j], ic), true
+		if r, ok := p.tapRowAt(idx); ok {
+			if r.tap >= 0 {
+				return tapCells(p.taps[r.tap], !p.trustUnknown, ic), true
+			}
+			return trustedCells(p.trusted[r.item], r.under, ic), true
 		}
 	case PanelServices:
 		if idx < len(p.services) {
@@ -193,26 +200,33 @@ func outdatedCells(name, version, newVersion string, ic style.Icons) sidebarCell
 	return c
 }
 
-// tapCells is a row on the Taps list. When the trust state was not read
-// (trustKnown false) it shows no trusted or untrusted word, only the name.
+// tapCells is a row on the Taps list. A trusted or official tap shows the locked
+// mark, an untrusted one the unlocked mark in the warning colour. When the trust
+// state was not read (trustKnown false) it keeps the subtle mark and shows no
+// trusted or untrusted word, only the name.
 func tapCells(t brew.Tap, trustKnown bool, ic style.Icons) sidebarCells {
-	c := sidebarCells{name: t.Name, icon: ic.OK, iconRole: style.InstalledBadge, right: "trusted", rightRole: style.SubtleText}
+	c := sidebarCells{name: t.Name, icon: ic.Locked, iconRole: style.InstalledBadge, right: "trusted", rightRole: style.SubtleText}
 	switch {
 	case t.IsOfficial:
 		c.right = "official"
 	case !trustKnown:
-		c.iconRole, c.right = style.SubtleText, ""
+		c.icon, c.iconRole, c.right = ic.OK, style.SubtleText, ""
 	case !t.Trusted:
-		c.icon, c.iconRole, c.right = ic.Warn, style.OutdatedBadge, "untrusted"
+		c.icon, c.iconRole, c.right = ic.Unlocked, style.OutdatedBadge, "untrusted"
 	}
 	return c
 }
 
 // trustedCells is a trusted formula, cask or command on the Taps list: the
-// trusted mark, the full name, then its kind flush right, as a Search row shows
-// its type.
-func trustedCells(e brew.TrustEntry, ic style.Icons) sidebarCells {
-	return sidebarCells{name: e.Name, icon: ic.OK, iconRole: style.InstalledBadge, right: string(e.Type), rightRole: style.SubtleText}
+// trusted mark, then the name, then its kind flush right, as a Search row shows
+// its type. Under its tap the name is the short one, after the tap's prefix.
+func trustedCells(e brew.TrustEntry, under bool, ic style.Icons) sidebarCells {
+	c := sidebarCells{name: e.Name, icon: ic.OK, iconRole: style.InstalledBadge, right: string(e.Type), rightRole: style.SubtleText}
+	if under {
+		c.indent = tapItemIndent
+		c.name = strings.TrimPrefix(e.Name, e.Tap+"/")
+	}
+	return c
 }
 
 // searchCells is a Search row: the installed mark, or a blank cell as wide as

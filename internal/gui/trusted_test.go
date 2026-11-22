@@ -13,19 +13,20 @@ import (
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
+	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
 // trustFixture is `brew trust --json=v1` with one tap, formulae, a cask and a
 // command. octo/tools is a tap, so it is a tap row only, not an item row.
 const trustFixture = `{"taps":["octo/tools"],"formulae":["octo/tools/zeta","acme/fonts/alpha"],"casks":["acme/fonts/gamma-app"],"commands":["octo/tools/cmd"]}`
 
-// trustedFixtureItems is the Taps list the fixture makes: the two taps, then the
-// items in brew's kind order, alphabetical within each kind.
+// trustedFixtureItems is the Taps list the fixture makes: the taps alphabetical,
+// each followed by its items in brew's kind order, alphabetical within each kind.
 var trustedFixtureItems = []string{
-	"octo/tools", "acme/fonts",
-	"acme/fonts/alpha", "octo/tools/zeta",
-	"acme/fonts/gamma-app",
-	"octo/tools/cmd",
+	"acme/fonts",
+	"acme/fonts/alpha", "acme/fonts/gamma-app",
+	"octo/tools",
+	"octo/tools/zeta", "octo/tools/cmd",
 }
 
 // callMu guards the call logs of the helpers below: the Taps read runs its taps
@@ -77,18 +78,10 @@ func tapsTrustedModel(t *testing.T, taps []brew.Tap, trusted []brew.TrustEntry) 
 	return m, calls
 }
 
-// tapsMsg is the DataLoadedMsg the Taps read lands: tap names, then the trusted
-// rows, with the tap-info of each tap in taps.
+// tapsMsg is the DataLoadedMsg the Taps read lands: the taps, with the tap-info of
+// each, and the trusted entries in trustedRows order.
 func tapsMsg(taps []brew.Tap, trusted []brew.TrustEntry) DataLoadedMsg {
-	rows := trustedRows(trusted)
-	items := make([]string, 0, len(taps)+len(rows))
-	for _, tap := range taps {
-		items = append(items, tap.Name)
-	}
-	for _, e := range rows {
-		items = append(items, e.Name)
-	}
-	return DataLoadedMsg{PanelID: PanelTaps, Items: items, Taps: taps, Trusted: rows}
+	return DataLoadedMsg{PanelID: PanelTaps, Taps: taps, Trusted: trustedRows(trusted)}
 }
 
 // recordingRunner answers every brew call with nothing and records its args.
@@ -149,7 +142,7 @@ func TestTapsReadFailureKeepsTheTapsAndToastsOnce(t *testing.T) {
 	m := tapsReadModel(t, `[]`, "", errors.New("trust read failed"), &calls)
 
 	p := m.panels[PanelTaps]
-	if want := []string{"octo/tools", "acme/fonts"}; !reflect.DeepEqual(p.items, want) {
+	if want := []string{"acme/fonts", "octo/tools"}; !reflect.DeepEqual(p.items, want) {
 		t.Fatalf("with the trust read failed, Taps rows = %v, want the taps only %v", p.items, want)
 	}
 	if len(m.toasts) != 1 || !strings.Contains(m.toasts[0].Message, "trust") {
@@ -388,5 +381,108 @@ func TestTapsRowsFitAtEightyByTwentyFour(t *testing.T) {
 	}
 	if row == "" {
 		t.Fatalf("the long item row should be cut with … and keep its type:\n%s", out)
+	}
+}
+
+// tapsTreeFixture is a Taps list with taps out of order, items under two of them,
+// and an item whose tap is not on the list.
+func tapsTreeFixture() ([]brew.Tap, []brew.TrustEntry) {
+	taps := []brew.Tap{{Name: "rjyo/moshi", Trusted: true}, {Name: "lthiagol/tap", Trusted: true}, {Name: "anomalyco/tap", Trusted: true}, {Name: "danielfoehrkn/switch"}}
+	trusted := []brew.TrustEntry{
+		trustedAt("lthiagol/tap/frond", brew.TrustTypeFormula),
+		trustedAt("anomalyco/tap/opencode-v2", brew.TrustTypeFormula),
+		trustedAt("lthiagol/tap/tool", brew.TrustTypeCask),
+		trustedAt("other/gone/thing", brew.TrustTypeFormula),
+	}
+	return taps, trusted
+}
+
+func TestTapsListOrdersTapsThenTheirItemsThenOrphans(t *testing.T) {
+	taps, trusted := tapsTreeFixture()
+	m, _ := tapsTrustedModel(t, taps, trusted)
+	want := []string{
+		"anomalyco/tap", "anomalyco/tap/opencode-v2",
+		"danielfoehrkn/switch",
+		"lthiagol/tap", "lthiagol/tap/frond", "lthiagol/tap/tool",
+		"rjyo/moshi",
+		"other/gone/thing",
+	}
+	if got := m.panels[PanelTaps].items; !reflect.DeepEqual(got, want) {
+		t.Fatalf("Taps rows = %v, want %v", got, want)
+	}
+}
+
+func TestTapsListCountIsTheNumberOfTaps(t *testing.T) {
+	taps, trusted := tapsTreeFixture()
+	m, _ := tapsTrustedModel(t, taps, trusted)
+	if got := m.panels[PanelTaps].itemCount(); got != len(taps) {
+		t.Fatalf("the Taps count = %d, want the %d taps, rows %d", got, len(taps), len(m.panels[PanelTaps].items))
+	}
+	if out := ansi.Strip(m.View().Content); !strings.Contains(out, "Taps & Trust ") || !strings.Contains(out, " 4 ─") {
+		t.Fatalf("the Taps border should count 4 taps:\n%s", out)
+	}
+}
+
+func TestTapsListRowsDrawLocksAndIndentedItems(t *testing.T) {
+	taps, trusted := tapsTreeFixture()
+	p := &panelData{id: PanelTaps, taps: taps, trusted: trustedRows(trusted)}
+	p.setTapRows()
+
+	for name, ic := range map[string]style.Icons{"nerd": style.NerdIcons, "unicode": style.UnicodeIcons} {
+		row := func(i int) string { return plainLine(p.sidebarRow(i, 50, nil, ic, false)) }
+		if got := row(0); !strings.Contains(got, ic.Locked+" anomalyco/tap") || !strings.HasSuffix(strings.TrimSpace(got), "trusted") {
+			t.Errorf("%s set: trusted tap row = %q, want the locked mark, the name and trusted", name, got)
+		}
+		if got := row(1); !strings.Contains(got, "   └ "+ic.OK+" opencode-v2") || !strings.HasSuffix(strings.TrimSpace(got), "formula") {
+			t.Errorf("%s set: item row = %q, want the tree mark, the green check, the short name and its kind", name, got)
+		}
+		if got := row(2); !strings.Contains(got, ic.Unlocked+" danielfoehrkn/switch") || !strings.HasSuffix(strings.TrimSpace(got), "untrusted") {
+			t.Errorf("%s set: untrusted tap row = %q, want the unlocked mark and untrusted", name, got)
+		}
+		if got := row(7); !strings.Contains(got, ic.OK+" other/gone/thing") || strings.Contains(got, "└") {
+			t.Errorf("%s set: orphan row = %q, want the full name, unindented", name, got)
+		}
+	}
+}
+
+func TestTapsListTrustUnknownKeepsTheSubtleCheck(t *testing.T) {
+	taps, trusted := tapsTreeFixture()
+	p := &panelData{id: PanelTaps, taps: taps, trusted: trustedRows(trusted), trustUnknown: true}
+	p.setTapRows()
+	got := plainLine(p.sidebarRow(0, 50, nil, style.UnicodeIcons, false))
+	if !strings.Contains(got, style.UnicodeIcons.OK+" anomalyco/tap") || strings.Contains(got, "trusted") || strings.Contains(got, "⚠") {
+		t.Fatalf("a tap whose trust is unread should show the subtle check and no word: %q", got)
+	}
+}
+
+func TestTapsListCursorSelectsTheRowItIsOn(t *testing.T) {
+	taps, trusted := tapsTreeFixture()
+	m, _ := tapsTrustedModel(t, taps, trusted)
+
+	m = selectRow(t, m, "lthiagol/tap")
+	if tap := m.panels[PanelTaps].selectedTap(); tap == nil || tap.Name != "lthiagol/tap" || m.panels[PanelTaps].selectedTrusted() != nil {
+		t.Fatalf("the cursor on a tap should select that tap, got tap %+v", tap)
+	}
+
+	m = selectRow(t, m, "lthiagol/tap/tool")
+	if e := m.panels[PanelTaps].selectedTrusted(); e == nil || e.Name != "lthiagol/tap/tool" || m.panels[PanelTaps].selectedTap() != nil {
+		t.Fatalf("the cursor on an item should select that trusted entry, got %+v", e)
+	}
+
+	m = selectRow(t, m, "other/gone/thing")
+	if e := m.panels[PanelTaps].selectedTrusted(); e == nil || e.Name != "other/gone/thing" {
+		t.Fatalf("the cursor on an orphan should select that trusted entry, got %+v", e)
+	}
+}
+
+func TestTapsListReloadKeepsTheCursorOnATapBehindItsItems(t *testing.T) {
+	taps, trusted := tapsTreeFixture()
+	m, _ := tapsTrustedModel(t, taps, trusted)
+	m = selectRow(t, m, "rjyo/moshi")
+
+	// A new item under anomalyco/tap moves rjyo/moshi down, and the cursor follows.
+	m = updateModel(m, tapsMsg(taps, append(trusted, trustedAt("anomalyco/tap/aaa", brew.TrustTypeFormula))))
+	if got := m.panels[PanelTaps].selectedName(); got != "rjyo/moshi" {
+		t.Fatalf("after a reload the cursor is on %q, want rjyo/moshi", got)
 	}
 }

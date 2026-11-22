@@ -315,6 +315,7 @@ func footerOn(id PanelID) []keyHint {
 			for _, unknown := range []bool{false, true} {
 				show(func(m *Model) {
 					m.panels[PanelTaps].taps = []brew.Tap{tap}
+					m.panels[PanelTaps].setTapRows()
 					m.panels[PanelTaps].trustUnknown = unknown
 				})
 			}
@@ -329,6 +330,7 @@ func footerOn(id PanelID) []keyHint {
 func trustedItemUnderCursor(m *Model) {
 	m.panels[PanelTaps].taps = []brew.Tap{{Name: "a/b", Installed: true}}
 	m.panels[PanelTaps].trusted = []brew.TrustEntry{{Name: "a/b/c", Type: brew.TrustTypeFormula, Tap: "a/b"}}
+	m.panels[PanelTaps].setTapRows()
 	m.panels[PanelTaps].selected = 1
 }
 

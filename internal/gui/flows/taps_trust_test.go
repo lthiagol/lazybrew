@@ -94,7 +94,7 @@ func TestTapsTrustedItemFlow(t *testing.T) {
 	tm := testutil.NewTestModelWithRunner(t, runner, teatest.WithInitialTermSize(120, 40))
 
 	tm.Send(tea.KeyPressMsg{Code: '5', Text: "5"})
-	waitForScreen(t, tm, "octo/tools/zeta")
+	waitForScreen(t, tm, "└ ✔ zeta")
 	tm.Send(tea.KeyPressMsg{Code: 'j', Text: "j"})
 
 	tm.Send(tea.KeyPressMsg{Code: 'x', Text: "x"})
@@ -117,11 +117,12 @@ func TestTapsTrustedItemFlow(t *testing.T) {
 		}
 	}
 	// The sidebar row is checked, not the bare name: the operation overlay names
-	// the formula too.
+	// the formula too. The item sits under its tap, so its row shows the short name.
 	view := ansi.Strip(tm.FinalModel(t).View().Content)
-	if strings.Contains(view, "✔ octo/tools/zeta") {
+	if strings.Contains(view, "└ ✔ zeta") {
 		t.Errorf("the untrusted formula is still on the Taps list:\n%s", view)
 	}
+	// The tap row leads with the locked mark, which is ✔ in the Unicode set.
 	if !strings.Contains(view, "▸ ✔ octo/tools ") {
 		t.Errorf("the cursor should land on the tap above the removed row:\n%s", view)
 	}

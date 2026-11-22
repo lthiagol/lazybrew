@@ -25,6 +25,7 @@ func tapsActionModel(t *testing.T, taps []brew.Tap) (*Model, *[][]string) {
 	m.switchPanel(PanelTaps)
 	p := m.panels[PanelTaps]
 	p.taps = taps
+	p.setTapRows()
 	p.items = make([]string, len(taps))
 	for i, tap := range taps {
 		p.items[i] = tap.Name

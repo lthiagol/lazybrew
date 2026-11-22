@@ -19,6 +19,7 @@ func tapsPanelWith(names []string, sel int) *Model {
 		p.taps[i] = brew.Tap{Name: n, Installed: true}
 		p.items[i] = n
 	}
+	p.setTapRows()
 	p.loaded = true
 	p.selected = sel
 	return m

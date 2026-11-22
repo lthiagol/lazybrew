@@ -108,15 +108,22 @@ type panelData struct {
 	// trustUnknown is set when the taps were read without tap-info: the rows
 	// and the Tap Info say so, and t and T refuse until a full read lands.
 	trustUnknown bool
-	// trusted is the Taps list's trusted formulae, casks and commands: the rows
-	// after the taps, in trustedRows order.
+	// trusted is the Taps list's trusted formulae, casks and commands, in
+	// trustedRows order. tapRows is the Taps list in display order, built from
+	// taps and trusted by setTapRows; see trusted.go.
 	trusted []brew.TrustEntry
+	tapRows []tapRow
 	// trustFailed is set when the last trust read failed: the failure is toasted
 	// once, not again on every refresh that repeats it.
 	trustFailed bool
 }
 
+// itemCount is the count the sidebar border shows. On the Taps list it is the
+// taps, not the rows under them.
 func (p *panelData) itemCount() int {
+	if p.id == PanelTaps {
+		return len(p.taps)
+	}
 	return len(p.items)
 }
 
@@ -246,11 +253,11 @@ func (p *panelData) nameAt(i int) string {
 			return p.casks[j].Name
 		}
 	case PanelTaps:
-		if i < len(p.taps) {
-			return p.taps[i].Name
-		}
-		if j := i - len(p.taps); j < len(p.trusted) {
-			return p.trusted[j].Name
+		if r, ok := p.tapRowAt(i); ok {
+			if r.tap >= 0 {
+				return p.taps[r.tap].Name
+			}
+			return p.trusted[r.item].Name
 		}
 	case PanelServices:
 		if i < len(p.services) {
@@ -272,8 +279,8 @@ func (p *panelData) selectedName() string {
 // selectedTrusted is the trusted item under the cursor on the Taps list, nil on a
 // tap row.
 func (p *panelData) selectedTrusted() *brew.TrustEntry {
-	if i := p.selected - len(p.taps); p.selected >= 0 && i >= 0 && i < len(p.trusted) {
-		return &p.trusted[i]
+	if r, ok := p.tapRowAt(p.selected); ok && r.item >= 0 {
+		return &p.trusted[r.item]
 	}
 	return nil
 }
@@ -293,8 +300,8 @@ func (p *panelData) selectedCask() *brew.Cask {
 }
 
 func (p *panelData) selectedTap() *brew.Tap {
-	if p.selected >= 0 && p.selected < len(p.taps) {
-		return &p.taps[p.selected]
+	if r, ok := p.tapRowAt(p.selected); ok && r.tap >= 0 {
+		return &p.taps[r.tap]
 	}
 	return nil
 }

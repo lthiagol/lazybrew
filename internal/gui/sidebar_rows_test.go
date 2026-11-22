@@ -107,15 +107,15 @@ func TestOutdatedRowsCountFormulaeThenCasks(t *testing.T) {
 	}
 }
 
-// TestTrustedTapRowDrawsCheckmark (lb25 fix r2): a trusted tap's row leads with
-// the ✔ brew prints, in both sets, never ✓.
-func TestTrustedTapRowDrawsCheckmark(t *testing.T) {
+// TestTrustedTapRowDrawsLock (lb25 fix r2, u5): a trusted tap's row leads with the
+// set's locked mark, in both sets, never ✓. Unicode's locked mark is the ✔ brew prints.
+func TestTrustedTapRowDrawsLock(t *testing.T) {
 	taps := &panelData{id: PanelTaps, taps: []brew.Tap{{Name: "lt/tap", Trusted: true}}}
-	taps.items = []string{"lt/tap"}
+	taps.setTapRows()
 	for name, icons := range map[string]style.Icons{"nerd": style.NerdIcons, "unicode": style.UnicodeIcons} {
 		got := plainLine(taps.sidebarRow(0, 30, nil, icons, false))
-		if !strings.Contains(got, "✔ lt/tap") || strings.Contains(got, "✓") {
-			t.Errorf("%s set: trusted tap row %q should draw ✔ and no ✓", name, got)
+		if want := icons.Locked + " lt/tap"; !strings.Contains(got, want) || strings.Contains(got, "✓") {
+			t.Errorf("%s set: trusted tap row %q should draw %q and no ✓", name, got, icons.Locked)
 		}
 	}
 }
@@ -124,7 +124,7 @@ func TestTrustedTapRowDrawsCheckmark(t *testing.T) {
 // service its running state, both as the right-hand word.
 func TestTapAndServiceRowsShowTheirState(t *testing.T) {
 	taps := &panelData{id: PanelTaps, taps: []brew.Tap{{Name: "lt/tap"}}}
-	taps.items = []string{"lt/tap"}
+	taps.setTapRows()
 	if got := plainLine(taps.sidebarRow(0, 30, nil, style.UnicodeIcons, false)); !strings.HasSuffix(got, "untrusted") {
 		t.Errorf("an untrusted tap ends with untrusted: %q", got)
 	}

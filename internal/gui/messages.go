@@ -23,7 +23,8 @@ type DataLoadedMsg struct {
 	Items    []string
 	Formulae []brew.Formula
 	Casks    []brew.Cask
-	Taps     []brew.Tap
+	// Taps and Trusted build the Taps list; Items is not read for it.
+	Taps []brew.Tap
 	// TrustUnknown is set when the Taps read got no tap-info: Taps holds names
 	// only, so their trust state is not known (v2-10 AC-00).
 	TrustUnknown bool

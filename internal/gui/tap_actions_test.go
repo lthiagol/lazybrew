@@ -48,6 +48,7 @@ func tapsModel(taps []brew.Tap, trustKnown bool) *Model {
 	p.loading = false
 	p.loaded = true
 	p.taps = taps
+	p.setTapRows()
 	p.items = make([]string, len(taps))
 	for i, t := range taps {
 		p.items[i] = t.Name

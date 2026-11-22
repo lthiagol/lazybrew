@@ -568,6 +568,7 @@ func TestConfirmRepair(t *testing.T) {
 	p := m.panels[PanelTaps]
 	p.items = []string{"nicknisi/tap"}
 	p.taps = []brew.Tap{{Name: "nicknisi/tap"}}
+	p.setTapRows()
 	p.selected = 0
 
 	tm, _ := m.confirmRepair()
@@ -582,6 +583,7 @@ func TestConfirmUntap(t *testing.T) {
 	p := m.panels[PanelTaps]
 	p.items = []string{"nicknisi/tap"}
 	p.taps = []brew.Tap{{Name: "nicknisi/tap"}}
+	p.setTapRows()
 	p.selected = 0
 
 	tm, _ := m.confirmUntap()
@@ -596,6 +598,7 @@ func TestConfirmUntapOfficial(t *testing.T) {
 	p := m.panels[PanelTaps]
 	p.items = []string{"homebrew/core"}
 	p.taps = []brew.Tap{{Name: "homebrew/core"}}
+	p.setTapRows()
 	p.selected = 0
 
 	tm, _ := m.confirmUntap()
@@ -726,6 +729,7 @@ func TestStartTrustMenu(t *testing.T) {
 	p := m.panels[PanelTaps]
 	p.items = []string{"nicknisi/tap"}
 	p.taps = []brew.Tap{{Name: "nicknisi/tap", FormulaNames: []string{"formula1"}, CaskNames: []string{"cask1"}}}
+	p.setTapRows()
 	p.selected = 0
 
 	tm, _ := m.startTrustMenu()
