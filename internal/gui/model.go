@@ -236,11 +236,15 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	return m
 }
 
-func (m *Model) CommandLogCallback() brew.CommandCallback {
+// CommandLogHook is the LoggingRunner hook: each brew command adds one
+// running row, and its finisher updates that row in place.
+func (m *Model) CommandLogHook() brew.CommandHook {
 	cl := m.commandLog
-	return func(args []string, err error) {
+	return func(args []string) func(error) {
 		id := cl.Append(brewCommandString(args))
-		cl.SetStatus(id, commandStatus(args, err))
+		return func(err error) {
+			cl.SetStatus(id, commandStatus(args, err))
+		}
 	}
 }
 
@@ -258,11 +262,4 @@ func commandStatus(args []string, err error) CommandStatus {
 		return CommandSuccess
 	}
 	return CommandError
-}
-
-func (m *Model) CommandLogStartCallback() brew.CommandCallback {
-	cl := m.commandLog
-	return func(args []string, _ error) {
-		cl.Append(brewCommandString(args))
-	}
 }

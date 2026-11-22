@@ -33,8 +33,8 @@ type LogEntry struct {
 	id int
 }
 
-// CommandLog is written from brew runner goroutines (LoggingRunner
-// OnStart/OnExec callbacks) and read from the render thread, so every
+// CommandLog is written from brew runner goroutines (the LoggingRunner
+// OnCommand hook) and read from the render thread, so every
 // accessor takes the mutex (r1 finding 3).
 type CommandLog struct {
 	mu      sync.Mutex

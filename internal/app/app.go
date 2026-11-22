@@ -67,7 +67,7 @@ func New(opts Options) (tea.Model, error) {
 		runner = defaultRunner
 	}
 
-	logRunner := brew.NewLoggingRunner(runner, nil, nil)
+	logRunner := brew.NewLoggingRunner(runner, nil)
 	client := brew.NewClient(logRunner)
 	client.SetCacheTTLs(brew.CacheTTLs{
 		Formulae: cfg.Brew.FormulaeTTL,
@@ -78,8 +78,7 @@ func New(opts Options) (tea.Model, error) {
 		Doctor:   cfg.Brew.DoctorTTL,
 	})
 	model := gui.New(client, cfg)
-	logRunner.OnStart = model.CommandLogStartCallback()
-	logRunner.OnExec = model.CommandLogCallback()
+	logRunner.OnCommand = model.CommandLogHook()
 
 	return model, nil
 }

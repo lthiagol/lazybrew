@@ -292,59 +292,59 @@ func finishErr(err error) error {
 	return err
 }
 
-type CommandCallback func(args []string, err error)
+// CommandHook runs when a brew command starts. It returns the finisher, which
+// the runner calls once with the command's final error.
+type CommandHook func(args []string) (finish func(err error))
 
 type LoggingRunner struct {
-	inner   Runner
-	OnExec  CommandCallback
-	OnStart CommandCallback
+	inner     Runner
+	OnCommand CommandHook
 }
 
-func NewLoggingRunner(inner Runner, onStart, onExec CommandCallback) *LoggingRunner {
+// NewLoggingRunner wraps inner. A nil hook logs nothing.
+func NewLoggingRunner(inner Runner, onCommand CommandHook) *LoggingRunner {
 	return &LoggingRunner{
-		inner:   inner,
-		OnStart: onStart,
-		OnExec:  onExec,
+		inner:     inner,
+		OnCommand: onCommand,
 	}
+}
+
+// start calls the hook for a new command, or returns a no-op finisher when
+// there is no hook.
+func (r *LoggingRunner) start(args []string) func(error) {
+	if r.OnCommand == nil {
+		return func(error) {}
+	}
+	return r.OnCommand(args)
 }
 
 func (r *LoggingRunner) Execute(ctx context.Context, args ...string) ([]byte, error) {
-	if r.OnStart != nil {
-		r.OnStart(args, nil)
-	}
+	finish := r.start(args)
 	out, err := r.inner.Execute(ctx, args...)
-	if r.OnExec != nil {
-		r.OnExec(args, err)
-	}
+	finish(err)
 	return out, err
 }
 
 func (r *LoggingRunner) ExecuteJSON(ctx context.Context, result any, args ...string) error {
-	if r.OnStart != nil {
-		r.OnStart(args, nil)
-	}
+	finish := r.start(args)
 	err := r.inner.ExecuteJSON(ctx, result, args...)
-	if r.OnExec != nil {
-		r.OnExec(args, err)
-	}
+	finish(err)
 	return err
 }
 
 func (r *LoggingRunner) ExecuteStream(ctx context.Context, args ...string) (<-chan string, <-chan error) {
-	if r.OnStart != nil {
-		r.OnStart(args, nil)
-	}
+	finish := r.start(args)
 	stdoutChan, errChan := r.inner.ExecuteStream(ctx, args...)
-	if r.OnExec == nil {
+	if r.OnCommand == nil {
 		return stdoutChan, errChan
 	}
-	// This goroutine is the inner channel's only reader. It logs the error,
-	// then hands the same error to the caller on a channel of its own.
+	// This goroutine is the inner channel's only reader. It finishes the log
+	// row, then hands the same error to the caller on a channel of its own.
 	out := make(chan error, 1)
 	go func() {
 		defer close(out)
 		err := <-errChan
-		r.OnExec(args, err)
+		finish(err)
 		out <- err
 	}()
 	return stdoutChan, out
