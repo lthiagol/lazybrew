@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 	"github.com/lthiagol/lazybrew/internal/config"
@@ -124,6 +125,38 @@ func TestSidebarLabelStates(t *testing.T) {
 	m.panels[PanelCasks].loading = true
 	if got := m.sidebarLabel(m.panels[PanelCasks]).full; got != m.spinner.View() {
 		t.Fatalf("loading label = %q, want the spinner", got)
+	}
+}
+
+// TestSidebarRowsStayWhileRefreshing: a panel loaded before keeps its rows and
+// cursor while its re-fetch is pending, with the spinner as its label. A panel
+// never loaded draws no rows. Search does not keep its rows: they are the last
+// query's.
+func TestSidebarRowsStayWhileRefreshing(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{"alpha", "beta"}})
+	casks := m.panels[PanelCasks]
+	casks.loading = true
+
+	body := ansi.Strip(casks.renderSidebarContent(30, 5, nil, m.icons, true))
+	if !strings.Contains(body, "alpha") || !strings.Contains(body, "beta") {
+		t.Fatalf("a loaded panel should keep its rows while refreshing, got:\n%s", body)
+	}
+	if got := m.sidebarLabel(casks).full; got != m.spinner.View() {
+		t.Fatalf("the spinner should be the label while refreshing, got %q", got)
+	}
+
+	outdated := m.panels[PanelOutdated]
+	outdated.loading = true
+	if body := outdated.renderSidebarContent(30, 5, nil, m.icons, true); body != "" {
+		t.Fatalf("a panel never loaded should draw no rows while loading, got %q", body)
+	}
+
+	search := m.panels[PanelSearch]
+	search.loaded, search.loading = true, true
+	search.items = []string{"old-result"}
+	if body := search.renderSidebarContent(30, 5, nil, m.icons, true); strings.Contains(body, "old-result") {
+		t.Fatalf("Search should not keep the last query's rows while searching, got:\n%s", body)
 	}
 }
 

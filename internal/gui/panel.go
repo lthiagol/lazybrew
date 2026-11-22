@@ -357,11 +357,13 @@ func emptyPanel(width, height int) string {
 	)
 }
 
-// renderSidebarContent is the body of a sidebar box. A pending fetch, a panel
-// that was never loaded and an empty one draw no body: their state is the
-// box's border label (sidebarLabel).
+// renderSidebarContent is the body of a sidebar box. A panel that was never
+// loaded and an empty one draw no body: their state is the box's border label
+// (sidebarLabel). A pending fetch does the same, unless the panel was loaded
+// before: its rows stay until the fresh ones land. Search is not kept, since
+// its rows belong to the last query.
 func (p *panelData) renderSidebarContent(width, maxRows int, batch map[int]bool, ic style.Icons, focused bool) string {
-	if p.loading {
+	if p.loading && (!p.loaded || p.id == PanelSearch) {
 		return ""
 	}
 	if p.err != nil {

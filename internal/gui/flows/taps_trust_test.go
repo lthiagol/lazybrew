@@ -127,3 +127,49 @@ func TestTapsTrustedItemFlow(t *testing.T) {
 		t.Errorf("the cursor should land on the tap above the removed row:\n%s", view)
 	}
 }
+
+// TestRefreshKeepsTapRowsWhileReloadPendsFlow (u8): a Taps list that has loaded
+// keeps its rows while R's re-read is pending. The read is held at its brew call
+// until the flow has quit and read the View, so the rows must come from the
+// stale list.
+func TestRefreshKeepsTapRowsWhileReloadPendsFlow(t *testing.T) {
+	runner := newTrustFlowRunner()
+	release := make(chan struct{})
+	held := make(chan struct{})
+	var heldOnce sync.Once
+	var mu sync.Mutex
+	armed := false
+	inner := runner.ExecuteFn
+	runner.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		mu.Lock()
+		hold := armed && len(args) > 0 && args[0] == "tap"
+		mu.Unlock()
+		if hold {
+			heldOnce.Do(func() { close(held) })
+			<-release
+		}
+		return inner(ctx, args...)
+	}
+	defer close(release)
+	tm := testutil.NewTestModelWithRunner(t, runner, teatest.WithInitialTermSize(120, 40))
+
+	tm.Send(tea.KeyPressMsg{Code: '5', Text: "5"})
+	waitForScreen(t, tm, "└ ✔ zeta")
+
+	mu.Lock()
+	armed = true
+	mu.Unlock()
+	tm.Send(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	select {
+	case <-held:
+	case <-time.After(3 * time.Second):
+		t.Fatal("the refresh never re-read the taps")
+	}
+	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
+	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
+
+	view := ansi.Strip(tm.FinalModel(t).View().Content)
+	if !strings.Contains(view, "✔ octo/tools ") || !strings.Contains(view, "└ ✔ zeta") {
+		t.Errorf("the Taps rows should stay on screen while the reload is pending:\n%s", view)
+	}
+}
