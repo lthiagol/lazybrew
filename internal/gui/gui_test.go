@@ -1655,6 +1655,41 @@ func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
 	}
 }
 
+// TestOverlappingRefreshesToastOnceAllLanded: a refresh that starts while an
+// earlier one still has reads out adds its reads to the count. The earlier
+// refresh's landing must not end the count early and toast "Data refreshed"
+// while the later refresh's read is still pending.
+func TestOverlappingRefreshesToastOnceAllLanded(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelStatus
+	m.cfg.GUI.AutoRefreshSeconds = 0
+	for _, p := range m.panels {
+		p.loading = false
+	}
+
+	m = updateModel(m, RefreshMsg{})
+	m = updateModel(m, RefreshMsg{})
+	if m.refreshing != 2 {
+		t.Fatalf("refreshing = %d after two refreshes, want 2 (one Status read each)", m.refreshing)
+	}
+
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
+	if m.refreshing != 1 {
+		t.Errorf("refreshing = %d after one of two reads landed, want 1", m.refreshing)
+	}
+	if got := lastToast(m); got == "Data refreshed" {
+		t.Error("\"Data refreshed\" toasted while a read of the second refresh is still pending")
+	}
+
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
+	if m.refreshing != 0 {
+		t.Errorf("refreshing = %d after both reads landed, want 0", m.refreshing)
+	}
+	if got := lastToast(m); got != "Data refreshed" {
+		t.Errorf("last toast = %q after both reads landed, want \"Data refreshed\"", got)
+	}
+}
+
 func TestRefreshDoesNotEnqueueEmptyStatusStub(t *testing.T) {
 	// F-03: when active is Status, must not also enqueue fetchPanelData(Status)
 	// which returns Items:[] and can wipe the dashboard.

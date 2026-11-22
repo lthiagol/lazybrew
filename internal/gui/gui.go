@@ -634,8 +634,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, fetchPanelData(m.client, p.id))
 		}
 		// Count only DataLoadedMsg producers so the "Data refreshed" toast
-		// fires when the last panel lands.
-		m.refreshing = len(cmds)
+		// fires when the last panel lands. A refresh that starts while an
+		// earlier one still has reads out adds to the count: a reset would let
+		// the earlier reads' landings end it while the new ones are pending.
+		m.refreshing += len(cmds)
 		return m, tea.Batch(cmds...)
 
 	case tea.PasteMsg:
