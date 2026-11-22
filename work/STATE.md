@@ -7,39 +7,36 @@ learn what is done, what is in flight, and where to pick up.
 
 `v1.1.0-rc4` is tagged and `lazybrew-dev` in the tap points at it (2026-11-21); rc1 was `fd1a037`. No PR to `stable`: work stays on `wip`.
 
-## ▶ Resume here (2026-11-20, end of the orchestrator session)
+## ▶ Resume here (2026-11-22, end of the orchestrator session)
 
-**Where we are.** LB-08 is code-complete on `wip`: the overhaul (v2-01 … v2-06,
-v2-05s) and the user's follow-ups (v2-07 … v2-11, ruling `Q-v2-next`) are all
-closed `ok`, pushed, `wip-ci` green (with `-race`). No agent is running.
+**Where we are.** Every planned slice is closed `ok` (lb12 … lb32, table below),
+pushed to `wip`, `wip-ci` green. `v1.1.0-rc4` is tagged and in the tap. No agent
+is running and the `lb-builder` / `lb-reviewer` tabs are closed. No PR, nothing
+on `stable`: work stays on `wip`.
 
-**Next, in order** (user ruling `Q-backlog-next`, 2026-11-20 — LB-05 smoke
-deferred, backlog first, LB-11 deferred).
-1. ~~`lb04-lb10-small-fixes`~~ closed `ok` r1.
-2. ~~`lb09-service-logs`~~ closed `ok` r2. No agent is running.
-3. Then the LB-05 smoke and, on the user's go-ahead, the PR `wip` → `stable`
-   (`gh pr create --base stable --head wip`). Never push to `stable` directly.
-4. Code-review slices (2026-11-20, source `code-review.md`, user chose 5
-   briefs with Low items included): ~~`cr1-correctness`~~ (closed ok r1) → ~~`cr2-brew-cache`~~ (closed ok r2) →
-   ~~`cr3-render-perf`~~ (closed ok r2) → ~~`cr4-gui-dedup`~~ (closed ok r3) → ~~`cr5-dead-code`~~ (closed ok r2), strictly in order — **the code-review run is complete**;
-   shared rules in `work/briefs/cr-common.md`. Orchestrator reviews each
-   receipt (revert-the-fix check on every regression test, `make ci`,
-   deadcode/staticcheck) and writes `fix-<slice>-rN.md` if needed.
+**Awaiting the user.** Try rc4 on macOS (`brew update && brew upgrade
+lthiagol/tap/lazybrew-dev`; `lazybrew-dev --version` prints `lazybrew
+1.1.0-rc4`) and report failures with exact text. Untested in a real terminal:
+OSC 52 copy, the Vulns view, Cleanup/Unused tabs, Taps & Trust.
 
-**Read before acting.** `work/README.md` (lane flow + herdr runbook: Haiku 5.5
-high builder, Opus 5.5 medium reviewer, fresh pair per slice, ≤ 5 review
-rounds, push `wip` per closed slice); the user rulings at the bottom of
-`work/questions.md` (`Q-v2-next`, `Q-v2-builder-speed` + amendment,
-`Q-v2-09-a`, `Q-v2-11-b`, `Q-v2-10-a/b`); `work/backlog.md` (parked LB-09,
-LB-10, LB-11; LB-04 still open).
+**Open (all in `work/backlog.md`).** LB-27 Latte contrast (only if light mode
+reads badly); LB-31 one unreproduced `make ci` failure; untracked
+`Screenshot*.png` in the repo root (add to `.gitignore` if the user agrees).
 
-**Checkpoint pages** (private claude.ai artifacts, owner only):
-overhaul https://claude.ai/artifact/SXy5t4jDeZDASph52RD2UG · follow-ups
-https://claude.ai/artifact/7oLz5pJxfcGxuFwfcG7aW4.
+**Read before acting.** `work/README.md` (lane flow, herdr runbook, lane names
+`lb-builder`/`lb-reviewer`; Haiku 5.5 high builder, a fresh session per round;
+Opus 5.5 medium reviewer; ≤ 5 rounds; push `wip` per closed slice);
+`work/backlog.md`; the rulings at the bottom of `work/questions.md`.
 
-**Gate.** `make ci` (full, ~30 s here); per commit `make test-fast
-PKG=<pkgs>`. Never run brew write commands from an agent on this machine
-(`moshi-hook` is live).
+**Gate.** `make ci` (use `GOFLAGS=-p=1` if /tmp is tight); per commit
+`make test-fast PKG=<pkgs>`. Never run brew write commands from an agent on this
+machine (`moshi-hook` is live); never launch the TUI against the real brew; do
+not touch the other project's (`andre`) files in /tmp.
+
+**New work** starts with a brief in `work/briefs/<slice>.md` + a review brief,
+then the lane flow. Release: tag the `wip` tip `vX.Y.Z-rcN`, push the tag, bump
+`url` + `sha256` in the tap's `Formula/lazybrew-dev.rb` (see AGENTS.md, "WIP /
+dev builds").
 
 | slice | commits | state | verdict |
 |---|---|---|---|
