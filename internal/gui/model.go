@@ -240,12 +240,24 @@ func (m *Model) CommandLogCallback() brew.CommandCallback {
 	cl := m.commandLog
 	return func(args []string, err error) {
 		id := cl.Append(brewCommandString(args))
-		if err != nil {
-			cl.SetStatus(id, CommandError)
-		} else {
-			cl.SetStatus(id, CommandSuccess)
-		}
+		cl.SetStatus(id, commandStatus(args, err))
 	}
+}
+
+// commandStatus is the log status of a finished brew command. Exit 1 is a
+// result for the commands brew.ExitOneReport names, not a failure.
+func commandStatus(args []string, err error) CommandStatus {
+	if err == nil {
+		return CommandSuccess
+	}
+	warn, success := brew.ExitOneReport(args, err)
+	switch {
+	case warn:
+		return CommandWarn
+	case success:
+		return CommandSuccess
+	}
+	return CommandError
 }
 
 func (m *Model) CommandLogStartCallback() brew.CommandCallback {

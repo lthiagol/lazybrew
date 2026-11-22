@@ -16,6 +16,9 @@ const (
 	CommandRunning CommandStatus = iota
 	CommandSuccess
 	CommandError
+	// CommandWarn is a command whose exit 1 printed a report (see
+	// brew.ExitOneReport), not a failure.
+	CommandWarn
 )
 
 type LogEntry struct {
@@ -152,6 +155,9 @@ func (cl *CommandLog) View(width, height int) string {
 		case CommandSuccess:
 			glyph = icons.OK
 			cmdStyle = style.NormalItem
+		case CommandWarn:
+			glyph = icons.Warn
+			cmdStyle = style.WarningText
 		case CommandError:
 			glyph = icons.Error
 			cmdStyle = style.ErrorBadge

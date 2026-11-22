@@ -102,3 +102,26 @@ func IsExitCode(err error, code int) bool {
 	}
 	return false
 }
+
+// ExitOneReport says what the error of a brew command means, for a command whose
+// exit 1 is a result, as the readers above read it. warn is true for the
+// commands that print a report on exit 1 (doctor, missing, vulns): the readers
+// parse that report. success is true for search, where exit 1 means no results.
+// A vulns exit 1 with an Error: line on stderr is a failure, as VulnsReport reads
+// it. Any other error, and any other command's exit 1, is a failure: both are
+// false.
+func ExitOneReport(args []string, err error) (warn, success bool) {
+	var exit *BrewExitError
+	if len(args) == 0 || !errors.As(err, &exit) || exit.ExitCode != 1 {
+		return false, false
+	}
+	switch args[0] {
+	case "doctor", "missing":
+		return true, false
+	case "vulns":
+		return !hasErrorLine(exit.Stderr), false
+	case "search":
+		return false, true
+	}
+	return false, false
+}
