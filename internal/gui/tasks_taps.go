@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"unicode"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
@@ -138,10 +139,24 @@ func (m *Model) startTapAdd() (tea.Model, tea.Cmd) {
 	return m, inputModal.Init()
 }
 
+// normaliseTapName trims the spaces around a typed tap name and the slashes
+// after it: brew rejects `user/repo/` as an invalid tap name. Nothing else is
+// rewritten.
+func normaliseTapName(name string) string {
+	return strings.TrimRightFunc(strings.TrimSpace(name), func(r rune) bool {
+		return r == '/' || unicode.IsSpace(r)
+	})
+}
+
 // executeTapAdd runs `brew tap <name>` through the task manager. It used
 // to be unreachable: the tap-add input result was routed to the search
-// flow instead (r1 finding 2).
+// flow instead (r1 finding 2). A name that is empty once trimmed enqueues
+// nothing.
 func (m Model) executeTapAdd(name string) (tea.Model, tea.Cmd) {
+	name = normaliseTapName(name)
+	if name == "" {
+		return m, nil
+	}
 	client := m.client
 	t := errTask("tap-"+name, "Tap "+name, func(ctx context.Context) error {
 		return client.TapsWrite.Tap(ctx, name)

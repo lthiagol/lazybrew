@@ -1,12 +1,15 @@
 package gui
 
 import (
+	"context"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 )
 
 // tapStates are the four states a tap can be in on the Taps list (v2-10
@@ -132,6 +135,61 @@ func TestTapTrustTabNamesTheKeysThatAct(t *testing.T) {
 				if strings.Contains(out, bad) {
 					t.Errorf("Trust tab should not say %q:\n%s", bad, out)
 				}
+			}
+		})
+	}
+}
+
+// tapAddInput sends an add-tap input through the Taps flow with a fake runner.
+// It returns the brew arguments that ran and whether the task manager is idle
+// (nothing running, nothing queued).
+func tapAddInput(t *testing.T, value string) ([][]string, bool) {
+	t.Helper()
+	var ran [][]string
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		ran = append(ran, args)
+		return []byte(""), nil
+	}
+	m := New(brew.NewClient(r), testConfig())
+	m.pendingAction = "tap-add"
+	res, cmd := m.handleModalResult(&modal.InputResult{Value: value}, nil)
+	nm := res.(Model)
+	if cmd != nil {
+		if _, ok := cmd().(TaskStartedMsg); !ok {
+			t.Fatalf("expected TaskStartedMsg, got %T", cmd())
+		}
+		if _, ok := nm.tasks.RunNext()().(TaskCompletedMsg); !ok {
+			t.Fatal("expected TaskCompletedMsg")
+		}
+	}
+	return ran, nm.tasks.Idle()
+}
+
+// TestTapAddTrimsTrailingSlashAndSpaces: a typed `user/repo/` or a value with
+// surrounding spaces runs `brew tap user/repo`, since brew rejects the slash.
+func TestTapAddTrimsTrailingSlashAndSpaces(t *testing.T) {
+	for _, value := range []string{"anomalyco/tap/", " anomalyco/tap/ ", "anomalyco/tap//"} {
+		t.Run(value, func(t *testing.T) {
+			ran, _ := tapAddInput(t, value)
+			if len(ran) != 1 || strings.Join(ran[0], " ") != "tap anomalyco/tap" {
+				t.Fatalf("brew calls = %v, want [tap anomalyco/tap]", ran)
+			}
+		})
+	}
+}
+
+// TestTapAddEnqueuesNothingWhenEmptyAfterTrim: a value that is only slashes or
+// whitespace runs no brew command and leaves the task manager idle.
+func TestTapAddEnqueuesNothingWhenEmptyAfterTrim(t *testing.T) {
+	for _, value := range []string{"/", "//", "   ", " / "} {
+		t.Run(value, func(t *testing.T) {
+			ran, idle := tapAddInput(t, value)
+			if len(ran) != 0 {
+				t.Errorf("brew calls = %v, want none", ran)
+			}
+			if !idle {
+				t.Error("the task manager has a task, want none enqueued")
 			}
 		})
 	}
