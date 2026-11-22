@@ -86,6 +86,7 @@ dev builds").
 | lb34-doctor-stderr | ecc6a51, 32541b0 | closed | ok (u3 doctor warnings from stderr r1 clean; u4 README doc tests → sample, r2 clean). README rewrite uncommitted, waits on docs/ screenshots |
 | lb35-taps-tree | 14a0942 | closed | ok (taps tree + lock icons, r1 clean; awaiting user's manual test) |
 | lb36-log-status | c65c165, 343d79a | closed | ok (report-style exit 1 → Warn, r2 clean; one row per command, r2 clean) |
+| lb37-readme-refresh | f91eb55, b619d43 | closed | ok (README rewrite + docs/ screenshots; sidebar keeps rows on refresh, r1 clean) |
 | lb29-footer-redesign | a918265, 0d87daa, 5379050; fix r2: 5f0cd94, 4ddfaa5, 3d7883a, cf112f3 | implemented | awaiting reviewer |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
 | lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |
