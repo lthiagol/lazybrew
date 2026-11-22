@@ -136,3 +136,5 @@ four `-count=4` on gui/brew/config) passed. Suspect a timing-sensitive test unde
 again, keep the log and file the test name.
 2026-11-22: seen twice in one session as `TestTapsTrustedItemFlow` (internal/gui/flows) — it presses `q` once the
 "Data refresh" toast shows while the view still reads "refreshing…"; fix: wait for the reloaded `octo/tools` row.
+
+**LB-35 (parked)** — `Missing` (internal/brew/doctor.go) parses stdout only on exit 1, like `Doctor` did before ecc6a51 (brew doctor prints warnings on stderr). Capture real `brew missing` output with a missing dep before changing it.
