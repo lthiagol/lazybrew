@@ -22,7 +22,10 @@ type trustFlowRunner struct {
 	brewtest.MockRunner
 	mu        sync.Mutex
 	untrusted bool
-	calls     [][]string
+	// reloaded adds a trusted formula to the trust list, so a flow can wait for
+	// a reload that reads the list after this is set.
+	reloaded bool
+	calls    [][]string
 }
 
 func newTrustFlowRunner() *trustFlowRunner {
@@ -36,6 +39,9 @@ func newTrustFlowRunner() *trustFlowRunner {
 			return []byte(`[{"name":"octo/tools","trusted":true}]`), nil
 		case args[0] == "trust" && len(args) == 2 && args[1] == "--json=v1":
 			if r.isUntrusted() {
+				if r.isReloaded() {
+					return []byte(`{"taps":["octo/tools"],"formulae":["octo/tools/reload"],"casks":[],"commands":[]}`), nil
+				}
 				return []byte(`{"taps":["octo/tools"],"formulae":[],"casks":[],"commands":[]}`), nil
 			}
 			return []byte(`{"taps":["octo/tools"],"formulae":["octo/tools/zeta"],"casks":[],"commands":[]}`), nil
@@ -59,6 +65,18 @@ func (r *trustFlowRunner) isUntrusted() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.untrusted
+}
+
+func (r *trustFlowRunner) isReloaded() bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.reloaded
+}
+
+func (r *trustFlowRunner) setReloaded() {
+	r.mu.Lock()
+	r.reloaded = true
+	r.mu.Unlock()
 }
 
 func (r *trustFlowRunner) getCalls() [][]string {
@@ -105,9 +123,15 @@ func TestTapsTrustedItemFlow(t *testing.T) {
 	tm.Send(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	waitForBrewCall(t, runner, "untrust", "--formula", "octo/tools/zeta")
 
-	// R reads the taps and the trust list again; the toast says the reload landed.
-	tm.Send(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	// The untrust ends in a refresh of its own, which toasts "Data refreshed".
+	// Wait for that toast first: waits read the output in order, so a later wait
+	// for the same text would match it rather than R's reload.
 	waitForScreen(t, tm, "Data refresh")
+	runner.setReloaded()
+	// R reads the taps and the trust list again. Only that read returns the
+	// reloaded row, so the flow quits once the reload has landed.
+	tm.Send(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	waitForScreen(t, tm, "└ ✔ reload")
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
 
