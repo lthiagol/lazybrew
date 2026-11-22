@@ -82,6 +82,7 @@ dev builds").
 | lb30-taps-and-trust | 7c878ea, d8655ab, d036d12, b750e10, 249eb6e, 9b6c3d9 | closed | ok (r1 + fix r2, orchestrator-verified) |
 | lb31-cleanup-tabs | baf820b, 8534342, 6b8284c, 9170eab, 9a5b520, 66f79c8, 2ea1e4b, 5f97ec8 | closed | ok (r1 + fix rounds r2/r3, orchestrator-verified) |
 | lb32-vulns-view | 392a00b, ba894cb, a6f496f, 8d2a0f2, 6ddde2f, d835549, db0ab4f | closed | ok (r1 + fix r2, orchestrator-verified) |
+| lb33-tap-fixes | a2e0603, 02e20fe | closed | ok (claude-crew subagents; u1 tap-info keys, u2 tap-add trim; both r1 clean) |
 | lb29-footer-redesign | a918265, 0d87daa, 5379050; fix r2: 5f0cd94, 4ddfaa5, 3d7883a, cf112f3 | implemented | awaiting reviewer |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
 | lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |

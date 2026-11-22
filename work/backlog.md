@@ -134,3 +134,5 @@ patched/skipped counts, text fallback when the JSON cannot be read. User request
 right after the lb31 r3 builder exited; five later full runs (one `make ci`, one `go test ./... -race`,
 four `-count=4` on gui/brew/config) passed. Suspect a timing-sensitive test under load. If it shows
 again, keep the log and file the test name.
+2026-11-22: seen twice in one session as `TestTapsTrustedItemFlow` (internal/gui/flows) — it presses `q` once the
+"Data refresh" toast shows while the view still reads "refreshing…"; fix: wait for the reloaded `octo/tools` row.
