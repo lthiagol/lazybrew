@@ -7,6 +7,15 @@
 
 ---
 
+## Run 3 — before v1.1.0 (2026-11-22)
+
+> **Status:** signed off by the user (human, interactive) on `wip` after rc5:
+> Taps & Trust tree and lock icons, tap counts, tap-add trim, Doctor warnings
+> and the Log marks, one Log row per command, sidebar kept during the refresh
+> after an upgrade, Search. Result: pass.
+
+---
+
 ## Run 2 — v2 overhaul (LB-05, before the `wip` → `stable` PR)
 
 > **Status:** run 2026-11-21 (human, interactive; result below). Covers LB-08

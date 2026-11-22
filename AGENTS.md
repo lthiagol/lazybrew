@@ -166,7 +166,7 @@ Before v0.2.0 tag:
 - [x] M21.2 ≥8 teatest flows done
 - [x] M22.1b CI green on push/PR (wip-ci, with `-race` since v2-11)
 - [x] M22.2 integration workflow file exists
-- [ ] M22.4 release checklist signed off
+- [x] M22.4 release checklist signed off
 
 The manual smoke gate is tracked at [`SMOKE-CHECKLIST.md`](SMOKE-CHECKLIST.md) — it is
 a release gate artifact and must pass before the stable tag.
