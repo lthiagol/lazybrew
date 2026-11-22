@@ -130,7 +130,7 @@ per-package next step (upgrade available → version from Outdated, no fix relea
 upstream not released), commit-hash lists collapsed (kept in `y` copy), dimmed footer for
 patched/skipped counts, text fallback when the JSON cannot be read. User request 2026-11-21.
 
-**LB-31 (parked)** — one unexplained `GOFLAGS=-p=1 make ci` failure (exit 2 at `make test`, log lost)
+**LB-31 (closed 2026-11-22)** — TestTapsTrustedItemFlow: the wait after R matched the untrust's own toast (test race); fixed in the flow, plus overlapping-refresh counting in gui.go. Original note: — one unexplained `GOFLAGS=-p=1 make ci` failure (exit 2 at `make test`, log lost)
 right after the lb31 r3 builder exited; five later full runs (one `make ci`, one `go test ./... -race`,
 four `-count=4` on gui/brew/config) passed. Suspect a timing-sensitive test under load. If it shows
 again, keep the log and file the test name.
@@ -138,3 +138,7 @@ again, keep the log and file the test name.
 "Data refresh" toast shows while the view still reads "refreshing…"; fix: wait for the reloaded `octo/tools` row.
 
 **LB-35 (closed 2026-11-22, not a bug)** — brew's cmd/missing.rb prints the missing deps with `puts` (stdout); only the install hint goes to stderr via `opoo`, so stdout parsing is right. Original note: — `Missing` (internal/brew/doctor.go) parses stdout only on exit 1, like `Doctor` did before ecc6a51 (brew doctor prints warnings on stderr). Capture real `brew missing` output with a missing dep before changing it.
+
+**LB-36 (parked)** — the refresh counter (`m.refreshing`, land.go) is decremented by any non-preloaded landing: a lazy load, the Taps/Services reloads (gui.go ~591/596) or a launch read landing during a refresh can make "Data refreshed" toast early. Fix: tag refresh reads (like `launch`) and decrement only for tagged landings. Cosmetic (early toast); the header can't stick.
+
+**LB-37 (parked)** — TestCleanupTabFlow (flows/cleanup_tabs_test.go:64) failed once under load ("Nothing to clean up" not seen within 3 s); ~3.25 s per run against 3 s waits. Passes 40/40 alone. Likely the same load-timing class as the original LB-31 failure.

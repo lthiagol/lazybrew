@@ -87,6 +87,7 @@ dev builds").
 | lb35-taps-tree | 14a0942 | closed | ok (taps tree + lock icons, r1 clean; awaiting user's manual test) |
 | lb36-log-status | c65c165, 343d79a | closed | ok (report-style exit 1 → Warn, r2 clean; one row per command, r2 clean) |
 | lb37-readme-refresh | f91eb55, b619d43 | closed | ok (README rewrite + docs/ screenshots; sidebar keeps rows on refresh, r1 clean) |
+| lb38-backlog-pre-release | e620814 + u9 commits | closed | ok (LB-35 not a bug; LB-31 fixed: test race + overlapping-refresh count, r1 clean; LB-36/LB-37 parked) |
 | lb29-footer-redesign | a918265, 0d87daa, 5379050; fix r2: 5f0cd94, 4ddfaa5, 3d7883a, cf112f3 | implemented | awaiting reviewer |
 | lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
 | lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |
