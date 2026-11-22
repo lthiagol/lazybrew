@@ -58,16 +58,18 @@ func NewDiagnosticsWriter(runner Runner, cache *Cache) DiagnosticsWriter {
 func (s *diagnosticsReader) Doctor(ctx context.Context) ([]DoctorWarning, error) {
 	return cached(s.cache, KeyDoctorResult, s.doctorTTL, func() ([]DoctorWarning, bool, error) {
 		output, err := s.runner.Execute(ctx, "doctor")
-		if err != nil {
-			// brew doctor exits 1 when warnings are found — still parse output
-			if !IsExitCode(err, 1) {
-				return nil, false, err
-			}
-		}
-
 		text := string(output)
 		if strings.Contains(text, "Your system is ready to brew") {
 			return []DoctorWarning{}, true, nil
+		}
+		if err != nil {
+			// brew doctor exits 1 when warnings are found and prints them on
+			// stderr. Parse stdout, then stderr.
+			var exit *BrewExitError
+			if !errors.As(err, &exit) || exit.ExitCode != 1 {
+				return nil, false, err
+			}
+			text += "\n" + exit.Stderr
 		}
 		return parseDoctorWarnings(text), true, nil
 	})

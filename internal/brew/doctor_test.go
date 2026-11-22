@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -211,5 +212,37 @@ func TestDiagnosticsVulnsErrorLineIsError(t *testing.T) {
 	})
 	if !IsExitCode(err, 1) {
 		t.Fatalf("expected the exit 1 error, got %v", err)
+	}
+}
+
+func TestDiagnosticsDoctorExitCode1ReadsWarningsFromStderr(t *testing.T) {
+	// Real brew 7.0.15: `brew doctor` exits 1, its stdout is one blank line,
+	// and the Warning: blocks are on stderr. Execute trims stderr.
+	stdout, err := os.ReadFile("testdata/doctor_exit1_stdout.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stderr, err := os.ReadFile("testdata/doctor_exit1_stderr.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return stdout, &BrewExitError{Command: "doctor", ExitCode: 1, Stderr: strings.TrimSpace(string(stderr))}
+	}
+	diag := NewDiagnosticsReader(r, NewCache(time.Minute))
+
+	warnings, err := diag.Doctor(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 1 {
+		t.Fatalf("expected 1 warning from stderr, got %d: %+v", len(warnings), warnings)
+	}
+	if want := "The following taps are not trusted:"; warnings[0].Title != want {
+		t.Errorf("Title = %q, want %q", warnings[0].Title, want)
+	}
+	if !strings.Contains(warnings[0].Details, "danielfoehrkn/switch") {
+		t.Errorf("Details should list the tap, got: %s", warnings[0].Details)
 	}
 }
