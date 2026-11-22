@@ -1,205 +1,65 @@
-# Lazybrew — Agent & Contributor Guide
+# lazybrew — agent guide
 
-> **Purpose:** Operational conventions for humans and coding agents working on lazybrew.  
-> **Audience:** Anyone opening a PR, running an agent session, or doing a code review.  
-> **Architectural context:** See [DESIGN.md](DESIGN.md).  
+A Bubble Tea v2 TUI (`charm.land/bubbletea/v2`) for Homebrew (Go). Architecture: [DESIGN.md](DESIGN.md).
+Keep this file short; the details live in the files under **Read when needed**.
 
----
-
-## Quick Start
+## Commands
 
 ```bash
-git clone https://github.com/lthiagol/lazybrew
-cd lazybrew
-make            # list the targets (same as make help)
-make build      # build bin/lazybrew
-make run        # build bin/lazybrew, then launch the TUI
-make test       # unit tests + race detector (sets CGO_ENABLED=1)
-make test-fast  # unit tests without -race; PKG=./internal/gui/... narrows it
-make ci         # the full gate: gofmt check, vet, test -race, coverage floors, build
+make build      # bin/lazybrew
+make test-fast  # unit tests, no -race; PKG=./internal/gui/... narrows it
+make fmt        # gofmt
+make ci         # the gate, five steps: gofmt check, vet, go test -race, coverage floors, build
 ```
 
-Run integration tests (requires real Homebrew):
+`make ci` passing is "done". When /tmp is tight use `GOFLAGS=-p=1 make ci`; never
+delete files in /tmp you did not create (another project shares it).
 
-```bash
-make test-integration
-```
+## Map
 
----
-
-## Repository Map
-
-| Path | What lives here | Test command |
-|---|---|---|
-| `cmd/lazybrew/` | `main.go`, CLI flags | — |
-| `internal/app/` | Bootstrap: config, theme, runner, `gui.New` | `go test ./internal/app/...` |
-| `internal/brew/` | Domain models, `Runner`, services, cache, parsers | `go test ./internal/brew/...` |
-| `internal/config/` | YAML config loading/validation | `go test ./internal/config/...` |
-| `internal/logtail/` | Bounded read of a log file's last lines, safe to draw | `go test ./internal/logtail/...` |
-| `internal/gui/` | Bubble Tea model, panels, rendering, keybindings | `go test ./internal/gui/...` |
-| `internal/gui/modal/` | Reusable modals (confirm, input, toast, menu) | `go test ./internal/gui/modal/...` |
-| `internal/gui/presentation/` | Formatters and snapshot tests | `go test ./internal/gui/presentation/...` |
-| `internal/gui/style/` | Lip Gloss styles and themes | `go test ./internal/gui/style/...` |
-| `internal/gui/task/` | TaskManager for serializing write operations | `go test ./internal/gui/task/...` |
-| `internal/gui/flows/` | `teatest` E2E flows | `go test ./internal/gui/flows/...` |
-| `internal/gui/testutil/` | Test helper for E2E flows | — |
-| `scripts/` | Build/test helpers (e.g. coverage floor check) | — |
-
----
-
-## Change Guidelines
-
-1. **Scope:** One milestone/step per change set. Avoid drive-by refactors.
-2. **Tests:** Add or update tests in the same commit/PR as the code change.
-3. **Style:** Run `make fmt` before committing.
-4. **Verification:** Run `make test` and `go vet ./...` before considering work done.
-5. **No secrets:** Never commit tokens, keys, or personal config files.
-6. **No large binaries:** `bin/lazybrew` is gitignored; do not force-add it.
-
----
-
-## Bubble Tea Rules
-
-All GUI state mutation must go through the Bubble Tea `Update(msg tea.Msg)` loop.
-
-1. **Zero `program.Send` in production code.** If you find `program.Send`, replace it with a `tea.Cmd` that returns a message.
-2. **All write operations through `task.Manager`.** Install, uninstall, reinstall, upgrade, pin, tap, untap, trust, service start/stop, repair, cleanup, autoremove, and `brew update` must be enqueued via `m.tasks.Enqueue`. The one exception is the user-confirmed
-   retry of a step that needs sudo (`terminal_retry.go`): it runs with the TUI
-   suspended, and only when the manager is idle (nothing running or queued) and
-   no batch is in flight.
-3. **No raw goroutines in handlers.** Use `tea.Cmd` closures or the TaskManager streaming pattern.
-4. **The Operation overlay owns streaming output.** `TaskOutputMsg` lines are appended to the active `Operation` (`m.opState`); `TaskCompletedMsg` marks it done (`opSuccess`/`opError`/`opCancelled`) and shows a toast. A successful run closes itself after 2 s; failed and cancelled runs stay until Esc or a panel switch. (The old `ProgressModal` was removed; there is no progress modal anymore.)
-5. **Model fields are the source of truth.** Do not read from `m.program` to infer state.
-
----
-
-## Testing Rules
-
-| Tier | Tool | When to use | Example |
-|---|---|---|---|
-| Unit | `testing` | Pure logic, parsers, cache, TaskManager | `internal/brew`, `internal/gui/task` |
-| Snapshot | `cmp` / string compare | Stable presentation output | `internal/gui/presentation` |
-| Integration | `//go:build integration` | Real `brew` CLI round-trip | `internal/brew/runner_integration_test.go` |
-| E2E | `teatest` | Full user flows with `View()` assertions | `internal/gui/flows` |
-
-Rules:
-
-- Unit tests must pass with `-race` (`make test`).
-- E2E flows must assert on `View()` output, not just model fields.
-- Coverage floors are enforced by `make cover-check`. Do not lower them without a decision log entry.
-- New brew command support requires: service method, cache invalidation, unit test, and a row in the relevant coverage tracking file.
-
----
-
-## Planning
-
-**This project does not use the `mp` CLI, and it does not use `master-plan/`.**
-
-`master-plan/` is a **frozen local archive**. It is untracked by git, kept on this
-machine for history only, and it is **not** a spec, **not** a plan, and **not** an
-input to any decision. Do not read it, do not update it, do not run `mp` here.
-
-Planning runs through the herdr lane flow under `work/`:
-
-| File | Role |
+| Path | What |
 |---|---|
-| `work/briefs/<slice>.md` | The contract for a slice. It wins over any other plan or convention. |
-| `work/STATE.md` | The resume record — what was done, where it stopped. |
-| `work/backlog.md` | The parked-work list. |
-| `work/questions.md` | Open questions. |
+| `cmd/lazybrew/` | `main.go`, flags |
+| `internal/app/` | bootstrap: config, runner, `gui.New` |
+| `internal/brew/` | brew runner, services, cache, parsers; `brewtest/` = fake runner for tests |
+| `internal/config/` | YAML config, `Sample()` (`--config-sample`) |
+| `internal/gui/` | Bubble Tea model, panels, keys, render; `flows/` = teatest E2E, `testutil/` = their model helpers |
+| `internal/gui/{modal,presentation,style,task,anim,textutil}` | modals, formatters, themes/icons, TaskManager, motion, text helpers |
+| `internal/logtail/` | bounded read of a log file's tail |
+| `work/` | plan: briefs, `STATE.md` (resume record), `backlog.md`, `questions.md` |
 
-### Lane Protocol
+## Hard rules
 
-1. **One commit per acceptance criterion**, in AC order, staged by name — never
-   `git add -A`, never `git add .`.
-2. **The gate must pass before a lane reports**: `make ci` (gofmt check,
-   `go vet`, `go test ./... -race -count=1` with `CGO_ENABLED=1`,
-   `make cover-check`, build). **Per commit**, the lighter check is enough:
-   `make test-fast PKG=<touched packages>` (no `-race`) — ruling
-   `Q-v2-builder-speed` in `work/questions.md`.
-3. **A lane reports by writing `work/inbox/<lane>-<slice>.md`, committing it,
-   then nudging the orchestrator.** The file is the record; the nudge is the bell.
-4. **The slice's row in `work/STATE.md` is the resume record** and is updated in
-   the same session as the slice.
-5. **A question that is not written in `work/questions.md` is a lost question.**
-   Append it there and keep going on the unaffected criteria.
+1. **This machine runs a real Homebrew with live services (`moshi-hook`).** Never run a
+   brew write: install, uninstall, reinstall, upgrade, update, pin/unpin, tap/untap,
+   trust/untrust, cleanup, autoremove, `services start|stop|restart|run|cleanup|kill`.
+   Never run the TUI over the real brew: not `make run`, and not a test, harness or frame
+   dump that builds `gui.New` over `brew.NewDefaultRunner()` (its `Init` runs `brew update`).
+   Tests and harnesses use `brewtest.NewMockRunner`. Read-only brew commands are fine.
+2. **Branches.** Work on `wip`. Never commit, merge or push to `stable` unless the
+   user asks for it in this session.
+3. **Git.** Commit only when asked or when running the lane/crew flow. Stage by
+   name, never `git add -A` / `git add .`. Never push, force-push, rebase or amend
+   unless asked, or as [work/README.md](work/README.md) authorises for a closed slice
+   on `wip`. Commits are `Luiz Thiago <lthiagol@gmail.com>` (repo config).
+   Conventional, imperative subjects.
+4. **Bubble Tea.** State changes only in `Update`; no `program.Send`; no raw
+   goroutines in handlers; every brew write is a task started with `m.enqueue`.
+   Call a mutating method before the return (`cmd := m.f(); return m, cmd`), never
+   `return m, m.f()`. Details: [docs/agents/gui.md](docs/agents/gui.md).
+5. **Tests ship with the change**, and E2E flows assert on `View()`. Never lower a
+   coverage floor without a ruling in `work/questions.md`.
+6. **Scope.** One slice per change set; no drive-by refactors.
+7. **`master-plan/` is a frozen, untracked archive.** Do not read it, edit it, or
+   run `mp`.
 
----
+## Read when needed
 
-## Git Rules
-
-1. Do not commit unless explicitly asked.
-2. Do not push, force-push, rebase, or amend commits unless explicitly asked.
-3. Keep commits focused on a single milestone/step.
-4. Commit messages should match repo style (concise, imperative).
-
----
-
-## Verification Commands
-
-Run these before declaring any milestone step done:
-
-```bash
-make ci
-```
-
-`make ci` runs what `.github/workflows/wip-ci.yml` runs (gofmt check, vet,
-race tests, build) plus the coverage floors. This machine has cgo off by
-default; the Makefile sets `CGO_ENABLED=1` for the race detector.
-
-For release readiness:
-
-```bash
-make ci
-make test-integration   # requires Homebrew
-./bin/lazybrew --version
-```
-
----
-
-## Release Readiness Checklist (Agent View)
-
-Before v0.2.0 tag:
-
-- [x] M18.8 AGENTS.md done (this file)
-- [x] M17.3 update summary toast done
-- [x] M21.2 ≥8 teatest flows done
-- [x] M22.1b CI green on push/PR (wip-ci, with `-race` since v2-11)
-- [x] M22.2 integration workflow file exists
-- [x] M22.4 release checklist signed off
-
-The manual smoke gate is tracked at [`SMOKE-CHECKLIST.md`](SMOKE-CHECKLIST.md) — it is
-a release gate artifact and must pass before the stable tag.
-
----
-
-## Release Procedure (tag → tap)
-
-Releases are cut from `stable` and the tap formula is updated by hand (the old GitHub Actions auto-bump pipeline was removed when the project moved to Codeberg).
-
-**To cut a release:**
-
-1. From `wip`, open a PR → `stable` once the milestone sign-off checklist above is complete.
-2. After `stable` is green, tag the merge commit:
-
-   ```bash
-   git checkout stable
-   git pull
-   git tag vX.Y.Z          # semver; matches Formula/lazybrew.rb convention
-   git push origin vX.Y.Z
-   ```
-
-3. Update [`lthiagol/homebrew-tap`](https://github.com/lthiagol/homebrew-tap) → `Formula/lazybrew.rb`: set the new `url` to the Codeberg archive for the tag (`https://github.com/lthiagol/lazybrew/archive/refs/tags/vX.Y.Z.tar.gz`) and recompute the `sha256` (`shasum -a 256` on the downloaded tarball).
-4. Commit and push the tap change. Users get the new version on `brew upgrade`.
-
-**WIP / dev builds:**
-
-The tap also ships `lazybrew-dev`, built from a tag cut on `wip` (no PR to `stable` needed). To ship one: tag the `wip` tip (`git tag -a vX.Y.Z-rcN`, `git push origin vX.Y.Z-rcN`), then bump the `url` tag and `sha256` in the tap's `Formula/lazybrew-dev.rb`; the formula passes the version to the binary with `-X main.version`. The steps are in [homebrew-tap/projects/lazybrew-dev/README.md](https://github.com/lthiagol/homebrew-tap/blob/main/projects/lazybrew-dev/README.md). Stable releases do not touch `lazybrew-dev`.
-
----
-
-## References
-
-- [DESIGN.md](DESIGN.md) — architecture and concurrency ADR
-- [SMOKE-CHECKLIST.md](SMOKE-CHECKLIST.md) — manual smoke gate (release artifact)
-- [work/README.md](work/README.md) — the lane protocol: brief, receipt, gate, state row
+| When you are… | Read |
+|---|---|
+| writing or fixing tests, chasing a flake | [docs/agents/testing.md](docs/agents/testing.md) |
+| adding, parsing or caching a brew command (`internal/brew/`) | [docs/agents/brew.md](docs/agents/brew.md) |
+| changing anything under `internal/gui/` | [docs/agents/gui.md](docs/agents/gui.md) |
+| tagging, releasing, bumping the tap | [docs/agents/release.md](docs/agents/release.md) |
+| running a planned slice (brief → build → review → STATE row) | [work/README.md](work/README.md) |
+| resuming work | `work/STATE.md` ("▶ Resume here" at the top; slice rows below); the "Open questions" section of `work/questions.md`; grep a Q-id or LB-id when one is cited |

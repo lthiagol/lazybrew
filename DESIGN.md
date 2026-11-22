@@ -43,7 +43,7 @@ cmd/lazybrew/main.go
        |
   ┌────┴───────────────────────┐
   │  Update(msg) → tea.Cmd     │
-  │  View() → string           │
+  │  View() → tea.View         │
   │  Init() → tea.Cmd          │
   └────────────────────────────┘
           │
@@ -52,7 +52,7 @@ cmd/lazybrew/main.go
   gui/panel     gui/modal     gui/task
   (panelData,   (confirm,     (Manager,
    renderList)   input,        Task,
-                 progress,     messages)
+                 menu,         messages)
                  toast)
 ```
 
@@ -70,12 +70,12 @@ cmd/lazybrew/main.go
 | D19-1 | Package `internal/gui/task/` | Top-level package — too scattered |
 | D19-2 | **Zero `program.Send` in handlers** | Keep pump — violates Bubble Tea purity |
 | D19-3 | Reads outside TaskManager | Queue reads — unnecessary blocking |
-| D19-4 | Progress modal on Model, not Manager | Manager owns UI — coupling |
+| D19-4 | Operation overlay on Model, not Manager (the progress modal was removed) | Manager owns UI — coupling |
 | D19-5 | Queue max 10 tasks | Unbounded — memory risk |
 
 ### Rules
 
-1. **All write operations** (install, uninstall, reinstall, upgrade, pin, tap, untap, trust, untrust, service start/stop, repair, cleanup, update) go through `task.Manager`
+1. **All write operations** (install, uninstall, reinstall, upgrade, update, pin/unpin, tap/untap/repair, trust/untrust, services start/stop/restart/run/cleanup, cleanup, autoremove) go through `task.Manager`
 2. **Read operations** (list, get, search, doctor, config, status) use direct `tea.Cmd` — never queued
 3. **No raw goroutines** — every concurrent operation returns a `tea.Cmd` that Bubble Tea schedules
 4. **No `program.Send`** — all state updates happen through `Update()` message handlers; `program.Send` is forbidden in production code
@@ -127,3 +127,4 @@ See the config ADR topic (configuration schema decisions).
 | 2026-11-19 | Moved to the Charm v2 stack (charm.land bubbletea/lipgloss/bubbles v2) — prerequisite for overlay compositing and animation in the visual overhaul. | Slice v2-01-charm-v2 |
 | 2026-11-20 | Visual overhaul closed (LB-08: v2-01 … v2-06, v2-05s) and user follow-ups v2-07 … v2-11: finished operations auto-close, startup preload, main-area layout (padding, tables, two-column Info), tap actions, process-group cancel, fast tests, CI with `-race`. | Rulings `Q-v2-*` in `work/questions.md` |
 | 2026-11-20 | brew runs with `Setsid`; tty prompts (sudo, git credentials) fail fast with a needs-sudo message. Suspending the TUI for them (`tea.ExecProcess`) is parked as LB-11 — the user ruled the message is enough. | Slice v2-11, `Q-v2-11-b` |
+| 2026-11-22 | Tap bumps are manual (`docs/agents/release.md`); `stable-ci.yml`'s `tap-update` job is a dead leftover (LB-41). Supersedes the 2026-08-01 row. | Docs rewrite review |

@@ -3,40 +3,32 @@
 One row per slice. This file is the resume record: a cold session reads it to
 learn what is done, what is in flight, and where to pick up.
 
-## ▶ Dev build
+## ▶ Resume here (2026-11-22, after the v1.1.0 smoke)
 
-`v1.1.0-rc4` is tagged and `lazybrew-dev` in the tap points at it (2026-11-21); rc1 was `fd1a037`. No PR to `stable`: work stays on `wip`.
+**Where we are.** Every planned slice is closed `ok` (table below), pushed to
+`wip`, `wip-ci` green. `v1.1.0-rc5` is tagged and `lazybrew-dev` in the tap points
+at it. `v1.1.0` is tagged on the `wip` tip (157f34b). The smoke Run 3 is signed off
+(`SMOKE-CHECKLIST.md`). The history was rewritten to `lthiagol@gmail.com` on
+2026-11-22 and force-pushed. No agent is running.
 
-## ▶ Resume here (2026-11-22, end of the orchestrator session)
+**Not done: `stable`.** `origin/stable` has not moved (still the bootstrap commit);
+the user will ask for it. Branch protection on `stable` was removed by the user.
+The steps, and the stable formula's missing `-X main.version`, are in
+`docs/agents/release.md`.
 
-**Where we are.** Every planned slice is closed `ok` (lb12 … lb32, table below),
-pushed to `wip`, `wip-ci` green. `v1.1.0-rc4` is tagged and in the tap. No agent
-is running and the `lb-builder` / `lb-reviewer` tabs are closed. No PR, nothing
-on `stable`: work stays on `wip`.
+**Open (all in `work/backlog.md`).** LB-36 early "Data refreshed" toast; LB-37
+`TestCleanupTabFlow` load flake; LB-38 the `return m, m.f()` sites; LB-39 the Log
+marks `cleanup -n` / `autoremove -n` exit 1 as failed; LB-40 no coverage floor for
+`textutil`; LB-41 the dead `tap-update` job in `stable-ci.yml` (owner to decide).
+LB-27 (Latte contrast) stays parked.
 
-**Awaiting the user.** Try rc4 on macOS (`brew update && brew upgrade
-lthiagol/tap/lazybrew-dev`; `lazybrew-dev --version` prints `lazybrew
-1.1.0-rc4`) and report failures with exact text. Untested in a real terminal:
-OSC 52 copy, the Vulns view, Cleanup/Unused tabs, Taps & Trust.
-
-**Open (all in `work/backlog.md`).** LB-27 Latte contrast (only if light mode
-reads badly); LB-31 one unreproduced `make ci` failure; untracked
-`Screenshot*.png` in the repo root (add to `.gitignore` if the user agrees).
-
-**Read before acting.** `work/README.md` (lane flow, herdr runbook, lane names
-`lb-builder`/`lb-reviewer`; Haiku 5.5 high builder, a fresh session per round;
-Opus 5.5 medium reviewer; ≤ 5 rounds; push `wip` per closed slice);
-`work/backlog.md`; the rulings at the bottom of `work/questions.md`.
-
-**Gate.** `make ci` (use `GOFLAGS=-p=1` if /tmp is tight); per commit
-`make test-fast PKG=<pkgs>`. Never run brew write commands from an agent on this
-machine (`moshi-hook` is live); never launch the TUI against the real brew; do
-not touch the other project's (`andre`) files in /tmp.
+**Read before acting.** `AGENTS.md` (hard rules), then `work/README.md` (lane flow,
+herdr runbook: `lb-builder` / `lb-reviewer`, a fresh Haiku 5.5 high builder per
+round, Opus 5.5 medium reviewer, ≤ 5 rounds, push `wip` per closed slice), and the
+"Open questions" section of `work/questions.md`.
 
 **New work** starts with a brief in `work/briefs/<slice>.md` + a review brief,
-then the lane flow. Release: tag the `wip` tip `vX.Y.Z-rcN`, push the tag, bump
-`url` + `sha256` in the tap's `Formula/lazybrew-dev.rb` (see AGENTS.md, "WIP /
-dev builds").
+then the lane flow. Releases: `docs/agents/release.md`.
 
 | slice | commits | state | verdict |
 |---|---|---|---|
