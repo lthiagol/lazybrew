@@ -27,15 +27,24 @@ func TestTapsServiceList(t *testing.T) {
 			for _, name := range names {
 				entries = append(entries, `{
 					"name": "`+name+`",
-					"remote": "https://github.com/example/`+name+`.git",
-					"formula_count": 10,
-					"cask_count": 5,
-					"command_count": 1,
+					"user": "example",
+					"repo": "`+name+`",
+					"repository": "`+name+`",
+					"path": "/opt/homebrew/Library/Taps/example/`+name+`",
 					"installed": true,
-					"api": false,
+					"official": false,
 					"trusted": true,
-					"formula_names": ["foo-from-`+name+`"],
-					"cask_names": ["bar-from-`+name+`"]
+					"formula_names": ["foo-from-`+name+`", "foo2-from-`+name+`"],
+					"cask_tokens": ["bar-from-`+name+`", "bar2-from-`+name+`", "bar3-from-`+name+`"],
+					"formula_files": ["/opt/homebrew/Library/Taps/example/`+name+`/Formula/foo.rb"],
+					"cask_files": ["/opt/homebrew/Library/Taps/example/`+name+`/Casks/bar.rb"],
+					"command_files": ["/opt/homebrew/Library/Taps/example/`+name+`/cmd/tool.rb"],
+					"remote": "https://github.com/example/`+name+`.git",
+					"custom_remote": false,
+					"private": false,
+					"HEAD": "0123456789abcdef",
+					"last_commit": "2 days ago",
+					"branch": "master"
 				}`)
 			}
 			return []byte("[" + strings.Join(entries, ",") + "]"), nil
@@ -73,11 +82,22 @@ func TestTapsServiceList(t *testing.T) {
 	if !core.Trusted {
 		t.Error("homebrew/core should be trusted")
 	}
-	if len(core.FormulaNames) != 1 || core.FormulaNames[0] != "foo-from-homebrew/core" {
-		t.Errorf("FormulaNames = %v, want [foo-from-homebrew/core]", core.FormulaNames)
+	if len(core.FormulaNames) != 2 || core.FormulaNames[0] != "foo-from-homebrew/core" {
+		t.Errorf("FormulaNames = %v, want [foo-from-homebrew/core foo2-from-homebrew/core]", core.FormulaNames)
 	}
-	if len(core.CaskNames) != 1 || core.CaskNames[0] != "bar-from-homebrew/core" {
-		t.Errorf("CaskNames = %v, want [bar-from-homebrew/core]", core.CaskNames)
+	if len(core.CaskNames) != 3 || core.CaskNames[0] != "bar-from-homebrew/core" {
+		t.Errorf("CaskNames = %v, want the cask_tokens of homebrew/core", core.CaskNames)
+	}
+	// Counts come from the name lists brew emits: 2 formulae, 3 casks, and
+	// one command per command_files entry.
+	if core.FormulaCount != 2 {
+		t.Errorf("FormulaCount = %d, want 2 (len formula_names)", core.FormulaCount)
+	}
+	if core.CaskCount != 3 {
+		t.Errorf("CaskCount = %d, want 3 (len cask_tokens)", core.CaskCount)
+	}
+	if core.CommandCount != 1 {
+		t.Errorf("CommandCount = %d, want 1 (len command_files)", core.CommandCount)
 	}
 
 	third := list[2]

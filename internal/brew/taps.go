@@ -46,21 +46,18 @@ func NewTapsWriter(runner Runner, cache *Cache) TapsWriter {
 	return &tapsWriter{runner: runner, cache: cache}
 }
 
+// tapInfoJSON is one entry of `brew tap-info --json`. The keys are the ones
+// brew's Tap#to_hash emits; brew has no formula, cask or command count keys,
+// so the counts are len() of the name lists (see infoToTap).
 type tapInfoJSON struct {
-	Name         string `json:"name"`
-	Remote       string `json:"remote"`
-	FormulaCount int    `json:"formula_count"`
-	CaskCount    int    `json:"cask_count"`
-	CommandCount int    `json:"command_count"`
-	Private      bool   `json:"private"`
-	Installed    bool   `json:"installed"`
-	Manifest     bool   `json:"manifest"`
-	API          bool   `json:"api"`
-	AutoPublish  bool   `json:"auto_publish"`
-
-	Trusted      bool     `json:"trusted,omitempty"`
-	FormulaNames []string `json:"formula_names,omitempty"`
-	CaskNames    []string `json:"cask_names,omitempty"`
+	Name         string   `json:"name"`
+	Remote       string   `json:"remote"`
+	Private      bool     `json:"private"`
+	Installed    bool     `json:"installed"`
+	Trusted      bool     `json:"trusted"`
+	FormulaNames []string `json:"formula_names"`
+	CaskTokens   []string `json:"cask_tokens"`
+	CommandFiles []string `json:"command_files"`
 }
 
 func (s *tapsReader) List(ctx context.Context) (TapList, error) {
@@ -118,14 +115,13 @@ func infoToTap(info *tapInfoJSON) *Tap {
 		Name:         info.Name,
 		Remote:       info.Remote,
 		IsOfficial:   strings.HasPrefix(info.Name, "homebrew/"),
-		FormulaCount: info.FormulaCount,
-		CaskCount:    info.CaskCount,
-		CommandCount: info.CommandCount,
+		FormulaCount: len(info.FormulaNames),
+		CaskCount:    len(info.CaskTokens),
+		CommandCount: len(info.CommandFiles),
 		Installed:    true,
-		IsAPI:        info.API,
 		Trusted:      info.Trusted,
 		FormulaNames: info.FormulaNames,
-		CaskNames:    info.CaskNames,
+		CaskNames:    info.CaskTokens,
 	}
 }
 
