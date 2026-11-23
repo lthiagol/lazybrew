@@ -67,6 +67,19 @@ func launchRead(read tea.Cmd) tea.Cmd {
 	}
 }
 
+// refreshRead marks the data a refresh read returns, so that landData counts
+// only the landings the refresh waits for (DataLoadedMsg.refresh).
+func refreshRead(read tea.Cmd) tea.Cmd {
+	return func() tea.Msg {
+		msg := read()
+		if data, ok := msg.(DataLoadedMsg); ok {
+			data.refresh = true
+			return data
+		}
+		return msg
+	}
+}
+
 // lastUpdateCmd reads when brew last updated. It is the launch check of auto
 // mode; its result is a lastUpdateMsg.
 func (m Model) lastUpdateCmd() tea.Cmd {
@@ -613,11 +626,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.panels[PanelStatus].loading = true
-		cmds := []tea.Cmd{fetchStatusData(m.client, msg.LoadOutdated)}
+		cmds := []tea.Cmd{refreshRead(fetchStatusData(m.client, msg.LoadOutdated))}
 		if m.activePanel != PanelStatus && m.activePanel != PanelSearch {
 			m.invalidatePanelCache(m.activePanel)
 			m.panels[m.activePanel].loading = true
-			cmds = append(cmds, fetchPanelData(m.client, m.activePanel))
+			cmds = append(cmds, refreshRead(fetchPanelData(m.client, m.activePanel)))
 		}
 		for _, p := range m.panels {
 			if p.id == PanelStatus || p.id == PanelSearch {
@@ -631,12 +644,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.invalidatePanelCache(p.id)
 			p.loading = true
-			cmds = append(cmds, fetchPanelData(m.client, p.id))
+			cmds = append(cmds, refreshRead(fetchPanelData(m.client, p.id)))
 		}
-		// Count only DataLoadedMsg producers so the "Data refreshed" toast
-		// fires when the last panel lands. A refresh that starts while an
-		// earlier one still has reads out adds to the count: a reset would let
-		// the earlier reads' landings end it while the new ones are pending.
+		// Count only the refresh's own reads so the "Data refreshed" toast fires
+		// when the last of them lands; landData decrements for tagged landings
+		// alone. A refresh that starts while an earlier one still has reads out
+		// adds to the count: a reset would let the earlier reads' landings end it
+		// while the new ones are pending.
 		m.refreshing += len(cmds)
 		return m, tea.Batch(cmds...)
 

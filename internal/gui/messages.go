@@ -18,6 +18,10 @@ type DataLoadedMsg struct {
 	// refresh has been issued, such a read is dropped: it holds the metadata the
 	// update replaces, and the refresh reads the panels again.
 	launch bool
+	// refresh marks a read the refresh started (RefreshMsg). Only these landings
+	// count down the refresh, so a lazy load or a reload landing mid-refresh
+	// cannot end it early.
+	refresh bool
 
 	PanelID  PanelID
 	Items    []string

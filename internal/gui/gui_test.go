@@ -1646,7 +1646,7 @@ func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
 		t.Fatalf("refreshing = %d, want 1 (Status only when active=Status)", m.refreshing)
 	}
 
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
 	if m.refreshing != 0 {
 		t.Errorf("after 1 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
 	}
@@ -1673,7 +1673,7 @@ func TestOverlappingRefreshesToastOnceAllLanded(t *testing.T) {
 		t.Fatalf("refreshing = %d after two refreshes, want 2 (one Status read each)", m.refreshing)
 	}
 
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
 	if m.refreshing != 1 {
 		t.Errorf("refreshing = %d after one of two reads landed, want 1", m.refreshing)
 	}
@@ -1681,12 +1681,92 @@ func TestOverlappingRefreshesToastOnceAllLanded(t *testing.T) {
 		t.Error("\"Data refreshed\" toasted while a read of the second refresh is still pending")
 	}
 
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
 	if m.refreshing != 0 {
 		t.Errorf("refreshing = %d after both reads landed, want 0", m.refreshing)
 	}
 	if got := lastToast(m); got != "Data refreshed" {
 		t.Errorf("last toast = %q after both reads landed, want \"Data refreshed\"", got)
+	}
+}
+
+// TestRefreshEndsOnlyOnItsOwnReads: a read that is not the refresh's own (a lazy
+// load, a services reload) landing mid-refresh must not end it: no "Data
+// refreshed" toast, and the header keeps "refreshing…". The refresh's own
+// landings end it, and a failed one counts too (LB-36).
+func TestRefreshEndsOnlyOnItsOwnReads(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.cfg.GUI.AutoRefreshSeconds = 0
+	for _, p := range m.panels {
+		p.loading = false
+	}
+
+	m = updateModel(m, RefreshMsg{})
+	if m.refreshing != 2 {
+		t.Fatalf("refreshing = %d, want 2 (Status + active Formulae)", m.refreshing)
+	}
+
+	// Untagged landings: a lazy load and a services reload, as the app issues
+	// them outside a refresh.
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
+	if m.refreshing != 2 {
+		t.Errorf("refreshing = %d after non-refresh landings, want 2", m.refreshing)
+	}
+	if got := lastToast(m); got == "Data refreshed" {
+		t.Error("\"Data refreshed\" toasted by a read the refresh did not start")
+	}
+	if !strings.Contains(m.headerOperation(), "refreshing") {
+		t.Errorf("header = %q while the refresh's reads are pending, want \"refreshing…\"", m.headerOperation())
+	}
+
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
+	if m.refreshing != 1 {
+		t.Errorf("refreshing = %d after one refresh read landed, want 1", m.refreshing)
+	}
+	if got := lastToast(m); got == "Data refreshed" {
+		t.Error("\"Data refreshed\" toasted while the second refresh read is pending")
+	}
+
+	// A refresh read that fails still counts as landed.
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelFormulae, refresh: true, Err: errors.New("brew failed")})
+	if m.refreshing != 0 {
+		t.Errorf("refreshing = %d after both refresh reads landed, want 0", m.refreshing)
+	}
+	if got := lastToast(m); got != "Data refreshed" {
+		t.Errorf("last toast = %q after both refresh reads landed, want \"Data refreshed\"", got)
+	}
+	if strings.Contains(m.headerOperation(), "refreshing") {
+		t.Errorf("header = %q after the refresh ended, still says refreshing", m.headerOperation())
+	}
+}
+
+// TestRefreshReadsCarryTheRefreshTag: the reads a RefreshMsg starts land tagged,
+// so each one counts down the refresh (LB-36). Counted against m.refreshing.
+func TestRefreshReadsCarryTheRefreshTag(t *testing.T) {
+	m := newTestModel()
+	m.activePanel = PanelFormulae
+	m.cfg.GUI.AutoRefreshSeconds = 0
+	for _, p := range m.panels {
+		p.loading = false
+	}
+
+	nm, cmd := m.Update(RefreshMsg{})
+	refreshing := nm.(Model).refreshing
+	landed := 0
+	for _, msg := range drainCmds(cmd) {
+		data, ok := msg.(DataLoadedMsg)
+		if !ok {
+			continue
+		}
+		landed++
+		if !data.refresh {
+			t.Errorf("refresh read for panel %v landed untagged", data.PanelID)
+		}
+	}
+	if landed != refreshing || landed != 2 {
+		t.Errorf("%d refresh reads landed, refreshing = %d, want both 2", landed, refreshing)
 	}
 }
 

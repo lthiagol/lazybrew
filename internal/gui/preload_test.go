@@ -346,7 +346,7 @@ func TestPreloadLandingDoesNotCountAsRefresh(t *testing.T) {
 	if m.refreshing != 1 {
 		t.Errorf("refreshing = %d after a preload landing, want 1", m.refreshing)
 	}
-	m, _ = preloadStep(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{}})
+	m, _ = preloadStep(m, DataLoadedMsg{PanelID: PanelCasks, Items: []string{}, refresh: true})
 	if m.refreshing != 0 {
 		t.Errorf("refreshing = %d after the refresh's own landing, want 0", m.refreshing)
 	}

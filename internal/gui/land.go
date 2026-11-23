@@ -87,8 +87,9 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 		p.trustFailed = msg.TrustErr != nil
 	}
 	m.clearPanelTabContent(msg.PanelID)
-	// A preload read is not one a refresh waits for, so it does not count.
-	if m.refreshing > 0 && !preloaded {
+	// Only the refresh's own reads count: a preload, lazy-load, launch or
+	// reload read is not one a refresh waits for.
+	if m.refreshing > 0 && msg.refresh && !preloaded {
 		m.refreshing--
 		if m.refreshing == 0 {
 			return tea.Batch(

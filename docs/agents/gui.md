@@ -31,8 +31,8 @@ returns a `tea.View` (`.Content`).
   and returns the finisher that sets its final status. Which exit 1 counts as a report
   (Warn) or a result (OK) lives in `brew.ExitOneReport` (see [brew.md](brew.md)).
 - **Refresh.** `m.refreshing` counts the reads of pending refreshes (`+=` per refresh,
-  `gui.go`); "Data refreshed" toasts at 0 (`land.go`). Known bug, parked as LB-36: any
-  non-preloaded landing also decrements it, so the toast can come early. A loaded
+  `gui.go`, each read tagged by `refreshRead`); "Data refreshed" toasts at 0 (`land.go`),
+  and only tagged landings decrement it, so a lazy load or reload cannot end it early. A loaded
   sidebar panel keeps its rows while it re-reads; the main pane shows "Loading..."
   (ASCII dots) over cached content, pinned by `TestLoadingOverCachedFilesTabShowsLoading`.
 - **Taps & Trust rows** are built once, by `setTapRows` in `trusted.go`, when taps
