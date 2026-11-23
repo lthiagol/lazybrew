@@ -22,7 +22,7 @@ returns a `tea.View` (`.Content`).
 6. **Call a mutating method before the return.** `Update` returns the Model by value,
    and Go does not order the read of `m` against a call in the same return. Write
    `cmd := m.switchPanel(p); return m, cmd`, never `return m, m.switchPanel(p)`
-   (lb09 F-r1-01; the sites left are LB-38).
+   (lb09 F-r1-01; the last sites were hoisted in LB-38).
 
 ## Things that are easy to get wrong
 
