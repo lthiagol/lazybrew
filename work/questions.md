@@ -1013,3 +1013,10 @@ shell). `fix-lb31-cleanup-tabs-r1`.
 does not fit the Path column, drop the directories and show that segment's start and end
 (`0a1b2c--foo-1.0.arm64_s…ottle.tar.gz`), so rows stay distinct; the middle cut with `/` snapping stays
 for paths whose last segment fits. The full path is in `y`. `fix-lb31-cleanup-tabs-r3`.
+
+**Ruling (user, 2026-11-23) — Q-lb28-latte-contrast, revisited:** darken Latte's five
+below-floor roles so every role meets its floor (LB-27). Muted → Overlay2 (3.49:1) and
+Subtle → Subtext1 (5.53:1), both official tokens. No official Latte token reaches 4.5:1
+for Success, Warning or Info (Green 2.96, Yellow 2.31, Peach 2.64, Blue 4.34), so those
+three take darker shades of Green, Yellow and Blue (same hue, lightness lowered just
+past 4.5:1), as Frappé already overrides its Muted. `latteBelow` goes away.
