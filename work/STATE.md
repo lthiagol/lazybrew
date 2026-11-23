@@ -5,16 +5,14 @@ learn what is done, what is in flight, and where to pick up.
 
 ## ▶ Resume here (2026-11-22, after the v1.1.0 smoke)
 
-**Where we are.** Every planned slice is closed `ok` (table below), pushed to
-`wip`, `wip-ci` green. `v1.1.0-rc5` is tagged and `lazybrew-dev` in the tap points
-at it. `v1.1.0` is tagged on the `wip` tip (157f34b). The smoke Run 3 is signed off
-(`SMOKE-CHECKLIST.md`). The history was rewritten to `lthiagol@gmail.com` on
+**Where we are.** Every planned slice is closed `ok` (table below). `v1.1.0` is
+released: `stable` was fast-forwarded to `wip` (ec32cf5) and pushed, both CIs green;
+the tag sits on 157f34b (the commit after it is docs only). The tap's
+`Formula/lazybrew.rb` points at `v1.1.0` and passes `-X main.version`. Dev builds
+moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
+`lazybrew-dev` there points at `v1.1.0-rc5`, and `lthiagol/tap` has a
+`tap_migrations.json` for it. The history was rewritten to `lthiagol@gmail.com` on
 2026-11-22 and force-pushed. No agent is running.
-
-**Not done: `stable`.** `origin/stable` has not moved (still the bootstrap commit);
-the user will ask for it. Branch protection on `stable` was removed by the user.
-The steps, and the stable formula's missing `-X main.version`, are in
-`docs/agents/release.md`.
 
 **Open (all in `work/backlog.md`).** LB-36 early "Data refreshed" toast; LB-37
 `TestCleanupTabFlow` load flake; LB-38 the `return m, m.f()` sites; LB-39 the Log
