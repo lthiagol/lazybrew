@@ -16,7 +16,8 @@ moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
 
 **Open (all in `work/backlog.md`).** Only the LB-43 pty follow-up, if a real upgrade
 still looks stuck. LB-27 and LB-36..43 closed 2026-11-23 on `wip` (LB-41 earlier);
-no release since v1.1.0.
+`v1.2.0` released 2026-11-23 (no rc, no smoke, user call): `stable`
+fast-forwarded to d777b0d, tag on it; the tap bump (`/tap bump lazybrew v1.2.0`) is the user's.
 
 **Read before acting.** `AGENTS.md` (hard rules), then `work/README.md` (lane flow,
 herdr runbook: `lb-builder` / `lb-reviewer`, a fresh Haiku 5.5 high builder per
