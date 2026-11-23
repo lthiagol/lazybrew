@@ -106,7 +106,7 @@ global), dim `·` between hints, one arrow hint `←↑↓→ navigate` (user ru
 `1-7 jump`; `h/j/k/l` and `shift+tab` leave the footer and stay on `?`. Touches every
 golden and the keymap test, so it goes after the key changes above.
 
-**LB-27 (parked)** — Latte (`light`) roles under the contrast floors: Muted 2.30:1 (floor
+**LB-27 (closed 2026-11-23)** — Latte (`light`) roles under the contrast floors: Muted 2.30:1 (floor
 3), Success 2.96, Warning 2.31, Info 4.34, Subtle 4.37 (floor 4.5). Remap them to darker
 official Latte tokens (e.g. Subtext1/Overlay2 for Muted, Green/Yellow shades) and update
 the `light` goldens, if the user finds light mode hard to read. Raised by lb28 (`Q-lb28-latte-contrast`).
@@ -139,7 +139,7 @@ again, keep the log and file the test name.
 
 **LB-35 (closed 2026-11-22, not a bug)** — brew's cmd/missing.rb prints the missing deps with `puts` (stdout); only the install hint goes to stderr via `opoo`, so stdout parsing is right. Original note: — `Missing` (internal/brew/doctor.go) parses stdout only on exit 1, like `Doctor` did before ecc6a51 (brew doctor prints warnings on stderr). Capture real `brew missing` output with a missing dep before changing it.
 
-**LB-36 (parked)** — the refresh counter (`m.refreshing`, land.go) is decremented by any non-preloaded landing: a lazy load, the Taps/Services reloads (gui.go ~591/596) or a launch read landing during a refresh can make "Data refreshed" toast early. Fix: tag refresh reads (like `launch`) and decrement only for tagged landings. Cosmetic (early toast); the header can't stick.
+**LB-36 (closed 2026-11-23)** — the refresh counter (`m.refreshing`, land.go) is decremented by any non-preloaded landing: a lazy load, the Taps/Services reloads (gui.go ~591/596) or a launch read landing during a refresh can make "Data refreshed" toast early. Fix: tag refresh reads (like `launch`) and decrement only for tagged landings. Cosmetic (early toast); the header can't stick.
 
 **LB-37 (closed 2026-11-23)** — TestCleanupTabFlow (flows/cleanup_tabs_test.go:64) failed once under load ("Nothing to clean up" not seen within 3 s); ~3.25 s per run against 3 s waits. Passes 40/40 alone. Likely the same load-timing class as the original LB-31 failure.
 
