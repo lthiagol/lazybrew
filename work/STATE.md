@@ -14,10 +14,9 @@ moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
 `tap_migrations.json` for it. The history was rewritten to `lthiagol@gmail.com` on
 2026-11-22 and force-pushed. No agent is running.
 
-**Open (all in `work/backlog.md`).** the LB-43 pty follow-up (only if a real upgrade still
-looks stuck). LB-27, LB-36..40 closed 2026-11-23; no release since v1.1.0. LB-41 is closed (the `tap-update` job was removed).
-LB-27 (Latte contrast) stays parked. LB-42 (cleanup/autoremove run hint) and LB-43
-(stderr streamed into writes) closed 2026-11-23 on `wip`.
+**Open (all in `work/backlog.md`).** Only the LB-43 pty follow-up, if a real upgrade
+still looks stuck. LB-27 and LB-36..43 closed 2026-11-23 on `wip` (LB-41 earlier);
+no release since v1.1.0.
 
 **Read before acting.** `AGENTS.md` (hard rules), then `work/README.md` (lane flow,
 herdr runbook: `lb-builder` / `lb-reviewer`, a fresh Haiku 5.5 high builder per
