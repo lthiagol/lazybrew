@@ -21,9 +21,10 @@ below was a bug once.
   `vulns` (a JSON report; exit 1 with an `Error:` line on stderr is a failure),
   `search` (no results), `cleanup -n` / `autoremove -n` with a listing, `outdated`
   (read as none). Each reader handles its own.
-- The Log (`internal/gui/command_log.go`) maps exit 1 through `brew.ExitOneReport`,
-  which knows only doctor, missing, vulns (Warn) and search (OK): a `cleanup -n` /
-  `autoremove -n` exit 1 still shows as failed there (LB-39).
+- The Log (`internal/gui/command_log.go`) maps exit 1 through `brew.ExitOneReport`:
+  doctor, missing, vulns and the `cleanup` / `autoremove` dry runs (`-n` or
+  `--dry-run`) show as Warn, search as OK. An `Error:` line on stderr makes vulns
+  and a dry run a failure.
 - `Execute` returns stdout and, on failure, a `*BrewExitError` whose `Stderr`
   holds stderr.
 
