@@ -25,7 +25,3 @@ Only when the user asks. Work stays on `wip`; `stable` moves only on request.
 - **Moving a tag to another commit changes its tarball's sha256** (the archive
   records the commit id). A tap formula pinned to that tag breaks until it is bumped.
 - Tags are `v<semver>`, pre-releases `vX.Y.Z-rcN` (no dot before N).
-- `.github/workflows/stable-ci.yml` still has a `tap-update` job that runs on every
-  `v*` tag and fails (it never checks out the repo, and it still writes
-  `lazybrew-dev.rb` into `lthiagol/tap`). The manual bump above is the process; the
-  job is a known leftover (LB-41).

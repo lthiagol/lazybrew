@@ -17,7 +17,7 @@ moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
 **Open (all in `work/backlog.md`).** LB-36 early "Data refreshed" toast; LB-37
 `TestCleanupTabFlow` load flake; LB-38 the `return m, m.f()` sites; LB-39 the Log
 marks `cleanup -n` / `autoremove -n` exit 1 as failed; LB-40 no coverage floor for
-`textutil`; LB-41 the dead `tap-update` job in `stable-ci.yml` (owner to decide).
+`textutil`. LB-41 is closed (the `tap-update` job was removed).
 LB-27 (Latte contrast) stays parked.
 
 **Read before acting.** `AGENTS.md` (hard rules), then `work/README.md` (lane flow,

@@ -127,4 +127,4 @@ See the config ADR topic (configuration schema decisions).
 | 2026-11-19 | Moved to the Charm v2 stack (charm.land bubbletea/lipgloss/bubbles v2) — prerequisite for overlay compositing and animation in the visual overhaul. | Slice v2-01-charm-v2 |
 | 2026-11-20 | Visual overhaul closed (LB-08: v2-01 … v2-06, v2-05s) and user follow-ups v2-07 … v2-11: finished operations auto-close, startup preload, main-area layout (padding, tables, two-column Info), tap actions, process-group cancel, fast tests, CI with `-race`. | Rulings `Q-v2-*` in `work/questions.md` |
 | 2026-11-20 | brew runs with `Setsid`; tty prompts (sudo, git credentials) fail fast with a needs-sudo message. Suspending the TUI for them (`tea.ExecProcess`) is parked as LB-11 — the user ruled the message is enough. | Slice v2-11, `Q-v2-11-b` |
-| 2026-11-22 | Tap bumps are manual (`docs/agents/release.md`); `stable-ci.yml`'s `tap-update` job is a dead leftover (LB-41). Supersedes the 2026-08-01 row. | Docs rewrite review |
+| 2026-11-22 | Tap bumps are manual (`docs/agents/release.md`); `stable-ci.yml`'s `tap-update` job was removed (LB-41). Supersedes the 2026-08-01 row. | Docs rewrite review |
