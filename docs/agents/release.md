@@ -2,21 +2,20 @@
 
 Only when the user asks. Work stays on `wip`; `stable` moves only on request.
 
+Tap changes go through the user's `/tap` skill (`~/.claude/skills/tap`). You cannot
+run it: suggest the command (e.g. `/tap bump lazybrew v1.2.0`) and let the user run it.
+
 ## Dev build (`lazybrew-dev`)
 
 1. Tag the `wip` tip: `git tag -a vX.Y.Z-rcN -m vX.Y.Z-rcN && git push origin vX.Y.Z-rcN`.
-2. In the dev tap `lthiagol/dev` (`~/coding/homebrew-dev`, repo
-   `lthiagol/homebrew-dev`), `Formula/lazybrew-dev.rb`: set `url` to
-   `https://github.com/lthiagol/lazybrew/archive/refs/tags/vX.Y.Z-rcN.tar.gz` and
-   `sha256` to `curl -sL <url> | sha256sum`. Commit only that file, push.
+2. `/tap bump lazybrew-dev vX.Y.Z-rcN` (the dev tap `lthiagol/dev`).
 
 ## Stable
 
 1. The human smoke gate passes (`SMOKE-CHECKLIST.md`; add a run note).
 2. Fast-forward: `git checkout stable && git merge --ff-only wip && git push origin stable`.
 3. Tag the `stable` tip `vX.Y.Z` (annotated), push the tag.
-4. Bump `Formula/lazybrew.rb` in `lthiagol/tap` (`~/coding/homebrew-tap`) the same
-   way (url, sha256).
+4. `/tap bump lazybrew vX.Y.Z` (`lthiagol/tap`).
 
 ## Gotchas
 
