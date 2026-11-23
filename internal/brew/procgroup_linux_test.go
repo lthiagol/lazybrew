@@ -91,7 +91,9 @@ func TestPtyHelper(t *testing.T) {
 	if result == "" {
 		t.Skip("helper process of TestBrewCannotReadTheTerminal")
 	}
-	r := writeFakeBrew(t, "if read x </dev/tty; then echo terminal; else echo no-terminal; fi\n")
+	// The shell's "cannot open /dev/tty" goes to stderr, which the stream now
+	// sends as lines, so the group silences it: only the read's answer is asserted.
+	r := writeFakeBrew(t, "if { read x </dev/tty; } 2>/dev/null; then echo terminal; else echo no-terminal; fi\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

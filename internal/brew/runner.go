@@ -141,6 +141,9 @@ func (r *DefaultRunner) ExecuteJSON(ctx context.Context, result any, args ...str
 	return nil
 }
 
+// ExecuteStream runs brew and sends its stdout and stderr lines on one channel
+// as they are written. Lines of the two streams may interleave; each stream's
+// own order is kept. The error, sent once, is built from the whole stderr text.
 func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-chan string, <-chan error) {
 	stdoutChan := make(chan string, 100)
 	errChan := make(chan error, 1)
@@ -181,11 +184,13 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 
 		// Stdout and stderr are writers, not pipes, so cmd.Wait owns both
 		// copies and waits for them itself, bounded by WaitDelay: a stray
-		// child holding the pipes open cannot hang the stream.
+		// child holding the pipes open cannot hang the stream. Each stream
+		// has its own lineWriter, so a line never mixes the two.
 		lines := &lineWriter{ctx: ctx, out: stdoutChan}
+		errLines := &lineWriter{ctx: ctx, out: stdoutChan}
 		var stderr bytes.Buffer
 		cmd.Stdout = lines
-		cmd.Stderr = &stderr
+		cmd.Stderr = stderrCopy{buf: &stderr, lines: errLines}
 
 		if err := cmd.Start(); err != nil {
 			sendErr(fmt.Errorf("start: %w", err))
@@ -194,6 +199,7 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 
 		err := finishErr(cmd.Wait())
 		lines.flush()
+		errLines.flush()
 		if err != nil {
 			// A cancelled context killed the process: sendErr already
 			// prefers context.Canceled over the local error, so the GUI
@@ -211,8 +217,24 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 	return stdoutChan, errChan
 }
 
-// lineWriter splits brew's stdout into lines and sends each one to out. A
-// line ends at \n, at \r (brew's progress bars redraw with \r), or at \r\n,
+// stderrCopy is brew's stderr for ExecuteStream. Every byte goes to buf, which
+// the error message is built from, and also to lines, which sends the lines
+// on the stream. A failed line send (ctx done) is dropped here: buf must keep
+// the whole text, and a cancel already ends the run.
+type stderrCopy struct {
+	buf   *bytes.Buffer
+	lines *lineWriter
+}
+
+func (w stderrCopy) Write(p []byte) (int, error) {
+	w.buf.Write(p)
+	_, _ = w.lines.Write(p)
+	return len(p), nil
+}
+
+// lineWriter splits brew's output into lines and sends each one to out. Each
+// stream gets its own lineWriter, since a partial line is buffered per writer.
+// A line ends at \n, at \r (brew's progress bars redraw with \r), or at \r\n,
 // which is one break. A send blocks until the consumer takes the line or ctx
 // is done, in which case Write fails and the copy stops.
 type lineWriter struct {
