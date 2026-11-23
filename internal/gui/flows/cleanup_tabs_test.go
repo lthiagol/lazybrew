@@ -57,7 +57,7 @@ func TestCleanupTabFlow(t *testing.T) {
 	tm := testutil.NewTestModelWithRunner(t, p.runner(), teatest.WithInitialTermSize(140, 40))
 
 	tm.Send(tea.KeyPressMsg{Code: 'c', Text: "c"})
-	waitForScreen(t, tm, "Would free ~230.3MB")
+	waitForScreenAll(t, tm, "Would free ~230.3MB", "Press c again to run brew cleanup")
 	tm.Send(tea.KeyPressMsg{Code: 'c', Text: "c"})
 	waitForScreen(t, tm, "Run brew cleanup, freeing about 230.3MB?")
 	tm.Send(tea.KeyPressMsg{Code: 'y', Text: "y"})
@@ -82,7 +82,7 @@ func TestAutoremoveTabFlow(t *testing.T) {
 	tm := testutil.NewTestModelWithRunner(t, p.runner(), teatest.WithInitialTermSize(140, 40))
 
 	tm.Send(tea.KeyPressMsg{Code: 'A', Text: "A"})
-	waitForScreen(t, tm, "2 unused formulae would be removed")
+	waitForScreenAll(t, tm, "2 unused formulae would be removed", "Press A again to run brew autoremove")
 	tm.Send(tea.KeyPressMsg{Code: 'A', Text: "A"})
 	waitForScreen(t, tm, "Uninstall 2 unused formulae?")
 	tm.Send(tea.KeyPressMsg{Code: 'y', Text: "y"})

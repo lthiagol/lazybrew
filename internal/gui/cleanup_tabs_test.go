@@ -37,13 +37,16 @@ func TestCleanupViewTable(t *testing.T) {
 	if lines[0] != "Would free ~950MB" {
 		t.Fatalf("header = %q, want %q", lines[0], "Would free ~950MB")
 	}
+	if lines[1] != "Press c again to run brew cleanup" {
+		t.Fatalf("hint = %q, want the line under the summary", lines[1])
+	}
 	wantRows := []string{
 		"230.3MB  3 files      <prefix>/Cellar/old-formula/1.0",
 		" 48.2MB  1 file       ~/.cache/Homebrew/downloads/0a1b-foo-1.0.tar.gz",
 		"      —  broken link  <prefix>/bin/gone",
 	}
 	for i, want := range wantRows {
-		if got := lines[3+i]; got != want {
+		if got := lines[4+i]; got != want {
 			t.Errorf("row %d:\n got %q\nwant %q", i, got, want)
 		}
 	}
@@ -63,25 +66,40 @@ func TestCleanupViewFitsWidth(t *testing.T) {
 	}
 }
 
-// Empty and raw-fallback: nothing parsed shows brew's own text, nothing shows the
-// empty line.
+// Empty and raw-fallback: nothing parsed shows brew's own text, then the run hint
+// when there is something to run; nothing shows the empty line and no hint.
 func TestCleanupViewEmptyAndRaw(t *testing.T) {
 	if got := ansi.Strip(cleanupView(brew.CleanupPreview{}, 80, style.UnicodeIcons, "", "")); got != "✔ Nothing to clean up" {
 		t.Errorf("empty = %q", got)
 	}
 	raw := brew.CleanupPreview{Raw: []string{"Something brew says in a new shape"}}
-	if got := cleanupView(raw, 80, style.UnicodeIcons, "", ""); got != "Something brew says in a new shape" {
-		t.Errorf("raw = %q", got)
+	want := "Something brew says in a new shape\nPress c again to run brew cleanup"
+	if got := ansi.Strip(cleanupView(raw, 80, style.UnicodeIcons, "", "")); got != want {
+		t.Errorf("raw = %q, want %q", got, want)
+	}
+}
+
+// Without brew's total the hint is the first line, above the table; the hint is
+// clipped to the tab's width.
+func TestCleanupViewHintWithoutTotal(t *testing.T) {
+	p := brew.CleanupPreview{Items: []brew.CleanupItem{{Path: testPrefix + "/bin/gone", Kind: "broken link"}}}
+	lines := strings.Split(ansi.Strip(cleanupView(p, 80, style.UnicodeIcons, "", testPrefix)), "\n")
+	if lines[0] != "Press c again to run brew cleanup" || lines[1] != "" {
+		t.Errorf("first lines = %q, %q; want the hint then a blank line", lines[0], lines[1])
+	}
+	short := ansi.Strip(cleanupView(p, 20, style.UnicodeIcons, "", testPrefix))
+	if first := strings.Split(short, "\n")[0]; lipglossWidth(first) > 20 {
+		t.Errorf("hint at width 20 is %d cells: %q", lipglossWidth(first), first)
 	}
 }
 
 func TestUnusedView(t *testing.T) {
 	out := ansi.Strip(unusedView(brew.AutoremovePreview{Formulae: []string{"cmake", "openssl@3"}}, style.UnicodeIcons))
-	if want := "2 unused formulae would be removed\ncmake\nopenssl@3"; out != want {
+	if want := "2 unused formulae would be removed\nPress A again to run brew autoremove\ncmake\nopenssl@3"; out != want {
 		t.Errorf("unused = %q, want %q", out, want)
 	}
 	one := ansi.Strip(unusedView(brew.AutoremovePreview{Formulae: []string{"foo"}}, style.UnicodeIcons))
-	if !strings.HasPrefix(one, "1 unused formula would be removed") {
+	if !strings.HasPrefix(one, "1 unused formula would be removed\nPress A again to run brew autoremove\n") {
 		t.Errorf("singular = %q", one)
 	}
 	if got := ansi.Strip(unusedView(brew.AutoremovePreview{}, style.UnicodeIcons)); got != "✔ Nothing unused" {

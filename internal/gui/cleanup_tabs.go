@@ -170,15 +170,18 @@ func (m Model) unusedTabView() string {
 // cleanupView draws a cleanup preview at width cells. Paths are cut in the
 // middle to the room the path column has; the copy draws it wide, so it is whole.
 func cleanupView(p brew.CleanupPreview, width int, icons style.Icons, home, prefix string) string {
+	hint := style.SubtleText.Render(textutil.Clip(fmt.Sprintf("Press %s again to run brew cleanup", stCleanup.key), width))
 	var out []string
 	switch {
 	case len(p.Items) > 0:
 		if p.Total != "" {
-			out = append(out, style.AccentText.Render("Would free ~"+p.Total), "")
+			out = append(out, style.AccentText.Render("Would free ~"+p.Total))
 		}
+		out = append(out, hint, "")
 		out = append(out, cleanupTable(p.Items, width, home, prefix)...)
 	case len(p.Raw) > 0:
 		out = append(out, p.Raw...)
+		out = append(out, hint)
 	default:
 		out = append(out, style.SuccessText.Render(presentation.WithIcon(icons.OK, "Nothing to clean up")))
 	}
@@ -247,7 +250,10 @@ func unusedView(p brew.AutoremovePreview, icons style.Icons) string {
 		return style.SuccessText.Render(presentation.WithIcon(icons.OK, "Nothing unused"))
 	}
 	n := len(p.Formulae)
-	out := []string{style.AccentText.Render(fmt.Sprintf("%d unused %s would be removed", n, plural(n, "formula", "formulae")))}
+	out := []string{
+		style.AccentText.Render(fmt.Sprintf("%d unused %s would be removed", n, plural(n, "formula", "formulae"))),
+		style.SubtleText.Render(fmt.Sprintf("Press %s again to run brew autoremove", stAutoremove.key)),
+	}
 	for _, name := range p.Formulae {
 		out = append(out, style.NormalItem.Render(name))
 	}
