@@ -28,7 +28,8 @@
 - GUI unit tests: `newTestModel()` (mock runner), `updateModel`, `sendKey`,
   `sendSpecial`, `drainCmds` in `internal/gui/gui_test.go`.
 - Flows: `testutil.NewTestModelWithRunner(t, runner)` (`internal/gui/testutil`);
-  wait with `waitForScreen` / `waitForCall` (`flows/wait_test.go`, 3 s). The flows'
+  wait with `waitForScreen` / `waitForScreenAll` / `waitForCall` (`flows/wait_test.go`; each
+  waits up to `flowWaitCeiling`, 10 s, and returns as soon as its text shows). The flows'
   `TestMain` sets Unicode icons and animations off, so frames are plain resting text.
 - To look at a frame, build a harness on the mock runner and dump
   `ansi.Strip(m.View().Content)`. Never on `brew.NewDefaultRunner()` (AGENTS.md rule 1).
@@ -43,5 +44,6 @@
   ("Data refresh"), not the whole word.
 - A held fake read (to test "while loading") must be released with a deferred
   `close`, so no goroutine stays blocked.
-- Flows with ~3 s waits can miss under load (LB-37, `TestCleanupTabFlow`). Re-run
-  once; if a flow fails twice, it is yours to fix.
+- LB-37: `TestCleanupTabFlow` missed "Nothing to clean up" under load with a 3 s wait.
+  The wait spans the 2 s auto-close of a successful Operation (`operationAutoClose`),
+  so the ceiling is 10 s (`flowWaitCeiling`). A flow that still fails twice is yours to fix.
