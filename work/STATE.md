@@ -14,10 +14,8 @@ moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
 `tap_migrations.json` for it. The history was rewritten to `lthiagol@gmail.com` on
 2026-11-22 and force-pushed. No agent is running.
 
-**Open (all in `work/backlog.md`).** LB-36 early "Data refreshed" toast; LB-37
-`TestCleanupTabFlow` load flake; LB-38 the `return m, m.f()` sites; LB-39 the Log
-marks `cleanup -n` / `autoremove -n` exit 1 as failed; LB-40 no coverage floor for
-`textutil`. LB-41 is closed (the `tap-update` job was removed).
+**Open (all in `work/backlog.md`).** LB-36 early "Data refreshed" toast; the LB-43
+pty follow-up (only if upgrades still look stuck). LB-37..40 closed 2026-11-23. LB-41 is closed (the `tap-update` job was removed).
 LB-27 (Latte contrast) stays parked. LB-42 (cleanup/autoremove run hint) and LB-43
 (stderr streamed into writes) closed 2026-11-23 on `wip`.
 
@@ -91,6 +89,7 @@ then the lane flow. Releases: `docs/agents/release.md`.
 | lb32-vulns-view | 392a00b, ba894cb, a6f496f | implemented | awaiting reviewer |
 | lb42-cleanup-run-hint | 3db700d | closed | ok (herdr-crew, r1 clean) |
 | lb43-stream-stderr | 6b2c7d7 | closed | ok (herdr-crew, r1 clean; pty follow-up not started) |
+| lb-small-round (LB-40, 38, 39, 37) | 7d83f36, 9c363a0, 94c9828, 2418202 | closed | ok (herdr-crew; LB-39 r2 clean, others r1) |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
