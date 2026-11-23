@@ -161,11 +161,27 @@ func TestLightThemeIsLatte(t *testing.T) {
 		"text":    {theme.Text, lipgloss.Color("#4c4f69")},
 		"surface": {theme.Surface, lipgloss.Color("#ccd0da")},
 		"border":  {theme.Border, lipgloss.Color("#bcc0cc")},
-		"subtle":  {theme.Subtle, lipgloss.Color("#6c6f85")},
-		"muted":   {theme.Muted, lipgloss.Color("#9ca0b0")},
 		"pinned":  {theme.Pinned, lipgloss.Color("#179299")},
 		"error":   {theme.Error, lipgloss.Color("#d20f39")},
-		"success": {theme.Success, lipgloss.Color("#40a02b")},
+	}
+	for name, w := range want {
+		if w.got != w.want {
+			t.Errorf("LightTheme %s = %q, want %q", name, w.got, w.want)
+		}
+	}
+}
+
+// TestLightRolesAreTheChosenShades pins the five Latte roles that differ from
+// their flavour's default: Muted and Subtle take official tokens, Success,
+// Warning and Info take the darker shades (theme.go gives each ratio).
+func TestLightRolesAreTheChosenShades(t *testing.T) {
+	theme := LightTheme()
+	want := map[string]struct{ got, want color.Color }{
+		"muted":   {theme.Muted, lipgloss.Color("#7c7f93")},   // overlay2
+		"subtle":  {theme.Subtle, lipgloss.Color("#5c5f77")},  // subtext1
+		"success": {theme.Success, lipgloss.Color("#317a21")}, // green, darkened
+		"warning": {theme.Warning, lipgloss.Color("#965f13")}, // yellow, darkened
+		"info":    {theme.Info, lipgloss.Color("#135ef5")},    // blue, darkened
 	}
 	for name, w := range want {
 		if w.got != w.want {

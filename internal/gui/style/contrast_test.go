@@ -42,52 +42,20 @@ var contrastFloor = map[string]float64{
 	"Muted":   3,
 }
 
-// latteBelow records the Latte roles that sit under their floor. Latte keeps
-// today's colours (its frames are pinned), so the floor is not met here; each
-// role is held at its measured ratio, and the test fails if one falls further.
-// Q-lb28-latte-contrast asks the orchestrator to rule on these.
-var latteBelow = map[string]float64{
-	"Subtle":  4.37,
-	"Muted":   2.30,
-	"Success": 2.96,
-	"Warning": 2.31,
-	"Info":    4.34,
-}
-
 // TestEveryThemeMeetsItsContrastFloor: each role's contrast with the theme's
-// background meets its floor, except the Latte roles recorded above.
+// background meets its floor.
 func TestEveryThemeMeetsItsContrastFloor(t *testing.T) {
 	for _, name := range registryNames() {
 		th, _ := ThemeByName(name)
 		roles := roleSet(th)
 		for role, floor := range contrastFloor {
 			ratio := contrast(roles[role], th.Background)
-			if name == "light" || name == "catppuccin-latte" {
-				if below, ok := latteBelow[role]; ok {
-					if ratio < below-0.005 {
-						t.Errorf("%s %s = %.2f:1, below its recorded %.2f:1", name, role, ratio, below)
-					}
-					continue
-				}
-			}
 			if ratio < floor {
 				t.Errorf("%s %s = %.2f:1 on the background, want at least %.1f:1", name, role, ratio, floor)
 			}
 		}
 		if roles["Surface"] == th.Background {
 			t.Errorf("%s: Surface is the background colour, want a distinct row colour", name)
-		}
-	}
-}
-
-// TestLatteBelowFloorIsStillBelow: a Latte role recorded as below its floor
-// must still be below it, so a fix that lifts it is noticed and the record
-// is removed.
-func TestLatteBelowFloorIsStillBelow(t *testing.T) {
-	latte := LightTheme()
-	for role := range latteBelow {
-		if got := contrast(roleSet(latte)[role], latte.Background); got >= contrastFloor[role] {
-			t.Errorf("Latte %s now meets its floor (%.2f:1): drop it from latteBelow", role, got)
 		}
 	}
 }

@@ -88,8 +88,32 @@ func themeFrom(p Palette) *Theme {
 // DarkTheme is Catppuccin Mocha.
 func DarkTheme() *Theme { return themeFrom(Mocha) }
 
-// LightTheme is Catppuccin Latte.
-func LightTheme() *Theme { return themeFrom(Latte) }
+// Latte's Success, Warning and Info. No official Latte token reaches 4.5:1 on
+// the base, so each is a darker shade of its token's hue, lightness lowered
+// until it clears the floor with a small margin (ratios on Latte.Base):
+//
+//	role     colour    why
+//	Success  #317a21   Green, darkened; 4.72:1
+//	Warning  #965f13   Yellow, darkened; 4.71:1
+//	Info     #135ef5   Blue, darkened; 4.71:1
+var (
+	latteSuccess = lipgloss.Color("#317a21")
+	latteWarning = lipgloss.Color("#965f13")
+	latteInfo    = lipgloss.Color("#135ef5")
+)
+
+// LightTheme is Catppuccin Latte. Its Muted is overlay2 and its Subtle is
+// subtext1: the official tokens that clear their floors (Overlay0 is 2.30:1,
+// Subtext0 is 4.37:1). Success, Warning and Info are the darker shades above.
+func LightTheme() *Theme {
+	t := themeFrom(Latte)
+	t.Muted = Latte.Overlay2
+	t.Subtle = Latte.Subtext1
+	t.Success = latteSuccess
+	t.Warning = latteWarning
+	t.Info = latteInfo
+	return t
+}
 
 // MacchiatoTheme is Catppuccin Macchiato.
 func MacchiatoTheme() *Theme { return themeFrom(Macchiato) }
