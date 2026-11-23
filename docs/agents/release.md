@@ -16,8 +16,7 @@ Only when the user asks. Work stays on `wip`; `stable` moves only on request.
 2. Fast-forward: `git checkout stable && git merge --ff-only wip && git push origin stable`.
 3. Tag the `stable` tip `vX.Y.Z` (annotated), push the tag.
 4. Bump `Formula/lazybrew.rb` in `lthiagol/tap` (`~/coding/homebrew-tap`) the same
-   way (url, sha256). That clone's git config has the work email: commit with
-   `-c user.name="Luiz Thiago" -c user.email=lthiagol@gmail.com`.
+   way (url, sha256).
 
 ## Gotchas
 
