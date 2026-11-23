@@ -44,7 +44,7 @@ func (m Model) retryInTerminal(needs *brew.NeedsSudoError) (tea.Model, tea.Cmd) 
 	cmd := exec.Command(m.client.Runner.BrewPath(), needs.Args...)
 	cmd.Env = brew.CommandEnv()
 	id, title, args := m.opState.TaskID, m.opState.TaskTitle, needs.Args
-	return m, m.execProcess(cmd, func(err error) tea.Msg {
+	c := m.execProcess(cmd, func(err error) tea.Msg {
 		// A failed command is its exit status, as the toast names it.
 		var exit *exec.ExitError
 		if errors.As(err, &exit) {
@@ -52,6 +52,7 @@ func (m Model) retryInTerminal(needs *brew.NeedsSudoError) (tea.Model, tea.Cmd) 
 		}
 		return SudoRunDoneMsg{ID: id, Title: title, Args: args, Err: err}
 	})
+	return m, c
 }
 
 // sudoRetryDone is the end of a retry in the terminal. As for every write, the
@@ -64,7 +65,8 @@ func (m Model) sudoRetryDone(msg SudoRunDoneMsg) (tea.Model, tea.Cmd) {
 		m.invalidateCacheGroup(msg.Args[0])
 	}
 	if msg.Err != nil {
-		return m, m.setToast(failureText(msg.ID, msg.Title, msg.Err), modal.ToastError)
+		cmd := m.setToast(failureText(msg.ID, msg.Title, msg.Err), modal.ToastError)
+		return m, cmd
 	}
 	if m.opState != nil {
 		m.opState.Status = opSuccess

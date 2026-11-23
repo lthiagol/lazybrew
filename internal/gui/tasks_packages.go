@@ -447,7 +447,8 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if !r.Installed {
-			return m, m.setToast(name+" is not installed", modal.ToastInfo)
+			cmd := m.setToast(name+" is not installed", modal.ToastInfo)
+			return m, cmd
 		}
 		searchIsCask = r.IsCask
 	}

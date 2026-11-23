@@ -233,5 +233,6 @@ func (m Model) selectTab(i int) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.activeTab = i
-	return m, m.loadTabContent()
+	cmd := m.loadTabContent()
+	return m, cmd
 }

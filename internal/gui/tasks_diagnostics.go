@@ -69,7 +69,8 @@ func (m Model) openDiagnosticsTab(tab int) (tea.Model, tea.Cmd) {
 	m.activeTab = tab
 	m.invalidateCacheGroup("diagnostics")
 	delete(m.tabContent, tabKey(PanelStatus, tab, statusItemName))
-	return m, m.loadTabContent()
+	cmd := m.loadTabContent()
+	return m, cmd
 }
 
 // executeCleanup runs brew cleanup through the task manager, after its confirm.

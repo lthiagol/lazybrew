@@ -106,7 +106,8 @@ func (m Model) previewKey(tab int) (tea.Model, tea.Cmd) {
 	if m.activeTab != tab {
 		m.activeTab = tab
 		m.previews.dropPreview(tab)
-		return m, m.loadTabContent()
+		cmd := m.loadTabContent()
+		return m, cmd
 	}
 	if tab == statusCleanupTab {
 		return m.confirmCleanup()

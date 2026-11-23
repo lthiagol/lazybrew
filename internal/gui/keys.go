@@ -35,9 +35,11 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "tab":
 			// Tab moves on even while the box has focus; switchPanel blurs it.
-			return m, m.nextPanel()
+			c := m.nextPanel()
+			return m, c
 		case "shift+tab":
-			return m, m.prevPanel()
+			c := m.prevPanel()
+			return m, c
 		case "esc":
 			m.searchInput.Blur()
 			return m, nil
@@ -190,7 +192,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	case "/":
 		if m.panels[m.activePanel].canFilter() {
-			return m, m.openFilter()
+			c := m.openFilter()
+			return m, c
 		}
 		m.switchPanel(PanelSearch)
 		return m, m.searchInput.Focus()
@@ -200,7 +203,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m.retryInTerminal(needs)
 		}
 		if m.activePanel == PanelSearch && len(m.searchResults) > 0 {
-			return m, m.fetchSelectedSearchInfo()
+			c := m.fetchSelectedSearchInfo()
+			return m, c
 		}
 
 	case "y":
@@ -219,7 +223,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "i":
 		if m.activePanel == PanelSearch {
 			if r, ok := m.selectedSearchRow(); ok && r.Installed {
-				return m, m.setToast(r.Name+" is already installed, x to uninstall", modal.ToastInfo)
+				c := m.setToast(r.Name+" is already installed, x to uninstall", modal.ToastInfo)
+				return m, c
 			}
 		}
 		if m.activePanel == PanelSearch || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {

@@ -213,9 +213,11 @@ func (m Model) filterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "ctrl+c":
 		return m, tea.Quit
 	case "tab":
-		return m, m.nextPanel()
+		cmd := m.nextPanel()
+		return m, cmd
 	case "shift+tab":
-		return m, m.prevPanel()
+		cmd := m.prevPanel()
+		return m, cmd
 	case "up":
 		p.up()
 	case "down":
@@ -235,7 +237,8 @@ func (m Model) filterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 	if needsTabFetch(m.activePanel, m.activeTab) {
-		return m, m.loadTabContent()
+		cmd := m.loadTabContent()
+		return m, cmd
 	}
 	return m, nil
 }
