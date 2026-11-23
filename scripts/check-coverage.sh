@@ -18,9 +18,10 @@ declare -a PKGS=(
     "github.com/lthiagol/lazybrew/internal/gui/presentation"
     "github.com/lthiagol/lazybrew/internal/gui/style"
     "github.com/lthiagol/lazybrew/internal/gui/task"
+    "github.com/lthiagol/lazybrew/internal/gui/textutil"
     "github.com/lthiagol/lazybrew/internal/logtail"
 )
-declare -a FLOORS=(64 78 85 83 86 88 96 88 93 90)
+declare -a FLOORS=(64 78 85 83 86 88 96 88 93 98 90)
 
 # Floors are the measured coverage rounded down, less 2 points of headroom
 # for small drift (Q-cover-floors, 2026-11-20). Every package with tests has
