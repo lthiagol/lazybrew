@@ -18,7 +18,8 @@ moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
 `TestCleanupTabFlow` load flake; LB-38 the `return m, m.f()` sites; LB-39 the Log
 marks `cleanup -n` / `autoremove -n` exit 1 as failed; LB-40 no coverage floor for
 `textutil`. LB-41 is closed (the `tap-update` job was removed).
-LB-27 (Latte contrast) stays parked.
+LB-27 (Latte contrast) stays parked. LB-42 (cleanup/autoremove run hint) and LB-43
+(stderr streamed into writes) closed 2026-11-23 on `wip`.
 
 **Read before acting.** `AGENTS.md` (hard rules), then `work/README.md` (lane flow,
 herdr runbook: `lb-builder` / `lb-reviewer`, a fresh Haiku 5.5 high builder per
@@ -88,6 +89,8 @@ then the lane flow. Releases: `docs/agents/release.md`.
 | lb30-taps-and-trust | 7c878ea, d8655ab, d036d12, b750e10 | implemented | awaiting reviewer |
 | lb31-cleanup-tabs | baf820b, 8534342, 6b8284c | implemented; 80x24 open (Q-lb31-tabs-80) | awaiting reviewer |
 | lb32-vulns-view | 392a00b, ba894cb, a6f496f | implemented | awaiting reviewer |
+| lb42-cleanup-run-hint | 3db700d | closed | ok (herdr-crew, r1 clean) |
+| lb43-stream-stderr | 6b2c7d7 | closed | ok (herdr-crew, r1 clean; pty follow-up not started) |
 
 **detach-master-plan, closed.** The five slice commits implement the detach
 (`AGENTS.md`, `README.md`, `DESIGN.md`, the `work/` lane-flow structure,
