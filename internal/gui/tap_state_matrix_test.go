@@ -93,6 +93,10 @@ func TestTapActionsByState(t *testing.T) {
 				}
 				// Only the task starts brew, and only it: a confirm or menu runs nothing.
 				if s.want[i] == "task" {
+					// The task's reader runs its brew call.
+					if r := m.tasks.RunNext(); r != nil {
+						r()
+					}
 					if !hasCall(*calls, "trust", user) {
 						t.Errorf("%s: %q should run `brew trust %s`, got %v", s.name, key, user, *calls)
 					}

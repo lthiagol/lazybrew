@@ -263,6 +263,10 @@ func TestManager_RunImmediateError(t *testing.T) {
 	}
 
 	m.Enqueue(task)
+	// Run is called by the first reader, so the task starts and then fails.
+	if _, ok := m.RunNext()().(TaskStartedMsg); !ok {
+		t.Fatal("expected TaskStartedMsg")
+	}
 	msg := m.RunNext()()
 	comp, ok := msg.(TaskCompletedMsg)
 	if !ok {
@@ -342,11 +346,15 @@ func TestManager_CancelCurrent(t *testing.T) {
 	m.Enqueue(task)
 	m.RunNext()()
 
+	// The reader calls Run; Esc may come before or after it.
+	done := make(chan tea.Msg, 1)
+	reader := m.RunNext()
+	go func() { done <- reader() }()
 	m.CancelCurrent()
 
 	<-cancelled
 
-	msg := m.RunNext()()
+	msg := <-done
 	comp, ok := msg.(TaskCompletedMsg)
 	if !ok {
 		t.Fatalf("expected TaskCompletedMsg, got %T", msg)
@@ -578,7 +586,136 @@ func TestManager_Idle(t *testing.T) {
 	if _, ok := m.RunNext()().(TaskCompletedMsg); !ok {
 		t.Fatal("expected TaskCompletedMsg")
 	}
+	if m.Idle() {
+		t.Fatal("a completion Update has not handled is not idle")
+	}
+	if m.RunNext() != nil {
+		t.Fatal("nothing queued: RunNext has nothing to start")
+	}
 	if !m.Idle() {
-		t.Fatal("a completed task leaves the manager idle")
+		t.Fatal("a handled completion leaves the manager idle")
+	}
+}
+
+// A Run that blocks never holds RunNext: starting a task only makes it
+// current, the reader calls Run, and Esc cancels it while Run still blocks
+// (FC1).
+func TestManager_BlockingRunDoesNotBlockRunNext(t *testing.T) {
+	m := NewManager(10)
+	release := make(chan struct{})
+	entered := make(chan struct{})
+	m.Enqueue(&Task{ID: "slow", Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+		close(entered)
+		select {
+		case <-release:
+		case <-ctx.Done():
+		}
+		errCh := make(chan error, 1)
+		errCh <- ctx.Err()
+		return nil, errCh, nil
+	}})
+
+	started := make(chan tea.Cmd, 1)
+	go func() { started <- m.RunNext() }()
+	var cmd tea.Cmd
+	select {
+	case cmd = <-started:
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("RunNext blocked on the task's Run")
+	}
+	if _, ok := cmd().(TaskStartedMsg); !ok {
+		t.Fatal("expected TaskStartedMsg")
+	}
+
+	done := make(chan tea.Msg, 1)
+	reader := m.RunNext()
+	go func() { done <- reader() }()
+	<-entered
+	m.CancelCurrent()
+	select {
+	case msg := <-done:
+		c, ok := msg.(TaskCompletedMsg)
+		if !ok || !errors.Is(c.Err, context.Canceled) {
+			t.Fatalf("want a cancelled completion, got %#v", msg)
+		}
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("Esc did not cancel a Run that blocks")
+	}
+}
+
+// While a reader is out, RunNext issues no second one.
+func TestManager_OneReaderAtATime(t *testing.T) {
+	m := NewManager(10)
+	out := make(chan string)
+	errCh := make(chan error, 1)
+	m.Enqueue(&Task{ID: "a", Run: func(context.Context) (<-chan string, <-chan error, error) {
+		return out, errCh, nil
+	}})
+	m.RunNext()()
+	reader := m.RunNext()
+	if reader == nil {
+		t.Fatal("expected the first reader")
+	}
+	if m.RunNext() != nil {
+		t.Fatal("a second reader was issued while the first is out")
+	}
+	done := make(chan tea.Msg, 1)
+	go func() { done <- reader() }()
+	out <- "line"
+	if msg, ok := (<-done).(TaskOutputMsg); !ok || msg.Lines[0] != "line" {
+		t.Fatalf("want the line, got %#v", msg)
+	}
+	if m.RunNext() == nil {
+		t.Fatal("the reader returned: the next one is issued")
+	}
+}
+
+// FC2: task A completes in its reader before Update handles the completion.
+// In that window an Enqueue of B is queued, not started; the completion's
+// RunNext starts B, and B's start issues its one reader. B completes once.
+func TestManager_LateCompletionGivesOneReader(t *testing.T) {
+	m := NewManager(10)
+	var bRuns atomic.Int32
+	m.Enqueue(&Task{ID: "A", Run: func(context.Context) (<-chan string, <-chan error, error) {
+		return afterTask()
+	}})
+	m.RunNext()()
+	if _, ok := m.RunNext()().(TaskCompletedMsg); !ok {
+		t.Fatal("expected A's completion")
+	}
+
+	// The completion is in flight; the user confirms B.
+	res, err := m.Enqueue(&Task{ID: "B", Run: func(context.Context) (<-chan string, <-chan error, error) {
+		bRuns.Add(1)
+		return afterTask()
+	}})
+	if err != nil || res != EnqueueQueued {
+		t.Fatalf("B must queue behind A's unhandled completion, got %v %v", res, err)
+	}
+
+	// Update handles A's completion.
+	started, ok := m.RunNext()().(TaskStartedMsg)
+	if !ok || started.ID != "B" {
+		t.Fatalf("want B started, got %#v", started)
+	}
+	// Update handles B's start: one reader. Any further RunNext while it is
+	// out (a stale handler) gets none.
+	reader := m.RunNext()
+	if extra := m.RunNext(); extra != nil {
+		t.Fatal("a second reader for B")
+	}
+	msgs := make(chan tea.Msg, 2)
+	go func() { msgs <- reader() }()
+	c, ok := (<-msgs).(TaskCompletedMsg)
+	if !ok || c.ID != "B" {
+		t.Fatalf("want B's completion, got %#v", c)
+	}
+	if m.RunNext() != nil {
+		t.Fatal("B completes once")
+	}
+	if n := bRuns.Load(); n != 1 {
+		t.Fatalf("B's Run called %d times, want 1", n)
 	}
 }

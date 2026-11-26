@@ -11,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
 	"github.com/lthiagol/lazybrew/internal/gui/modal"
+	"github.com/lthiagol/lazybrew/internal/gui/task"
 )
 
 func (m *Model) executeSearch(query string) tea.Cmd {
@@ -252,6 +253,11 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 	// (r1 finding 14).
 	enqueued := 0
 	queueFull := false
+	// started is the first Enqueue's result. Only EnqueueStarted lets this
+	// batch call RunNext: behind a running task, or one done but not yet
+	// handled (FC2), the batch waits for that task's completion to start it
+	// (D1). RunNext here would clear the done task before its completion lands.
+	started := false
 	client := m.client
 	for _, n := range names {
 		name := n.name
@@ -264,9 +270,13 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 			return client.FormulaeWrite.Upgrade(ctx, name)
 		})
 
-		if _, err := m.tasks.Enqueue(t); err != nil {
+		res, err := m.tasks.Enqueue(t)
+		if err != nil {
 			queueFull = true
 			break
+		}
+		if enqueued == 0 {
+			started = res == task.EnqueueStarted
 		}
 		enqueued++
 		// Track the batch by the task's (prefixed) ID, counting
@@ -296,17 +306,25 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 	if queueFull {
 		// The queued batch tasks are parked waiting for a RunNext: without
 		// it the whole batch silently stalls until the user triggers some
-		// other mutation (r2 finding NEW-1).
+		// other mutation (r2 finding NEW-1). Behind a running task, the
+		// completion's RunNext starts them (D1).
 		c := m.setToast(
 			fmt.Sprintf("Queue full: batch limited to %d of %d packages", enqueued, len(names)),
 			modal.ToastWarning,
 		)
+		if !started {
+			return m, c
+		}
 		return m, tea.Batch(
 			c,
 			m.tasks.RunNext(),
 		)
 	}
 
+	if !started {
+		c := m.setToast("Queued behind running task", modal.ToastInfo)
+		return m, c
+	}
 	return m, m.tasks.RunNext()
 }
 
@@ -605,4 +623,32 @@ func (m Model) toggleLeaves() (tea.Model, tea.Cmd) {
 		}
 		return MutationResultMsg{Name: "leaves", Leaves: leaves}
 	}
+}
+
+// packagesReload is the quiet refresh and the Search re-mark after a package
+// write fails or is cancelled: it may have changed what is installed (an
+// upgrade that fails on one package after upgrading the rest), so the lists
+// are read again, with no "Data refreshed" toast over the error (FB4).
+func (m *Model) packagesReload(id string) tea.Cmd {
+	if !isPackageWrite(id) {
+		return nil
+	}
+	return tea.Batch(
+		func() tea.Msg { return RefreshMsg{Quiet: true} },
+		m.remarkSearch(),
+	)
+}
+
+// isPackageWrite is whether a task changes which packages are installed.
+func isPackageWrite(id string) bool {
+	switch id {
+	case "upgrade-all", "cleanup", "autoremove":
+		return true
+	}
+	for _, prefix := range []string{"install:", "uninstall:", "reinstall:", "upgrade:", "zap:", "batch-upgrade:"} {
+		if strings.HasPrefix(id, prefix) {
+			return true
+		}
+	}
+	return false
 }

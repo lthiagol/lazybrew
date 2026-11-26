@@ -24,7 +24,9 @@ func TestHelpEscClosesHelpBeforeCancellingATask(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	m.tasks.RunNext() // starts the task; the returned read command is not needed here
+	m.tasks.RunNext() // starts the task
+	// The reader calls Run; it blocks on the task's channels for good.
+	go m.tasks.RunNext()()
 	ctx := <-ctxs
 	m.opState = &Operation{Title: "Upgrade bash", Status: opRunning}
 

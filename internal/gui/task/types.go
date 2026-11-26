@@ -4,8 +4,12 @@ import "context"
 
 // Task represents a single serialized operation.
 type Task struct {
-	ID     string
-	Title  string
+	ID    string
+	Title string
+	// Run starts the work and returns its output lines and its one error. The
+	// manager calls it once, on a Cmd goroutine (never in Update), so it may
+	// block; it must stop when ctx is cancelled. A non-nil third result is a
+	// task that failed to start.
 	Run    func(ctx context.Context) (<-chan string, <-chan error, error)
 	Cancel context.CancelFunc
 }

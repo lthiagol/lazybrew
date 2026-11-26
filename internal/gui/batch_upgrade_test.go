@@ -123,6 +123,74 @@ func TestBatchUpgradeQueueFullStillStartsBatch(t *testing.T) {
 	}
 }
 
+// doneUnhandled runs a task to the end of its reader and returns its
+// completion unhandled: the manager holds the task as done, and Update has not
+// seen the completion yet (FC2).
+func doneUnhandled(t *testing.T, m *Model) (*Model, tea.Msg) {
+	t.Helper()
+	cmd := m.enqueue(errTask("pin:a", "Toggle pin a", func(context.Context) error { return nil }))
+	m, completion := step(m, cmd())
+	if _, ok := completion.(TaskCompletedMsg); !ok {
+		t.Fatalf("expected the reader to return TaskCompletedMsg, got %T", completion)
+	}
+	return m, completion
+}
+
+// --- D1 (LB-46 review): a batch behind a done task waits for its completion
+
+func TestBatchBehindDoneTaskWaitsForItsCompletion(t *testing.T) {
+	m, completion := doneUnhandled(t, newTestModel())
+	seedOutdatedBatch(m, 2)
+
+	// batchUpgrade used to RunNext at once: that cleared the done task and
+	// started the first upgrade before the done task's completion was handled.
+	nm, cmd := m.batchUpgrade()
+	mm := nm.(Model)
+	m = &mm
+	if ts, ok := firstTaskStarted(execCmds(cmd)); ok {
+		t.Fatalf("batch started while the done task's completion was unhandled: %q", ts.ID)
+	}
+	if m.batchCount != 2 {
+		t.Fatalf("expected batchCount 2, got %d", m.batchCount)
+	}
+	if toast := m.newestToast(); toast == nil || toast.Message != "Queued behind running task" {
+		t.Fatalf("expected the queued toast, got %+v", toast)
+	}
+
+	// The done task's completion starts the batch through its own RunNext.
+	_, cmd = m.Update(completion)
+	ts, ok := firstTaskStarted(execCmds(cmd))
+	if !ok || !strings.HasPrefix(ts.ID, "batch-upgrade:1:") {
+		t.Fatalf("expected the completion to start the batch, got %q (started=%v)", ts.ID, ok)
+	}
+}
+
+// The queue-full branch follows the same rule: the done task holds one of the
+// queue's slots, so one package fewer fits, and the batch still waits.
+func TestQueueFullBatchBehindDoneTaskWaitsForItsCompletion(t *testing.T) {
+	m, completion := doneUnhandled(t, newTestModel())
+	seedOutdatedBatch(m, task.DefaultMaxQueue+2)
+
+	nm, cmd := m.batchUpgrade()
+	mm := nm.(Model)
+	m = &mm
+	if m.batchCount != task.DefaultMaxQueue-1 {
+		t.Fatalf("expected batchCount %d, got %d", task.DefaultMaxQueue-1, m.batchCount)
+	}
+	if toast := m.newestToast(); toast == nil || !strings.Contains(toast.Message, "Queue full") {
+		t.Fatalf("expected a queue-full warning toast, got %+v", toast)
+	}
+	if ts, ok := firstTaskStarted(execCmds(cmd)); ok {
+		t.Fatalf("batch started while the done task's completion was unhandled: %q", ts.ID)
+	}
+
+	_, cmd = m.Update(completion)
+	ts, ok := firstTaskStarted(execCmds(cmd))
+	if !ok || !strings.HasPrefix(ts.ID, "batch-upgrade:1:") {
+		t.Fatalf("expected the completion to start the batch, got %q (started=%v)", ts.ID, ok)
+	}
+}
+
 // --- NEW-2 / NEW-9: failed batch tasks decrement the counter --------------
 
 func TestFailedBatchTaskDecrementsCounter(t *testing.T) {
@@ -192,7 +260,9 @@ func TestFailedBatchTaskDecrementsCounter(t *testing.T) {
 
 	// Mid-batch failure counter behavior: an unrelated completion must
 	// not skew the still-running batch's counter.
-	m = updateModel(m, TaskCompletedMsg{ID: "doctor", Title: "Doctor"})
+	nmD, docCmd := m.Update(TaskCompletedMsg{ID: "doctor", Title: "Doctor"})
+	mmD := nmD.(Model)
+	m = &mmD
 	if m.batchCount != 1 {
 		t.Fatalf("unrelated completion must not skew batchCount after a failure, got %d", m.batchCount)
 	}
@@ -203,7 +273,15 @@ func TestFailedBatchTaskDecrementsCounter(t *testing.T) {
 	if !ok {
 		t.Fatal("expected the second batch task to start after the failure")
 	}
-	m, msg2 := step(m, ts2)
+	// The unrelated completion's RunNext already issued the second task's
+	// one reader, so its start issues none: the completion comes from there.
+	m = updateModel(m, ts2)
+	var msg2 tea.Msg
+	for _, x := range execCmds(docCmd) {
+		if c, ok := x.(TaskCompletedMsg); ok {
+			msg2 = c
+		}
+	}
 	comp2, ok := msg2.(TaskCompletedMsg)
 	if !ok {
 		t.Fatalf("expected TaskCompletedMsg for the second task, got %T", msg2)

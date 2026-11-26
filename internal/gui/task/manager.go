@@ -33,7 +33,14 @@ type runningTask struct {
 	outCh <-chan string
 	errCh <-chan error
 	// err is the task's error, once errCh has delivered it.
-	err  error
+	err error
+	// started is set once Run has been called, by the first reader.
+	started bool
+	// reading is set while a readChunk Cmd for the task is out: RunNext issues
+	// no second one, so the task has one reader at a time.
+	reading bool
+	// done is set when the reader returned the task's TaskCompletedMsg. The
+	// task stays current until Update hands the completion back (RunNext).
 	done bool
 }
 
@@ -71,7 +78,9 @@ func (m *Manager) Enqueue(t *Task) (EnqueueResult, error) {
 	defer m.mu.Unlock()
 
 	total := len(m.queue)
-	canStart := m.current == nil || m.current.done
+	// A done task whose completion Update has not handled yet still counts:
+	// only the RunNext of that completion clears it (FC2).
+	canStart := m.current == nil
 	if !canStart {
 		total++
 	}
@@ -90,7 +99,7 @@ func (m *Manager) Enqueue(t *Task) (EnqueueResult, error) {
 func (m *Manager) Idle() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return (m.current == nil || m.current.done) && len(m.queue) == 0
+	return m.current == nil && len(m.queue) == 0
 }
 
 func (m *Manager) CancelCurrent() {
@@ -103,8 +112,15 @@ func (m *Manager) CancelCurrent() {
 	}
 }
 
+// RunNext is called from Update after every task message. It clears a task
+// whose completion has come back, issues the running task's next reader (at
+// most one at a time), or starts the next queued task. Starting never calls
+// Task.Run here: the task becomes current, with its Cancel set, and the first
+// reader calls Run on the Cmd goroutine, so a Run that blocks never holds
+// Update and Esc can cancel it at once (FC1).
 func (m *Manager) RunNext() tea.Cmd {
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.current != nil && m.current.done {
 		m.current = nil
@@ -112,42 +128,23 @@ func (m *Manager) RunNext() tea.Cmd {
 
 	if m.current != nil {
 		rt := m.current
-		m.mu.Unlock()
+		if rt.reading {
+			return nil
+		}
+		rt.reading = true
 		return m.readChunk(rt)
 	}
 
 	if len(m.queue) == 0 {
-		m.mu.Unlock()
 		return nil
 	}
 
 	next := m.queue[0]
 	m.queue = m.queue[1:]
-	m.mu.Unlock()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	next.Cancel = cancel
-
-	outCh, errCh, err := next.Run(ctx)
-	if err != nil {
-		return func() tea.Msg {
-			return TaskCompletedMsg{
-				ID:    next.ID,
-				Title: next.Title,
-				Err:   err,
-			}
-		}
-	}
-
-	rt := &runningTask{
-		task:  next,
-		ctx:   ctx,
-		outCh: outCh,
-		errCh: errCh,
-	}
-	m.mu.Lock()
-	m.current = rt
-	m.mu.Unlock()
+	m.current = &runningTask{task: next, ctx: ctx}
 
 	return func() tea.Msg {
 		return TaskStartedMsg{ID: next.ID, Title: next.Title}
@@ -155,50 +152,69 @@ func (m *Manager) RunNext() tea.Cmd {
 }
 
 // readChunk is the next message of a running task: a batch of its output, or
-// its completion once the output is done and the error is in.
+// its completion once the output is done and the error is in. The first one
+// calls the task's Run. Only one is out per task at a time (rt.reading), so
+// the fields it reads and writes have one owner.
 func (m *Manager) readChunk(rt *runningTask) tea.Cmd {
 	return func() tea.Msg {
-		for rt.outCh != nil {
-			if rt.errCh != nil {
-				// The task is still running: take whichever comes first, a line
-				// or the error.
-				select {
-				case line, ok := <-rt.outCh:
-					if ok {
-						return TaskOutputMsg{ID: rt.task.ID, Lines: rt.batch(line)}
-					}
-					rt.outCh = nil
-				case err := <-rt.errCh:
-					rt.err = err
-					rt.errCh = nil
-				}
-				continue
-			}
-			// The error is in, and brew's lines may still be buffered behind it.
-			// They come before the completion: read up to the close of outCh,
-			// or until the task is cancelled (C10).
+		msg := rt.read()
+		m.mu.Lock()
+		rt.reading = false
+		if _, ok := msg.(TaskCompletedMsg); ok {
+			rt.done = true
+		}
+		m.mu.Unlock()
+		return msg
+	}
+}
+
+// read is the body of readChunk.
+func (rt *runningTask) read() tea.Msg {
+	if !rt.started {
+		rt.started = true
+		outCh, errCh, err := rt.task.Run(rt.ctx)
+		if err != nil {
+			return TaskCompletedMsg{ID: rt.task.ID, Title: rt.task.Title, Err: err}
+		}
+		rt.outCh, rt.errCh = outCh, errCh
+	}
+	for rt.outCh != nil {
+		if rt.errCh != nil {
+			// The task is still running: take whichever comes first, a line
+			// or the error.
 			select {
 			case line, ok := <-rt.outCh:
 				if ok {
 					return TaskOutputMsg{ID: rt.task.ID, Lines: rt.batch(line)}
 				}
 				rt.outCh = nil
-			case <-rt.ctx.Done():
-				rt.outCh = nil
+			case err := <-rt.errCh:
+				rt.err = err
+				rt.errCh = nil
 			}
+			continue
 		}
-		if rt.errCh != nil {
-			rt.err = <-rt.errCh
-			rt.errCh = nil
+		// The error is in, and brew's lines may still be buffered behind it.
+		// They come before the completion: read up to the close of outCh,
+		// or until the task is cancelled (C10).
+		select {
+		case line, ok := <-rt.outCh:
+			if ok {
+				return TaskOutputMsg{ID: rt.task.ID, Lines: rt.batch(line)}
+			}
+			rt.outCh = nil
+		case <-rt.ctx.Done():
+			rt.outCh = nil
 		}
-		m.mu.Lock()
-		rt.done = true
-		m.mu.Unlock()
-		return TaskCompletedMsg{
-			ID:    rt.task.ID,
-			Title: rt.task.Title,
-			Err:   rt.err,
-		}
+	}
+	if rt.errCh != nil {
+		rt.err = <-rt.errCh
+		rt.errCh = nil
+	}
+	return TaskCompletedMsg{
+		ID:    rt.task.ID,
+		Title: rt.task.Title,
+		Err:   rt.err,
 	}
 }
 

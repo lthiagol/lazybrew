@@ -37,8 +37,10 @@ func errTask(id, title string, run func(ctx context.Context) error) *task.Task {
 		ID:    id,
 		Title: title,
 		Run: func(ctx context.Context) (<-chan string, <-chan error, error) {
+			// The manager runs Run off Update; the goroutine keeps Run quick
+			// anyway, whoever calls it.
 			errCh := make(chan error, 1)
-			errCh <- run(ctx)
+			go func() { errCh <- run(ctx) }()
 			return closedCh(), errCh, nil
 		},
 	}

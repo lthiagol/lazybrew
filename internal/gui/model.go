@@ -134,6 +134,8 @@ type Model struct {
 	// taskID was removed (r3 finding R3-6): nothing read it, and stale
 	// output filtering belongs to the TaskManager, not the model.
 	refreshing int
+	// refreshQuiet is set while every refresh counted in refreshing was Quiet.
+	refreshQuiet bool
 
 	// logCollapsed hides the command log pane (Shift+C / "C"). Default false.
 	logCollapsed bool

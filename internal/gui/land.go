@@ -118,6 +118,10 @@ func (m *Model) countRefreshLanding(refresh bool) tea.Cmd {
 	if m.refreshing > 0 {
 		return nil
 	}
+	if m.refreshQuiet {
+		m.refreshQuiet = false
+		return m.loadTabContent()
+	}
 	return tea.Batch(
 		m.setToast("Data refreshed", modal.ToastSuccess),
 		m.loadTabContent(),

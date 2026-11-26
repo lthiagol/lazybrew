@@ -106,6 +106,9 @@ type SearchInfoLoadedMsg struct {
 type RefreshMsg struct {
 	LoadOutdated      bool
 	ReloadDiagnostics bool
+	// Quiet drops the "Data refreshed" toast at the refresh's end, so the
+	// error toast of the failed write that asked for it stays (FB4).
+	Quiet bool
 }
 
 // servicesReloadMsg reloads the Services panel alone, after a services task

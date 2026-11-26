@@ -431,7 +431,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case TaskOutputMsg:
-		if m.isUpdating {
+		// Only the update's own lines: a queued update must not collect the
+		// running task's output (FB6).
+		if m.isUpdating && msg.ID == "brew-update" {
 			m.updateOutput = append(m.updateOutput, msg.Lines...)
 		}
 		if m.opState != nil {
@@ -445,10 +447,15 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.ID == "brew-update" {
 			m.isUpdating = false
 			m.updateSettled = true
-			m.lastUpdate = time.Now()
+			// Only a finished update makes the metadata fresh (FB6).
+			if msg.Err == nil {
+				m.lastUpdate = time.Now()
+			}
 			m.opState = nil
 			var toastTick tea.Cmd
-			if msg.Err != nil {
+			if errors.Is(msg.Err, context.Canceled) {
+				toastTick = m.setToast("Update cancelled", modal.ToastInfo)
+			} else if msg.Err != nil {
 				toastTick = m.setToast("Update: "+msg.Err.Error(), modal.ToastError)
 			} else {
 				summary := parseUpdateSummary(m.updateOutput)
@@ -507,10 +514,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.tasks.RunNext(),
 				serviceReload(msg.ID),
 				tapsReload(msg.ID),
+				m.packagesReload(msg.ID),
 			)
 		}
 		if errors.Is(msg.Err, context.Canceled) {
-			return m, tea.Batch(m.tasks.RunNext(), serviceReload(msg.ID), tapsReload(msg.ID))
+			return m, tea.Batch(m.tasks.RunNext(), serviceReload(msg.ID), tapsReload(msg.ID), m.packagesReload(msg.ID))
 		}
 		return m.finishedMutation(msg.ID, msg.Title)
 
@@ -700,6 +708,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// alone. A refresh that starts while an earlier one still has reads out
 		// adds to the count: a reset would let the earlier reads' landings end it
 		// while the new ones are pending.
+		m.refreshQuiet = msg.Quiet && (m.refreshing == 0 || m.refreshQuiet)
 		m.refreshing += len(cmds)
 		return m, tea.Batch(cmds...)
 
