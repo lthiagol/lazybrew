@@ -28,6 +28,8 @@ func (m *Model) startBrewUpdate() tea.Cmd {
 	c, err := m.tryEnqueue(t)
 	if err != nil {
 		m.isUpdating = false
+		// No update will run, so nothing waits for one (updatePending).
+		m.updateSettled = true
 	}
 	return c
 }

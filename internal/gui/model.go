@@ -84,12 +84,16 @@ type Model struct {
 	isUpdating             bool
 	// updateChecked is set once auto mode's launch read (lastUpdateMsg) lands.
 	updateChecked bool
-	// launchStale is set when that read found brew stale and ran brew update.
+	// launchStale is set when the launch update runs: auto's read found brew
+	// stale, or update_on_start: always started it.
 	launchStale bool
 	// updateRefreshed is set when a brew-update completion has issued its
 	// load-flagged refresh. A launch read that lands after it is dropped.
 	updateRefreshed bool
-	updateOutput    []string
+	// updateSettled is set once a brew update has ended: completed, failed or
+	// refused. Under update_on_start: always the preload waits for it (updatePending).
+	updateSettled bool
+	updateOutput  []string
 
 	// logs is the Services Logs tab's view of its service's log (logs.go).
 	logs logsView

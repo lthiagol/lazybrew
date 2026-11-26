@@ -25,7 +25,11 @@ const (
 func (m Model) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	if m.cfg.Brew.UpdateOnStart == config.UpdateAlways {
+		// The launch read runs beside the update, as auto mode's does, so the
+		// dashboard shows while brew update fetches. The update's refresh
+		// replaces it, and a read that lands after that refresh is dropped.
 		cmds = append(cmds,
+			m.launchReadCmd(),
 			func() tea.Msg { return StartUpdateMsg{} },
 			m.updateTickerCmd(),
 		)
@@ -35,11 +39,7 @@ func (m Model) Init() tea.Cmd {
 		// panels then load in the background once Status has landed
 		// (preload.go); otherwise they lazy-load on first switch via
 		// lazyLoadPanel().
-		if m.activePanel == PanelStatus {
-			cmds = append(cmds, launchRead(fetchStatusData(m.client, false)))
-		} else {
-			cmds = append(cmds, launchRead(fetchPanelData(m.client, m.activePanel)))
-		}
+		cmds = append(cmds, m.launchReadCmd())
 		// Auto mode reads when brew last updated while the panel above loads.
 		// The read decides whether `brew update` runs (lastUpdateMsg).
 		if m.cfg.Brew.UpdateOnStart == config.UpdateAuto {
@@ -52,6 +52,15 @@ func (m Model) Init() tea.Cmd {
 	}
 	cmds = append(cmds, func() tea.Msg { return m.spinner.Tick() })
 	return tea.Batch(cmds...)
+}
+
+// launchReadCmd is the launch read: the Status dashboard, or the active panel
+// when it is not Status.
+func (m Model) launchReadCmd() tea.Cmd {
+	if m.activePanel == PanelStatus {
+		return launchRead(fetchStatusData(m.client, false))
+	}
+	return launchRead(fetchPanelData(m.client, m.activePanel))
 }
 
 // launchRead marks the data a launch read returns, so that Update can drop it
@@ -101,11 +110,19 @@ func (m Model) updateIsStale(msg lastUpdateMsg) bool {
 	return time.Since(msg.at) >= time.Duration(m.cfg.Brew.UpdateStaleHours)*time.Hour
 }
 
-// updatePending is true while auto mode has not decided whether to update, or
-// its update is running. The preload waits for it, so the preload reads the
-// metadata the update has just fetched.
+// updatePending is true while the launch update has not settled: under auto,
+// while the check has not decided whether to update or the update runs; under
+// always, until the launch update has completed, failed or been refused. The
+// preload waits for it, so the preload reads the metadata the update has just
+// fetched.
 func (m Model) updatePending() bool {
-	return m.cfg.Brew.UpdateOnStart == config.UpdateAuto && (!m.updateChecked || m.isUpdating)
+	switch m.cfg.Brew.UpdateOnStart {
+	case config.UpdateAuto:
+		return !m.updateChecked || m.isUpdating
+	case config.UpdateAlways:
+		return !m.updateSettled
+	}
+	return false
 }
 
 // preloadAfterCheck starts the preload when the launch check has found brew
@@ -377,8 +394,14 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.isUpdating || m.cfg.Brew.UpdateOnStart == config.UpdateNever {
 			return m, nil
 		}
+		// The launch read runs beside this update, so it may hold metadata the
+		// update replaces: it is dropped if it lands after the update's refresh.
+		m.launchStale = true
+		// A refused update settles with no load after it, so the preload is
+		// checked here too (updatePending).
 		cmd := m.beginUpdate()
-		return m, cmd
+		preload := m.preloadAfterCheck()
+		return m, tea.Batch(cmd, preload)
 
 	case lastUpdateMsg:
 		m.updateChecked = true
@@ -408,6 +431,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case TaskCompletedMsg:
 		if msg.ID == "brew-update" {
 			m.isUpdating = false
+			m.updateSettled = true
 			m.lastUpdate = time.Now()
 			m.opState = nil
 			var toastTick tea.Cmd
