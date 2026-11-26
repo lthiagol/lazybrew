@@ -14,7 +14,7 @@ moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
 `tap_migrations.json` for it. The history was rewritten to `lthiagol@gmail.com` on
 2026-11-22 and force-pushed. No agent is running.
 
-**Open (all in `work/backlog.md`).** Only the LB-43 pty follow-up, if a real upgrade
+**Open (all in `work/backlog.md`).** LB-44/45 (faster launch) closed 2026-11-26 on `wip`, not released. Only the LB-43 pty follow-up, if a real upgrade
 still looks stuck. LB-27 and LB-36..43 closed 2026-11-23 on `wip` (LB-41 earlier);
 `v1.2.0` released 2026-11-23 (no rc, no smoke, user call): `stable`
 fast-forwarded to d777b0d, tag on it; the tap points at `v1.2.0` (lthiagol/homebrew-tap 9ca2154).
@@ -89,6 +89,8 @@ then the lane flow. Releases: `docs/agents/release.md`.
 | lb32-vulns-view | 392a00b, ba894cb, a6f496f | implemented | awaiting reviewer |
 | lb42-cleanup-run-hint | 3db700d | closed | ok (herdr-crew, r1 clean) |
 | lb43-stream-stderr | 6b2c7d7 | closed | ok (herdr-crew, r1 clean; pty follow-up not started) |
+| lb44-load-during-update | b26fb6e | closed | ok (claude-crew, r2 clean) |
+| lb45-doctor-off-dashboard | af908a3 | closed | ok (claude-crew, r2 clean) |
 | lb-small-round (LB-40, 38, 39, 37) | 7d83f36, 9c363a0, 94c9828, 2418202 | closed | ok (herdr-crew; LB-39 r2 clean, others r1) |
 | lb36-refresh-tags, lb27-latte-contrast | 282eb69, c1577b8 | closed | ok (herdr-crew, r1 clean) |
 
