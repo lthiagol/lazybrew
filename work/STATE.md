@@ -14,7 +14,7 @@ moved to their own tap, `lthiagol/dev` (`~/coding/homebrew-dev`);
 `tap_migrations.json` for it. The history was rewritten to `lthiagol@gmail.com` on
 2026-11-22 and force-pushed. No agent is running.
 
-**Open (all in `work/backlog.md`).** LB-44/45 (faster launch) and LB-46..53 (whole-project review, 2026-11-26: 3 Opus-medium reviewers, 29 findings, 8 fix units) closed on `wip`, not released. LB-54 (pin/unpin full name) open. Only the LB-43 pty follow-up, if a real upgrade
+**Open (all in `work/backlog.md`).** LB-44/45 (faster launch) and LB-46..53 (whole-project review, 2026-11-26: 3 Opus-medium reviewers, 29 findings, 8 fix units) closed on `wip`, not released. LB-54/55 closed the same day; nothing open. Only the LB-43 pty follow-up, if a real upgrade
 still looks stuck. LB-27 and LB-36..43 closed 2026-11-23 on `wip` (LB-41 earlier);
 `v1.2.0` released 2026-11-23 (no rc, no smoke, user call): `stable`
 fast-forwarded to d777b0d, tag on it; the tap points at `v1.2.0` (lthiagol/homebrew-tap 9ca2154).
@@ -89,6 +89,8 @@ then the lane flow. Releases: `docs/agents/release.md`.
 | lb51-menu-scroll-info-split | 0630ef6 | closed | ok (U6, r2 clean) |
 | lb52-flows-assert | 77c508d | closed | ok (U7, r1 clean) |
 | lb53-config-logtail-floors | 9c49ba7 | closed | ok (U8, r1 clean) |
+| lb54-pin-full-name | e33e52c | closed | ok (U9, r1 clean) |
+| lb55-ttl-key-error | 7426122 | closed | ok (U10, r2 clean) |
 | lb-small-round (LB-40, 38, 39, 37) | 7d83f36, 9c363a0, 94c9828, 2418202 | closed | ok (herdr-crew; LB-39 r2 clean, others r1) |
 | lb36-refresh-tags, lb27-latte-contrast | 282eb69, c1577b8 | closed | ok (herdr-crew, r1 clean) |
 
