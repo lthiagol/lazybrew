@@ -262,13 +262,14 @@ func (m Model) filterRows(p *panelData) int {
 }
 
 // filterLine is the filter row of a sidebar box: "/ query", with the input when
-// it has focus.
+// it has focus on this box. The input belongs to the active panel, so another
+// box shows its own saved query (FB12).
 func (m Model) filterLine(p *panelData) string {
 	if !m.filterRowShown(p) {
 		return ""
 	}
 	prompt := style.AccentText.Render("/ ")
-	if m.filterInput.Focused() {
+	if m.filterInput.Focused() && p.id == m.activePanel {
 		return prompt + m.filterInput.View()
 	}
 	return prompt + style.NormalItem.Render(p.query)

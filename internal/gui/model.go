@@ -112,7 +112,10 @@ type Model struct {
 	// it lands. searchInfoErr is why there is none instead (cr3 AC-01).
 	searchInfo    *pkgInfo
 	searchInfoErr error
-	searchInput   textinput.Model
+	// searchGen numbers the searches run. An info read carries the gen it was
+	// asked under, so one that lands after a newer search is dropped (FB10).
+	searchGen   int
+	searchInput textinput.Model
 	// filterInput is the `/` filter's input on Formulae and Casks (filter.go).
 	// Only one input has focus at a time, and it belongs to the active panel.
 	filterInput textinput.Model

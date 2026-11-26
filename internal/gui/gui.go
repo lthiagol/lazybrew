@@ -357,6 +357,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case SearchInfoLoadedMsg:
+		if !m.searchInfoWanted(msg) {
+			return m, nil
+		}
 		m.searchInfo, m.searchInfoErr = nil, msg.Err
 		if msg.Err == nil && msg.Content != "" {
 			m.searchInfo, m.searchInfoErr = parseSearchInfo(msg.Content)
@@ -535,8 +538,16 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Leaves != nil && m.activePanel == PanelFormulae {
 			m.panels[PanelFormulae].toggleLeaves(msg.Leaves)
 		}
+		// A leaves read is no write: it leaves an open dialog alone, reloads
+		// nothing, and toasts only a failure (FB13).
+		if msg.Name == "leaves" {
+			var toast tea.Cmd
+			if msg.Err != nil {
+				toast = m.setToast(msg.Name+": "+msg.Err.Error(), modal.ToastError)
+			}
+			return m, toast
+		}
 		m.activeModal = nil
-		// A leaves result is not a finished mutation, so it has no toast.
 		var toast tea.Cmd
 		switch {
 		case msg.Err != nil:

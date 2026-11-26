@@ -196,7 +196,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, c
 		}
 		m.switchPanel(PanelSearch)
-		return m, m.searchInput.Focus()
+		cmd := m.searchInput.Focus()
+		return m, cmd
 
 	case "enter":
 		if needs, ok := m.terminalRetry(); ok {

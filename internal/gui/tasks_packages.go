@@ -20,6 +20,10 @@ func (m *Model) executeSearch(query string) tea.Cmd {
 	// Reset the cursor: a new search with fewer results used to leave a
 	// stale out-of-range selection behind (r1 finding 30).
 	m.panels[PanelSearch].selected = 0
+	// The info of the last search is no longer shown, and a read still out for it
+	// is dropped on landing (FB10).
+	m.searchGen++
+	m.searchInfo, m.searchInfoErr = nil, nil
 
 	return func() tea.Msg {
 		results, err := boundedRead(brewSearchTimeout, "search", func(ctx context.Context) ([]brew.SearchResult, error) {
@@ -114,15 +118,26 @@ func (m Model) fetchSelectedSearchInfo() tea.Cmd {
 		args = append(args, "--formula")
 	}
 	args = append(args, r.Name)
+	name, isCask, gen := r.Name, r.IsCask, m.searchGen
 	return func() tea.Msg {
 		output, err := boundedRead(brewSearchTimeout, "info", func(ctx context.Context) ([]byte, error) {
 			return m.client.Runner.Execute(ctx, args...)
 		})
 		if err != nil {
-			return SearchInfoLoadedMsg{Err: searchInfoErr(err)}
+			return SearchInfoLoadedMsg{Err: searchInfoErr(err), Name: name, isCask: isCask, gen: gen}
 		}
-		return SearchInfoLoadedMsg{Content: string(output)}
+		return SearchInfoLoadedMsg{Content: string(output), Name: name, isCask: isCask, gen: gen}
 	}
+}
+
+// searchInfoWanted is whether an info read landing is for the search and the row
+// the cursor is on now. A read for a row the cursor has left, or for a search
+// that has since run, is stale and is dropped (FB10). The row's kind is part of
+// the match, so a formula's read does not land on the cask of the same name (D1).
+// With no row selected the zero row's empty name is the one that matches.
+func (m Model) searchInfoWanted(msg SearchInfoLoadedMsg) bool {
+	r, _ := m.selectedSearchRow()
+	return msg.gen == m.searchGen && msg.Name == r.Name && msg.isCask == r.IsCask
 }
 
 // packageWriter is the write side brew has for one kind of package. Formulae

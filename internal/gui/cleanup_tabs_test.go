@@ -342,6 +342,35 @@ func TestCleanupTabReadsOnOpen(t *testing.T) {
 	}
 }
 
+// TestPreviewReadStartsOnce (FB9): while the Cleanup read is out, a second look at
+// the tab starts no second `brew cleanup -n`.
+func TestPreviewReadStartsOnce(t *testing.T) {
+	m := loadedStatus(140, 40)
+	m.activeTab = statusCleanupTab
+	if first := m.loadTabContent(); first == nil {
+		t.Fatal("the first look should start the read")
+	}
+	if second := m.loadTabContent(); second != nil {
+		t.Fatal("a second look while the read is out should start none")
+	}
+}
+
+// TestPreviewReadFromBeforeClearIsDropped (FB9): a read started before R lands
+// after it, and is dropped, so the tab reads brew again.
+func TestPreviewReadFromBeforeClearIsDropped(t *testing.T) {
+	m := loadedStatus(140, 40)
+	m.activeTab = statusCleanupTab
+	m.loadTabContent()
+	m.clearTabContent()
+	m = updateModel(m, CleanupPreviewMsg{Preview: previewPreview(), gen: 0})
+	if m.previews.cleanupLoaded() {
+		t.Fatal("a read from before R should not show as the preview")
+	}
+	if cmd := m.loadTabContent(); cmd == nil {
+		t.Fatal("after R the tab should read brew again")
+	}
+}
+
 // lipglossWidth is the cell width of a line, ignoring any escape codes.
 func lipglossWidth(s string) int {
 	return ansi.StringWidth(s)

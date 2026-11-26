@@ -228,6 +228,99 @@ func TestSearchInfoAsksForTheRowsKind(t *testing.T) {
 	}
 }
 
+// searchInfoModel is the Search panel with two results, the cursor on the first,
+// and a brew that answers every `info` with the installed formula.
+func searchInfoModel(t *testing.T) *Model {
+	t.Helper()
+	runner := brewtest.NewMockRunner()
+	runner.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte(searchFormulaInstalled), nil
+	}
+	m := New(brew.NewClient(runner), testConfig())
+	m = updateModel(m, tea.WindowSizeMsg{Width: 100, Height: 40})
+	m = sendKey(m, "7")
+	return updateModel(m, SearchDoneMsg{
+		Results: []string{"foo", "bar"},
+		Raw:     []brew.SearchResult{{Name: "foo"}, {Name: "bar"}},
+	})
+}
+
+// The row's info lands on the pane while the cursor is still on that row (FB10).
+func TestSearchInfoLandsForTheSelectedRow(t *testing.T) {
+	m := searchInfoModel(t)
+	m = updateModel(m, m.fetchSelectedSearchInfo()())
+	if !m.hasSearchInfo() {
+		t.Fatal("the info of the selected row should show")
+	}
+}
+
+// A read for a row the cursor has left lands and is dropped: the pane never
+// shows one row's info under another row (FB10).
+func TestSearchInfoDropsARowTheCursorLeft(t *testing.T) {
+	m := searchInfoModel(t)
+	msg := m.fetchSelectedSearchInfo()()
+	m.panels[PanelSearch].selected = 1
+	m = updateModel(m, msg)
+	if m.hasSearchInfo() {
+		t.Fatal("a read for foo should not show with the cursor on bar")
+	}
+}
+
+// A formula and a cask can share a name. A read for the formula row lands after
+// the cursor moved to the cask row of the same name, and is dropped: the pane
+// never shows the formula's info under the cask (D1). The cask row's own read
+// still lands.
+func TestSearchInfoDropsASameNameRowOfAnotherKind(t *testing.T) {
+	runner := brewtest.NewMockRunner()
+	runner.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return []byte(searchFormulaInstalled), nil
+	}
+	m := New(brew.NewClient(runner), testConfig())
+	m = updateModel(m, tea.WindowSizeMsg{Width: 100, Height: 40})
+	m = sendKey(m, "7")
+	m = updateModel(m, SearchDoneMsg{
+		Results: []string{"docker", "docker"},
+		Raw:     []brew.SearchResult{{Name: "docker", IsFormula: true}, {Name: "docker", IsCask: true}},
+	})
+
+	formulaMsg := m.fetchSelectedSearchInfo()()
+	m.panels[PanelSearch].selected = 1
+	m = updateModel(m, formulaMsg)
+	if m.hasSearchInfo() {
+		t.Fatal("a formula's read should not show under the cask row of the same name")
+	}
+
+	m = updateModel(m, m.fetchSelectedSearchInfo()())
+	if !m.hasSearchInfo() {
+		t.Fatal("the cask row's own read should show")
+	}
+}
+
+// A read out for an older search lands after a newer one ran, and is dropped
+// (FB10).
+func TestSearchInfoDropsAReadFromAnOlderSearch(t *testing.T) {
+	m := searchInfoModel(t)
+	msg := m.fetchSelectedSearchInfo()()
+	m.executeSearch("bar")
+	m = updateModel(m, msg)
+	if m.hasSearchInfo() {
+		t.Fatal("a read from before the new search should not show")
+	}
+}
+
+// A new search clears the info of the last one (FB10).
+func TestNewSearchClearsSearchInfo(t *testing.T) {
+	m := searchInfoModel(t)
+	m = updateModel(m, m.fetchSelectedSearchInfo()())
+	if !m.hasSearchInfo() {
+		t.Fatal("setup: the info should show before the new search")
+	}
+	m.executeSearch("bar")
+	if m.hasSearchInfo() {
+		t.Fatal("a new search should clear the last search's info")
+	}
+}
+
 // A cask row's `brew info --json=v2 --cask` payload parses as a cask, read from
 // the same fixture the Casks list is built from (LB-19).
 func TestSearchInfoCaskRowParsesBrewCaskFixture(t *testing.T) {

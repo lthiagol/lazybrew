@@ -24,6 +24,13 @@ type previewCache struct {
 	cleanupErr error
 	unused     *brew.AutoremovePreview
 	unusedErr  error
+	// cleanupFetching and unusedFetching mark a read out, so a look at the tab
+	// while it is out starts no second brew dry run (FB9).
+	cleanupFetching bool
+	unusedFetching  bool
+	// gen numbers the cache. Clearing it or dropping a read moves it on, and a
+	// read that lands from an older gen is dropped (FB9).
+	gen int
 }
 
 func (p previewCache) cleanupLoaded() bool { return p.cleanup != nil || p.cleanupErr != nil }
@@ -39,41 +46,49 @@ func isPreviewTab(panel PanelID, tab int) bool {
 func (m *Model) loadPreviewTab() tea.Cmd {
 	switch m.activeTab {
 	case statusCleanupTab:
-		if !m.previews.cleanupLoaded() {
-			return cleanupPreviewCmd(m.client)
+		if !m.previews.cleanupLoaded() && !m.previews.cleanupFetching {
+			m.previews.cleanupFetching = true
+			return cleanupPreviewCmd(m.client, m.previews.gen)
 		}
 	case statusUnusedTab:
-		if !m.previews.unusedLoaded() {
-			return autoremovePreviewCmd(m.client)
+		if !m.previews.unusedLoaded() && !m.previews.unusedFetching {
+			m.previews.unusedFetching = true
+			return autoremovePreviewCmd(m.client, m.previews.gen)
 		}
 	}
 	return nil
 }
 
 // cleanupPreviewCmd runs `brew cleanup -n` as a bounded read. It changes nothing,
-// so it does not go through the task manager.
-func cleanupPreviewCmd(client *brew.Client) tea.Cmd {
+// so it does not go through the task manager. gen is the cache's gen it was started
+// under.
+func cleanupPreviewCmd(client *brew.Client, gen int) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), fetchTabContentTimeout)
 		defer cancel()
 		p, err := client.Diagnostics.CleanupPreview(ctx)
-		return CleanupPreviewMsg{Preview: p, Err: timeoutError(ctx, "cleanup", fetchTabContentTimeout, err)}
+		return CleanupPreviewMsg{Preview: p, Err: timeoutError(ctx, "cleanup", fetchTabContentTimeout, err), gen: gen}
 	}
 }
 
 // autoremovePreviewCmd runs `brew autoremove -n` as a bounded read.
-func autoremovePreviewCmd(client *brew.Client) tea.Cmd {
+func autoremovePreviewCmd(client *brew.Client, gen int) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), fetchTabContentTimeout)
 		defer cancel()
 		p, err := client.Diagnostics.AutoremovePreview(ctx)
-		return AutoremovePreviewMsg{Preview: p, Err: timeoutError(ctx, "autoremove", fetchTabContentTimeout, err)}
+		return AutoremovePreviewMsg{Preview: p, Err: timeoutError(ctx, "autoremove", fetchTabContentTimeout, err), gen: gen}
 	}
 }
 
 // landCleanup and landUnused store a read's result. A failed read keeps its error
-// and no preview, so the tab shows the error rather than a spinner.
+// and no preview, so the tab shows the error rather than a spinner. A read from an
+// older gen is stale and is dropped; it leaves the current read's flag alone.
 func (p *previewCache) landCleanup(msg CleanupPreviewMsg) {
+	if msg.gen != p.gen {
+		return
+	}
+	p.cleanupFetching = false
 	if msg.Err != nil {
 		p.cleanup, p.cleanupErr = nil, msg.Err
 		return
@@ -82,6 +97,10 @@ func (p *previewCache) landCleanup(msg CleanupPreviewMsg) {
 }
 
 func (p *previewCache) landUnused(msg AutoremovePreviewMsg) {
+	if msg.gen != p.gen {
+		return
+	}
+	p.unusedFetching = false
 	if msg.Err != nil {
 		p.unused, p.unusedErr = nil, msg.Err
 		return
@@ -89,8 +108,12 @@ func (p *previewCache) landUnused(msg AutoremovePreviewMsg) {
 	p.unused, p.unusedErr = &msg.Preview, nil
 }
 
-// dropPreview forgets one tab's read, so opening the tab reads brew again.
+// dropPreview forgets one tab's read, so opening the tab reads brew again. Every
+// read out goes stale with it, so both flags clear: the other tab reads again when
+// it is next opened.
 func (p *previewCache) dropPreview(tab int) {
+	p.gen++
+	p.cleanupFetching, p.unusedFetching = false, false
 	switch tab {
 	case statusCleanupTab:
 		p.cleanup, p.cleanupErr = nil, nil

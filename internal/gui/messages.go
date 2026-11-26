@@ -54,16 +54,20 @@ type TabContentMsg struct {
 	Err      error
 }
 
-// CleanupPreviewMsg is the Cleanup tab's read: `brew cleanup -n`, parsed.
+// CleanupPreviewMsg is the Cleanup tab's read: `brew cleanup -n`, parsed. gen is
+// the previewCache gen the read was started under (FB9).
 type CleanupPreviewMsg struct {
 	Preview brew.CleanupPreview
 	Err     error
+	gen     int
 }
 
 // AutoremovePreviewMsg is the Unused tab's read: `brew autoremove -n`, parsed.
+// gen is the previewCache gen the read was started under (FB9).
 type AutoremovePreviewMsg struct {
 	Preview brew.AutoremovePreview
 	Err     error
+	gen     int
 }
 
 // VulnsMsg is the result of the Vulns tab's check: brew's report, or the error
@@ -86,9 +90,16 @@ type SearchMarksMsg struct {
 	gen     int
 }
 
+// SearchInfoLoadedMsg is the info read of one search row. Name is the row's name,
+// isCask its kind (a name can be both a formula and a cask, D1), and gen the
+// searchGen the read was asked under; the handler drops a read that no longer
+// matches the selected row or the search (FB10).
 type SearchInfoLoadedMsg struct {
 	Content string
 	Err     error
+	Name    string
+	isCask  bool
+	gen     int
 }
 
 // RefreshMsg asks the app to refresh its panels.

@@ -62,6 +62,18 @@ func TestSlashStillSearchesOnOtherPanels(t *testing.T) {
 	}
 }
 
+// TestSlashFocusesSearchWithResults (FB11): with results on the Search panel, /
+// from another panel still leaves the Search box focused for typing. The focus
+// is the returned model's, so the key's Update must hand it back (gui.md rule 6).
+func TestSlashFocusesSearchWithResults(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.searchResults = []brew.SearchResult{{Name: "ripgrep", IsFormula: true}}
+	m = sendKey(m, "/")
+	if m.activePanel != PanelSearch || !m.searchInput.Focused() {
+		t.Fatalf("/ with results should focus the Search box, panel %v focused %v", m.activePanel, m.searchInput.Focused())
+	}
+}
+
 // TestSlashOnEmptySearchBoxIsNotTyped: a / on the focused, empty Search box only
 // keeps it focused; once the box holds text, / is typed as before.
 func TestSlashOnEmptySearchBoxIsNotTyped(t *testing.T) {
@@ -192,6 +204,20 @@ func TestFilterFollowsItsPanel(t *testing.T) {
 	m = sendKey(m, "2")
 	if p := m.panels[PanelFormulae]; p.query != "wg" || len(p.items) != 1 {
 		t.Fatalf("back on Formulae: query %q, %d items; want wg, 1", p.query, len(p.items))
+	}
+}
+
+// TestFilterRowOfAnotherPanelShowsItsQuery (FB12): while the input is open on
+// Formulae, the Casks box shows its own saved query, not what is typed on Formulae.
+func TestFilterRowOfAnotherPanelShowsItsQuery(t *testing.T) {
+	m := typeText(sendKey(filterModel(t, 120, 40, "ripgrep", "wget"), "/"), "ri")
+	casks := m.panels[PanelCasks]
+	casks.setQuery("fire")
+	if got := ansi.Strip(m.filterLine(casks)); got != "/ fire" {
+		t.Fatalf("Casks filter row = %q, want its own query %q", got, "/ fire")
+	}
+	if got := ansi.Strip(m.filterLine(m.panels[PanelFormulae])); !strings.HasPrefix(got, "/ ri") {
+		t.Fatalf("Formulae filter row = %q, want the open input", got)
 	}
 }
 

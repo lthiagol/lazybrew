@@ -155,7 +155,7 @@ func needsTabFetch(panelID PanelID, tabIdx int) bool {
 func (m *Model) clearTabContent() {
 	m.tabContent = make(map[string]string)
 	m.tabFetching = make(map[string]bool)
-	m.previews = previewCache{}
+	m.previews = previewCache{gen: m.previews.gen + 1}
 }
 
 func (m *Model) clearPanelTabContent(pid PanelID) {

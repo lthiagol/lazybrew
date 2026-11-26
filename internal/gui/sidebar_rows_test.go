@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/gui/modal"
 	"github.com/lthiagol/lazybrew/internal/gui/style"
 )
 
@@ -160,6 +161,23 @@ func TestLeavesFilterKeepsFormulaeAligned(t *testing.T) {
 	p = m.panels[PanelFormulae]
 	if len(p.items) != 2 || len(p.formulae) != 2 {
 		t.Fatalf("leaves off should restore both lists, got %d and %d", len(p.items), len(p.formulae))
+	}
+}
+
+// TestLeavesResultLeavesModalAndDataAlone (FB13): an L read that lands under an
+// open dialog keeps the dialog, and reloads no panel.
+func TestLeavesResultLeavesModalAndDataAlone(t *testing.T) {
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
+	m.activeModal = modal.NewConfirmModal(modal.ActionDanger, "Uninstall bash", "Remove bash?")
+	nm, cmd := m.Update(MutationResultMsg{Name: "leaves", Leaves: []string{"bash"}})
+	m = modelOf(nm)
+	if m.activeModal == nil {
+		t.Fatal("a leaves result should leave the open dialog up")
+	}
+	for _, msg := range drainCmds(cmd) {
+		if _, ok := msg.(RefreshMsg); ok {
+			t.Fatal("a leaves result should not ask for a refresh")
+		}
 	}
 }
 
