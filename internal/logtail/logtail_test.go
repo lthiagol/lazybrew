@@ -100,6 +100,19 @@ func TestReadNeverReadsWholeFile(t *testing.T) {
 	}
 }
 
+// A read that starts exactly after a newline starts a line: that line is kept
+// whole. Here the bound leaves "bbb" first, with the newline before it.
+func TestReadKeepsLineAtBoundaryAfterNewline(t *testing.T) {
+	content := "aaa\nbbb\nccc\n"
+	tail, err := read(writeFile(t, content), 10, 8)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"bbb", "ccc"}; !reflect.DeepEqual(tail.Lines, want) {
+		t.Errorf("Lines = %q, want %q", tail.Lines, want)
+	}
+}
+
 // A file that is exactly the bound starts at its first byte, so nothing is dropped.
 func TestReadExactlyTheBoundDropsNothing(t *testing.T) {
 	content := "one\ntwo\nthree\n"

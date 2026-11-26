@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -190,6 +191,64 @@ func TestLoadZeroAllTTLsFallBackToDefaults(t *testing.T) {
 		if tc.got != tc.want {
 			t.Errorf("%s = %s, want %s (default)", tc.name, tc.got, tc.want)
 		}
+	}
+}
+
+// A TTL above 0 but under 1s is rejected, and the error names the key and the
+// form to write. A value such as 300ns or 500ms parses, so it needs this check.
+func TestLoadTTLUnderOneSecondIsError(t *testing.T) {
+	tests := []struct {
+		line string
+		key  string
+		eg   string
+	}{
+		{"formulae_ttl: 300ns", "brew.formulae_ttl", "5m"},
+		{"casks_ttl: 500ms", "brew.casks_ttl", "5m"},
+		{"outdated_ttl: 1ns", "brew.outdated_ttl", "30m"},
+		{"taps_ttl: 999ms", "brew.taps_ttl", "1h"},
+		{"services_ttl: 300us", "brew.services_ttl", "30s"},
+		{"doctor_ttl: 500ms", "brew.doctor_ttl", "1h"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.key, func(t *testing.T) {
+			dir := t.TempDir()
+			path := filepath.Join(dir, "config.yml")
+			if err := os.WriteFile(path, []byte("brew:\n  "+tc.line+"\n"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			_, err := Load(path)
+			if err == nil {
+				t.Fatalf("%s: Load gave no error", tc.line)
+			}
+			for _, want := range []string{tc.key, "under 1s", "e.g. " + tc.eg} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("error = %q, want it to contain %q", err, want)
+				}
+			}
+		})
+	}
+}
+
+// One second is the smallest TTL accepted; a TTL of 0 still keeps the default.
+func TestLoadTTLOneSecondIsAccepted(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	data := `brew:
+  services_ttl: 1s
+  formulae_ttl: 0s
+`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Brew.ServicesTTL != time.Second {
+		t.Errorf("ServicesTTL = %s, want 1s", cfg.Brew.ServicesTTL)
+	}
+	if cfg.Brew.FormulaeTTL != DefaultFormulaeTTL {
+		t.Errorf("FormulaeTTL = %s, want the default %s", cfg.Brew.FormulaeTTL, DefaultFormulaeTTL)
 	}
 }
 

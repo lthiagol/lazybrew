@@ -49,7 +49,13 @@ func read(path string, n int, maxBytes int64) (Tail, error) {
 		return Tail{}, err
 	}
 	size := info.Size()
-	off := max(0, size-maxBytes)
+	start := max(0, size-maxBytes)
+	// The read also takes the byte before start, to tell whether start begins a
+	// line: after a newline it does, and its line is kept whole.
+	off := start
+	if start > 0 {
+		off = start - 1
+	}
 	if _, err := f.Seek(off, io.SeekStart); err != nil {
 		return Tail{}, err
 	}
@@ -61,13 +67,17 @@ func read(path string, n int, maxBytes int64) (Tail, error) {
 		return Tail{}, err
 	}
 	text := string(buf[:got])
-	if off > 0 {
-		// The read began inside a line, so that partial line is dropped.
-		i := strings.IndexByte(text, '\n')
-		if i < 0 {
-			text = ""
-		} else {
-			text = text[i+1:]
+	if start > 0 && got > 0 {
+		before := text[0]
+		text = text[1:]
+		if before != '\n' {
+			// The read began inside a line, so that partial line is dropped.
+			i := strings.IndexByte(text, '\n')
+			if i < 0 {
+				text = ""
+			} else {
+				text = text[i+1:]
+			}
 		}
 	}
 	return Tail{

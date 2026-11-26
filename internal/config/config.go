@@ -37,8 +37,9 @@ const DefaultAutoRefreshPause = 500 * time.Millisecond
 // Per-class TTLs (M12) bound how long `brew …` results are reused before
 // the next shell invocation. Each field defaults to a sensible class
 // cadence (formulae/casks/taps change rarely; services/doctor can be
-// more frequent). Setting any TTL to <= 0 keeps the cache default (30s),
-// preserving pre-M12 behavior for that class.
+// more frequent). Setting any TTL to <= 0 keeps that class's default (the
+// Default*TTL constants), preserving pre-M12 behavior for that class. A TTL
+// above 0 but under 1s is an error: 300ns parses, but it is no cache TTL.
 type BrewConfig struct {
 	Path          string     `yaml:"path"`
 	UpdateOnStart UpdateMode `yaml:"update_on_start"`
@@ -256,21 +257,28 @@ func loadFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("parsing config %s: %w", path, err)
 	}
 
-	// A TTL of 0 or less keeps the class's default. This is the one place the
-	// check is made; the brew readers take the TTLs as they are given.
+	// A TTL of 0 or less keeps the class's default; one above 0 but under 1s is
+	// an error. This is the one place the check is made; the brew readers take
+	// the TTLs as they are given.
 	for _, ttl := range []struct {
+		key   string
 		value *time.Duration
 		def   time.Duration
 	}{
-		{&cfg.Brew.OutdatedTTL, DefaultOutdatedTTL},
-		{&cfg.Brew.FormulaeTTL, DefaultFormulaeTTL},
-		{&cfg.Brew.CasksTTL, DefaultCasksTTL},
-		{&cfg.Brew.TapsTTL, DefaultTapsTTL},
-		{&cfg.Brew.ServicesTTL, DefaultServicesTTL},
-		{&cfg.Brew.DoctorTTL, DefaultDoctorTTL},
+		{"brew.outdated_ttl", &cfg.Brew.OutdatedTTL, DefaultOutdatedTTL},
+		{"brew.formulae_ttl", &cfg.Brew.FormulaeTTL, DefaultFormulaeTTL},
+		{"brew.casks_ttl", &cfg.Brew.CasksTTL, DefaultCasksTTL},
+		{"brew.taps_ttl", &cfg.Brew.TapsTTL, DefaultTapsTTL},
+		{"brew.services_ttl", &cfg.Brew.ServicesTTL, DefaultServicesTTL},
+		{"brew.doctor_ttl", &cfg.Brew.DoctorTTL, DefaultDoctorTTL},
 	} {
 		if *ttl.value <= 0 {
 			*ttl.value = ttl.def
+			continue
+		}
+		if *ttl.value < time.Second {
+			return nil, fmt.Errorf("%s: %s is under 1s; write a duration with a unit, e.g. %s",
+				ttl.key, *ttl.value, sampleDuration(ttl.def))
 		}
 	}
 	if cfg.Brew.UpdateStaleHours < 1 {

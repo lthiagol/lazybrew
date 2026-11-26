@@ -90,16 +90,26 @@ See the config ADR topic (configuration schema decisions).
 
 | Field | Status | Notes |
 |---|---|---|
-| `gui.theme` | Wired | `dark` or `light` |
+| `gui.theme` | Wired | `dark` (default), `light`, `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte`, `dracula` or `nord` |
 | `gui.sidebar_width` | Wired | Integer |
 | `gui.show_icons` | Wired | `false` draws no icons at all |
 | `gui.icons` | Wired | `nerd` (default) or `unicode`; `LAZYBREW_ICONS` overrides |
 | `gui.animations` | Wired | `true` (default) springs the motion; `false` draws every change at once; `LAZYBREW_ANIMATIONS` overrides |
 | `gui.preload` | Wired | `true` (default) loads every panel in the background after Status, two reads at a time; `false` loads each panel on first visit; `LAZYBREW_PRELOAD` overrides |
 | `gui.mouse` | Wired | `View().MouseMode = tea.MouseModeCellMotion` |
-| `gui.auto_refresh_seconds` | Planned | Tick in M20.8 |
-| `brew.path` | Planned | Custom runner path in M20.8 |
+| `gui.auto_refresh_seconds` | Wired | `0` (default) is off; `N` refreshes the data every N seconds |
+| `gui.auto_refresh_pause` | Wired | Duration, e.g. `500ms` (default): the auto-refresh waits this long after a key; `0` turns the pause off |
+| `brew.path` | Wired | Path to the brew binary; empty (default) auto-detects it |
 | `brew.update_on_start` | Wired | `true` (default): `brew update` at every launch; `auto`: update on launch only when brew's last update is older than `brew.update_stale_hours`; `false`: never |
+| `brew.update_stale_hours` | Wired | Whole hours, default 6, at least 1: the age past which `auto` runs `brew update` |
+| `brew.formulae_ttl` | Wired | Duration with a unit, e.g. `5m` (default): how long formula results are reused |
+| `brew.casks_ttl` | Wired | Duration with a unit, e.g. `5m` (default): how long cask results are reused |
+| `brew.outdated_ttl` | Wired | Duration with a unit, e.g. `30m` (default): how long the outdated list is reused |
+| `brew.taps_ttl` | Wired | Duration with a unit, e.g. `1h` (default): how long tap results are reused |
+| `brew.services_ttl` | Wired | Duration with a unit, e.g. `30s` (default): how long service results are reused |
+| `brew.doctor_ttl` | Wired | Duration with a unit, e.g. `1h` (default): how long doctor output is reused |
+
+A TTL of `0` or less keeps its default; a TTL above `0` but under `1s` (e.g. `300ms`) is an error. `--config-sample` prints every key with its default.
 
 ## Testing Tiers
 
