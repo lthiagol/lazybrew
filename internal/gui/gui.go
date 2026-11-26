@@ -28,8 +28,8 @@ func (m Model) Init() tea.Cmd {
 		// The launch read runs beside the update, as auto mode's does, so the
 		// dashboard shows while brew update fetches. The update's refresh
 		// replaces it, and a read that lands after that refresh is dropped.
+		cmds = append(cmds, m.launchReadCmds()...)
 		cmds = append(cmds,
-			m.launchReadCmd(),
 			func() tea.Msg { return StartUpdateMsg{} },
 			m.updateTickerCmd(),
 		)
@@ -39,7 +39,7 @@ func (m Model) Init() tea.Cmd {
 		// panels then load in the background once Status has landed
 		// (preload.go); otherwise they lazy-load on first switch via
 		// lazyLoadPanel().
-		cmds = append(cmds, m.launchReadCmd())
+		cmds = append(cmds, m.launchReadCmds()...)
 		// Auto mode reads when brew last updated while the panel above loads.
 		// The read decides whether `brew update` runs (lastUpdateMsg).
 		if m.cfg.Brew.UpdateOnStart == config.UpdateAuto {
@@ -54,13 +54,18 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// launchReadCmd is the launch read: the Status dashboard, or the active panel
-// when it is not Status.
-func (m Model) launchReadCmd() tea.Cmd {
+// launchReadCmds are the launch reads: the Status dashboard and its doctor
+// read, or the active panel when it is not Status.
+func (m Model) launchReadCmds() []tea.Cmd {
 	if m.activePanel == PanelStatus {
-		return launchRead(fetchStatusData(m.client, false))
+		// Doctor is its own read, generation 0, so the dashboard lands
+		// without waiting for it.
+		return []tea.Cmd{
+			launchRead(fetchStatusData(m.client, false)),
+			launchRead(fetchDoctor(m.client, 0)),
+		}
 	}
-	return launchRead(fetchPanelData(m.client, m.activePanel))
+	return []tea.Cmd{launchRead(fetchPanelData(m.client, m.activePanel))}
 }
 
 // launchRead marks the data a launch read returns, so that Update can drop it
@@ -68,7 +73,11 @@ func (m Model) launchReadCmd() tea.Cmd {
 func launchRead(read tea.Cmd) tea.Cmd {
 	return func() tea.Msg {
 		msg := read()
-		if data, ok := msg.(DataLoadedMsg); ok {
+		switch data := msg.(type) {
+		case DataLoadedMsg:
+			data.launch = true
+			return data
+		case doctorLoadedMsg:
 			data.launch = true
 			return data
 		}
@@ -81,7 +90,11 @@ func launchRead(read tea.Cmd) tea.Cmd {
 func refreshRead(read tea.Cmd) tea.Cmd {
 	return func() tea.Msg {
 		msg := read()
-		if data, ok := msg.(DataLoadedMsg); ok {
+		switch data := msg.(type) {
+		case DataLoadedMsg:
+			data.refresh = true
+			return data
+		case doctorLoadedMsg:
 			data.refresh = true
 			return data
 		}
@@ -544,6 +557,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case TabContentMsg:
 		key := tabKey(msg.PanelID, msg.TabIndex, msg.ItemName)
+		delete(m.tabFetching, key)
 		if msg.Err != nil {
 			m.tabContent[key] = "Error: " + msg.Err.Error()
 		} else if msg.Content != "" {
@@ -587,6 +601,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.PanelID == PanelStatus && m.cfg.GUI.Preload && !m.preload.started && !m.updatePending() {
 			cmd = tea.Batch(cmd, tea.Batch(m.startPreload()...))
 		}
+		return m, cmd
+
+	case doctorLoadedMsg:
+		cmd := m.landDoctor(msg)
 		return m, cmd
 
 	case preloadedMsg:
@@ -650,7 +668,14 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.panels[PanelStatus].loading = true
-		cmds := []tea.Cmd{refreshRead(fetchStatusData(m.client, msg.LoadOutdated))}
+		// Doctor is its own read so the dashboard lands without it; it is one
+		// of the refresh's reads, so the toast waits for it too.
+		m.doctorGen++
+		m.doctorPending = true
+		cmds := []tea.Cmd{
+			refreshRead(fetchStatusData(m.client, msg.LoadOutdated)),
+			refreshRead(fetchDoctor(m.client, m.doctorGen)),
+		}
 		if m.activePanel != PanelStatus && m.activePanel != PanelSearch {
 			m.invalidatePanelCache(m.activePanel)
 			m.panels[m.activePanel].loading = true

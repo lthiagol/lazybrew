@@ -94,7 +94,8 @@ func (m Model) servicesBody(inner int) string {
 	}, inner)
 }
 
-// healthBody is the Health card: the doctor summary when a run has answered,
+// healthBody is the Health card: a pending line while the doctor read is out,
+// the doctor summary when a run has answered,
 // the reason when its run failed, the prompt to run it when none has, and the
 // sources that failed. A line the card is too narrow for wraps, so a timeout
 // or a failure is read whole.
@@ -102,6 +103,8 @@ func (m Model) healthBody() string {
 	s := m.status
 	var rows []string
 	switch {
+	case m.doctorPending:
+		rows = append(rows, style.SubtleText.Render("running doctor…"))
 	case s.DoctorErr != "":
 		rows = append(rows, warningLines(presentation.WithIcon(m.icons.Warn, "doctor unavailable: "+s.DoctorErr))...)
 	case !s.Doctor.Known:

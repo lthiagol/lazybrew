@@ -1285,6 +1285,65 @@ func TestUsesTabReissuesFetchOnDataLoaded(t *testing.T) {
 	}
 }
 
+// TestRefreshReadsActiveTabOnItsPanelsLanding: on R with the Formulae Uses tab
+// open, brew uses runs when the Formulae read lands, before the doctor read,
+// and once per refresh: the refresh's end skips the tab in flight (LB-45 D1).
+func TestRefreshReadsActiveTabOnItsPanelsLanding(t *testing.T) {
+	calls := 0
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		if len(args) >= 1 && args[0] == "uses" {
+			calls++
+		}
+		return []byte{}, nil
+	}
+	m := newTestModel()
+	m.client = brew.NewClient(r)
+	m.activePanel = PanelFormulae
+	m.activeTab = formulaUsesTab
+	m.cfg.GUI.AutoRefreshSeconds = 0
+	for _, p := range m.panels {
+		p.loading = false
+	}
+	p := m.panels[PanelFormulae]
+	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{{Name: "ripgrep", Version: "14.1.1"}}
+	p.loaded = true
+
+	for round := 1; round <= 2; round++ {
+		m = updateModel(m, RefreshMsg{})
+		nm, cmd := m.Update(DataLoadedMsg{
+			PanelID:  PanelFormulae,
+			Items:    []string{"ripgrep  14.1.1  bottled"},
+			Formulae: []brew.Formula{{Name: "ripgrep", Version: "14.1.1"}},
+			refresh:  true,
+		})
+		m = modelOf(nm)
+		var tabMsgs []tea.Msg
+		for _, msg := range drainCmds(cmd) {
+			if _, ok := msg.(TabContentMsg); ok {
+				tabMsgs = append(tabMsgs, msg)
+			}
+		}
+		if len(tabMsgs) != 1 || calls != round {
+			t.Fatalf("round %d: the Formulae landing issued %d tab reads (brew uses calls %d), want one before doctor lands", round, len(tabMsgs), calls)
+		}
+		m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
+		nm, cmd = m.Update(doctorLoadedMsg{gen: m.doctorGen, refresh: true})
+		m = modelOf(nm)
+		drainCmds(cmd)
+		if m.refreshing != 0 {
+			t.Fatalf("round %d: refreshing = %d after all reads landed, want 0", round, m.refreshing)
+		}
+		if calls != round {
+			t.Fatalf("round %d: the refresh's end read the tab again (brew uses calls %d), want %d", round, calls, round)
+		}
+		for _, msg := range tabMsgs {
+			m = updateModel(m, msg)
+		}
+	}
+}
+
 func TestDataLoadedForDifferentPanelDoesNotReissueActivePanelFetch(t *testing.T) {
 	m := newTestModel()
 	m.activePanel = PanelCasks
@@ -1600,10 +1659,10 @@ func TestRefreshTieredRespectsLoadedSet(t *testing.T) {
 
 	m = updateModel(m, RefreshMsg{})
 
-	// Status + Formulae (active) + Casks + Taps = 4. Outdated/Services unloaded.
-	wantCmds := 4
+	// Status + doctor + Formulae (active) + Casks + Taps = 5. Outdated/Services unloaded.
+	wantCmds := 5
 	if m.refreshing != wantCmds {
-		t.Errorf("refreshing = %d, want %d (Status + Formulae + Casks + Taps)", m.refreshing, wantCmds)
+		t.Errorf("refreshing = %d, want %d (Status + doctor + Formulae + Casks + Taps)", m.refreshing, wantCmds)
 	}
 	if m.panels[PanelOutdated].loading {
 		t.Error("unloaded PanelOutdated should NOT enter loading on refresh")
@@ -1626,9 +1685,9 @@ func TestRefreshLoadsOutdatedWhenActive(t *testing.T) {
 	if !m.panels[PanelOutdated].loading {
 		t.Error("PanelOutdated should load on Refresh when active (AC-04)")
 	}
-	// Status + active = 2 cmds; unloaded panels stay skipped.
-	if m.refreshing != 2 {
-		t.Errorf("refreshing = %d, want 2 (Status + active)", m.refreshing)
+	// Status + doctor + active = 3 cmds; unloaded panels stay skipped.
+	if m.refreshing != 3 {
+		t.Errorf("refreshing = %d, want 3 (Status + doctor + active)", m.refreshing)
 	}
 }
 
@@ -1642,13 +1701,20 @@ func TestRefreshToastWhenOutdatedInactive(t *testing.T) {
 	}
 
 	m = updateModel(m, RefreshMsg{})
-	if m.refreshing != 1 {
-		t.Fatalf("refreshing = %d, want 1 (Status only when active=Status)", m.refreshing)
+	if m.refreshing != 2 {
+		t.Fatalf("refreshing = %d, want 2 (Status and its doctor read when active=Status)", m.refreshing)
 	}
 
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
+	if m.refreshing != 1 {
+		t.Errorf("after the Status landing, refreshing = %d, want 1 (doctor out)", m.refreshing)
+	}
+	if lastToast(m) == "Data refreshed" {
+		t.Error("\"Data refreshed\" toasted before the doctor read landed")
+	}
+	m = updateModel(m, doctorLoadedMsg{gen: m.doctorGen, refresh: true})
 	if m.refreshing != 0 {
-		t.Errorf("after 1 DataLoadedMsg, refreshing = %d, want 0", m.refreshing)
+		t.Errorf("after the doctor landing, refreshing = %d, want 0", m.refreshing)
 	}
 	if m.newestToast() == nil {
 		t.Fatal("expected 'Data refreshed' toast after last panel load")
@@ -1669,21 +1735,24 @@ func TestOverlappingRefreshesToastOnceAllLanded(t *testing.T) {
 
 	m = updateModel(m, RefreshMsg{})
 	m = updateModel(m, RefreshMsg{})
-	if m.refreshing != 2 {
-		t.Fatalf("refreshing = %d after two refreshes, want 2 (one Status read each)", m.refreshing)
+	if m.refreshing != 4 {
+		t.Fatalf("refreshing = %d after two refreshes, want 4 (Status and doctor reads each)", m.refreshing)
 	}
 
+	// The first refresh's doctor read is stale by now: it still counts down.
+	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
+	m = updateModel(m, doctorLoadedMsg{gen: m.doctorGen - 1, refresh: true})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
 	if m.refreshing != 1 {
-		t.Errorf("refreshing = %d after one of two reads landed, want 1", m.refreshing)
+		t.Errorf("refreshing = %d with one read still out, want 1", m.refreshing)
 	}
 	if got := lastToast(m); got == "Data refreshed" {
 		t.Error("\"Data refreshed\" toasted while a read of the second refresh is still pending")
 	}
 
-	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
+	m = updateModel(m, doctorLoadedMsg{gen: m.doctorGen, refresh: true})
 	if m.refreshing != 0 {
-		t.Errorf("refreshing = %d after both reads landed, want 0", m.refreshing)
+		t.Errorf("refreshing = %d after all reads landed, want 0", m.refreshing)
 	}
 	if got := lastToast(m); got != "Data refreshed" {
 		t.Errorf("last toast = %q after both reads landed, want \"Data refreshed\"", got)
@@ -1703,16 +1772,16 @@ func TestRefreshEndsOnlyOnItsOwnReads(t *testing.T) {
 	}
 
 	m = updateModel(m, RefreshMsg{})
-	if m.refreshing != 2 {
-		t.Fatalf("refreshing = %d, want 2 (Status + active Formulae)", m.refreshing)
+	if m.refreshing != 3 {
+		t.Fatalf("refreshing = %d, want 3 (Status + doctor + active Formulae)", m.refreshing)
 	}
 
 	// Untagged landings: a lazy load and a services reload, as the app issues
 	// them outside a refresh.
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelServices, Items: []string{}})
-	if m.refreshing != 2 {
-		t.Errorf("refreshing = %d after non-refresh landings, want 2", m.refreshing)
+	if m.refreshing != 3 {
+		t.Errorf("refreshing = %d after non-refresh landings, want 3", m.refreshing)
 	}
 	if got := lastToast(m); got == "Data refreshed" {
 		t.Error("\"Data refreshed\" toasted by a read the refresh did not start")
@@ -1722,8 +1791,9 @@ func TestRefreshEndsOnlyOnItsOwnReads(t *testing.T) {
 	}
 
 	m = updateModel(m, DataLoadedMsg{PanelID: PanelStatus, refresh: true})
+	m = updateModel(m, doctorLoadedMsg{gen: m.doctorGen, refresh: true})
 	if m.refreshing != 1 {
-		t.Errorf("refreshing = %d after one refresh read landed, want 1", m.refreshing)
+		t.Errorf("refreshing = %d after two refresh reads landed, want 1", m.refreshing)
 	}
 	if got := lastToast(m); got == "Data refreshed" {
 		t.Error("\"Data refreshed\" toasted while the second refresh read is pending")
@@ -1756,17 +1826,21 @@ func TestRefreshReadsCarryTheRefreshTag(t *testing.T) {
 	refreshing := nm.(Model).refreshing
 	landed := 0
 	for _, msg := range drainCmds(cmd) {
-		data, ok := msg.(DataLoadedMsg)
-		if !ok {
-			continue
-		}
-		landed++
-		if !data.refresh {
-			t.Errorf("refresh read for panel %v landed untagged", data.PanelID)
+		switch data := msg.(type) {
+		case DataLoadedMsg:
+			landed++
+			if !data.refresh {
+				t.Errorf("refresh read for panel %v landed untagged", data.PanelID)
+			}
+		case doctorLoadedMsg:
+			landed++
+			if !data.refresh {
+				t.Error("the refresh's doctor read landed untagged")
+			}
 		}
 	}
-	if landed != refreshing || landed != 2 {
-		t.Errorf("%d refresh reads landed, refreshing = %d, want both 2", landed, refreshing)
+	if landed != refreshing || landed != 3 {
+		t.Errorf("%d refresh reads landed, refreshing = %d, want both 3", landed, refreshing)
 	}
 }
 
@@ -1777,8 +1851,8 @@ func TestRefreshDoesNotEnqueueEmptyStatusStub(t *testing.T) {
 	m.activePanel = PanelStatus
 	m.cfg.GUI.AutoRefreshSeconds = 0
 	m = updateModel(m, RefreshMsg{})
-	if m.refreshing != 1 {
-		t.Fatalf("want 1 cmd (fetchStatusData only), got refreshing=%d", m.refreshing)
+	if m.refreshing != 2 {
+		t.Fatalf("want 2 cmds (fetchStatusData and fetchDoctor only), got refreshing=%d", m.refreshing)
 	}
 }
 
@@ -2380,17 +2454,7 @@ func TestStatusDashboardSurfacesDoctorError(t *testing.T) {
 		}
 		return []byte{}, nil
 	})
-	client := brew.NewClient(r)
-	cmd := fetchStatusData(client, false)
-	if cmd == nil {
-		t.Fatal("fetchStatusData returned nil cmd")
-	}
-	msg := cmd()
-	dMsg, ok := msg.(DataLoadedMsg)
-	if !ok {
-		t.Fatalf("expected DataLoadedMsg, got %T", msg)
-	}
-	health := healthWords(dMsg.Summary)
+	health := doctorHealth(brew.NewClient(r))
 	if !strings.Contains(health, "⚠ doctor unavailable: brew doctor exited with code 2") {
 		t.Errorf("expected the doctor failure and its reason in Health, got:\n%s", health)
 	}
@@ -2412,14 +2476,7 @@ func TestStatusDashboardDoesNotWarnOnDoctorExitCode1(t *testing.T) {
 		}
 		return []byte{}, nil
 	})
-	client := brew.NewClient(r)
-	cmd := fetchStatusData(client, false)
-	msg := cmd()
-	dMsg, ok := msg.(DataLoadedMsg)
-	if !ok {
-		t.Fatalf("expected DataLoadedMsg, got %T", msg)
-	}
-	health := healthWords(dMsg.Summary)
+	health := doctorHealth(brew.NewClient(r))
 	if !strings.Contains(health, "⚠ 1 warning") {
 		t.Errorf("expected '⚠ 1 warning' in Health, got:\n%s", health)
 	}
@@ -2563,4 +2620,12 @@ func TestKeyEventResetsLastKeyAt(t *testing.T) {
 	if !updated.lastKeyAt.After(before) {
 		t.Errorf("lastKeyAt should advance on key press, was %v, now %v", before, updated.lastKeyAt)
 	}
+}
+
+// doctorHealth lands the doctor read over client on a fresh model, as Update
+// does, and returns the Health card's words.
+func doctorHealth(client *brew.Client) string {
+	m := newTestModel()
+	m = updateModel(m, fetchDoctor(client, m.doctorGen)())
+	return strings.Join(strings.Fields(ansi.Strip(m.healthBody())), " ")
 }

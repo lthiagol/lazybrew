@@ -64,6 +64,7 @@ func TestOutdatedUnknownIsNotLoadedNeverZero(t *testing.T) {
 func TestHealthReadsTheDoctorSummary(t *testing.T) {
 	m := newTestModel()
 	m.icons = style.UnicodeIcons
+	m.doctorPending = false
 	cases := []struct {
 		name   string
 		doctor knownCount
@@ -137,6 +138,7 @@ func dashboardCards(msg DataLoadedMsg) string {
 // the card wraps still reads as one phrase.
 func healthWords(s statusSummary) string {
 	m := newTestModel()
+	m.doctorPending = false
 	m.status = s
 	return strings.Join(strings.Fields(ansi.Strip(m.healthBody())), " ")
 }
@@ -145,6 +147,7 @@ func healthWords(s statusSummary) string {
 // at 80 columns, Health is the second card, so a problem shows without scrolling.
 func TestStackedCardsPutHealthNearTheTop(t *testing.T) {
 	m := newTestModel()
+	m.doctorPending = false
 	m.status = statusSummary{DoctorErr: "brew doctor exited with code 2", Problems: []string{"⚠ taps: brew tap-info timed out after 1s"}}
 	rows := strings.Split(ansi.Strip(m.renderDashboard(50)), "\n")
 	health, packages := -1, -1

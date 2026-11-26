@@ -82,7 +82,8 @@ func TestStatusRowsAreCompactSummary(t *testing.T) {
 }
 
 // TestStatusDashboardTabShowsTheFullDashboard (AC-03.1): the Dashboard tab
-// draws its five cards from the typed summary, not as a list. (v2-05 AC-03:
+// draws its five cards from the typed summary, not as a list. The doctor read
+// has not landed, so Health shows it running (LB-45). (v2-05 AC-03:
 // the expectation moved from the old text block's lines to the cards.)
 func TestStatusDashboardTabShowsTheFullDashboard(t *testing.T) {
 	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 140, Height: 40})
@@ -91,7 +92,7 @@ func TestStatusDashboardTabShowsTheFullDashboard(t *testing.T) {
 
 	out := ansi.Strip(m.renderContent(140, 30))
 	for _, line := range []string{"Homebrew", "Packages", "Taps", "Services", "Health",
-		"Formulae:  125 installed", "not loaded — press R", "press d to run doctor"} {
+		"Formulae:  125 installed", "not loaded — press R", "running doctor…"} {
 		if !strings.Contains(out, line) {
 			t.Fatalf("the Dashboard tab should draw %q, got:\n%s", line, out)
 		}

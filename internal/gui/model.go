@@ -47,6 +47,9 @@ type Model struct {
 	// the top each time help opens.
 	helpScroll int
 	tabContent map[string]string
+	// tabFetching is the tab keys whose read is in flight, so a refresh
+	// does not read the same tab twice. clearTabContent drops it.
+	tabFetching map[string]bool
 	// previews is the Cleanup and Unused tabs' reads. They are typed, not text,
 	// so a draw cuts the paths to its own width; see cleanup_tabs.go.
 	previews previewCache
@@ -140,6 +143,11 @@ type Model struct {
 	// status is what the last dashboard load read: the header's version and
 	// counts, and the Status sidebar's rows. Empty until the dashboard loads.
 	status statusSummary
+	// doctorGen is the generation of the latest brew doctor read issued; a
+	// doctor result from an earlier one is not applied. The launch read is
+	// generation 0. doctorPending is set while that latest read is out.
+	doctorGen     int
+	doctorPending bool
 	// preload is the background load of the panels after the Status dashboard
 	// (gui.preload); see preload.go.
 	preload preloadState
@@ -210,14 +218,17 @@ func New(client *brew.Client, cfg *config.Config) *Model {
 	icons := iconSet(cfg)
 	cl.SetIcons(icons)
 	m := &Model{
-		client:        client,
-		cfg:           cfg,
-		activePanel:   PanelStatus,
-		panels:        panels,
+		client:      client,
+		cfg:         cfg,
+		activePanel: PanelStatus,
+		panels:      panels,
+		// Init issues the launch doctor read beside the Status dashboard.
+		doctorPending: true,
 		activeTab:     0,
 		tabs:          panelTabs[PanelStatus],
 		batch:         newBatchState(),
 		tabContent:    make(map[string]string),
+		tabFetching:   make(map[string]bool),
 		tasks:         task.NewManager(task.DefaultMaxQueue),
 		commandLog:    cl,
 		spinner:       s,

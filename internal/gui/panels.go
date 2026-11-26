@@ -154,6 +154,7 @@ func needsTabFetch(panelID PanelID, tabIdx int) bool {
 // is drawn: the text tabs, and the Cleanup and Unused previews.
 func (m *Model) clearTabContent() {
 	m.tabContent = make(map[string]string)
+	m.tabFetching = make(map[string]bool)
 	m.previews = previewCache{}
 }
 
@@ -162,6 +163,11 @@ func (m *Model) clearPanelTabContent(pid PanelID) {
 	for k := range m.tabContent {
 		if strings.HasPrefix(k, prefix) {
 			delete(m.tabContent, k)
+		}
+	}
+	for k := range m.tabFetching {
+		if strings.HasPrefix(k, prefix) {
+			delete(m.tabFetching, k)
 		}
 	}
 }

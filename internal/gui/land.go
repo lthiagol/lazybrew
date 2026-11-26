@@ -54,7 +54,11 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 			p.services = msg.Services
 			p.serviceInfo = msg.ServiceInfo
 			if msg.PanelID == PanelStatus {
+				// Doctor lands on its own (landDoctor): the dashboard
+				// keeps the result it already has.
+				doctor, doctorErr := m.status.Doctor, m.status.DoctorErr
 				m.status = msg.Summary
+				m.status.Doctor, m.status.DoctorErr = doctor, doctorErr
 				if m.cfg.GUI.Preload {
 					m.status.fillUnknown(m.landed)
 					p.items = statusRows(m.status)
@@ -89,18 +93,52 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 	m.clearPanelTabContent(msg.PanelID)
 	// Only the refresh's own reads count: a preload, lazy-load, launch or
 	// reload read is not one a refresh waits for.
-	if m.refreshing > 0 && msg.refresh && !preloaded {
-		m.refreshing--
-		if m.refreshing == 0 {
-			return tea.Batch(
-				trustToast,
-				m.setToast("Data refreshed", modal.ToastSuccess),
-				m.loadTabContent(),
-			)
+	if !preloaded {
+		if done := m.countRefreshLanding(msg.refresh); done != nil {
+			return tea.Batch(trustToast, done)
 		}
 	}
+	// The active panel's own landing reads its tab at once, so a slow read
+	// (brew doctor) does not hold it back; the refresh's end then skips a
+	// tab already read or in flight (tabFetching).
 	if msg.PanelID == m.activePanel && needsTabFetch(m.activePanel, m.activeTab) {
 		return tea.Batch(trustToast, m.loadTabContent())
 	}
 	return trustToast
+}
+
+// countRefreshLanding counts down the refresh for one of its own reads
+// (refresh set). When that was the last one, it returns the "Data refreshed"
+// toast and the tab reload; otherwise nil.
+func (m *Model) countRefreshLanding(refresh bool) tea.Cmd {
+	if m.refreshing == 0 || !refresh {
+		return nil
+	}
+	m.refreshing--
+	if m.refreshing > 0 {
+		return nil
+	}
+	return tea.Batch(
+		m.setToast("Data refreshed", modal.ToastSuccess),
+		m.loadTabContent(),
+	)
+}
+
+// landDoctor applies a brew doctor read to the Health card. A read older than
+// the latest issued (doctorGen) is not applied, nor a launch read that lands
+// after a stale update's refresh; a refresh read still counts the refresh down.
+func (m *Model) landDoctor(msg doctorLoadedMsg) tea.Cmd {
+	cmd := m.countRefreshLanding(msg.refresh)
+	if msg.gen != m.doctorGen || (msg.launch && m.launchStale && m.updateRefreshed) {
+		return cmd
+	}
+	m.doctorPending = false
+	if msg.err != nil {
+		m.status.Doctor = knownCount{}
+		m.status.DoctorErr = msg.err.Error()
+		return cmd
+	}
+	m.status.Doctor = knownCount{N: msg.warnings, Known: true}
+	m.status.DoctorErr = ""
+	return cmd
 }

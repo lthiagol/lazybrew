@@ -163,3 +163,15 @@ type autoRefreshTickMsg struct {
 // recent key press and rescheduled itself. The handler converts this
 // back into a follow-up tick (armAutoRefresh) so the next tick re-evaluates.
 type autoRefreshPausedMsg struct{}
+
+// doctorLoadedMsg is a brew doctor read for the Status Health card. It runs
+// apart from the dashboard's other reads, so the dashboard lands without
+// waiting for it. gen is the read's generation (Model.doctorGen); launch and
+// refresh mark it as DataLoadedMsg's flags do.
+type doctorLoadedMsg struct {
+	gen      int
+	launch   bool
+	refresh  bool
+	warnings int
+	err      error
+}

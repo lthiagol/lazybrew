@@ -262,9 +262,10 @@ func (m *Model) loadTabContent() tea.Cmd {
 			return nil
 		}
 		key := tabKey(panelID, tabIdx, name)
-		if _, ok := m.tabContent[key]; ok {
+		if _, ok := m.tabContent[key]; ok || m.tabFetching[key] {
 			return nil
 		}
+		m.tabFetching[key] = true
 		return fetchTabContentCmd(m.client, panelID, tabIdx, name, m.icons)
 	}
 	return nil
@@ -491,10 +492,22 @@ func fetchStatusData(client *brew.Client, loadOutdated bool) tea.Cmd {
 	}
 }
 
+// fetchDoctor is the Health card's brew doctor read, capped at
+// brewReadTimeout like each dashboard read. gen is the generation Update
+// issued it under (Model.doctorGen).
+func fetchDoctor(client *brew.Client, gen int) tea.Cmd {
+	return func() tea.Msg {
+		warnings, err := boundedReadIn(context.Background(), brewReadTimeout, "doctor", client.Diagnostics.Doctor)
+		return doctorLoadedMsg{gen: gen, warnings: len(warnings), err: err}
+	}
+}
+
 // statusDashboard reads every source the status dashboard aggregates and
 // returns the typed summary the cards and the sidebar are drawn from.
 //
-// The dashboard aggregates five independent sources plus brew doctor. Each
+// The dashboard aggregates five independent sources. brew doctor is not one
+// of them: it is slow, so it is its own read (fetchDoctor) and the dashboard
+// lands without waiting for it. Each
 // read is capped on its own (brewReadTimeout), and the aggregation as a
 // whole is bounded by a separate total budget (brewStatusTotalTimeout):
 // bounding the reads alone would still let five slow sources add up to
@@ -528,9 +541,8 @@ func statusDashboard(client *brew.Client, loadOutdated bool) statusSummary {
 		taps     brew.TapList
 		services []brew.Service
 		cfg      *brew.BrewConfig
-		warnings []brew.DoctorWarning
 
-		fErr, cErr, tErr, sErr, docErr error
+		fErr, cErr, tErr, sErr error
 
 		outdatedFormulae []brew.Formula
 		outdatedCasks    []brew.Cask
@@ -563,9 +575,6 @@ func statusDashboard(client *brew.Client, loadOutdated bool) statusSummary {
 		// Config errors stay ignored: the dashboard has always tolerated a
 		// missing config. The deadline still applies so it cannot hang.
 		cfg, _ = boundedReadIn(totalCtx, brewReadTimeout, "config", client.Diagnostics.Config)
-	})
-	read(func() {
-		warnings, docErr = boundedReadIn(totalCtx, brewReadTimeout, "doctor", client.Diagnostics.Doctor)
 	})
 	if loadOutdated {
 		// Explicit request (R): the outdated entries are read through the
@@ -625,9 +634,6 @@ func statusDashboard(client *brew.Client, loadOutdated bool) statusSummary {
 	if sErr != nil {
 		sources = append(sources, sourceErr{"services", sErr})
 	}
-	if docErr != nil {
-		sources = append(sources, sourceErr{"doctor", docErr})
-	}
 	if outdatedFErr != nil {
 		sources = append(sources, sourceErr{"outdated", outdatedFErr})
 	}
@@ -636,7 +642,6 @@ func statusDashboard(client *brew.Client, loadOutdated bool) statusSummary {
 	}
 
 	summary := statusSummary{
-		Doctor:   knownCount{N: len(warnings), Known: docErr == nil},
 		Formulae: knownCount{N: len(formulae), Known: fErr == nil},
 		Casks:    knownCount{N: len(casks), Known: cErr == nil},
 		Taps:     knownCount{N: len(taps.Taps), Known: tErr == nil},
@@ -664,15 +669,9 @@ func statusDashboard(client *brew.Client, loadOutdated bool) statusSummary {
 	summary.OfficialTaps = officialTaps
 	summary.ServicesStarted = servicesStarted
 
-	// The doctor failure is the Health card's own line, with its reason; the
-	// other failed sources are ⚠ lines.
-	if docErr != nil {
-		summary.DoctorErr = docErr.Error()
-	}
+	// The failed sources are ⚠ lines.
 	for _, s := range sources {
-		if s.label != "doctor" {
-			summary.Problems = append(summary.Problems, "⚠ "+s.label+": "+s.err.Error())
-		}
+		summary.Problems = append(summary.Problems, "⚠ "+s.label+": "+s.err.Error())
 	}
 
 	return summary
