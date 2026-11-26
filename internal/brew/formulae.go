@@ -99,9 +99,10 @@ type outdatedJSON struct {
 	Formulae []outdatedFormulaJSON `json:"formulae"`
 }
 
+// outdatedFormulaJSON's name is the full name (user/tap/foo for a tap formula):
+// brew writes no full_name.
 type outdatedFormulaJSON struct {
 	Name              string   `json:"name"`
-	FullName          string   `json:"full_name"`
 	InstalledVersions []string `json:"installed_versions"`
 	CurrentVersion    string   `json:"current_version"`
 	Pinned            bool     `json:"pinned"`
@@ -146,8 +147,8 @@ func (s *formulaeReader) fetchOutdated(ctx context.Context) ([]Formula, bool, er
 	outdated := make([]Formula, 0, len(data.Formulae))
 	for _, of := range data.Formulae {
 		formula := Formula{
-			Name:       of.Name,
-			FullName:   of.FullName,
+			Name:       lastPart(of.Name),
+			FullName:   of.Name,
 			Pinned:     of.Pinned,
 			Outdated:   true,
 			NewVersion: of.CurrentVersion,
@@ -165,6 +166,12 @@ func (s *formulaeReader) fetchOutdated(ctx context.Context) ([]Formula, bool, er
 func (s *formulaeReader) SetCacheTTLs(ttls CacheTTLs) {
 	s.formulaeTTL = ttls.Formulae
 	s.outdatedTTL = ttls.Outdated
+}
+
+// lastPart is the name after its last slash: the short name of a tap-qualified
+// name such as user/tap/foo.
+func lastPart(name string) string {
+	return name[strings.LastIndex(name, "/")+1:]
 }
 
 // nonEmptyLines splits output into lines, trims each, and drops the empty ones.
@@ -241,7 +248,8 @@ func parseFormula(f formulaJSON) Formula {
 	var deps []string
 
 	if len(f.Installed) > 0 {
-		inst := f.Installed[0]
+		// brew lists the kegs oldest first, so the last is the newest.
+		inst := f.Installed[len(f.Installed)-1]
 		version = inst.Version
 		installedOn = time.Unix(inst.Time, 0)
 		installedOnReq = inst.InstalledOnRequest

@@ -228,18 +228,17 @@ func (s *diagnosticsReader) Config(ctx context.Context) (*BrewConfig, error) {
 			}
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
+			// The core tap's line is the time of its JSON cache, or its HEAD for
+			// a git clone: brew prints no tap name. OS is macOS: on a Mac.
 			switch {
 			case key == "HOMEBREW_VERSION":
 				cfg.HomebrewVersion = value
 			case key == "HOMEBREW_PREFIX":
 				cfg.Prefix = value
-			case key == "HOMEBREW_CELLAR":
-				cfg.Cellar = value
-			case key == "HOMEBREW_REPOSITORY":
-				cfg.Repository = value
-			case key == "HOMEBREW_CORE_TAP":
+			case key == "Core tap JSON" || key == "Core tap HEAD":
 				cfg.CoreTap = value
-			case key == "HOMEBREW_SYSTEM":
+				cfg.CoreTapLabel = key
+			case key == "OS" || key == "macOS":
 				cfg.OS = value
 			}
 		}

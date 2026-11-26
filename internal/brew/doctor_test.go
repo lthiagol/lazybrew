@@ -79,9 +79,15 @@ func TestDiagnosticsDoctorWarnings(t *testing.T) {
 }
 
 func TestDiagnosticsConfig(t *testing.T) {
+	// testdata/config_linux.txt is real `HOMEBREW_NO_AUTO_UPDATE=1 brew config`
+	// output (brew 7.0.16, Debian 13).
+	out, err := os.ReadFile("testdata/config_linux.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte("HOMEBREW_VERSION: 6.0.0\nHOMEBREW_PREFIX: /opt/homebrew\nHOMEBREW_CELLAR: /opt/homebrew/Cellar\nHOMEBREW_REPOSITORY: /opt/homebrew\nHOMEBREW_CORE_TAP: homebrew/core\nHOMEBREW_SYSTEM: macOS\n"), nil
+		return out, nil
 	}
 	cache := NewCache(time.Minute)
 	diag := NewDiagnosticsReader(r, cache)
@@ -90,14 +96,63 @@ func TestDiagnosticsConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.HomebrewVersion != "6.0.0" {
-		t.Errorf("HomebrewVersion = %q, want 6.0.0", cfg.HomebrewVersion)
+	if cfg.HomebrewVersion != "7.0.16-52-g1423910" {
+		t.Errorf("HomebrewVersion = %q, want 7.0.16-52-g1423910", cfg.HomebrewVersion)
 	}
-	if cfg.Prefix != "/opt/homebrew" {
-		t.Errorf("Prefix = %q, want /opt/homebrew", cfg.Prefix)
+	if cfg.Prefix != "/home/linuxbrew/.linuxbrew" {
+		t.Errorf("Prefix = %q, want /home/linuxbrew/.linuxbrew", cfg.Prefix)
 	}
-	if cfg.CoreTap != "homebrew/core" {
-		t.Errorf("CoreTap = %q, want homebrew/core", cfg.CoreTap)
+	if cfg.CoreTap != "26 Nov 11:31 UTC" || cfg.CoreTapLabel != "Core tap JSON" {
+		t.Errorf("CoreTap = %q under %q, want the Core tap JSON time", cfg.CoreTap, cfg.CoreTapLabel)
+	}
+	if want := "Debian GNU/Linux 13 (trixie) (trixie)"; cfg.OS != want {
+		t.Errorf("OS = %q, want %q", cfg.OS, want)
+	}
+}
+
+// TestDiagnosticsConfigMacOSAndGitTap covers the lines brew config prints on
+// macOS (macOS:) and for a git core tap (Core tap HEAD:). No macOS capture is
+// on this machine; the lines follow brew's source, extend/os/mac/system_config.rb
+// and system_config.rb dump_tap_config.
+func TestDiagnosticsConfigMacOSAndGitTap(t *testing.T) {
+	cases := []struct {
+		name, output, wantOS, wantCoreTap, wantLabel string
+	}{
+		{
+			name:        "macOS with the JSON core tap",
+			output:      "HOMEBREW_VERSION: 5.0.0\nHOMEBREW_PREFIX: /opt/homebrew\nCore tap JSON: 10 Nov 12:34 UTC\nmacOS: 15.4-arm64\n",
+			wantOS:      "15.4-arm64",
+			wantCoreTap: "10 Nov 12:34 UTC",
+			wantLabel:   "Core tap JSON",
+		},
+		{
+			name:        "git core tap reads its HEAD",
+			output:      "HOMEBREW_VERSION: 5.0.0\nCore tap HEAD: 1423910\nOS: Ubuntu 24.04\n",
+			wantOS:      "Ubuntu 24.04",
+			wantCoreTap: "1423910",
+			wantLabel:   "Core tap HEAD",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := brewtest.NewMockRunner()
+			r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+				return []byte(tc.output), nil
+			}
+			cfg, err := NewDiagnosticsReader(r, NewCache(time.Minute)).Config(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.OS != tc.wantOS {
+				t.Errorf("OS = %q, want %q", cfg.OS, tc.wantOS)
+			}
+			if cfg.CoreTap != tc.wantCoreTap {
+				t.Errorf("CoreTap = %q, want %q", cfg.CoreTap, tc.wantCoreTap)
+			}
+			if cfg.CoreTapLabel != tc.wantLabel {
+				t.Errorf("CoreTapLabel = %q, want %q", cfg.CoreTapLabel, tc.wantLabel)
+			}
+		})
 	}
 }
 

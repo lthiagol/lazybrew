@@ -1,0 +1,19 @@
+{
+  "formulae": [
+    {
+      "name": "ripgrep",
+      "installed_versions": ["14.1.1"],
+      "current_version": "14.1.2",
+      "pinned": false,
+      "pinned_version": null
+    },
+    {
+      "name": "user/tap/tool",
+      "installed_versions": ["0.4.0"],
+      "current_version": "0.5.0",
+      "pinned": false,
+      "pinned_version": null
+    }
+  ],
+  "casks": []
+}

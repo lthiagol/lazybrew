@@ -271,6 +271,19 @@ func (p *panelData) nameAt(i int) string {
 	return ""
 }
 
+// writeNameAt is the name brew acts on for the row at i. A formula keeps its
+// full name (user/tap/tool), since the short name would resolve to the
+// homebrew/core formula of the same name. Casks write by token, so they keep
+// nameAt.
+func (p *panelData) writeNameAt(i int) string {
+	if p.id == PanelFormulae || p.id == PanelOutdated {
+		if i >= 0 && i < len(p.formulae) && p.formulae[i].FullName != "" {
+			return p.formulae[i].FullName
+		}
+	}
+	return p.nameAt(i)
+}
+
 // selectedName is the real name of the selected row; see nameAt.
 func (p *panelData) selectedName() string {
 	return p.nameAt(p.selected)

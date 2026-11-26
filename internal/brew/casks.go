@@ -182,9 +182,9 @@ func (s *casksReader) fetchOutdated(ctx context.Context) ([]Cask, bool, error) {
 	}
 
 	var data struct {
+		// name is the cask's token. brew writes no full_name.
 		Casks []struct {
 			Name              string   `json:"name"`
-			FullName          string   `json:"full_name"`
 			InstalledVersions []string `json:"installed_versions"`
 			CurrentVersion    string   `json:"current_version"`
 		} `json:"casks"`
@@ -196,8 +196,8 @@ func (s *casksReader) fetchOutdated(ctx context.Context) ([]Cask, bool, error) {
 	outdated := make([]Cask, 0, len(data.Casks))
 	for _, oc := range data.Casks {
 		cask := Cask{
-			Name:       oc.Name,
-			FullName:   oc.FullName,
+			Name:       lastPart(oc.Name),
+			FullName:   oc.Name,
 			Outdated:   true,
 			NewVersion: oc.CurrentVersion,
 		}

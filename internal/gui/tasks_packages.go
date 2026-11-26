@@ -140,16 +140,20 @@ type packageWriter interface {
 type mutTarget struct {
 	mutType mutationType
 	// label is the verb the task is titled with.
-	label  string
-	name   string
-	isCask bool
-	panel  PanelID
+	label string
+	name  string
+	// writeName is what brew is given: the full name of a tap formula, else
+	// name (see panelData.writeNameAt).
+	writeName string
+	isCask    bool
+	panel     PanelID
 }
 
 // selectedTarget is the target of mutType on the selected row of the active
 // panel; ok is false when no row is selected.
 func (m Model) selectedTarget(mutType mutationType, label string) (mutTarget, bool) {
-	name := m.panels[m.activePanel].selectedName()
+	active := m.panels[m.activePanel]
+	name := active.selectedName()
 	if name == "" {
 		return mutTarget{}, false
 	}
@@ -163,11 +167,12 @@ func (m Model) selectedTarget(mutType mutationType, label string) (mutTarget, bo
 		}
 	}
 	return mutTarget{
-		mutType: mutType,
-		label:   label,
-		name:    name,
-		isCask:  m.activePanel == PanelCasks || (m.activePanel == PanelSearch && searchIsCask),
-		panel:   m.activePanel,
+		mutType:   mutType,
+		label:     label,
+		name:      name,
+		writeName: active.writeNameAt(active.selected),
+		isCask:    m.activePanel == PanelCasks || (m.activePanel == PanelSearch && searchIsCask),
+		panel:     m.activePanel,
 	}, true
 }
 
@@ -178,7 +183,7 @@ func (m Model) doMutation(tg mutTarget) (tea.Model, tea.Cmd) {
 	}
 
 	title := tg.label + " " + name
-	pkgName := name
+	pkgName := tg.writeName
 	if mutType == mutUpgradeAll {
 		title = "Upgrading all packages"
 		pkgName = ""
@@ -187,7 +192,7 @@ func (m Model) doMutation(tg mutTarget) (tea.Model, tea.Cmd) {
 	// Task IDs must be unique: the batch counter keys on them, and two
 	// concurrent tasks sharing a bare package name would cross-talk
 	// (r2 finding NEW-3). Prefix every mutation with its op type.
-	taskID := mutationID(mutType, name)
+	taskID := mutationID(mutType, pkgName)
 
 	var writer packageWriter = m.client.FormulaeWrite
 	if tg.isCask {
@@ -234,8 +239,9 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 	}
 
 	names := make([]struct {
-		name   string
-		isCask bool
+		name      string
+		writeName string
+		isCask    bool
 	}, 0, len(m.batch.selected))
 
 	// The map only ever holds true entries (toggle deletes on deselect),
@@ -252,14 +258,16 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 		if itemName == "" {
 			continue
 		}
+		writeName := panel.writeNameAt(idx)
 		isCask := false
 		if idx >= len(panel.formulae) && idx-len(panel.formulae) < len(panel.casks) {
 			isCask = true
 		}
 		names = append(names, struct {
-			name   string
-			isCask bool
-		}{itemName, isCask})
+			name      string
+			writeName string
+			isCask    bool
+		}{itemName, writeName, isCask})
 	}
 
 	m.batch.selected = make(map[int]bool)
@@ -284,13 +292,14 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 	client := m.client
 	for _, n := range names {
 		name := n.name
+		writeName := n.writeName
 		isCask := n.isCask
 
-		t := streamTask(batchPrefix+name, "Upgrade "+name, func(ctx context.Context) (<-chan string, <-chan error) {
+		t := streamTask(batchPrefix+writeName, "Upgrade "+name, func(ctx context.Context) (<-chan string, <-chan error) {
 			if isCask {
-				return client.CasksWrite.Upgrade(ctx, name)
+				return client.CasksWrite.Upgrade(ctx, writeName)
 			}
-			return client.FormulaeWrite.Upgrade(ctx, name)
+			return client.FormulaeWrite.Upgrade(ctx, writeName)
 		})
 
 		res, err := m.tasks.Enqueue(t)
@@ -306,7 +315,7 @@ func (m Model) batchUpgrade() (tea.Model, tea.Cmd) {
 		// occurrences: a formula and a cask can share a name, and a bool
 		// set collapsed them into one entry, stranding the counter above
 		// zero when the second duplicate completed (r3 finding R3-2).
-		m.batchIDs[batchPrefix+name]++
+		m.batchIDs[batchPrefix+writeName]++
 	}
 	m.batchCount = enqueued
 	m.batchTotal = enqueued

@@ -178,8 +178,9 @@ type DoctorWarning struct {
 type BrewConfig struct {
 	HomebrewVersion string `json:"homebrew_version"`
 	Prefix          string `json:"prefix"`
-	Cellar          string `json:"cellar"`
-	Repository      string `json:"repository"`
 	CoreTap         string `json:"core_tap"`
-	OS              string `json:"os"`
+	// CoreTapLabel is the key brew printed CoreTap under: "Core tap JSON" (the
+	// time of the JSON cache) or "Core tap HEAD" (a git clone's commit).
+	CoreTapLabel string `json:"core_tap_label"`
+	OS           string `json:"os"`
 }

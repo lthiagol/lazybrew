@@ -343,13 +343,17 @@ func formatConfig(cfg *brew.BrewConfig) string {
 	if cfg == nil {
 		return "No config available"
 	}
+	// The core tap's value is a cache time or a commit, so its row carries the
+	// key brew printed it under.
+	coreTap := cfg.CoreTapLabel
+	if coreTap == "" {
+		coreTap = "Core tap"
+	}
 	// Built uncut: the Config tab cuts each row to the main width when drawn.
 	return presentation.Detail([]presentation.Field{
 		{Label: "Homebrew", Value: cfg.HomebrewVersion},
 		{Label: "Prefix", Value: cfg.Prefix},
-		{Label: "Cellar", Value: cfg.Cellar},
-		{Label: "Repository", Value: cfg.Repository},
-		{Label: "Core Tap", Value: cfg.CoreTap},
+		{Label: coreTap, Value: cfg.CoreTap},
 		{Label: "OS", Value: cfg.OS},
 	}, 0)
 }

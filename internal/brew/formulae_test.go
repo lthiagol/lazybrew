@@ -3,6 +3,8 @@ package brew
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -86,12 +88,13 @@ var sampleOutdatedJSON = `{
   "formulae": [
     {
       "name": "ripgrep",
-      "full_name": "ripgrep",
       "installed_versions": ["14.1.1"],
       "current_version": "14.1.2",
-      "pinned": false
+      "pinned": false,
+      "pinned_version": null
     }
-  ]
+  ],
+  "casks": []
 }`
 
 func newMockFormulaeRunner() *brewtest.MockRunner {
@@ -265,6 +268,71 @@ func TestFormulaeReaderOutdated(t *testing.T) {
 	}
 	if o.NewVersion != "14.1.2" {
 		t.Errorf("NewVersion = %q, want 14.1.2", o.NewVersion)
+	}
+}
+
+// TestFormulaeOutdatedNamesAreBrewsNames: brew writes an outdated formula's full
+// name as name and no full_name (cmd/outdated.rb json_info). A tap formula reads
+// with its short name, and its full name is the whole user/tap/foo.
+//
+// testdata/outdated_formulae_v2.json is BUILT, not captured: it follows brew's
+// json_info (cmd/outdated.rb) because nothing was outdated on this machine when
+// it was written (`brew outdated --json=v2` was empty). Replace it with a real
+// capture once a tap formula is outdated.
+func TestFormulaeOutdatedNamesAreBrewsNames(t *testing.T) {
+	raw, err := os.ReadFile("testdata/outdated_formulae_v2.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := newMockFormulaeRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return raw, nil
+	}
+	outdated, err := NewFormulaeReader(r, NewCache(time.Minute)).Outdated(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(outdated) != 2 {
+		t.Fatalf("expected 2 outdated, got %d", len(outdated))
+	}
+	tap := outdated[1]
+	if tap.Name != "tool" || tap.FullName != "user/tap/tool" {
+		t.Errorf("tap formula Name, FullName = %q, %q; want tool, user/tap/tool", tap.Name, tap.FullName)
+	}
+	if tap.Version != "0.4.0" || tap.NewVersion != "0.5.0" {
+		t.Errorf("tap formula versions = %q -> %q, want 0.4.0 -> 0.5.0", tap.Version, tap.NewVersion)
+	}
+	core := outdated[0]
+	if core.Name != "ripgrep" || core.FullName != "ripgrep" {
+		t.Errorf("core formula Name, FullName = %q, %q; want ripgrep, ripgrep", core.Name, core.FullName)
+	}
+}
+
+// TestFormulaeInstalledUsesNewestKeg: brew lists installed kegs oldest first
+// (formula.rb sorts them by version), so the newest is the last entry. The
+// fixture is the real bash entry with an older keg (no runtime dependencies)
+// added before it; no formula on this machine has two kegs.
+func TestFormulaeInstalledUsesNewestKeg(t *testing.T) {
+	raw, err := os.ReadFile("testdata/info_bash_two_kegs.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	formulae, _, err := ParseInfo(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(formulae) != 1 {
+		t.Fatalf("expected 1 formula, got %d", len(formulae))
+	}
+	f := formulae[0]
+	if f.Version != "5.3.20" {
+		t.Errorf("Version = %q, want the newest keg 5.3.20", f.Version)
+	}
+	if want := time.Unix(1793798897, 0); !f.InstalledOn.Equal(want) {
+		t.Errorf("InstalledOn = %v, want %v", f.InstalledOn, want)
+	}
+	if got := strings.Join(f.Dependencies, ","); got != "ncurses,readline" {
+		t.Errorf("Dependencies = %q, want the newest keg's ncurses,readline", got)
 	}
 }
 

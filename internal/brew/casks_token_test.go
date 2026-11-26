@@ -65,7 +65,7 @@ func TestOutdatedAndInstalledCaskNamesAgree(t *testing.T) {
 
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte(`{"casks":[{"name":"claude-code","full_name":"claude-code","installed_versions":["2.1.310"],"current_version":"2.1.311"}]}`), nil
+		return []byte(`{"casks":[{"name":"claude-code","installed_versions":["2.1.310"],"current_version":"2.1.311"}]}`), nil
 	}
 	outdated, err := NewCasksReader(r, NewCache(time.Minute)).Outdated(context.Background())
 	if err != nil {

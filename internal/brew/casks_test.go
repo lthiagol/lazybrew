@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -92,7 +93,7 @@ func TestCasksReaderListCached(t *testing.T) {
 func TestCasksReaderOutdated(t *testing.T) {
 	r := brewtest.NewMockRunner()
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
-		return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
+		return []byte(`{"casks":[{"name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
 	}
 	cache := NewCache(time.Minute)
 	reader := NewCasksReader(r, cache)
@@ -107,6 +108,39 @@ func TestCasksReaderOutdated(t *testing.T) {
 	}
 	if outdated[0].Name != "firefox" || !outdated[0].Outdated || outdated[0].NewVersion != "135.0" {
 		t.Errorf("got %+v", outdated[0])
+	}
+}
+
+// TestCasksOutdatedNamesAreTheToken: brew writes an outdated cask's token as
+// name and no full_name (cmd/outdated.rb json_info), so FullName comes from the
+// token.
+//
+// testdata/outdated_casks_v2.json is BUILT, not captured: it follows brew's
+// Cask#outdated_info (installed_versions, current_version, pinned) because
+// nothing was outdated on this machine when it was written. Replace it with a
+// real capture once a cask is outdated.
+func TestCasksOutdatedNamesAreTheToken(t *testing.T) {
+	raw, err := os.ReadFile("testdata/outdated_casks_v2.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := brewtest.NewMockRunner()
+	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		return raw, nil
+	}
+	outdated, err := NewCasksReader(r, NewCache(time.Minute)).Outdated(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(outdated) != 1 {
+		t.Fatalf("expected 1 outdated, got %d", len(outdated))
+	}
+	c := outdated[0]
+	if c.Name != "firefox" || c.FullName != "firefox" {
+		t.Errorf("Name, FullName = %q, %q; want firefox, firefox", c.Name, c.FullName)
+	}
+	if c.Version != "134.0" || c.NewVersion != "135.0" {
+		t.Errorf("versions = %q -> %q, want 134.0 -> 135.0", c.Version, c.NewVersion)
 	}
 }
 
@@ -261,7 +295,7 @@ func TestCasksOutdatedCoalescesConcurrentCalls(t *testing.T) {
 		r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 			atomic.AddInt32(&calls, 1)
 			<-gate
-			return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
+			return []byte(`{"casks":[{"name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
 		}
 		cache := NewCache(time.Minute)
 		reader := NewCasksReader(r, cache)
@@ -304,7 +338,7 @@ func TestCasksOutdatedCachesWithinTTL(t *testing.T) {
 	var calls int32
 	r.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
 		atomic.AddInt32(&calls, 1)
-		return []byte(`{"casks":[{"name":"firefox","full_name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
+		return []byte(`{"casks":[{"name":"firefox","installed_versions":["134.0"],"current_version":"135.0"}]}`), nil
 	}
 	cache := NewCache(time.Minute)
 	reader := NewCasksReader(r, cache)
