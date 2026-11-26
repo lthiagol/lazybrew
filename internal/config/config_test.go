@@ -252,6 +252,106 @@ func TestLoadTTLOneSecondIsAccepted(t *testing.T) {
 	}
 }
 
+// A TTL written as a bare number (300) or as text that is no duration is
+// rejected, and the error names the key, the value and the form to write.
+// yaml's own message for these does not name the key.
+func TestLoadTTLNotADurationIsError(t *testing.T) {
+	keys := []struct {
+		key string
+		eg  string
+	}{
+		{"formulae_ttl", "5m"},
+		{"casks_ttl", "5m"},
+		{"outdated_ttl", "30m"},
+		{"taps_ttl", "1h"},
+		{"services_ttl", "30s"},
+		{"doctor_ttl", "1h"},
+	}
+	for _, k := range keys {
+		for _, v := range []string{"300", "abc"} {
+			t.Run(k.key+" "+v, func(t *testing.T) {
+				dir := t.TempDir()
+				path := filepath.Join(dir, "config.yml")
+				if err := os.WriteFile(path, []byte("brew:\n  "+k.key+": "+v+"\n"), 0644); err != nil {
+					t.Fatal(err)
+				}
+				_, err := Load(path)
+				if err == nil {
+					t.Fatalf("%s: %s: Load gave no error", k.key, v)
+				}
+				for _, want := range []string{"brew." + k.key, `"` + v + `"`, "not a duration", "e.g. " + k.eg} {
+					if !strings.Contains(err.Error(), want) {
+						t.Errorf("error = %q, want it to contain %q", err, want)
+					}
+				}
+			})
+		}
+	}
+}
+
+// A TTL given through an anchor (*d) reads as the anchored duration, and an
+// alias of a bad value is refused with the value it points at.
+func TestLoadTTLAliasIsReadAsItsTarget(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	if err := os.WriteFile(path, []byte("x: &d 10m\nbrew:\n  formulae_ttl: *d\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Brew.FormulaeTTL != 10*time.Minute {
+		t.Errorf("FormulaeTTL = %s, want 10m", cfg.Brew.FormulaeTTL)
+	}
+
+	if err := os.WriteFile(path, []byte("x: &d 300\nbrew:\n  formulae_ttl: *d\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	_, err = Load(path)
+	if err == nil {
+		t.Fatal("aliased 300: Load gave no error")
+	}
+	for _, want := range []string{"brew.formulae_ttl", `"300"`, "not a duration", "e.g. 5m"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error = %q, want it to contain %q", err, want)
+		}
+	}
+}
+
+// A local tag on a TTL (!custom 5m) is read as its scalar, as it was before the
+// form check: the TTL loads as 5m.
+func TestLoadTTLLocalTagLoadsAsScalar(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	if err := os.WriteFile(path, []byte("brew:\n  formulae_ttl: !custom 5m\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Brew.FormulaeTTL != 5*time.Minute {
+		t.Errorf("FormulaeTTL = %s, want 5m", cfg.Brew.FormulaeTTL)
+	}
+}
+
+// An empty TTL keeps the class default, as it did before the form check.
+func TestLoadTTLEmptyKeepsDefault(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	if err := os.WriteFile(path, []byte("brew:\n  formulae_ttl:\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Brew.FormulaeTTL != DefaultFormulaeTTL {
+		t.Errorf("FormulaeTTL = %s, want the default %s", cfg.Brew.FormulaeTTL, DefaultFormulaeTTL)
+	}
+}
+
 func TestLoadInvalidYAML(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yml")

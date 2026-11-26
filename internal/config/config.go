@@ -39,7 +39,8 @@ const DefaultAutoRefreshPause = 500 * time.Millisecond
 // cadence (formulae/casks/taps change rarely; services/doctor can be
 // more frequent). Setting any TTL to <= 0 keeps that class's default (the
 // Default*TTL constants), preserving pre-M12 behavior for that class. A TTL
-// above 0 but under 1s is an error: 300ns parses, but it is no cache TTL.
+// above 0 but under 1s is an error: 300ns parses, but it is no cache TTL. A TTL
+// must also be written as a duration string: a bare number is an error.
 type BrewConfig struct {
 	Path          string     `yaml:"path"`
 	UpdateOnStart UpdateMode `yaml:"update_on_start"`
@@ -52,6 +53,60 @@ type BrewConfig struct {
 	TapsTTL          time.Duration `yaml:"taps_ttl"`
 	ServicesTTL      time.Duration `yaml:"services_ttl"`
 	DoctorTTL        time.Duration `yaml:"doctor_ttl"`
+}
+
+// ttlField is one brew TTL: its config key, the field it fills and its class default.
+type ttlField struct {
+	key   string
+	value *time.Duration
+	def   time.Duration
+}
+
+// ttls lists the six brew TTLs. loadFile checks their values; UnmarshalYAML
+// checks their forms.
+func (b *BrewConfig) ttls() []ttlField {
+	return []ttlField{
+		{"brew.outdated_ttl", &b.OutdatedTTL, DefaultOutdatedTTL},
+		{"brew.formulae_ttl", &b.FormulaeTTL, DefaultFormulaeTTL},
+		{"brew.casks_ttl", &b.CasksTTL, DefaultCasksTTL},
+		{"brew.taps_ttl", &b.TapsTTL, DefaultTapsTTL},
+		{"brew.services_ttl", &b.ServicesTTL, DefaultServicesTTL},
+		{"brew.doctor_ttl", &b.DoctorTTL, DefaultDoctorTTL},
+	}
+}
+
+// UnmarshalYAML reads the brew block. A TTL is checked for its form before the
+// block is decoded: yaml's own message for a bare number ("cannot unmarshal
+// !!int") does not name the key.
+func (b *BrewConfig) UnmarshalYAML(node *yaml.Node) error {
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		name := "brew." + node.Content[i].Value
+		for _, ttl := range b.ttls() {
+			if ttl.key == name {
+				if err := checkTTLForm(ttl, node.Content[i+1]); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	type plain BrewConfig
+	return node.Decode((*plain)(b))
+}
+
+// checkTTLForm refuses a TTL that yaml cannot read as a duration, such as 300 or
+// abc. yaml decides: an alias (*d) or a local tag (!custom 5m) reads as it does
+// on its own. An empty value keeps the class default, as it always did.
+func checkTTLForm(ttl ttlField, val *yaml.Node) error {
+	var d time.Duration
+	if err := val.Decode(&d); err == nil {
+		return nil
+	}
+	shown := val.Value
+	if val.Kind == yaml.AliasNode {
+		shown = val.Alias.Value
+	}
+	return fmt.Errorf("%s: %q is not a duration; write a duration with a unit, e.g. %s",
+		ttl.key, shown, sampleDuration(ttl.def))
 }
 
 // UpdateMode is brew.update_on_start. never (false) leaves brew's metadata as it
@@ -260,18 +315,7 @@ func loadFile(path string) (*Config, error) {
 	// A TTL of 0 or less keeps the class's default; one above 0 but under 1s is
 	// an error. This is the one place the check is made; the brew readers take
 	// the TTLs as they are given.
-	for _, ttl := range []struct {
-		key   string
-		value *time.Duration
-		def   time.Duration
-	}{
-		{"brew.outdated_ttl", &cfg.Brew.OutdatedTTL, DefaultOutdatedTTL},
-		{"brew.formulae_ttl", &cfg.Brew.FormulaeTTL, DefaultFormulaeTTL},
-		{"brew.casks_ttl", &cfg.Brew.CasksTTL, DefaultCasksTTL},
-		{"brew.taps_ttl", &cfg.Brew.TapsTTL, DefaultTapsTTL},
-		{"brew.services_ttl", &cfg.Brew.ServicesTTL, DefaultServicesTTL},
-		{"brew.doctor_ttl", &cfg.Brew.DoctorTTL, DefaultDoctorTTL},
-	} {
+	for _, ttl := range cfg.Brew.ttls() {
 		if *ttl.value <= 0 {
 			*ttl.value = ttl.def
 			continue
