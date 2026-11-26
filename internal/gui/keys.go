@@ -253,7 +253,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "F":
 		if m.activePanel == PanelSearch || m.activePanel == PanelFormulae || m.activePanel == PanelCasks {
-			return m.doMutation(mutFetch, "Fetch")
+			if tg, ok := m.selectedTarget(mutFetch, "Fetch"); ok {
+				return m.doMutation(tg)
+			}
 		}
 	case "u":
 		if m.activePanel == PanelOutdated {
@@ -274,8 +276,10 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "space":
 		if m.activePanel == PanelOutdated {
-			p := m.panels[PanelOutdated]
-			m.batch.toggle(p.selected)
+			// An empty or unloaded list has no row to select (LB-47).
+			if p := m.panels[PanelOutdated]; p.selected >= 0 && p.selected < len(p.items) {
+				m.batch.toggle(p.selected)
+			}
 		}
 	case "a":
 		if m.activePanel == PanelTaps {

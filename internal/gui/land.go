@@ -39,9 +39,13 @@ func (m *Model) landData(msg DataLoadedMsg, preloaded bool) tea.Cmd {
 				p.unfilteredCasks = msg.Casks
 				p.narrow(name)
 			} else {
+				// The package lists keep the cursor on the same package by
+				// name and kind, not by index (LB-47).
+				name, cask := p.selectedName(), p.selected >= len(p.formulae)
 				p.items = msg.Items
 				p.formulae = msg.Formulae
 				p.casks = msg.Casks
+				p.selectPackage(name, cask)
 			}
 			p.taps = msg.Taps
 			p.trustUnknown = msg.TrustUnknown

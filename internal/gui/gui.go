@@ -326,7 +326,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.searchResults = msg.Raw
 		}
 		p.normalize()
-		cmd := m.switchPanel(PanelSearch)
+		// The results are stored; the view moves to them only when the user
+		// is still on Search. A search can take seconds, and landing must
+		// not pull the user (or a dialog's panel) away (LB-47).
+		var cmd tea.Cmd
+		if m.activePanel == PanelSearch {
+			cmd = m.switchPanel(PanelSearch)
+		}
 		if toast != nil {
 			return m, tea.Batch(cmd, toast)
 		}
@@ -541,10 +547,15 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(toast, func() tea.Msg { return RefreshMsg{} })
 
 	case DepCheckMsg:
+		// Another dialog opened while brew read the dependents: it keeps
+		// the screen, and this question is dropped rather than replacing
+		// it (LB-47).
+		if m.activeModal != nil {
+			return m, nil
+		}
 		m.pendingAction = "uninstall"
-		m.pendingMutType = msg.MutType
-		m.pendingLabel = msg.Label
-		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Label, msg.Message).WithDetail(msg.Detail)
+		m.pendingTarget = msg.Target
+		m.activeModal = modal.NewConfirmModal(msg.Kind, msg.Target.label, msg.Message).WithDetail(msg.Detail)
 		return m, m.activeModal.Init()
 
 	case VulnsMsg:

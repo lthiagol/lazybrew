@@ -147,9 +147,10 @@ type SudoRunDoneMsg struct {
 	Err   error
 }
 
+// DepCheckMsg is an uninstall or zap question, once brew has said what
+// depends on the package. Target is the package the question names.
 type DepCheckMsg struct {
-	MutType mutationType
-	Label   string
+	Target  mutTarget
 	Message string
 	Kind    modal.ActionKind
 	Detail  string

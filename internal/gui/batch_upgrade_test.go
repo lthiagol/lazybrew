@@ -343,7 +343,7 @@ func TestMutationTaskIDsAreOpPrefixed(t *testing.T) {
 		p.formulae = []brew.Formula{{Name: "foo"}}
 		p.selected = 0
 
-		_, cmd := m.doMutation(tc.mut, tc.label)
+		_, cmd := m.doMutation(selTarget(t, m, tc.mut, tc.label))
 		ts, ok := firstTaskStarted(execCmds(cmd))
 		if !ok {
 			t.Fatalf("%s: expected TaskStartedMsg", tc.label)

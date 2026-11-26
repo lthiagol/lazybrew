@@ -196,10 +196,10 @@ func TestEnqueueQueuedOutcomeToastsQueueing(t *testing.T) {
 	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "foo"}}
 	m.panels[PanelFormulae].selected = 0
 
-	_, cmd := m.doMutation(mutInstall, "Install")
+	_, cmd := m.doMutation(selTarget(t, m, mutInstall, "Install"))
 	_ = cmd() // start the first task
 
-	nm, _ := m.doMutation(mutUpgrade, "Upgrade")
+	nm, _ := m.doMutation(selTarget(t, m, mutUpgrade, "Upgrade"))
 	mm := nm.(Model)
 	if mm.newestToast() == nil || !strings.Contains(mm.newestToast().Message, "Queued") {
 		t.Fatalf("expected 'queued' toast, got %+v", mm.newestToast())

@@ -58,10 +58,10 @@ type Model struct {
 	vulns          vulnsState
 	pendingAction  string
 	pendingService string
-	pendingMutType mutationType
-	// pendingLabel is the verb the confirmed mutation's task is titled with.
-	pendingLabel string
-	batchCount   int
+	// pendingTarget is the package the open mutation dialog named; the
+	// confirm acts on it (LB-47).
+	pendingTarget mutTarget
+	batchCount    int
 	// batchIDs counts the occurrences of each task ID enqueued by the
 	// current batch upgrade, so batchCount is only decremented by batch
 	// completions, never by unrelated ones (r1 finding 27). A formula and

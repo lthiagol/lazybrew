@@ -416,7 +416,7 @@ func TestDoMutationRejectedWhenRunning(t *testing.T) {
 	m.panels[PanelFormulae].formulae = []brew.Formula{{Name: "test"}}
 	m.panels[PanelFormulae].selected = 0
 
-	_, cmd := m.doMutation(mutInstall, "Install")
+	_, cmd := m.doMutation(selTarget(t, m, mutInstall, "Install"))
 	if cmd == nil {
 		t.Fatal("expected cmd from first doMutation")
 	}
@@ -425,7 +425,7 @@ func TestDoMutationRejectedWhenRunning(t *testing.T) {
 	// A second enqueue while a task runs is QUEUED, not refused: the
 	// caller gets an honest toast and the op still runs later (r1
 	// finding 6).
-	nm, cmd2 := m.doMutation(mutInstall, "Install")
+	nm, cmd2 := m.doMutation(selTarget(t, m, mutInstall, "Install"))
 	if cmd2 == nil {
 		t.Fatal("expected queued toast cmd from second doMutation")
 	}
@@ -743,9 +743,10 @@ func TestFetchFlow(t *testing.T) {
 	m.activePanel = PanelFormulae
 	p := m.panels[PanelFormulae]
 	p.items = []string{"ripgrep  14.1.1  bottled"}
+	p.formulae = []brew.Formula{{Name: "ripgrep"}}
 	p.selected = 0
 
-	_, cmd := m.doMutation(mutFetch, "Fetch")
+	_, cmd := m.doMutation(selTarget(t, m, mutFetch, "Fetch"))
 	if cmd != nil {
 		t.Log("fetch mutation dispatched")
 	}
@@ -2418,8 +2419,8 @@ func TestMutationShowsConfirmModal(t *testing.T) {
 	if result.pendingAction != "mutation" {
 		t.Fatalf("expected pendingAction 'mutation', got %q", result.pendingAction)
 	}
-	if result.pendingMutType != mutInstall {
-		t.Fatalf("expected pendingMutType mutInstall, got %v", result.pendingMutType)
+	if result.pendingTarget.mutType != mutInstall {
+		t.Fatalf("expected pendingTarget mutInstall, got %v", result.pendingTarget.mutType)
 	}
 }
 

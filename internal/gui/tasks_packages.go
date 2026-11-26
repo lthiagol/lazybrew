@@ -134,22 +134,50 @@ type packageWriter interface {
 	Upgrade(ctx context.Context, name string) (<-chan string, <-chan error)
 }
 
-func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {
-	panel := m.panels[m.activePanel]
-	name := panel.selectedName()
+// mutTarget is the package a mutation acts on, captured when the action is
+// asked. The confirm runs on it whatever the cursor, panel or lists did while
+// the dialog (or the dependency check before it) was up (LB-47).
+type mutTarget struct {
+	mutType mutationType
+	// label is the verb the task is titled with.
+	label  string
+	name   string
+	isCask bool
+	panel  PanelID
+}
+
+// selectedTarget is the target of mutType on the selected row of the active
+// panel; ok is false when no row is selected.
+func (m Model) selectedTarget(mutType mutationType, label string) (mutTarget, bool) {
+	name := m.panels[m.activePanel].selectedName()
+	if name == "" {
+		return mutTarget{}, false
+	}
+	// Casks must route to the cask writer whether the action starts from
+	// Search or from the Casks panel itself (r2 finding NEW-4). Search
+	// results can be casks too (r1 finding 12): the row's own flag decides.
+	searchIsCask := false
+	if m.activePanel == PanelSearch {
+		if r, ok := m.selectedSearchRow(); ok {
+			searchIsCask = r.IsCask
+		}
+	}
+	return mutTarget{
+		mutType: mutType,
+		label:   label,
+		name:    name,
+		isCask:  m.activePanel == PanelCasks || (m.activePanel == PanelSearch && searchIsCask),
+		panel:   m.activePanel,
+	}, true
+}
+
+func (m Model) doMutation(tg mutTarget) (tea.Model, tea.Cmd) {
+	mutType, name := tg.mutType, tg.name
 	if name == "" {
 		return m, nil
 	}
 
-	// Search results can be casks: installing from Search used to route
-	// every result through FormulaeWrite.Install, ignoring the result's
-	// type flag (r1 finding 12). Uninstall from Search follows the same flag.
-	searchIsCask := false
-	if r, ok := m.selectedSearchRow(); ok {
-		searchIsCask = r.IsCask
-	}
-
-	title := label + " " + name
+	title := tg.label + " " + name
 	pkgName := name
 	if mutType == mutUpgradeAll {
 		title = "Upgrading all packages"
@@ -161,13 +189,8 @@ func (m Model) doMutation(mutType mutationType, label string) (tea.Model, tea.Cm
 	// (r2 finding NEW-3). Prefix every mutation with its op type.
 	taskID := mutationID(mutType, name)
 
-	// Casks must route to the cask writer whether the install starts from
-	// Search or from the Casks panel itself (r2 finding NEW-4: the "i install"
-	// hint on Casks had no handler, and the handler must not fall back to
-	// brew's formula writer). The other mutations follow the panel alone.
-	isCask := m.activePanel == PanelCasks || (m.activePanel == PanelSearch && searchIsCask)
 	var writer packageWriter = m.client.FormulaeWrite
-	if isCask {
+	if tg.isCask {
 		writer = m.client.CasksWrite
 	}
 	client := m.client
@@ -453,12 +476,15 @@ func (m Model) togglePin() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
-	panel := m.panels[m.activePanel]
-	name := panel.selectedName()
-	if name == "" {
+	label := "Uninstall"
+	if mutType == mutZap {
+		label = "Zap"
+	}
+	target, ok := m.selectedTarget(mutType, label)
+	if !ok {
 		return m, nil
 	}
-	searchIsCask := false
+	name := target.name
 	if m.activePanel == PanelSearch {
 		r, ok := m.selectedSearchRow()
 		if !ok || mutType == mutZap && !r.IsCask {
@@ -468,18 +494,15 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 			cmd := m.setToast(name+" is not installed", modal.ToastInfo)
 			return m, cmd
 		}
-		searchIsCask = r.IsCask
 	}
 
-	label := "Uninstall"
 	message := "Uninstall " + name + "? This cannot be undone."
 	if mutType == mutZap {
-		label = "Zap"
 		message = "Zap " + name + "? This will remove ALL associated files and preferences."
 	}
 	// Only formulae have dependents, so a cask's confirm does not ask brew for
 	// them (Q4): brew uses has no answer for a cask.
-	isCask := m.activePanel == PanelCasks || (m.activePanel == PanelSearch && searchIsCask)
+	isCask := target.isCask
 	client := m.client
 
 	return m, func() tea.Msg {
@@ -510,8 +533,7 @@ func (m Model) confirmUninstall(mutType mutationType) (tea.Model, tea.Cmd) {
 				" — the list of packages that depend on " + name + " may be incomplete."
 		}
 		return DepCheckMsg{
-			MutType: mutType,
-			Label:   label,
+			Target:  target,
 			Message: text,
 			Kind:    mutationKind(mutType),
 			Detail:  removalDetail(name, mutType == mutZap, uses, err),
@@ -556,11 +578,11 @@ func mutationDetail(mutType mutationType, name string) string {
 }
 
 func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, tea.Cmd) {
-	panel := m.panels[m.activePanel]
-	name := panel.selectedName()
-	if name == "" {
+	target, ok := m.selectedTarget(mutType, label)
+	if !ok {
 		return m, nil
 	}
+	name := target.name
 
 	actionLabel := label
 	confirmLabel := label + " " + name
@@ -573,8 +595,7 @@ func (m Model) confirmMutation(mutType mutationType, label string) (tea.Model, t
 	}
 
 	m.pendingAction = "mutation"
-	m.pendingMutType = mutType
-	m.pendingLabel = label
+	m.pendingTarget = target
 	modal := modal.NewConfirmModal(mutationKind(mutType), actionLabel, message).
 		WithDetail(mutationDetail(mutType, name))
 	m.activeModal = modal

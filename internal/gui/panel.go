@@ -335,6 +335,21 @@ func (p *panelData) serviceInfoFor(name string) *brew.ServiceInfo {
 	return nil
 }
 
+// selectPackage moves the cursor of a Formulae, Casks or Outdated list to the
+// package called name, a cask row when cask is set (Outdated lists formulae,
+// then casks, and both can share a name). An unknown name leaves the cursor.
+func (p *panelData) selectPackage(name string, cask bool) {
+	if name == "" {
+		return
+	}
+	for i := range p.items {
+		if p.nameAt(i) == name && (i >= len(p.formulae)) == cask {
+			p.selected = i
+			return
+		}
+	}
+}
+
 // selectNamed moves the cursor of p to the row of rows called name, when the
 // list still has it. An empty or unknown name leaves the cursor where it is:
 // after an untap, that is the tap that followed the removed one (v2-10

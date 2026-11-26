@@ -138,7 +138,7 @@ func (m *Model) handleModalResult(result interface{}, cmd tea.Cmd) (tea.Model, t
 		if r.Confirmed {
 			switch m.pendingAction {
 			case "uninstall", "mutation":
-				return m.doMutation(m.pendingMutType, m.pendingLabel)
+				return m.doMutation(m.pendingTarget)
 			case "batch-upgrade":
 				return m.batchUpgrade()
 			case "untap":
