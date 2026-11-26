@@ -179,9 +179,10 @@ func streamWrite(ctx context.Context, runner Runner, cache *Cache, group string,
 // cached is the one read path every brew reader uses. It returns the cached
 // value of type T for key when there is one. Otherwise it runs fetch, once for
 // all concurrent callers, and stores the result for ttl (0 = the cache
-// default). fetch reports whether its result may be stored; a result it marks
+// default). fetch gets the flight's context, not ctx: each caller is bound
+// only by its own ctx, never by another caller's (see singleflight). fetch reports whether its result may be stored; a result it marks
 // as not storable (a partial tap list) is returned but not cached.
-func cached[T any](c *Cache, key CacheKey, ttl time.Duration, fetch func() (T, bool, error)) (T, error) {
+func cached[T any](ctx context.Context, c *Cache, key CacheKey, ttl time.Duration, fetch func(context.Context) (T, bool, error)) (T, error) {
 	if val, ok := cachedValue[T](c, key); ok {
 		return val, nil
 	}
@@ -190,13 +191,13 @@ func cached[T any](c *Cache, key CacheKey, ttl time.Duration, fetch func() (T, b
 	// a write to this key finished never joins a fetch that began before it.
 	gen := c.generation(key)
 	flightKey := string(key) + "@" + strconv.FormatUint(gen, 10)
-	val, err := c.sf.Do(flightKey, func() (any, error) {
+	val, err := c.sf.Do(ctx, flightKey, func(ctx context.Context) (any, error) {
 		// A flight that finished just before this caller started has already
 		// stored its result.
 		if val, ok := cachedValue[T](c, key); ok {
 			return val, nil
 		}
-		val, store, err := fetch()
+		val, store, err := fetch(ctx)
 		if err != nil {
 			return nil, err
 		}

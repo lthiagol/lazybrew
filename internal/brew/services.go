@@ -40,7 +40,7 @@ func NewServicesWriter(runner Runner, cache *Cache) ServicesWriter {
 }
 
 func (s *servicesReader) List(ctx context.Context) ([]Service, error) {
-	return cached(s.cache, KeyServicesList, s.servicesTTL, func() ([]Service, bool, error) {
+	return cached(ctx, s.cache, KeyServicesList, s.servicesTTL, func(ctx context.Context) ([]Service, bool, error) {
 		output, err := s.runner.Execute(ctx, "services", "list", "--json")
 		if err != nil {
 			return nil, false, err
@@ -53,7 +53,7 @@ func (s *servicesReader) List(ctx context.Context) ([]Service, error) {
 // Info is `brew services info --all --json`: the detail of every service in one
 // call. An entry that does not parse is skipped, as List skips one.
 func (s *servicesReader) Info(ctx context.Context) ([]ServiceInfo, error) {
-	return cached(s.cache, KeyServicesInfo, s.servicesTTL, func() ([]ServiceInfo, bool, error) {
+	return cached(ctx, s.cache, KeyServicesInfo, s.servicesTTL, func(ctx context.Context) ([]ServiceInfo, bool, error) {
 		output, err := s.runner.Execute(ctx, "services", "info", "--all", "--json")
 		if err != nil {
 			return nil, false, err

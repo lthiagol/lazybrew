@@ -61,7 +61,7 @@ type tapInfoJSON struct {
 }
 
 func (s *tapsReader) List(ctx context.Context) (TapList, error) {
-	return cached(s.cache, KeyTapsList, s.tapsTTL, func() (TapList, bool, error) {
+	return cached(ctx, s.cache, KeyTapsList, s.tapsTTL, func(ctx context.Context) (TapList, bool, error) {
 		tapNamesOutput, err := s.runner.Execute(ctx, "tap")
 		if err != nil {
 			return TapList{}, false, err

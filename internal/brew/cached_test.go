@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -115,7 +116,7 @@ func TestCachedDropsFetchThatRacedAWrite(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		_, _ = cached(c, KeyFormulaeList, 0, func() ([]Formula, bool, error) {
+		_, _ = cached(context.Background(), c, KeyFormulaeList, 0, func(context.Context) ([]Formula, bool, error) {
 			close(started)
 			<-release
 			return []Formula{{Name: "before-write"}}, true, nil
@@ -141,7 +142,7 @@ func TestCachedCallAfterWriteDoesNotJoinOldFetch(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		_, _ = cached(c, KeyFormulaeList, 0, func() ([]Formula, bool, error) {
+		_, _ = cached(context.Background(), c, KeyFormulaeList, 0, func(context.Context) ([]Formula, bool, error) {
 			close(started)
 			<-release
 			return []Formula{{Name: "before-write"}}, true, nil
@@ -150,7 +151,7 @@ func TestCachedCallAfterWriteDoesNotJoinOldFetch(t *testing.T) {
 
 	<-started
 	c.Invalidate(KeyFormulaeList)
-	got, err := cached(c, KeyFormulaeList, 0, func() ([]Formula, bool, error) {
+	got, err := cached(context.Background(), c, KeyFormulaeList, 0, func(context.Context) ([]Formula, bool, error) {
 		return []Formula{{Name: "after-write"}}, true, nil
 	})
 	if err != nil {
@@ -171,6 +172,61 @@ func TestCachedCallAfterWriteDoesNotJoinOldFetch(t *testing.T) {
 	}
 }
 
+// TestCachedCancelledCallerDoesNotFailJoiner: the fetch runs on the flight's
+// context, not the context of the caller that started it. That caller leaves
+// when its ctx is cancelled; the fetch must not see the cancel, so a joiner
+// with a live ctx still gets the value.
+func TestCachedCancelledCallerDoesNotFailJoiner(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		c := NewCache(time.Minute)
+		var runs atomic.Int32
+		release := make(chan struct{})
+		fetch := func(ctx context.Context) ([]Formula, bool, error) {
+			runs.Add(1)
+			<-release
+			if err := ctx.Err(); err != nil {
+				return nil, false, err
+			}
+			return []Formula{{Name: "fetched"}}, true, nil
+		}
+
+		leaderCtx, cancelLeader := context.WithCancel(context.Background())
+		leaderErr := make(chan error, 1)
+		go func() {
+			_, err := cached(leaderCtx, c, KeyFormulaeList, 0, fetch)
+			leaderErr <- err
+		}()
+		synctest.Wait()
+
+		type result struct {
+			formulae []Formula
+			err      error
+		}
+		joiner := make(chan result, 1)
+		go func() {
+			formulae, err := cached(context.Background(), c, KeyFormulaeList, 0, func(context.Context) ([]Formula, bool, error) {
+				t.Error("joiner must not run fetch")
+				return nil, false, nil
+			})
+			joiner <- result{formulae, err}
+		}()
+		synctest.Wait()
+
+		cancelLeader()
+		if err := <-leaderErr; !errors.Is(err, context.Canceled) {
+			t.Errorf("leader err = %v, want context.Canceled", err)
+		}
+		close(release)
+		r := <-joiner
+		if r.err != nil || len(r.formulae) != 1 || r.formulae[0].Name != "fetched" {
+			t.Errorf("joiner = (%+v, %v), want the fetched list", r.formulae, r.err)
+		}
+		if got := runs.Load(); got != 1 {
+			t.Errorf("fetch ran %d times, want 1", got)
+		}
+	})
+}
+
 // blockedFetch starts cached(key) in the background. Its fetch counts itself in
 // runs and blocks until release is closed. It returns once the fetch has
 // started, and a channel that closes when the read returns.
@@ -179,7 +235,7 @@ func blockedFetch(c *Cache, key CacheKey, runs *atomic.Int32, release <-chan str
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		_, _ = cached(c, key, 0, func() ([]Formula, bool, error) {
+		_, _ = cached(context.Background(), c, key, 0, func(context.Context) ([]Formula, bool, error) {
 			runs.Add(1)
 			close(started)
 			<-release
@@ -203,7 +259,7 @@ func TestCachedUnrelatedInvalidationKeepsFetch(t *testing.T) {
 	second := make(chan struct{})
 	go func() {
 		defer close(second)
-		_, _ = cached(c, KeyOutdatedFormulae, 0, func() ([]Formula, bool, error) {
+		_, _ = cached(context.Background(), c, KeyOutdatedFormulae, 0, func(context.Context) ([]Formula, bool, error) {
 			runs.Add(1)
 			return []Formula{{Name: "again"}}, true, nil
 		})
@@ -234,7 +290,7 @@ func TestCachedGroupInvalidationDropsItsFetch(t *testing.T) {
 	second := make(chan struct{})
 	go func() {
 		defer close(second)
-		_, _ = cached(c, KeyOutdatedFormulae, 0, func() ([]Formula, bool, error) {
+		_, _ = cached(context.Background(), c, KeyOutdatedFormulae, 0, func(context.Context) ([]Formula, bool, error) {
 			runs.Add(1)
 			return []Formula{{Name: "after-write"}}, true, nil
 		})
@@ -262,7 +318,7 @@ func TestCachedWrongTypeIsRefetched(t *testing.T) {
 	c := NewCache(time.Minute)
 	c.Set(KeyFormulaeList, 42)
 	fetched := false
-	got, err := cached(c, KeyFormulaeList, 0, func() ([]Formula, bool, error) {
+	got, err := cached(context.Background(), c, KeyFormulaeList, 0, func(context.Context) ([]Formula, bool, error) {
 		fetched = true
 		return []Formula{{Name: "ripgrep"}}, true, nil
 	})
@@ -279,12 +335,12 @@ func TestCachedWrongTypeIsRefetched(t *testing.T) {
 func TestCachedNotStorableResultIsNotCached(t *testing.T) {
 	c := NewCache(time.Minute)
 	calls := 0
-	fetch := func() (TapList, bool, error) {
+	fetch := func(context.Context) (TapList, bool, error) {
 		calls++
 		return TapList{TrustUnknown: true}, false, nil
 	}
 	for i := 0; i < 2; i++ {
-		got, err := cached(c, KeyTapsList, 0, fetch)
+		got, err := cached(context.Background(), c, KeyTapsList, 0, fetch)
 		if err != nil || !got.TrustUnknown {
 			t.Fatalf("call %d: got %+v, %v", i, got, err)
 		}

@@ -152,7 +152,7 @@ type caskJSON struct {
 }
 
 func (s *casksReader) List(ctx context.Context) ([]Cask, error) {
-	return cached(s.cache, KeyCasksList, s.casksTTL, func() ([]Cask, bool, error) {
+	return cached(ctx, s.cache, KeyCasksList, s.casksTTL, func(ctx context.Context) ([]Cask, bool, error) {
 		var data casksJSON
 		if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", "--installed", "--cask"); err != nil {
 			return nil, false, err
@@ -167,7 +167,7 @@ func (s *casksReader) List(ctx context.Context) ([]Cask, error) {
 }
 
 func (s *casksReader) Outdated(ctx context.Context) ([]Cask, error) {
-	return cached(s.cache, KeyOutdatedCasks, s.outdatedTTL, func() ([]Cask, bool, error) {
+	return cached(ctx, s.cache, KeyOutdatedCasks, s.outdatedTTL, func(ctx context.Context) ([]Cask, bool, error) {
 		return s.fetchOutdated(ctx)
 	})
 }

@@ -46,7 +46,7 @@ type trustJSON struct {
 }
 
 func (s *trustReader) ListTrusted(ctx context.Context) ([]TrustEntry, error) {
-	return cached(s.cache, KeyTrustList, 0, func() ([]TrustEntry, bool, error) {
+	return cached(ctx, s.cache, KeyTrustList, 0, func(ctx context.Context) ([]TrustEntry, bool, error) {
 		var data trustJSON
 		if err := s.runner.ExecuteJSON(ctx, &data, "trust", "--json=v1"); err != nil {
 			return nil, false, err

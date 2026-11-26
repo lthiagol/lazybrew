@@ -108,7 +108,7 @@ type outdatedFormulaJSON struct {
 }
 
 func (s *formulaeReader) List(ctx context.Context) ([]Formula, error) {
-	return cached(s.cache, KeyFormulaeList, s.formulaeTTL, func() ([]Formula, bool, error) {
+	return cached(ctx, s.cache, KeyFormulaeList, s.formulaeTTL, func(ctx context.Context) ([]Formula, bool, error) {
 		var data formulaeJSON
 		if err := s.runner.ExecuteJSON(ctx, &data, "info", "--json=v2", "--installed"); err != nil {
 			return nil, false, err
@@ -124,7 +124,7 @@ func (s *formulaeReader) List(ctx context.Context) ([]Formula, error) {
 }
 
 func (s *formulaeReader) Outdated(ctx context.Context) ([]Formula, error) {
-	return cached(s.cache, KeyOutdatedFormulae, s.outdatedTTL, func() ([]Formula, bool, error) {
+	return cached(ctx, s.cache, KeyOutdatedFormulae, s.outdatedTTL, func(ctx context.Context) ([]Formula, bool, error) {
 		return s.fetchOutdated(ctx)
 	})
 }

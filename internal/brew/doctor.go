@@ -56,7 +56,7 @@ func NewDiagnosticsWriter(runner Runner, cache *Cache) DiagnosticsWriter {
 }
 
 func (s *diagnosticsReader) Doctor(ctx context.Context) ([]DoctorWarning, error) {
-	return cached(s.cache, KeyDoctorResult, s.doctorTTL, func() ([]DoctorWarning, bool, error) {
+	return cached(ctx, s.cache, KeyDoctorResult, s.doctorTTL, func(ctx context.Context) ([]DoctorWarning, bool, error) {
 		output, err := s.runner.Execute(ctx, "doctor")
 		text := string(output)
 		if strings.Contains(text, "Your system is ready to brew") {
@@ -213,7 +213,7 @@ func hasErrorLine(stderr string) bool {
 }
 
 func (s *diagnosticsReader) Config(ctx context.Context) (*BrewConfig, error) {
-	return cached(s.cache, KeyConfig, 0, func() (*BrewConfig, bool, error) {
+	return cached(ctx, s.cache, KeyConfig, 0, func(ctx context.Context) (*BrewConfig, bool, error) {
 		output, err := s.runner.Execute(ctx, "config")
 		if err != nil {
 			return nil, false, err

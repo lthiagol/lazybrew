@@ -95,7 +95,9 @@ func (r *DefaultRunner) newCmd(ctx context.Context, args []string) *exec.Cmd {
 func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, error) {
 	cmd := r.newCmd(ctx, args)
 
-	var stdout, stderr bytes.Buffer
+	// The buffers are closed once Run returns: after exec.ErrWaitDelay, exec's
+	// copy goroutines may still be writing, and must not race the reads below.
+	var stdout, stderr closingBuffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
@@ -105,15 +107,21 @@ func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, er
 
 	err := finishErr(cmd.Run())
 	duration := time.Since(start)
+	out := stdout.close()
+	errText := stderr.close()
 
 	if err != nil {
-		exitCode := 0
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			// brew never ran (missing binary, ctx done before start, a pipe
+			// error): keep the cause instead of a made-up exit code.
+			Logger().Warn("brew failed to start", "args", cmdLine, "cause", err.Error())
+			return out, fmt.Errorf("brew %s: %w", cmdLine, err)
 		}
-		stderrStr := strings.TrimSpace(stderr.String())
+		exitCode := exitErr.ExitCode()
+		stderrStr := strings.TrimSpace(string(errText))
 		Logger().Warn("brew failed", "args", cmdLine, "exit", exitCode, "duration", duration)
-		return stdout.Bytes(), &BrewExitError{
+		return out, &BrewExitError{
 			Command:  cmdLine,
 			ExitCode: exitCode,
 			Stderr:   stderrStr,
@@ -121,7 +129,7 @@ func (r *DefaultRunner) Execute(ctx context.Context, args ...string) ([]byte, er
 	}
 
 	Logger().Debug("brew ok", "args", cmdLine, "duration", duration)
-	return stdout.Bytes(), nil
+	return out, nil
 }
 
 func (r *DefaultRunner) ExecuteJSON(ctx context.Context, result any, args ...string) error {
@@ -185,12 +193,14 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 		// Stdout and stderr are writers, not pipes, so cmd.Wait owns both
 		// copies and waits for them itself, bounded by WaitDelay: a stray
 		// child holding the pipes open cannot hang the stream. Each stream
-		// has its own lineWriter, so a line never mixes the two.
+		// has its own lineWriter, so a line never mixes the two. After
+		// exec.ErrWaitDelay the copies may still be writing, so flush closes
+		// each writer: a later write is dropped, and nothing is sent on
+		// stdoutChan once it is closed.
 		lines := &lineWriter{ctx: ctx, out: stdoutChan}
-		errLines := &lineWriter{ctx: ctx, out: stdoutChan}
-		var stderr bytes.Buffer
+		errLines := &lineWriter{ctx: ctx, out: stdoutChan, keep: &bytes.Buffer{}}
 		cmd.Stdout = lines
-		cmd.Stderr = stderrCopy{buf: &stderr, lines: errLines}
+		cmd.Stderr = stderrCopy{lines: errLines}
 
 		if err := cmd.Start(); err != nil {
 			sendErr(fmt.Errorf("start: %w", err))
@@ -205,7 +215,7 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 			// prefers context.Canceled over the local error, so the GUI
 			// maps the completion to "Cancelled" instead of a misleading
 			// "signal: killed" (r1 finding 10, r2 finding NEW-7).
-			stderrStr := strings.TrimSpace(stderr.String())
+			stderrStr := strings.TrimSpace(errLines.kept())
 			errMsg := stderrStr
 			if errMsg == "" {
 				errMsg = err.Error()
@@ -217,19 +227,42 @@ func (r *DefaultRunner) ExecuteStream(ctx context.Context, args ...string) (<-ch
 	return stdoutChan, errChan
 }
 
-// stderrCopy is brew's stderr for ExecuteStream. Every byte goes to buf, which
-// the error message is built from, and also to lines, which sends the lines
-// on the stream. A failed line send (ctx done) is dropped here: buf must keep
-// the whole text, and a cancel already ends the run.
+// stderrCopy is brew's stderr for ExecuteStream. lines keeps every byte, which
+// the error message is built from, and sends the lines on the stream. A failed
+// line send (ctx done) is dropped here: the kept text must be whole, and a
+// cancel already ends the run.
 type stderrCopy struct {
-	buf   *bytes.Buffer
 	lines *lineWriter
 }
 
 func (w stderrCopy) Write(p []byte) (int, error) {
-	w.buf.Write(p)
 	_, _ = w.lines.Write(p)
 	return len(p), nil
+}
+
+// closingBuffer is a buffer exec's copy goroutine writes to. close returns its
+// bytes and drops every later write, so a copy still running after
+// exec.ErrWaitDelay never races the reader.
+type closingBuffer struct {
+	mu     sync.Mutex
+	buf    bytes.Buffer
+	closed bool
+}
+
+func (b *closingBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if !b.closed {
+		b.buf.Write(p)
+	}
+	return len(p), nil
+}
+
+func (b *closingBuffer) close() []byte {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.closed = true
+	return b.buf.Bytes()
 }
 
 // lineWriter splits brew's output into lines and sends each one to out. Each
@@ -237,17 +270,33 @@ func (w stderrCopy) Write(p []byte) (int, error) {
 // A line ends at \n, at \r (brew's progress bars redraw with \r), or at \r\n,
 // which is one break. A send blocks until the consumer takes the line or ctx
 // is done, in which case Write fails and the copy stops.
+//
+// flush closes the writer: later writes are dropped, since exec's copy can
+// outlive cmd.Wait (exec.ErrWaitDelay) and out is closed after flush.
 type lineWriter struct {
 	ctx context.Context
 	out chan<- string
-	buf bytes.Buffer
+	// keep, when set, gets every byte written before the writer closed.
+	keep *bytes.Buffer
+
+	mu     sync.Mutex
+	closed bool
+	buf    bytes.Buffer
 	// afterCR is set when the last byte written ended a line with \r. A \n
 	// that follows is the rest of the same \r\n break.
 	afterCR bool
 }
 
 func (w *lineWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	n := len(p)
+	if w.closed {
+		return n, nil
+	}
+	if w.keep != nil {
+		w.keep.Write(p)
+	}
 	for len(p) > 0 {
 		if w.afterCR && p[0] == '\n' {
 			p = p[1:]
@@ -296,12 +345,23 @@ func (w *lineWriter) emit() error {
 	}
 }
 
-// flush sends the unterminated last line, if any, once the output has ended.
+// flush sends the unterminated last line, if any, once the output has ended,
+// and closes the writer. It waits for a Write in progress to finish.
 func (w *lineWriter) flush() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.closed = true
 	if w.buf.Len() == 0 {
 		return
 	}
 	_ = w.emit()
+}
+
+// kept is the text keep holds.
+func (w *lineWriter) kept() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.keep.String()
 }
 
 // finishErr is the error of a finished brew process. exec.ErrWaitDelay means
