@@ -467,32 +467,31 @@ func parsePackageInfo(rawJSON string) (*pkgInfo, error) {
 	return nil, fmt.Errorf("no package info found")
 }
 
-// togglePin pins/unpins the selected formula. The pinned state is looked
-// up by NAME, not by index: the leaves filter changes panel.items without
-// touching panel.formulae, so raw indices desync and the decision could
-// target the wrong package (r1 finding 13). Casks are not offered pinning
-// — `brew pin` is formula-only.
+// togglePin pins/unpins the selected formula. Both the write name and the
+// pinned state come from the selected row itself: a tap formula is written
+// by its full name, and a core formula of the same short name must not
+// decide its state (LB-54). The row is read by index, the same index
+// nameAt uses, so the leaves filter cannot desync them (r1 finding 13).
+// Casks are not offered pinning — `brew pin` is formula-only.
 func (m Model) togglePin() (tea.Model, tea.Cmd) {
 	panel := m.panels[PanelFormulae]
 	name := panel.selectedName()
 	if name == "" {
 		return m, nil
 	}
+	writeName := panel.writeNameAt(panel.selected)
 
 	pinned := false
-	for _, f := range panel.formulae {
-		if f.Name == name {
-			pinned = f.Pinned
-			break
-		}
+	if f := panel.selectedFormula(); f != nil {
+		pinned = f.Pinned
 	}
 
 	client := m.client
-	t := errTask("pin:"+name, "Toggle pin "+name, func(ctx context.Context) error {
+	t := errTask("pin:"+writeName, "Toggle pin "+name, func(ctx context.Context) error {
 		if pinned {
-			return client.FormulaeWrite.Unpin(ctx, name)
+			return client.FormulaeWrite.Unpin(ctx, writeName)
 		}
-		return client.FormulaeWrite.Pin(ctx, name)
+		return client.FormulaeWrite.Pin(ctx, writeName)
 	})
 
 	c := m.enqueue(t)

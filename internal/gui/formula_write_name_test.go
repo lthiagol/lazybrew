@@ -1,11 +1,13 @@
 package gui
 
 import (
+	"context"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lthiagol/lazybrew/internal/brew"
+	"github.com/lthiagol/lazybrew/internal/brew/brewtest"
 )
 
 // outdatedFormulaModel is a model on a loaded Outdated panel listing one
@@ -84,4 +86,93 @@ func TestCoreFormulaUpgradeWritesTheShortName(t *testing.T) {
 	m = sendKey(m, "u")
 	confirmAndRun(t, m)
 	wantWrites(t, r, "upgrade bash")
+}
+
+// pinWritesModel is a model on a loaded Formulae panel listing fs, cursor on
+// row at. The pin and unpin writes it runs are recorded in the returned slice.
+func pinWritesModel(fs []brew.Formula, at int) (*Model, *[][]string) {
+	var writes [][]string
+	mr := brewtest.NewMockRunner()
+	mr.ExecuteFn = func(ctx context.Context, args ...string) ([]byte, error) {
+		writes = append(writes, args)
+		return []byte(""), nil
+	}
+	m := updateModel(newTestModel(), tea.WindowSizeMsg{Width: 120, Height: 40})
+	m.client = brew.NewClient(mr)
+	m.activePanel = PanelFormulae
+	p := m.panels[PanelFormulae]
+	p.loaded = true
+	p.formulae = fs
+	p.items = make([]string, len(fs))
+	for i, f := range fs {
+		p.items[i] = f.Name + "  1.0"
+	}
+	p.selected = at
+	return m, &writes
+}
+
+// TestTapFormulaPinWritesTheFullName: p on a tap formula pins it by its full
+// name, so brew does not resolve it to homebrew/core's tool.
+func TestTapFormulaPinWritesTheFullName(t *testing.T) {
+	m, writes := pinWritesModel([]brew.Formula{{Name: "tool", FullName: "user/tap/tool"}}, 0)
+
+	tm, cmd := m.togglePin()
+	runQueuedTapTask(t, asModel(tm), cmd)
+	if got := strings.Join((*writes)[0], " "); len(*writes) != 1 || got != "pin user/tap/tool" {
+		t.Fatalf("writes = %v, want [pin user/tap/tool]", *writes)
+	}
+}
+
+// TestPinnedTapFormulaUnpinWritesTheFullName: p on a pinned tap formula unpins
+// it by its full name.
+func TestPinnedTapFormulaUnpinWritesTheFullName(t *testing.T) {
+	m, writes := pinWritesModel([]brew.Formula{{Name: "tool", FullName: "user/tap/tool", Pinned: true}}, 0)
+
+	tm, cmd := m.togglePin()
+	runQueuedTapTask(t, asModel(tm), cmd)
+	if len(*writes) != 1 || strings.Join((*writes)[0], " ") != "unpin user/tap/tool" {
+		t.Fatalf("writes = %v, want [unpin user/tap/tool]", *writes)
+	}
+}
+
+// TestTapFormulaPinStateComesFromItsOwnRow: a core tool and a tap user/tap/tool
+// are both listed, cursor on the tap one. Its pinned state decides the write,
+// not the core formula that shares its short name.
+func TestTapFormulaPinStateComesFromItsOwnRow(t *testing.T) {
+	cases := []struct {
+		name      string
+		corePin   bool
+		tapPin    bool
+		wantWrite string
+	}{
+		{"core pinned, tap not", true, false, "pin user/tap/tool"},
+		{"core not pinned, tap pinned", false, true, "unpin user/tap/tool"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fs := []brew.Formula{
+				{Name: "tool", FullName: "tool", Pinned: tc.corePin},
+				{Name: "tool", FullName: "user/tap/tool", Pinned: tc.tapPin},
+			}
+			m, writes := pinWritesModel(fs, 1)
+
+			tm, cmd := m.togglePin()
+			runQueuedTapTask(t, asModel(tm), cmd)
+			if len(*writes) != 1 || strings.Join((*writes)[0], " ") != tc.wantWrite {
+				t.Fatalf("writes = %v, want [%s]", *writes, tc.wantWrite)
+			}
+		})
+	}
+}
+
+// TestCoreFormulaPinWritesTheShortName: a core formula keeps its short name for
+// pin and unpin.
+func TestCoreFormulaPinWritesTheShortName(t *testing.T) {
+	m, writes := pinWritesModel([]brew.Formula{{Name: "bash", FullName: "bash"}}, 0)
+
+	tm, cmd := m.togglePin()
+	runQueuedTapTask(t, asModel(tm), cmd)
+	if len(*writes) != 1 || strings.Join((*writes)[0], " ") != "pin bash" {
+		t.Fatalf("writes = %v, want [pin bash]", *writes)
+	}
 }
