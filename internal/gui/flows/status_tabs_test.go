@@ -14,7 +14,8 @@ import (
 
 // TestStatusTabsFlow: m opens the Missing tab with its rows; l reaches the Vulns
 // tab, which shows the hint and runs nothing; v runs the check and shows the
-// report; h and l move through the five Status tabs without running it again.
+// report; l walks on through the seven Status tabs to Unused, and one more l
+// wraps to Dashboard, without running the check again.
 func TestStatusTabsFlow(t *testing.T) {
 	var vulns atomic.Int32
 	r := brewtest.NewMockRunner()
@@ -44,13 +45,13 @@ func TestStatusTabsFlow(t *testing.T) {
 	tm.Send(logsKeyPress('v'))
 	waitForScreen(t, tm, "CVE-2026-1: openssl@3")
 
-	// From Vulns, l wraps to Dashboard and h walks back through the tabs.
-	for _, key := range []rune{'l', 'h', 'h', 'h'} {
-		tm.Send(logsKeyPress(key))
-	}
-	waitForScreen(t, tm, "ready to brew")
-	tm.Send(logsKeyPress('h'))
-	waitForScreen(t, tm, "4.9.0")
+	// Vulns is the fifth of the seven Status tabs: two more l presses reach
+	// Unused, and a third wraps to Dashboard.
+	tm.Send(logsKeyPress('l'))
+	tm.Send(logsKeyPress('l'))
+	waitForScreen(t, tm, "Nothing unused")
+	tm.Send(logsKeyPress('l'))
+	waitForScreen(t, tm, "Packages")
 
 	tm.Send(logsKeyPress('q'))
 	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))

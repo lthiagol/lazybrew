@@ -283,19 +283,6 @@ func TestApplyThemeDefinesM14Styles(t *testing.T) {
 	ApplyTheme(DarkTheme())
 }
 
-func TestThemeConcurrency(t *testing.T) {
-	done := make(chan struct{})
-	go func() {
-		for i := 0; i < 10; i++ {
-			ApplyTheme(DarkTheme())
-			ApplyTheme(LightTheme())
-		}
-		done <- struct{}{}
-	}()
-	<-done
-	ApplyTheme(DarkTheme())
-}
-
 // TestSharedTextStylesDrawWhatTheyReplace (cr3 AC-06): the shared foreground
 // styles draw exactly what the per-render style of each role drew, in both
 // themes, and the badges that are the same role reuse them.

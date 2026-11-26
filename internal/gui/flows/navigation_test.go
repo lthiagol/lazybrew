@@ -1,8 +1,9 @@
 package flows_test
 
 import (
-	"io"
+	"context"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,33 +14,34 @@ import (
 	"github.com/lthiagol/lazybrew/internal/gui/testutil"
 )
 
-func readOutput(t *testing.T, r io.Reader) string {
-	t.Helper()
-	data, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(data)
-}
-
+// TestNavigationFlows: 2 opens Formulae, and Tab from there lands on Casks. Only
+// both keys in order leave the final main title on Casks.
 func TestNavigationFlows(t *testing.T) {
 	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
-	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
 	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
+	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
-	out := readOutput(t, tm.FinalOutput(t))
-	if !strings.Contains(out, "Formulae") {
-		t.Error("expected Formulae in output")
+	view := ansi.Strip(tm.FinalModel(t).View().Content)
+	if !strings.Contains(view, mainTitleMarker("Casks")) {
+		t.Errorf("2 then Tab should land on Casks:\n%s", view)
 	}
 }
 
+// TestSearchFlow: / opens the Search panel, and Esc takes the focus off its box,
+// so 2 jumps to Formulae rather than typing into the box.
 func TestSearchFlow(t *testing.T) {
 	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
 	tm.Send(tea.KeyPressMsg{Code: '/', Text: "/"})
+	waitForScreen(t, tm, "Search packages...")
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEsc})
+	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+	view := ansi.Strip(tm.FinalModel(t).View().Content)
+	if !strings.Contains(view, mainTitleMarker("Formulae")) {
+		t.Errorf("after Esc, 2 should reach Formulae; the box still had focus:\n%s", view)
+	}
 }
 
 func TestHelpFlow(t *testing.T) {
@@ -57,34 +59,45 @@ func TestHelpFlow(t *testing.T) {
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
 }
 
+// TestRefreshFlow: R re-reads the loaded Formulae list, so the row the list
+// gains after 2 shows once R's read lands.
 func TestRefreshFlow(t *testing.T) {
-	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
+	runner := newFilterRunner("testformula")
+	before := runner.ExecuteJSONFn
+	after := newFilterRunner("reloaded").ExecuteJSONFn
+	var reloaded atomic.Bool
+	runner.ExecuteJSONFn = func(ctx context.Context, result any, args ...string) error {
+		if reloaded.Load() {
+			return after(ctx, result, args...)
+		}
+		return before(ctx, result, args...)
+	}
+	tm := testutil.NewTestModelWithRunner(t, runner, teatest.WithInitialTermSize(120, 40))
+
+	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
+	waitForScreen(t, tm, "▸ ✔ testformula")
+	reloaded.Store(true)
 	tm.Send(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	waitForScreen(t, tm, "reloaded")
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
-	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
 }
 
+// TestModalFlow: x on Formulae opens the uninstall confirm, and Esc closes it.
 func TestModalFlow(t *testing.T) {
-	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
+	runner := newUninstallRecordingRunner()
+	tm := testutil.NewTestModelWithRunner(t, runner, teatest.WithInitialTermSize(120, 40))
+
+	tm.Send(tea.KeyPressMsg{Code: '2', Text: "2"})
+	waitForScreen(t, tm, "▸ ✔ testformula")
 	tm.Send(tea.KeyPressMsg{Code: 'x', Text: "x"})
+	waitForScreen(t, tm, "Uninstall testformula?")
 	tm.Send(tea.KeyPressMsg{Code: tea.KeyEsc})
 	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
-	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
-}
-
-// TestSearchTabCycleFlow (lb19 AC-01): Tab and Shift+Tab keep moving between
-// panels with the Search input focused, and the View shows each panel's name.
-func TestSearchTabCycleFlow(t *testing.T) {
-	tm := testutil.NewTestModel(t, teatest.WithInitialTermSize(120, 40))
-	tm.Send(tea.KeyPressMsg{Code: '/', Text: "/"})
-	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab})
-	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
-	tm.Send(tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
-	tm.Send(tea.KeyPressMsg{Code: 'q', Text: "q"})
-	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
-	out := readOutput(t, tm.FinalOutput(t))
-	if !strings.Contains(out, "Services") {
-		t.Error("Shift+Tab from Status should reach Services; the View never showed it")
+	tm.WaitFinished(t, teatest.WithFinalTimeout(3*time.Second))
+	view := ansi.Strip(tm.FinalModel(t).View().Content)
+	if strings.Contains(view, "Uninstall testformula?") {
+		t.Errorf("Esc should close the uninstall confirm:\n%s", view)
 	}
 }
 

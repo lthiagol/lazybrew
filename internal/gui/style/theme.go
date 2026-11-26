@@ -228,6 +228,9 @@ func ThemeByName(name string) (*Theme, bool) {
 	return nil, false
 }
 
+// ApplyTheme sets the package-level style globals to t. It writes them without
+// a lock, so it runs once before the program starts (app.New does, from
+// gui.theme); calling it from a goroutine while the TUI renders is a data race.
 func ApplyTheme(t *Theme) {
 	CurrentTheme = t
 	AccentColor = t.Accent
