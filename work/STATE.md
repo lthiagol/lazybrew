@@ -77,16 +77,6 @@ then the lane flow. Releases: `docs/agents/release.md`.
 | lb36-log-status | c65c165, 343d79a | closed | ok (report-style exit 1 → Warn, r2 clean; one row per command, r2 clean) |
 | lb37-readme-refresh | f91eb55, b619d43 | closed | ok (README rewrite + docs/ screenshots; sidebar keeps rows on refresh, r1 clean) |
 | lb38-backlog-pre-release | e620814 + u9 commits | closed | ok (LB-35 not a bug; LB-31 fixed: test race + overlapping-refresh count, r1 clean; LB-36/LB-37 parked) |
-| lb29-footer-redesign | a918265, 0d87daa, 5379050; fix r2: 5f0cd94, 4ddfaa5, 3d7883a, cf112f3 | implemented | awaiting reviewer |
-| lb23-sudo-in-terminal | a313fa2, 8e9ad25, 4fc15c8, a6dab0c | implemented | awaiting reviewer |
-| lb24-copy-and-wording | 9beaafe, 755f7de | implemented | awaiting reviewer |
-| lb25-search-polish | b2885f6, 4c14fbf, 897f98f | implemented | awaiting reviewer |
-| lb26-list-filter | 5abd469, 44d7475, c298ca6, 381ac43 | implemented | awaiting reviewer |
-| lb27-status-tabs | 6ab7914, cdbcb03, 3310921, f535d23 | implemented | awaiting reviewer |
-| lb28-themes | ca32bac, 12413b2, 0961c05, 42efc88 | implemented | awaiting reviewer |
-| lb30-taps-and-trust | 7c878ea, d8655ab, d036d12, b750e10 | implemented | awaiting reviewer |
-| lb31-cleanup-tabs | baf820b, 8534342, 6b8284c | implemented; 80x24 open (Q-lb31-tabs-80) | awaiting reviewer |
-| lb32-vulns-view | 392a00b, ba894cb, a6f496f | implemented | awaiting reviewer |
 | lb42-cleanup-run-hint | 3db700d | closed | ok (herdr-crew, r1 clean) |
 | lb43-stream-stderr | 6b2c7d7 | closed | ok (herdr-crew, r1 clean; pty follow-up not started) |
 | lb44-load-during-update | b26fb6e | closed | ok (claude-crew, r2 clean) |
