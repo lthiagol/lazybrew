@@ -21,6 +21,11 @@ const (
 // than 24 rows, and the header and footer take two, so 20 always fits.
 const dialogMaxRows = 20
 
+// dialogBodyRows is how many rows of the box the body may take. The chip, two
+// blank rows and the key line take 4 rows; with the border and padding that is
+// 8 rows of the box that are not body.
+const dialogBodyRows = dialogMaxRows - 8
+
 // innerWidth is the text width of a dialog box: the width less the thick border
 // (2) and the padding of 3 on each side.
 func innerWidth(width int) int {
@@ -52,9 +57,16 @@ func leftBlock(lines []string) []string {
 	for _, line := range lines {
 		widest = max(widest, lipgloss.Width(line))
 	}
+	return padBlock(lines, widest)
+}
+
+// padBlock pads each line to width cells, which must be no narrower than any
+// of them. A caller whose lines change under a fixed width (a scrolling list)
+// passes that width, so the block keeps its column.
+func padBlock(lines []string, width int) []string {
 	out := make([]string, 0, len(lines))
 	for _, line := range lines {
-		out = append(out, lipgloss.NewStyle().Width(widest).Render(line))
+		out = append(out, lipgloss.NewStyle().Width(width).Render(line))
 	}
 	return out
 }
@@ -82,11 +94,9 @@ func dialog(accent color.Color, label string, width int, body []string, keys str
 		Render(textutil.Clip(" "+strings.ToUpper(label)+" ", innerWidth(width)))
 
 	lines := strings.Split(strings.Join(body, "\n"), "\n")
-	// The chip, two blank rows and the key line take 4 rows; with the border
-	// and padding that is 8 rows of the box that are not body.
-	if maxBody := dialogMaxRows - 8; len(lines) > maxBody {
-		lines = lines[:maxBody]
-		lines[maxBody-1] = cutRow(lines[maxBody-1])
+	if len(lines) > dialogBodyRows {
+		lines = lines[:dialogBodyRows]
+		lines[dialogBodyRows-1] = cutRow(lines[dialogBodyRows-1])
 	}
 
 	// Each row is centred on its own, so a wrapped line and a short one both

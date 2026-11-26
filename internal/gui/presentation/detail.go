@@ -37,8 +37,8 @@ const infoMinRight = 26
 // Info draws an Info view within width cells. Narrower than splitWidth it is
 // one column, the fields in order. Wider, the fields not marked Right sit in a
 // left column and the Right ones in a right column, each keeping its order. A
-// view splits only when every non-prose value in the right column fits that
-// column whole (F-r4-01); otherwise it keeps the single column.
+// view splits only when every non-prose value in each column fits that column
+// whole (F-r4-01, LB-51); otherwise it keeps the single column.
 func Info(fields []Field, width int) string {
 	if width < splitWidth {
 		return Detail(fields, width)
@@ -55,7 +55,7 @@ func Info(fields []Field, width int) string {
 	// the width, and it leaves the right column infoMinRight cells.
 	leftW := min(max(width*2/5, naturalWidth(left)), width-infoGap-infoMinRight)
 	rightW := width - leftW - infoGap
-	if !fitsWhole(right, rightW) {
+	if !fitsValues(left, leftW) || !fitsWhole(right, rightW) {
 		return Detail(fields, width)
 	}
 	// The right column is prose and lists: its values wrap, never cut.
@@ -68,11 +68,35 @@ func Info(fields []Field, width int) string {
 		lipgloss.NewStyle().Width(rightW).Render(Detail(right, rightW)))
 }
 
+// fitsValues is whether every non-prose value of fields fits a column of width
+// cells whole: the value's full width must be within the value column the labels
+// leave. A left column cuts a value that is too wide for its row, so a multi-word
+// value that is too long is not whole even when each word of it is.
+func fitsValues(fields []Field, width int) bool {
+	labelW := 0
+	for _, f := range fields {
+		if f.Value != "" {
+			labelW = max(labelW, lipgloss.Width(f.Label+":"))
+		}
+	}
+	valueW := width - (labelW + 2)
+	for _, f := range fields {
+		if f.Prose || f.Value == "" {
+			continue
+		}
+		if valueWidth(f.Value) > valueW {
+			return false
+		}
+	}
+	return true
+}
+
 // fitsWhole is whether every non-prose value of fields fits a column of width
-// cells whole: no word of it is wider than the value column the labels leave.
-// A path, a URL or a command is one such word, and a word that does not fit
-// would break mid-token when drawn. Prose (Field.Prose) wraps at spaces, so it
-// is not checked.
+// cells whole in the sense of its words: no word of it is wider than the value
+// column the labels leave. A path, a URL or a command is one such word, and a
+// word that does not fit would break mid-token when drawn. A right column wraps
+// its values at spaces, so only the words are checked. Prose (Field.Prose) wraps
+// at spaces too, so it is not checked.
 func fitsWhole(fields []Field, width int) bool {
 	labelW := 0
 	for _, f := range fields {
@@ -166,11 +190,17 @@ func naturalWidth(fields []Field) int {
 	labelW += 2
 	w := 0
 	for _, f := range shown {
-		block := 0
-		for _, line := range strings.Split(f.Value, "\n") {
-			block = max(block, lipgloss.Width(strings.ReplaceAll(line, "\t", strings.Repeat(" ", tabStop))))
-		}
-		w = max(w, labelW+block)
+		w = max(w, labelW+valueWidth(f.Value))
+	}
+	return w
+}
+
+// valueWidth is the width a value is drawn at: its widest line, a tab drawn as
+// tabStop spaces.
+func valueWidth(value string) int {
+	w := 0
+	for _, line := range strings.Split(value, "\n") {
+		w = max(w, lipgloss.Width(strings.ReplaceAll(line, "\t", strings.Repeat(" ", tabStop))))
 	}
 	return w
 }

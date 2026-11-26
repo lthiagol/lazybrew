@@ -58,6 +58,38 @@ func TestInfoRightColumnWraps(t *testing.T) {
 	}
 }
 
+// TestInfoKeepsAHomepageWholeAtTheSplitWidth (LB-51 FC4): a homepage the left
+// column cannot hold whole drops the view to one column, so the URL is not cut.
+func TestInfoKeepsAHomepageWholeAtTheSplitWidth(t *testing.T) {
+	const homepage = "https://github.com/example-org/some-long-project-name-here"
+	f := brew.Formula{Name: "some-project", Version: "1.0", Tap: "homebrew/core",
+		Homepage: homepage, Description: "a formula with a long homepage"}
+	out := ansi.Strip(FormatFormulaInfo(f, splitWidth, style.UnicodeIcons))
+	if !strings.Contains(out, homepage) {
+		t.Fatalf("the homepage should be whole at %d cells, got:\n%s", splitWidth, out)
+	}
+	if first := strings.Split(out, "\n")[0]; strings.Contains(first, "Description:") {
+		t.Fatalf("the view should drop to one column, first row %q", first)
+	}
+}
+
+// TestInfoKeepsAMultiWordLicenseWholeAtTheSplitWidth (LB-51 D2): a left value
+// with spaces that is wider than its column is not cut with … when the view
+// splits; each word fits, but the whole value does not, so the view drops to one
+// column where the license is whole.
+func TestInfoKeepsAMultiWordLicenseWholeAtTheSplitWidth(t *testing.T) {
+	const license = "Apache-2.0 WITH LLVM-exception OR GPL-2.0-or-later"
+	f := brew.Formula{Name: "llvm", Version: "19.1.7", Tap: "homebrew/core", License: license,
+		Description: "compiler infrastructure"}
+	out := ansi.Strip(FormatFormulaInfo(f, splitWidth, style.UnicodeIcons))
+	if !strings.Contains(out, license) {
+		t.Fatalf("the license should be whole at %d cells, got:\n%s", splitWidth, out)
+	}
+	if first := strings.Split(out, "\n")[0]; strings.Contains(first, "Description:") {
+		t.Fatalf("the view should drop to one column, first row %q", first)
+	}
+}
+
 // TestInfoKeepsTheFieldOrderInOneColumn: the single column keeps the order the
 // fields are listed in, Right or not.
 func TestInfoKeepsTheFieldOrderInOneColumn(t *testing.T) {
